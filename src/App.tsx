@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Wifi, WifiOff, Database, HardDrive, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2 } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import { appendixAData as buildingData } from './data/appendixA';
@@ -63,17 +63,14 @@ const App: React.FC = () => {
 
   // ===== 项目列表 =====
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(true);
 
   // 加载项目列表
   useEffect(() => {
     (async () => {
-      setProjectsLoading(true);
       if (apiAvailable) {
         try {
           const list = await api.fetchProjects();
           setProjects(list);
-          // 同步到本地
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
         } catch {
           loadProjectsFromLocal();
@@ -81,7 +78,6 @@ const App: React.FC = () => {
       } else {
         loadProjectsFromLocal();
       }
-      setProjectsLoading(false);
     })();
 
     function loadProjectsFromLocal() {
