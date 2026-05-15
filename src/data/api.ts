@@ -2,6 +2,16 @@ import { ProjectInfo, UploadInfo } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+// 检测 API 是否可用
+export async function checkConnection(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/`, { method: 'GET', signal: AbortSignal.timeout(5000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ========== 项目 ==========
 export async function fetchProjects(): Promise<ProjectInfo[]> {
   const res = await fetch(`${API_BASE}/projects`);
