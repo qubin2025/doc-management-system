@@ -46,3 +46,31 @@ export interface CategoryStats {
   uploaded: number;
   pending: number;
 }
+
+// 权限
+export interface Permissions {
+  can_upload: boolean;
+  can_download: boolean;
+  can_use_ai: boolean;
+}
+
+// 用户信息
+export interface UserInfo {
+  id: number;
+  username: string;
+  displayName: string;
+  role: string;
+}
+
+// 登录态
+export interface AuthState {
+  token: string;
+  user: UserInfo;
+  permissions: Permissions;
+}
+
+// AI 聊天消息
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}

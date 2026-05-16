@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2 } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
+import LoginPage from './components/LoginPage';
+import AiChat from './components/AiChat';
+import BackupModal from './components/BackupModal';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
-import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType } from './types';
+import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType, AuthState, Permissions } from './types';
 import * as api from './data/api';
 import JSZip from 'jszip';
 
-const USER_KEY = 'document-management-current-user';
+const AUTH_KEY = 'doc-system-auth';
 const STANDARD_KEY = 'document-management-standard';
-const ADMIN_USERS = ['管理员', 'admin'];
 
 const STANDARD_INFO: Record<StandardType, {
   title: string;
@@ -55,11 +57,21 @@ const App: React.FC = () => {
     api.checkConnection().then(ok => { setApiAvailable(ok); setApiChecking(false); });
   }, []);
 
-  // ===== 用户 =====
-  const [currentUser, setCurrentUser] = useState<string>(() => {
-    return localStorage.getItem(USER_KEY) || '';
+  // ===== 认证 =====
+  const [auth, setAuth] = useState<AuthState | null>(() => {
+    const saved = localStorage.getItem(AUTH_KEY);
+    if (saved) { try { const a = JSON.parse(saved); api.setAuthToken(a.token); return a; } catch {} }
+    return null;
   });
-  const isAdmin = ADMIN_USERS.includes(currentUser);
+
+  const currentUser = auth?.user?.username || '';
+  const isAdmin = auth?.user?.role === 'admin';
+  const permissions: Permissions = auth?.permissions || { can_upload: true, can_download: true, can_use_ai: false };
+  const canUpload = isAdmin || permissions.can_upload;
+  const canUseAi = isAdmin || permissions.can_use_ai;
+
+  // ===== View 路由 =====
+  const [view, setView] = useState<string>(auth ? 'homepage' : 'login');
 
   // ===== 项目列表 =====
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
@@ -121,6 +133,24 @@ const App: React.FC = () => {
     }).finally(() => setUploadInfoLoading(false));
   }, [currentProject, apiAvailable, standard]);
 
+  // ===== View 路由 =====
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [showBackupModal, setShowBackupModal] = useState(false);
+
+  // ===== 登录/登出 =====
+  const handleLogin = (authState: AuthState) => {
+    setAuth(authState);
+    localStorage.setItem(AUTH_KEY, JSON.stringify(authState));
+    setView('homepage');
+  };
+
+  const handleLogout = () => {
+    api.logout();
+    setAuth(null);
+    localStorage.removeItem(AUTH_KEY);
+    setView('login');
+  };
+
   // ===== 筛选 & 统计 =====
   const [filters, setFilters] = useState<FilterOptions>({ category: '', archiveUnit: '', searchKeyword: '' });
   const [stats, setStats] = useState<CategoryStats>({ total: 0, uploaded: 0, pending: 0 });
@@ -152,6 +182,7 @@ const App: React.FC = () => {
   const handleSwitchStandard = (std: StandardType) => {
     setStandard(std);
     setShowStandardSelect(false);
+    setView('main');
     localStorage.setItem(STANDARD_KEY, std);
     // 切换规程时清空当前数据，等重新加载
     setAllUploadInfo({});
@@ -318,8 +349,76 @@ const App: React.FC = () => {
     }
   };
 
+  // ===== 登录页 =====
+  if (view === 'login') {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  // ===== 首页 =====
+  if (view === 'homepage') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500"><FileText className="w-6 h-6 text-white" /></div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">全过程工程咨询管理服务平台</h1>
+                <p className="text-xs text-gray-400">Full Process Engineering Consulting Management Platform</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 text-sm text-gray-600"><User className="w-4 h-4" /> {auth?.user?.displayName || auth?.user?.username}</span>
+              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${isAdmin ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                {isAdmin ? '管理员' : auth?.user?.role === 'project_manager' ? '项目经理' : auth?.user?.role === 'construction_unit' ? '建设单位' : '用户'}
+              </span>
+              <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <LogOut className="w-4 h-4" /> 退出
+              </button>
+            </div>
+          </div>
+        </header>
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">功能模块</h2>
+          <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位打通数据联系，大模型智能分析驱动全过程管理</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 资料管理 - 已上线 */}
+            <button
+              onClick={() => setView('standard-select')}
+              className="bg-white rounded-xl shadow-md p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer">
+              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-2"><h3 className="text-lg font-bold text-gray-800">工程资料管理</h3>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-medium">已上线 v1.0</span>
+              </div>
+              <p className="text-sm text-gray-500">建筑/市政工程资料分类保存管理，DB11/T 695-2025 & DB11/T 808-2020 附录A</p>
+            </button>
+            {/* 未来模块 - 规划中 */}
+            {[
+              { icon: <BarChart3 className="w-6 h-6 text-purple-600" />, title: '项目管理', desc: '前期管理、进度计划、甘特图/双代号网络图' },
+              { icon: <Upload className="w-6 h-6 text-orange-600" />, title: '招标管理', desc: '招标文件、评标记录、中标通知书归档' },
+              { icon: <Building2 className="w-6 h-6 text-indigo-600" />, title: '施工管理', desc: '施工日志、质量检验、隐蔽工程验收' },
+              { icon: <Download className="w-6 h-6 text-cyan-600" />, title: '结算管理', desc: '工程量清单、结算审核、竣工决算' },
+              { icon: <MessageSquare className="w-6 h-6 text-emerald-600" />, title: '智能分析', desc: '大模型驱动项目分析、知识沉淀、数字资产形成' },
+            ].map((m, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md p-6 text-left border-2 border-gray-100 opacity-80">
+                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mb-4">{m.icon}</div>
+                <div className="flex items-center gap-2 mb-2"><h3 className="text-lg font-bold text-gray-600">{m.title}</h3>
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-400 font-medium">规划中</span>
+                </div>
+                <p className="text-sm text-gray-400">{m.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <footer className="text-center text-xs text-gray-400 py-8">全过程工程咨询管理服务平台 · 内网系统</footer>
+      </div>
+    );
+  }
+
   // ===== 规程选择首页 =====
-  if (showStandardSelect) {
+  if (view === 'standard-select' || showStandardSelect) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl">
@@ -404,20 +503,38 @@ const App: React.FC = () => {
                   title="新建/管理项目">+ 项目</button>
               </div>
 
+              {/* 用户信息 */}
               <div className="flex items-center gap-2">
-                <input type="text" value={currentUser}
-                  onChange={(e) => { setCurrentUser(e.target.value); localStorage.setItem(USER_KEY, e.target.value); }}
-                  placeholder="当前用户"
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-28 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-                {isAdmin && <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">管理员</span>}
+                <span className="text-sm text-gray-600 flex items-center gap-1"><User className="w-3 h-3" /> {auth?.user?.displayName || currentUser}</span>
+                {isAdmin ? (
+                  <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">管理员</span>
+                ) : (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{auth?.user?.role === 'project_manager' ? '项目经理' : auth?.user?.role === 'construction_unit' ? '建设单位' : '用户'}</span>
+                )}
+                <button onClick={() => setView('homepage')} className="px-2 py-1 text-xs text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded" title="返回首页">
+                  <ArrowLeft className="w-3 h-3" />
+                </button>
+                <button onClick={handleLogout} className="px-2 py-1 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 rounded" title="退出登录">
+                  <LogOut className="w-3 h-3" />
+                </button>
               </div>
 
               <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
                 <Download className="w-4 h-4" />导出CSV</button>
               <button onClick={handlePackageDownload} className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm">
                 <Package className="w-4 h-4" />打包下载</button>
-              <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
-                <RefreshCw className="w-4 h-4" />清空记录</button>
+              {canUseAi && (
+                <button onClick={() => setShowAiChat(!showAiChat)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm text-white ${showAiChat ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-500 hover:bg-purple-600'}`}>
+                  <MessageSquare className="w-4 h-4" /> AI
+                </button>
+              )}
+              <button onClick={() => setShowBackupModal(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm">
+                <Package className="w-4 h-4" />备份</button>
+              {isAdmin && (
+                <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                  <RefreshCw className="w-4 h-4" />清空记录</button>
+              )}
             </div>
           </div>
         </div>
@@ -467,6 +584,7 @@ const App: React.FC = () => {
             filters={filters}
             currentUser={currentUser}
             isAdmin={isAdmin}
+            canUpload={canUpload}
             projectName={currentProject}
           />
         )}
@@ -531,6 +649,23 @@ const App: React.FC = () => {
           </p>
         </div>
       </footer>
+
+      {/* AI 聊天窗口 */}
+      {showAiChat && (
+        <AiChat
+          onClose={() => setShowAiChat(false)}
+          projectName={currentProject}
+          standard={standard}
+          colorClass={colorClass}
+        />
+      )}
+
+      {/* 备份弹窗 */}
+      {showBackupModal && (
+        <BackupModal
+          onClose={() => setShowBackupModal(false)}
+        />
+      )}
     </div>
   );
 };

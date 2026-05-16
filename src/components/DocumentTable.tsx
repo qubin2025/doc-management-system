@@ -13,6 +13,7 @@ interface DocumentTableProps {
   filters: FilterOptions;
   currentUser: string;
   isAdmin: boolean;
+  canUpload?: boolean;
   projectName: string;
 }
 
@@ -24,6 +25,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
   filters,
   currentUser,
   isAdmin,
+  canUpload = true,
   projectName
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['A1']));
@@ -231,13 +233,15 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
                   <td className="border border-gray-300 p-2 text-center">
                     <div className="flex items-center justify-center gap-1">
                       {/* 上传 / 添加文件按钮 */}
-                      <button
-                        onClick={() => handleUpload(item.id)}
-                        className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                        title={hasFiles ? '添加文件' : '上传文档'}
-                      >
-                        {hasFiles ? <Plus className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
-                      </button>
+                      {canUpload && (
+                        <button
+                          onClick={() => handleUpload(item.id)}
+                          className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                          title={hasFiles ? '添加文件' : '上传文档'}
+                        >
+                          {hasFiles ? <Plus className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
+                        </button>
+                      )}
                       {/* 下载按钮：有文件时显示蓝色↓ */}
                       {hasFiles && (
                         <button
