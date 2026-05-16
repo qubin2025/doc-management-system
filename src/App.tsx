@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2 } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -379,35 +379,65 @@ const App: React.FC = () => {
           </div>
         </header>
         <div className="max-w-7xl mx-auto px-4 py-12">
+          {/* ===== 第一区块：工作指南工作模块 ===== */}
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">指南工作模块</h2>
+          <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位严格按照指南手册内容执行，大模型智能分析驱动全过程管理</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+            {[
+              { icon: <ClipboardCheck className="w-6 h-6 text-blue-600" />, title: '第一章 前期工作', desc: '项目立项、可行性研究、用地规划许可、建设许可、施工许可等前期管理' },
+              { icon: <FileSearch className="w-6 h-6 text-amber-600" />, title: '第二章 招标采购', desc: '招标文件编制、招标公告、评标定标、中标通知、合同签订与备案' },
+              { icon: <HardHat className="w-6 h-6 text-emerald-600" />, title: '第三章 工程施工', desc: '施工准备、质量管理、进度控制、安全监督、变更管理、监理协调' },
+              { icon: <CheckCircle2 className="w-6 h-6 text-indigo-600" />, title: '第四章 竣工验收及移交', desc: '竣工预验收、正式验收、备案归档、工程移交、竣工结算、保修管理' },
+            ].map((m, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-gray-100 opacity-90 hover:shadow-md transition-all duration-200">
+                <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3">{m.icon}</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-bold text-gray-600">{m.title}</h3>
+                  <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-gray-100 text-gray-400 font-medium">规划中</span>
+                </div>
+                <p className="text-xs text-gray-400 leading-relaxed">{m.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 分隔线 */}
+          <div className="flex items-center gap-4 mb-12">
+            <div className="flex-1 h-px bg-gray-200"></div>
+            <span className="text-xs text-gray-400 font-medium">功能模块</span>
+            <div className="flex-1 h-px bg-gray-200"></div>
+          </div>
+
+          {/* ===== 第二区块：功能模块 ===== */}
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">功能模块</h2>
           <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位打通数据联系，大模型智能分析驱动全过程管理</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* 资料管理 - 已上线 */}
             <button
               onClick={() => setView('standard-select')}
-              className="bg-white rounded-xl shadow-md p-6 text-left hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer">
+              <div className="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <FileText className="w-6 h-6 text-blue-600" />
               </div>
-              <div className="flex items-center gap-2 mb-2"><h3 className="text-lg font-bold text-gray-800">工程资料管理</h3>
-                <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-medium">已上线 v1.0</span>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">工程资料管理</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线 v1.0</span>
               </div>
-              <p className="text-sm text-gray-500">建筑/市政工程资料分类保存管理，DB11/T 695-2025 & DB11/T 808-2020 附录A</p>
+              <p className="text-xs text-gray-500 leading-relaxed">建筑/市政工程资料分类保存管理，DB11/T 695-2025 & DB11/T 808-2020 附录A</p>
             </button>
             {/* 未来模块 - 规划中 */}
             {[
-              { icon: <BarChart3 className="w-6 h-6 text-purple-600" />, title: '项目管理', desc: '前期管理、进度计划、甘特图/双代号网络图' },
-              { icon: <Upload className="w-6 h-6 text-orange-600" />, title: '招标管理', desc: '招标文件、评标记录、中标通知书归档' },
-              { icon: <Building2 className="w-6 h-6 text-indigo-600" />, title: '施工管理', desc: '施工日志、质量检验、隐蔽工程验收' },
-              { icon: <Download className="w-6 h-6 text-cyan-600" />, title: '结算管理', desc: '工程量清单、结算审核、竣工决算' },
+              { icon: <BarChart3 className="w-6 h-6 text-purple-600" />, title: '知识库', desc: '积累沉淀项目文档、规范标准，形成可检索的知识资产' },
+              { icon: <Upload className="w-6 h-6 text-orange-600" />, title: '供应商库', desc: '供应商信息管理、资质审核、评价体系、供应商资源池' },
+              { icon: <Building2 className="w-6 h-6 text-indigo-600" />, title: '计划管理', desc: '项目进度计划、甘特图、双代号网络图、里程碑节点管理' },
+              { icon: <Download className="w-6 h-6 text-cyan-600" />, title: '造价数据', desc: '工程量清单、定额指标、成本分析、结算审核、造价数据库' },
               { icon: <MessageSquare className="w-6 h-6 text-emerald-600" />, title: '智能分析', desc: '大模型驱动项目分析、知识沉淀、数字资产形成' },
             ].map((m, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-md p-6 text-left border-2 border-gray-100 opacity-80">
-                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mb-4">{m.icon}</div>
-                <div className="flex items-center gap-2 mb-2"><h3 className="text-lg font-bold text-gray-600">{m.title}</h3>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-400 font-medium">规划中</span>
+              <div key={i} className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-gray-100 opacity-90 hover:shadow-md transition-all duration-200">
+                <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3">{m.icon}</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-bold text-gray-600">{m.title}</h3>
+                  <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-gray-100 text-gray-400 font-medium">规划中</span>
                 </div>
-                <p className="text-sm text-gray-400">{m.desc}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{m.desc}</p>
               </div>
             ))}
           </div>
