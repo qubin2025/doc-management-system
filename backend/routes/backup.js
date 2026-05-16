@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { getDb } from '../db.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import archiver from 'archiver';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const archiver = require('archiver');
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
