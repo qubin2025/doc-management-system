@@ -452,6 +452,9 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center p-4">
         <div className="w-full max-w-2xl">
+          <button onClick={() => setView('homepage')} className="flex items-center gap-1 mb-6 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
+            <ArrowLeft className="w-4 h-4" /> 返回首页
+          </button>
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">工程资料管理系统</h1>
             <p className="text-gray-500">请选择资料管理规程</p>
@@ -541,8 +544,8 @@ const App: React.FC = () => {
                 ) : (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{auth?.user?.role === 'project_manager' ? '项目经理' : auth?.user?.role === 'construction_unit' ? '建设单位' : '用户'}</span>
                 )}
-                <button onClick={() => setView('homepage')} className="px-2 py-1 text-xs text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded" title="返回首页">
-                  <ArrowLeft className="w-3 h-3" />
+                <button onClick={() => setView('homepage')} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
+                  <ArrowLeft className="w-4 h-4" /> 返回首页
                 </button>
                 <button onClick={handleLogout} className="px-2 py-1 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 rounded" title="退出登录">
                   <LogOut className="w-3 h-3" />
