@@ -24,18 +24,31 @@ const BackupModal: React.FC<BackupModalProps> = ({ onClose }) => {
     }).catch(() => {});
   }, []);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setDownloading(true);
     const base = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     const url = mode === 'all'
       ? `${base}/backup/all`
       : `${base}/backup/project/${selectedProject}`;
 
-    // 直接打开下载链接（浏览器会处理下载）
-    const token = api.getAuthToken();
-    window.open(url + (token ? `?token=${encodeURIComponent(token)}` : ''), '_blank');
-
-    setTimeout(() => { setDownloading(false); setDone(true); }, 1500);
+    try {
+      const token = api.getAuthToken();
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('下载失败');
+      const blob = await res.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = mode === 'all' ? 'full-backup.zip' : `project-backup-${selectedProject}.zip`;
+      a.click();
+      URL.revokeObjectURL(downloadUrl);
+      setDone(true);
+    } catch (err) {
+      alert('备份下载失败，请重试');
+    }
+    setDownloading(false);
   };
 
   return (
@@ -68,7 +81,7 @@ const BackupModal: React.FC<BackupModalProps> = ({ onClose }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="">-- 选择项目 --</option>
               {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={String(p.id)}>{p.name}</option>
               ))}
             </select>
           )}

@@ -1,0 +1,15 @@
+node_modules
+backend/node_modules
+dist
+.git
+.env
+backend/.env
+backend/data
+backend/files
+backend/backups
+*.bak
+*.bak2
+*.bak3
+*.clean
+*.fix
+.DS_Store

@@ -1,10 +1,11 @@
 import { Router } from 'express';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../db.js';
 
 const router = Router();
 
 // 从 localStorage 格式导入数据
-router.post('/', (req, res) => {
+router.post('/', requireAuth, (req, res) => {
   const { projectName, standard, data } = req.body;
   // data 格式: { "docId": [{ fileName, uploadTime, uploader, version, fileData }] }
 

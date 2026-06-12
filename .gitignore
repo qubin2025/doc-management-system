@@ -3,6 +3,7 @@ dist/
 *.db
 *.db-journal
 .env
+.env.production
 .DS_Store
 backend/data/
 backend/node_modules/

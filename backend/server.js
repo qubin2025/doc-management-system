@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import { getDb } from './db.js';
 import projectsRouter from './routes/projects.js';
 import documentsRouter from './routes/documents.js';
@@ -13,9 +15,32 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
-app.use(morgan('short'));
+const isProduction = process.env.NODE_ENV === 'production';
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(isProduction ? (corsOrigin ? {
+  origin: corsOrigin,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+} : { origin: false }) : {}));
+app.use(morgan(isProduction ? 'combined' : 'short'));
 app.use(express.json({ limit: '100mb' }));
+
+// 全局限流
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: isProduction ? 200 : 1000,
+  message: { error: '请求过于频繁，请稍后重试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
+// 安全头
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
 
 // Initialize database
 getDb();

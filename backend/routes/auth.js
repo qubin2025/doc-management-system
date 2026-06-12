@@ -2,13 +2,32 @@ import { Router } from 'express';
 import { getDb } from '../db.js';
 import bcrypt from 'bcrypt';
 import { v4 as uuid } from 'uuid';
+import rateLimit from 'express-rate-limit';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 const SESSION_HOURS = 24;
 
+// 登录接口限流：防止暴力破解
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟窗口
+  max: 10,                   // 最多10次尝试
+  message: { error: '登录尝试过于频繁，请15分钟后重试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// 注册接口限流
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,  // 1小时窗口
+  max: 5,                     // 最多5次注册
+  message: { error: '注册请求过于频繁，请稍后重试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // 登录
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: '用户名和密码不能为空' });
@@ -20,7 +39,7 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: '用户名或密码错误' });
   }
   if (!user.is_active) {
-    return res.status(403).json({ error: '账号已被禁用' });
+    return res.status(401).json({ error: '用户名或密码错误' });
   }
 
   const valid = bcrypt.compareSync(password, user.password_hash);
@@ -43,6 +62,23 @@ router.post('/login', (req, res) => {
     },
     permissions: JSON.parse(user.permissions || '{}'),
   });
+});
+
+// 用户注册（默认pending状态，需管理员审批）
+router.post('/register', registerLimiter, (req, res) => {
+  const { username, password, displayName, phone, dept } = req.body;
+  if (!username || !password) return res.status(400).json({ error: '用户名和密码为必填项' });
+  if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+  if (existing) return res.status(409).json({ error: '用户名已存在' });
+
+  const hash = bcrypt.hashSync(password, 10);
+  db.prepare('INSERT INTO users (username, password_hash, display_name, role, permissions, is_active) VALUES (?, ?, ?, ?, ?, ?)').run(
+    username, hash, displayName || username, 'viewer', '{"can_upload":false,"can_download":false,"can_use_ai":false}', 0
+  );
+  res.json({ message: '注册成功，等待管理员审批后即可登录' });
 });
 
 // 获取当前用户

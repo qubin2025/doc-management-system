@@ -2,6 +2,17 @@
 export interface ProjectInfo {
   name: string;
   createdAt: string;
+  details?: {
+    overview?: string;       // 项目概况
+    area?: string;           // 建筑面积
+    scale?: string;          // 建设规模
+    investment?: string;     // 投资额
+    pipeline?: string;       // 市政管线
+    aiReport?: string;       // AI分析报告
+    aiReportTime?: string;   // 报告更新时间
+    customFields?: { key: string; value: string }[]; // 自定义字段
+    projectDocs?: { fileName: string; uploader: string; uploadTime: string; data: string }[]; // 项目概况文件
+  };
 }
 
 // 工程资料类型
@@ -73,4 +84,101 @@ export interface AuthState {
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+}
+
+// ===== 全过程项目管理指南模块类型 =====
+
+// 工作项（可勾选）
+export interface GuideWorkItem {
+  id: string;
+  name: string;
+  checked: boolean;
+  duration?: string;        // 时长（如"3天"、"1周"）
+  attachmentFormat?: string; // 附件格式（如"PDF"、"Word/Excel"）
+  isCustom?: boolean;       // 是否用户自定义添加
+  completedAt?: string;     // 完成时间（ISO日期）
+  plannedDate?: string;     // 计划完成日期（ISO日期）
+  attachments?: { fileName: string; version: string; uploadTime: string; data?: string }[]; // 附件列表（data为base64）
+}
+
+// 子模块
+export interface GuideSubModule {
+  id: string;
+  name: string;
+  workItems: GuideWorkItem[];
+}
+
+// 逻辑关系连线 (workItemId → workItemId)
+export interface GuideLink {
+  from: string;       // 源工作项ID
+  to: string;         // 目标工作项ID
+  label?: string;     // 连线标签
+  duration?: string;  // 用时
+  startTime?: string; // 开始时间
+  endTime?: string;   // 结束时间
+  isCustom?: boolean;
+  srcAnchor?: string; // 用户指定源锚点
+  dstAnchor?: string; // 用户指定目标锚点
+  waypoints?: { x: number; y: number }[]; // 自定义中间拐点
+}
+
+// 节点位置
+export interface GuideNodePosition {
+  itemId: string;
+  x: number;
+  y: number;
+}
+
+// 附表字段定义
+export interface FormField {
+  key: string;          // 字段标识
+  label: string;        // 中文标签
+  type: 'text' | 'date' | 'number' | 'select' | 'textarea' | 'table';
+  placeholder?: string;
+  options?: string[];   // select 类型的选项
+  required?: boolean;
+  layout?: 'single' | 'double'; // 单列/双列布局（默认单列）
+  pairKey?: string;     // 双列时配对字段key（同行右侧字段）
+}
+
+// 附表模板（含字段结构）
+export interface GuideForm {
+  code: string;
+  name: string;
+  description?: string;
+  fields?: FormField[];          // 模板字段结构
+  sampleContent?: string;        // 示例内容（Markdown格式）
+}
+
+// 附表内容（持久化存储）
+export interface FormContent {
+  chapterId: string;            // 所属章节
+  formCode: string;             // 表单编号
+  content: string;              // 编辑内容（Markdown）
+  filledByAi: boolean;          // 是否AI填写
+  lastModified: string;         // 最后修改时间（ISO）
+  version: number;              // 版本号
+}
+
+// 附件的文件记录
+export interface FormAttachment {
+  fileName: string;
+  fileData: string;             // Base64
+  fileType: string;             // MIME type
+  uploadTime: string;
+  fileSize: number;
+}
+
+// 章节
+export interface GuideChapter {
+  id: string;
+  number: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: string;       // lucide icon name
+  color: string;      // tailwind color
+  subModules: GuideSubModule[];
+  links: GuideLink[];  // 默认时序逻辑关系
+  forms: GuideForm[];   // 附表清单
 }

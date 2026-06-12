@@ -6,6 +6,21 @@ import fs from 'fs';
 
 const router = Router();
 const FILES_ROOT = process.env.FILES_PATH || path.join(process.cwd(), 'files');
+const MAX_FILE_MB = 50; // 单文件大小上限
+const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.dwg', '.zip', '.rar', '.txt', '.csv'];
+
+// 安全检查：验证路径是否在允许的基准目录内
+function isPathSafe(targetPath, baseDir) {
+  const resolved = path.resolve(targetPath);
+  const base = path.resolve(baseDir);
+  return resolved.startsWith(base + path.sep) || resolved === base;
+}
+
+// 文件名安全化：只保留合法字符，防穿越
+function sanitizeFilename(name) {
+  const base = path.basename(name); // 剥离路径穿越
+  return base.replace(/[^a-zA-Z0-9\u4e00-\u9fff._\-()（）]+/g, '_').slice(0, 200);
+}
 
 // 获取某个项目下的所有文档上传记录
 router.get('/project/:projectId', requireAuth, (req, res) => {
@@ -53,25 +68,53 @@ router.get('/all/:projectId', requireAuth, (req, res) => {
 
 // 上传文档
 router.post('/upload', requirePermission('can_upload'), (req, res) => {
-  const { projectId, docId, fileName, fileData, uploadTime, uploader, version, standard } = req.body;
+  const { projectId, docId, fileName, fileData, uploadTime, version, standard } = req.body;
 
   if (!projectId || !docId || !fileName) {
     return res.status(400).json({ error: '缺少必要参数' });
   }
 
+  // 验证 projectId 为合法数字
+  const pid = Number(projectId);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return res.status(400).json({ error: '非法项目ID' });
+  }
+
+  // docId 安全检查：拒绝路径穿越字符
+  if (docId.includes('..') || docId.includes('/') || docId.includes('\\')) {
+    return res.status(400).json({ error: 'docId 包含非法字符' });
+  }
+
+  // 文件类型白名单验证（无论存储路径，必须检查）
+  const ext = path.extname(fileName).toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return res.status(400).json({ error: `不支持的文件类型: ${ext}，允许的类型: ${ALLOWED_EXTENSIONS.join(', ')}` });
+  }
+
   let filePath = null;
   // 如果有文件数据，写入磁盘
   if (fileData && fileData.length > 100) {
+    // 单文件大小检查
+    if (fileData.length > MAX_FILE_MB * 1024 * 1024) {
+      return res.status(413).json({ error: `文件过大，请控制在${MAX_FILE_MB}MB以内` });
+    }
     try {
-      const dir = path.join(FILES_ROOT, String(projectId), docId);
+      const safeName = sanitizeFilename(fileName);
+      const safeDocId = sanitizeFilename(docId);
+      const dir = path.join(FILES_ROOT, String(pid), safeDocId);
       fs.mkdirSync(dir, { recursive: true });
       const ts = Date.now();
-      filePath = path.join(dir, `${ts}_${fileName}`);
+      filePath = path.join(dir, `${ts}_${safeName}`);
       const base64 = fileData.split(',')[1] || fileData;
       fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
       filePath = path.relative(process.cwd(), filePath);
+      if (!filePath.startsWith('files' + path.sep) && filePath !== 'files') {
+        console.error('Path escape attempt:', filePath);
+        return res.status(400).json({ error: '文件路径异常，上传被拒绝' });
+      }
     } catch (e) {
       console.error('File write error:', e.message);
+      return res.status(500).json({ error: '文件写入失败' });
     }
   }
 
@@ -79,11 +122,11 @@ router.post('/upload', requirePermission('can_upload'), (req, res) => {
   const result = db.prepare(
     'INSERT INTO documents (project_id, doc_id, file_name, file_data, file_path, upload_time, uploader, version, standard) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
-    projectId, docId, fileName,
+    pid, docId, fileName,
     filePath ? null : (fileData || null), // 文件存磁盘则不再存 Base64
     filePath,
     uploadTime || new Date().toLocaleString('zh-CN'),
-    uploader || req.user?.username || '未知',
+    req.user?.username || '未知', // 使用认证用户，拒绝客户端伪造
     version || 'V1.0',
     standard || 'DB11/T695-2025'
   );
@@ -102,6 +145,7 @@ router.get('/download/:id', requireAuth, (req, res) => {
   if (doc.file_path) {
     try {
       const absPath = path.resolve(process.cwd(), doc.file_path);
+      if (!isPathSafe(absPath, FILES_ROOT)) return res.status(403).json({ error: '非法文件路径' });
       if (fs.existsSync(absPath)) {
         const buf = fs.readFileSync(absPath);
         return res.json({
@@ -109,7 +153,9 @@ router.get('/download/:id', requireAuth, (req, res) => {
           fileData: 'data:application/octet-stream;base64,' + buf.toString('base64'),
         });
       }
-    } catch {}
+    } catch (e) {
+      console.error('File read error:', e.message);
+    }
   }
 
   // 回退到数据库
@@ -121,7 +167,7 @@ router.get('/download/:id', requireAuth, (req, res) => {
 });
 
 // 删除单条文档记录
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requirePermission('can_upload'), (req, res) => {
   const db = getDb();
   const doc = db.prepare('SELECT id, file_path FROM documents WHERE id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: '记录不存在' });
@@ -130,8 +176,11 @@ router.delete('/:id', requireAuth, (req, res) => {
   if (doc.file_path) {
     try {
       const absPath = path.resolve(process.cwd(), doc.file_path);
+      if (!isPathSafe(absPath, FILES_ROOT)) return res.status(403).json({ error: '非法文件路径' });
       if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
-    } catch {}
+    } catch (e) {
+      console.error('File delete error:', e.message);
+    }
   }
 
   db.prepare('DELETE FROM documents WHERE id = ?').run(req.params.id);

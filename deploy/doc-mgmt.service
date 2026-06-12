@@ -1,0 +1,25 @@
+# 全过程工程咨询管理系统 — systemd 服务
+# 安装: sudo cp deploy/doc-mgmt.service /etc/systemd/system/
+#       sudo systemctl daemon-reload
+#       sudo systemctl enable --now doc-mgmt
+
+[Unit]
+Description=全过程工程咨询管理系统 Backend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/doc-mgmt/backend
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3000
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -113,4 +113,69 @@ router.post('/chat', requirePermission('can_use_ai'), async (req, res) => {
   }
 });
 
+// Embedding 向量化代理（通义 text-embedding-v1）
+router.post('/embed', requirePermission('can_use_ai'), async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: '缺少text参数' });
+  const apiKey = process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'Embedding服务未配置' });
+
+  try {
+    const resp = await fetch('https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'text-embedding-v1', input: { texts: [text] }, parameters: { text_type: 'document' } }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(502).json({ error: 'Embedding API错误: ' + JSON.stringify(data) });
+    res.json({ embedding: data.output?.embeddings?.[0]?.embedding || [] });
+  } catch (e) {
+    res.status(500).json({ error: 'Embedding请求失败: ' + e.message });
+  }
+});
+
+// 视觉模型代理（GLM-4V）
+router.post('/vision', requirePermission('can_use_ai'), async (req, res) => {
+  const { messages, images } = req.body;
+  const apiKey = process.env.ZHIPU_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: '视觉模型未配置' });
+
+  try {
+    const resp = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'glm-4v', messages, temperature: 0.7, max_tokens: 2000 }),
+      signal: AbortSignal.timeout(30000),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(502).json({ error: '视觉模型错误' });
+    res.json({ reply: data.choices?.[0]?.message?.content || '' });
+  } catch (e) {
+    res.status(500).json({ error: '视觉模型请求失败: ' + e.message });
+  }
+});
+
+// 表单填写代理
+router.post('/fill-form', requirePermission('can_use_ai'), async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: '缺少prompt参数' });
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'AI服务未配置' });
+
+  try {
+    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 2000 }),
+      signal: AbortSignal.timeout(60000),
+    });
+    const data = await resp.json();
+    if (!resp.ok) return res.status(502).json({ error: 'AI服务异常' });
+    res.json({ reply: data.choices?.[0]?.message?.content || '' });
+  } catch (e) {
+    res.status(500).json({ error: '表单填写请求失败: ' + e.message });
+  }
+});
+
 export default router;

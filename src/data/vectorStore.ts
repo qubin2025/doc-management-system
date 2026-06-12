@@ -1,0 +1,193 @@
+// 本地向量存储 — 项目维度索引、768维向量、余弦相似度、localStorage持久化
+
+export interface VectorDoc {
+  id: string;
+  text: string;
+  embedding: number[];
+  metadata?: {
+    projectName?: string;
+    fileName?: string;
+    fileType?: string;
+    formCode?: string;
+    uploadTime?: string;
+    chunkIndex?: number;
+    chunkCount?: number;
+  };
+}
+
+interface StoreData {
+  version: number;
+  updatedAt: string;
+  vectors: VectorDoc[];
+}
+
+const STORE_PREFIX = 'vector-store-';
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+export class LocalVectorStore {
+  private vectors: Map<string, VectorDoc[]> = new Map(); // project → docs
+
+  constructor() { this.loadAll(); }
+
+  private key(project: string): string {
+    return STORE_PREFIX + (project || 'default');
+  }
+
+  private loadProject(project: string): VectorDoc[] {
+    try {
+      const raw = localStorage.getItem(this.key(project));
+      if (!raw) return [];
+      const data: StoreData = JSON.parse(raw);
+      if (!data.vectors) return [];
+      return data.vectors;
+    } catch { return []; }
+  }
+
+  private loadAll(): void {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORE_PREFIX)) {
+        const docs = this.loadProject(k.replace(STORE_PREFIX, ''));
+        this.vectors.set(k.replace(STORE_PREFIX, ''), docs);
+      }
+    }
+  }
+
+  private saveProject(project: string): void {
+    const docs = this.vectors.get(project) || [];
+    const data: StoreData = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      vectors: docs,
+    };
+    try {
+      localStorage.setItem(this.key(project), JSON.stringify(data));
+    } catch (e) {
+      console.warn('[VectorStore] localStorage full, clearing oldest project');
+      this.clearOldest();
+      try { localStorage.setItem(this.key(project), JSON.stringify(data)); } catch {}
+    }
+  }
+
+  private clearOldest(): void {
+    let oldestKey = '';
+    let oldestTime = Infinity;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORE_PREFIX)) {
+        try {
+          const data = JSON.parse(localStorage.getItem(k) || '{}');
+          const t = new Date(data.updatedAt || 0).getTime();
+          if (t < oldestTime) { oldestTime = t; oldestKey = k; }
+        } catch {}
+      }
+    }
+    if (oldestKey) localStorage.removeItem(oldestKey);
+  }
+
+  // ---- public API ----
+
+  /** 添加文档（自动分块），返回添加的文档数 */
+  add(doc: VectorDoc): number {
+    const project = doc.metadata?.projectName || 'default';
+    if (!this.vectors.has(project)) this.vectors.set(project, []);
+    this.vectors.get(project)!.push(doc);
+    this.saveProject(project);
+    return 1;
+  }
+
+  /** 索引文档文本（单文档→单向量，精确语义检索） */
+  addDocument(text: string, embedding: number[], metadata: VectorDoc['metadata']): number {
+    const project = metadata?.projectName || 'default';
+    if (!this.vectors.has(project)) this.vectors.set(project, []);
+    const docs = this.vectors.get(project)!;
+    docs.push({
+      id: `${metadata?.fileName || 'doc'}_${Date.now()}`,
+      text: text.slice(0, 8000), // 截断到8000字符(Embedding API限制)
+      embedding,
+      metadata,
+    });
+    this.saveProject(project);
+    return docs.length;
+  }
+
+  /** 语义搜索 — 返回 Top-K 最相似文档 */
+  search(queryEmbedding: number[], project: string, topK = 5): VectorDoc[] {
+    const docs = this.vectors.get(project) || [];
+    if (docs.length === 0) return [];
+    const scored = docs.map(d => ({ doc: d, score: cosineSimilarity(queryEmbedding, d.embedding) }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.doc);
+  }
+
+  /** 全项目搜索 — 不限定项目 */
+  searchAll(queryEmbedding: number[], topK = 5): VectorDoc[] {
+    const allDocs: VectorDoc[] = [];
+    this.vectors.forEach(docs => allDocs.push(...docs));
+    if (allDocs.length === 0) return [];
+    const scored = allDocs.map(d => ({ doc: d, score: cosineSimilarity(queryEmbedding, d.embedding) }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.doc);
+  }
+
+  /** 获取项目统计 */
+  stats(project: string): { count: number; sizeKB: number } {
+    const docs = this.vectors.get(project) || [];
+    const raw = localStorage.getItem(this.key(project)) || '';
+    return { count: docs.length, sizeKB: Math.round(raw.length / 1024) };
+  }
+
+  /** 所有项目 */
+  projects(): string[] {
+    return Array.from(this.vectors.keys());
+  }
+
+  /** 删除文档 */
+  remove(id: string, project?: string): void {
+    if (project && this.vectors.has(project)) {
+      const docs = this.vectors.get(project)!;
+      this.vectors.set(project, docs.filter(d => d.id !== id));
+      this.saveProject(project);
+    } else {
+      this.vectors.forEach((docs, proj) => {
+        this.vectors.set(proj, docs.filter(d => d.id !== id));
+        this.saveProject(proj);
+      });
+    }
+  }
+
+  /** 清空项目 */
+  clearProject(project: string): void {
+    this.vectors.delete(project);
+    localStorage.removeItem(this.key(project));
+  }
+
+  /** 清空全部 */
+  /** 获取所有文档 */
+  getAllDocs(): VectorDoc[] {
+    const all: VectorDoc[] = [];
+    this.vectors.forEach(docs => all.push(...docs));
+    return all;
+  }
+
+  clearAll(): void {
+    this.vectors.clear();
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORE_PREFIX)) localStorage.removeItem(k);
+    }
+  }
+}
+
+// 全局单例
+export const vectorStore = new LocalVectorStore();

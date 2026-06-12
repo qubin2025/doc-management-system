@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { X, Upload, File, Search, Loader } from 'lucide-react';
 import { UploadInfo, DocumentItem } from '../types';
+import { toast } from './Toast';
+import { indexDocument } from '../data/ragService';
 
 interface UploadModalProps {
   docName: string;
@@ -96,11 +98,14 @@ const UploadModal: React.FC<UploadModalProps> = ({
           fileData: reader.result as string
         };
         onSubmit(info);
-        // 关闭弹窗由父组件处理
+        // AI索引 — 完全独立的 fire-and-forget，不阻塞上传、不依赖组件生命周期
+        indexDocument(file, projectName)
+          .then(result => toast(`AI已学习: ${file.name} (${result.chunks}段)`, 'success'))
+          .catch(() => {}); // 静默失败，不阻塞用户
       };
       reader.onerror = () => {
         setUploading(false);
-        alert('文件读取失败，请重试。');
+        toast('文件读取失败，请重试。', 'error');
       };
       reader.readAsDataURL(file);
     } else {
@@ -258,7 +263,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!file && !existingInfo?.fileName || uploading}
+            disabled={(!file && !existingInfo?.fileName) || uploading}
             className="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {uploading && <Loader className="w-4 h-4 animate-spin" />}
