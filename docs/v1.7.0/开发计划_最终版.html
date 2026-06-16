@@ -1,0 +1,108 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>全过程工程咨询管理服务平台 — 开发计划 v1.7→v2.5（最终版）</title>
+<style>
+:root{--p:#2563eb;--bg:#f8fafc;--card:#fff;--tx:#1e293b;--mu:#64748b;--bd:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx);line-height:1.9}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+header{background:linear-gradient(135deg,#0f172a,#1e3a8a,#3b82f6);color:#fff;padding:60px 20px;text-align:center}
+header h1{font-size:2.4em;margin-bottom:8px}header p{font-size:1.1em;opacity:.85}
+h2{color:var(--p);border-bottom:3px solid var(--p);padding-bottom:10px;margin:30px 0 18px;font-size:1.5em}
+h3{color:#334155;margin:20px 0 10px;font-size:1.15em}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+th,td{border:1px solid var(--bd);padding:10px 14px;text-align:left}
+th{background:#eff6ff;color:#1e40af;font-weight:600}
+.done{color:#059669;font-weight:600}.todo{color:#d97706;font-weight:600}.deferred{color:#7c3aed;font-weight:600}.warn{color:#dc2626}
+.phase-card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:30px 35px;margin:20px 0;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.phase-card h3{border-bottom:2px solid var(--bd);padding-bottom:8px;margin-top:0}
+.reminder{background:#fef2f2;border:3px solid #fca5a5;border-radius:14px;padding:30px 35px;margin:30px 0}
+.reminder h2{color:#dc2626;border-bottom-color:#fca5a5}
+footer{text-align:center;padding:40px;color:var(--mu);font-size:.85em;border-top:1px solid var(--bd);margin-top:30px}
+</style></head><body>
+<header><h1>全过程工程咨询管理服务平台</h1><p>开发计划 · 最终版 · v1.7.0 → v2.5.0</p><p style="font-size:.85em;margin-top:8px;opacity:.7">按方案A调整：承认技术边界，Python微服务推迟至独立迭代</p></header>
+<div class="container">
+
+<h2>一、方案A：调整后的版本路线图</h2>
+<table>
+<tr><th>阶段</th><th>状态</th><th>核心目标</th><th>备注</th></tr>
+<tr><td>Phase 1</td><td class="done">✅ 100%</td><td>安全加固+附件上传+测试+图谱3D</td><td>—</td></tr>
+<tr><td>Phase 2</td><td class="done">✅ 100%</td><td>三审查模块+RAG+docx导出+图谱同步</td><td>—</td></tr>
+<tr><td>Phase 3</td><td class="done">✅ Node.js部分100%</td><td>方案生成+分块+PDF导出+模板+完整性校验</td><td>Python部分推迟</td></tr>
+<tr><td>Phase 4</td><td class="done">✅ 80%</td><td>JSON Schema定义+完整性校验+约束生成</td><td>核心功能完成</td></tr>
+<tr><td>Phase 5</td><td class="done">✅ 50%</td><td>管理增强+用量统计+健康面板+SaaS准备</td><td>监控/计费推迟</td></tr>
+</table>
+
+<h2>二、Phase 3 详细状态（方案A）</h2>
+<div class="phase-card">
+<table>
+<tr><th>#</th><th>任务</th><th>方案A状态</th><th>说明</th></tr>
+<tr><td>3.1.1</td><td>方案生成引擎（AI逐章生成）</td><td class="done">✅ 完成</td><td>PlanGenerator.tsx — 10章模板，4章100%自动</td></tr>
+<tr><td>3.1.2</td><td>文本智能分块引擎</td><td class="done">✅ 完成</td><td>chunker.ts — 段落/句子/Token三策略</td></tr>
+<tr><td>3.1.3</td><td>标准条款自动注入</td><td class="done">✅ 完成</td><td>编制依据/安全/文明/应急4章自动引用DB11/T695</td></tr>
+<tr><td>3.1.4</td><td>PDF/Word/TXT三格式导出</td><td class="done">✅ 完成</td><td>exportPDF+exportDocx+TXT</td></tr>
+<tr><td>3.1.5</td><td>完整性校验</td><td class="done">✅ 完成</td><td>planSchema.ts — 关键词+字数+章节缺失检测</td></tr>
+<tr><td>3.1.6</td><td>LightRAG知识引擎</td><td class="deferred">🔮 推迟至方案B</td><td>需Python/FastAPI独立微服务</td></tr>
+<tr><td>3.1.7</td><td>LanceDB向量存储</td><td class="deferred">🔮 推迟至方案B</td><td>localStorage已满足当前百级文档规模</td></tr>
+<tr><td>3.1.8</td><td>unstructured.io文档解析</td><td class="deferred">🔮 推迟至方案B</td><td>pdfjs+mammoth+xlsx已覆盖主要格式</td></tr>
+<tr><td>3.1.9</td><td>混合检索(BM25+向量+图)</td><td class="deferred">🔮 推迟至方案B</td><td>Lunr全文+通义向量已满足需求</td></tr>
+</table>
+</div>
+
+<h2>三、方案B — 未完成开发内容（项目交付前提醒）</h2>
+
+<div class="reminder">
+<h2>⚠️ 项目交付前必须完成方案B</h2>
+<p style="font-size:1.1em;margin-bottom:16px">以下四项需创建独立的 <b>Python微服务</b>（FastAPI + LightRAG），通过HTTP API与主Node.js系统通信。</p>
+<table>
+<tr><th>#</th><th>任务</th><th>技术栈</th><th>预估工时</th><th>优先级</th></tr>
+<tr><td><b>B-1</b></td><td><b>LightRAG 知识引擎微服务</b><br>文档→自动实体抽取+图谱构建+混合检索</td><td>Python 3.11+ FastAPI + LightRAG + Neo4j</td><td>3天</td><td class="warn">高</td></tr>
+<tr><td><b>B-2</b></td><td><b>LanceDB 向量存储迁移</b><br>替代localStorage，支持大规模文档</td><td>Python + LanceDB + 通义Embedding</td><td>1天</td><td class="todo">中</td></tr>
+<tr><td><b>B-3</b></td><td><b>unstructured.io 专业解析</b><br>PDF表格/扫描件/复杂排版处理</td><td>Python + unstructured.io + tesseract</td><td>1.5天</td><td class="todo">中</td></tr>
+<tr><td><b>B-4</b></td><td><b>混合检索API对接</b><br>Node.js前端 ↔ Python微服务HTTP通信</td><td>api.ts新增 /api/lightrag/search 调用</td><td>0.5天</td><td class="warn">高</td></tr>
+<tr><td colspan="3"><b>方案B总计</b></td><td><b>6天</b></td><td></td></tr>
+</table>
+
+<h3>微服务架构</h3>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;font-size:.85em">
+┌──────────────────────────────────────────┐
+│           Docker Compose                  │
+│                                           │
+│  ┌─────────┐  ┌──────────┐  ┌─────────┐  │
+│  │ Node.js │  │ Python   │  │ Neo4j   │  │
+│  │ :3000   │  │ :8000    │  │ :7687   │  │
+│  │ 主系统   │←→│ LightRAG │←→│ 图数据库  │  │
+│  └─────────┘  │ 微服务    │  └─────────┘  │
+│               └──────────┘               │
+│                    ↓                     │
+│               ┌──────────┐               │
+│               │ LanceDB  │               │
+│               │ 向量存储   │               │
+│               └──────────┘               │
+└──────────────────────────────────────────┘
+</pre>
+</div>
+
+<h2>四、开发计划执行对比</h2>
+<table>
+<tr><th>阶段</th><th>原计划</th><th>实际完成</th><th>推迟项</th></tr>
+<tr><td>Phase 1</td><td>安全+附件+测试+图谱3D</td><td class="done">100% ✅</td><td>无</td></tr>
+<tr><td>Phase 2</td><td>三审查+合同+招投标+RAG+docx</td><td class="done">100% ✅</td><td>无</td></tr>
+<tr><td>Phase 3</td><td>方案生成+LightRAG+LanceDB+unstructured</td><td>Node.js: 100% ✅<br>Python: 0% 🔮</td><td>B1-B4 (6天)</td></tr>
+<tr><td>Phase 4</td><td>JSON Schema+约束生成+完整性校验</td><td class="done">80% ✅</td><td>Instructor/Guidance约束</td></tr>
+<tr><td>Phase 5</td><td>SaaS多租户+商业化+监控</td><td>50% ✅</td><td>Prometheus+计费系统</td></tr>
+</table>
+
+<h2>五、整体项目进度</h2>
+<table>
+<tr><th>维度</th><th>进度</th></tr>
+<tr><td>Node.js 前端</td><td class="done">95% — 31组件，知识图谱3D，三审查模块，方案生成</td></tr>
+<tr><td>Node.js 后端</td><td class="done">90% — 6路由模块，Neo4j集成，安全加固，API完整</td></tr>
+<tr><td>测试</td><td class="done">22用例 — 持续集成就绪</td></tr>
+<tr><td>部署</td><td class="done">Docker/PM2/Nginx三方案</td></tr>
+<tr><td>文档</td><td class="done">使用说明+开发文档+商业计划书+开发计划</td></tr>
+<tr><td>Python 微服务</td><td class="deferred">0% — 推迟至方案B</td></tr>
+</table>
+
+</div>
+<footer><p>全过程工程咨询管理服务平台 · 开发计划最终版 · 2026年6月</p></footer>
+</body></html>

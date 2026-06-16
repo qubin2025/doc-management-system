@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>全过程工程咨询管理服务平台 — 使用说明 v1.7.0</title>
+<style>
+:root{--p:#2563eb;--bg:#f8fafc;--card:#fff;--tx:#1e293b;--mu:#64748b;--bd:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx);line-height:1.9}
+.container{max-width:1000px;margin:0 auto;padding:20px}
+header{background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;padding:60px 20px;text-align:center}
+header h1{font-size:2.4em;margin-bottom:8px}header p{font-size:1.1em;opacity:.9}
+.hb-row{display:flex;justify-content:center;gap:18px;margin-top:22px;flex-wrap:wrap}
+.hb{background:rgba(255,255,255,.12);border-radius:10px;padding:12px 20px;min-width:100px;text-align:center}
+.hb .n{font-size:2em;font-weight:800}.hb .l{font-size:.75em;opacity:.75}
+.toc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:28px;margin:28px 0}
+.toc h3{margin-bottom:12px;color:var(--p)}.toc ol{columns:2;padding-left:20px}.toc li{margin:4px 0}
+.toc a{color:var(--p);text-decoration:none}
+section{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:32px 38px;margin:28px 0;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+h2{color:var(--p);border-bottom:3px solid var(--p);padding-bottom:10px;margin-bottom:20px;font-size:1.5em}
+h3{color:#334155;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid var(--bd);padding:10px 14px;font-size:.92em}
+th{background:#eff6ff;color:#1e40af;font-weight:600}
+.step{background:#eff6ff;border-left:4px solid var(--p);padding:12px 18px;margin:10px 0;border-radius:0 8px 8px 0}
+.step strong{color:var(--p)}
+.note{background:#fef3c7;border:1px solid #fcd34d;padding:14px 18px;border-radius:8px;margin:14px 0;font-size:.9em}
+.tip{background:#dcfce7;border:1px solid #86efac;padding:14px 18px;border-radius:8px;margin:14px 0;font-size:.9em}
+.screenshot{max-width:100%;border-radius:8px;border:1px solid var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.05);margin:12px 0 6px;display:block}
+.caption{text-align:center;font-size:.85em;color:var(--mu);margin-bottom:14px;font-weight:500}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ft-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:14px 0}
+.ft{background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:16px}
+.ft .fn{color:var(--p);font-weight:700;font-size:1.05em;margin-bottom:4px}
+.ft .fd{font-size:.82em;color:var(--mu)}
+footer{text-align:center;padding:36px;color:var(--mu);font-size:.85em;border-top:1px solid var(--bd);margin-top:28px}
+@media(max-width:768px){.toc ol{columns:1;padding-left:16px}.two-col{grid-template-columns:1fr}}
+</style></head><body>
+
+<header>
+<h1>全过程工程咨询管理服务平台</h1>
+<p>使用说明 · v1.7.0 · 2026年6月</p>
+<div class="hb-row">
+<div class="hb"><div class="n">7</div><div class="l">界面截图</div></div>
+<div class="hb"><div class="n">20+</div><div class="l">功能模块</div></div>
+<div class="hb"><div class="n">2</div><div class="l">支持规程</div></div>
+</div>
+</header>
+
+<div class="container">
+
+<div class="toc"><h3>目录</h3><ol>
+<li><a href="#s1">系统概述与快速启动</a></li>
+<li><a href="#s2">登录页面</a></li>
+<li><a href="#s3">项目入口页</a></li>
+<li><a href="#s4">工程资料管理首页</a></li>
+<li><a href="#s5">指南工作模块</a></li>
+<li><a href="#s6">时序逻辑图</a></li>
+<li><a href="#s7">附表清单</a></li>
+<li><a href="#s8">项目信息编辑</a></li>
+<li><a href="#s9">其余功能模块说明</a></li>
+</ol></div>
+
+<section id="s1">
+<h2>一、系统概述与快速启动</h2>
+<div class="ft-grid">
+<div class="ft"><div class="fn">🏗 双规程</div><div class="fd">建筑 DB11/T695-2025 + 市政 DB11/T808-2020，附录A数据已预置</div></div>
+<div class="ft"><div class="fn">🤖 AI驱动</div><div class="fd">DeepSeek聊天 + 通义Embedding + GLM-4V视觉，智能填写/分析/搜索</div></div>
+<div class="ft"><div class="fn">📋 指南数字化</div><div class="fd">4章40+子模块500+工作项，数字化跟踪全过程咨询指南</div></div>
+<div class="ft"><div class="fn">🔒 企业级安全</div><div class="fd">15项安全加固：路径防护/限流/加密/白名单/参数化查询</div></div>
+<div class="ft"><div class="fn">🐳 一键部署</div><div class="fd">Docker Compose / PM2+Nginx / Windows脚本 三方案</div></div>
+<div class="ft"><div class="fn">📡 离线双模式</div><div class="fd">localStorage+SQLite双重存储，断网自动降级</div></div>
+</div>
+<div class="step"><strong>第1步：启动系统</strong><br>Windows：双击 <code>deploy\start.bat</code>（自动安装依赖+启动前后端）<br>Linux：<code>bash deploy/deploy.sh</code> ｜ Docker：<code>docker-compose up -d</code></div>
+<div class="step"><strong>第2步：打开浏览器</strong><br>访问 <code>http://localhost:5173</code>（开发）或 <code>http://localhost</code>（Docker）</div>
+<div class="step"><strong>第3步：登录</strong><br>使用管理员账号登录。首次部署密码见部署说明。</div>
+<div class="tip">系统首次启动自动创建SQLite数据库和默认用户。AI功能需配置API Key。</div>
+</section>
+
+<section id="s2">
+<h2>二、登录页面</h2>
+<img class="screenshot" src="screenshots/01-login-new.png" alt="登录页面">
+<p class="caption">图1：系统登录页面 — 用户名密码登录 + 模块状态网格</p>
+<table><tr><th>区域</th><th>说明</th></tr>
+<tr><td>品牌Logo区</td><td>左上角显示系统名称"ZHJK"和全称</td></tr>
+<tr><td>登录表单</td><td>用户名/密码输入框 + 「登 录」提交按钮</td></tr>
+<tr><td>注册入口</td><td>「立即注册」按钮，新用户注册后需管理员审批</td></tr>
+<tr><td>离线演示</td><td>「离线演示」按钮，无需后端即可体验系统</td></tr>
+<tr><td>模块状态网格</td><td>40个方块表示系统功能模块状态（高亮=已启用）</td></tr></table>
+<div class="note">安全：登录限流15分钟/10次；禁用账号与密码错误统一返回"用户名或密码错误"</div>
+</section>
+
+<section id="s3">
+<h2>三、项目入口页</h2>
+<img class="screenshot" src="screenshots/02-project-entry-new.png" alt="项目入口页">
+<p class="caption">图2：项目入口页面 — 项目卡片列表 + AI助手栏</p>
+<table><tr><th>区域</th><th>说明</th></tr>
+<tr><td>顶部导航</td><td>系统名称 + 当前用户信息 + 角色标签 + 退出/管理入口</td></tr>
+<tr><td>搜索栏</td><td>输入关键词实时筛选项目，右侧显示项目总数</td></tr>
+<tr><td>「创建项目」按钮</td><td>点击创建新项目，弹出输入对话框</td></tr>
+<tr><td>项目卡片</td><td>显示项目名称、创建时间、指南进度条。点击进入项目，双击名称重命名，悬停右下角显示编辑按钮</td></tr>
+<tr><td>进度条</td><td>指南工作模块完成进度 (已完成/总项数)，绿蓝色渐变</td></tr>
+<tr><td>底部AI栏</td><td>输入工程咨询相关问题，按Enter发送给AI。支持文件/图片上传、模型切换</td></tr></table>
+</section>
+
+<section id="s4">
+<h2>四、工程资料管理首页</h2>
+<img class="screenshot" src="screenshots/03-homepage-new.png" alt="工程资料管理">
+<p class="caption">图3：进入项目后的首页 — 指南工作模块 + 功能菜单</p>
+<table><tr><th>区域</th><th>说明</th></tr>
+<tr><td>左侧分类目录</td><td>A/B/C/D类工程资料分类导航，支持建筑和市政双规程切换</td></tr>
+<tr><td>资料明细表</td><td>包含工程资料名称、表格编号、规范依据、4方归档单位（施工/监理/建设/档案馆）</td></tr>
+<tr><td>上传按钮</td><td>每条资料右侧上传按钮，支持PDF/Word/Excel/图片/CAD等13种格式，≤50MB，自动版本管理</td></tr>
+<tr><td>指南模块入口</td><td>4大章节卡片（前期工作/招标采购/工程施工/竣工验收），点击进入指南工作模块</td></tr>
+<tr><td>工具栏</td><td>规程切换、筛选搜索、CSV导出、ZIP打包下载、AI按钮、备份按钮、管理后台</td></tr>
+<tr><td>仪表盘入口</td><td>点击查看项目KPI指标（CPI/SPI/完整度/质量评分）</td></tr>
+</table>
+</section>
+
+<section id="s5">
+<h2>五、指南工作模块</h2>
+<img class="screenshot" src="screenshots/04-guide-new.png" alt="指南工作模块">
+<p class="caption">图4：指南工作模块 — 子模块卡片 + 工作项列表</p>
+<table><tr><th>功能</th><th>操作说明</th></tr>
+<tr><td>章信息</td><td>顶部显示章节标题和进度（已选/总量百分比）+ 撤销按钮（最近5步）</td></tr>
+<tr><td>标签切换</td><td>工作模块 / 时序逻辑图 / 附表清单 三个Tab页面切换</td></tr>
+<tr><td>子模块卡片</td><td>每个卡片显示编号、名称（可点击重命名）、全选/取肖、保存模板、添加工作项</td></tr>
+<tr><td>工作项勾选</td><td>☐ 未选 → ☑ 蓝色(计划中) → ☑ 绿色(已完成)。两步确认机制</td></tr>
+<tr><td>自定义工作项</td><td>「+」按钮添加工作项，可设置名称、时长、附件格式、前后置依赖</td></tr>
+<tr><td><strong>附件上传</strong></td><td>「修改」按钮 → 选择文件 → 自动版本编号(V1/V2/V3...) → 上传人+日期自动记录</td></tr>
+<tr><td>附件管理</td><td>工作项右侧 📎N 显示附件数，点击展开文件名+版本号，悬停显示删除按钮</td></tr>
+<tr><td>模板保存</td><td>「模板」按钮将子模块保存为模板，供其他章节复用</td></tr>
+</table>
+<div class="tip">4大章节：前期工作/招标采购/工程施工/竣工验收及移交，覆盖全过程咨询管理全流程</div>
+</section>
+
+<section id="s6">
+<h2>六、时序逻辑图</h2>
+<img class="screenshot" src="screenshots/05-logic-new.png" alt="时序逻辑图">
+<p class="caption">图5：时序逻辑图 — draw.io嵌入式编辑器，泳道图展示工作项间时序关系</p>
+<table><tr><th>功能</th><th>说明</th></tr>
+<tr><td>自动布局</td><td>按子模块分列生成泳道图，每个已勾选的工作项显示为卡片节点</td></tr>
+<tr><td>连线颜色</td><td>蓝色虚线=计划中；绿色实线=双方均已完成</td></tr>
+<tr><td>编辑模式</td><td>开启后可拖拽节点、创建连线、编辑标签</td></tr>
+<tr><td>同步连线</td><td>编辑完成后点击「同步连线」保存到工作模块</td></tr>
+<tr><td>缩放控制</td><td>25%-200%自由缩放 + 适应页面按钮</td></tr>
+<tr><td>重置</td><td>一键清除连线和位置，恢复默认布局</td></tr>
+<tr><td>图例</td><td>顶部显示颜色和连线样式说明</td></tr></table>
+<div class="note">draw.io编辑器首次加载需联网，后续支持离线使用。连线修改通过「同步连线」按钮回写到工作模块。</div>
+</section>
+
+<section id="s7">
+<h2>七、附表清单</h2>
+<img class="screenshot" src="screenshots/06-forms-new.png" alt="附表清单">
+<p class="caption">图6：附表清单 — 样本预览 + 上传 + AI自动填写</p>
+<table><tr><th>功能</th><th>说明</th></tr>
+<tr><td>样本预览</td><td>点击「样本」按钮查看附表模板格式和填写说明</td></tr>
+<tr><td>文件上传</td><td>「上传」提交实际填写的表单文件（PDF/Word/Excel/图片）</td></tr>
+<tr><td>AI自动填写</td><td>「编辑」→「AI自动填写」→ AI根据表单类型自动生成规范内容</td></tr>
+<tr><td>导出文本</td><td>编辑完成后导出为TXT文件</td></tr>
+<tr><td>附表总数</td><td>底部显示当前章节附表总数统计</td></tr></table>
+</section>
+
+<section id="s8">
+<h2>八、项目信息编辑</h2>
+<img class="screenshot" src="screenshots/08-edit-new.png" alt="项目编辑对话框">
+<p class="caption">图7：项目编辑对话框 — AI智能填写 + 文件上传 + 自定义字段</p>
+<table><tr><th>功能</th><th>说明</th></tr>
+<tr><td><strong>AI自动填写</strong></td><td>根据项目名称或上传的项目概况文档，AI智能提取建设规模、面积、投资额、管线信息</td></tr>
+<tr><td><strong>AI分析报告</strong></td><td>生成风险分析、进度评估、成本优化、质量控制专业报告，支持下载</td></tr>
+<tr><td>项目概况</td><td>多行文本输入，描述项目基本信息</td></tr>
+<tr><td>指标字段</td><td>建筑面积/建设规模/投资额/市政管线，2列布局</td></tr>
+<tr><td><strong>项目概况文件上传</strong></td><td>上传PDF/Word/Excel/TXT等文档，AI可读取内容智能提取关键字段</td></tr>
+<tr><td>自定义字段</td><td>添加任意键值对扩展项</td></tr>
+</table>
+</section>
+
+<section id="s9">
+<h2>九、其余功能模块说明</h2>
+<p>以下模块通过首页工具栏或菜单入口访问：</p>
+<table><tr><th>模块</th><th>入口</th><th>功能说明</th></tr>
+<tr><td><strong>项目仪表盘</strong></td><td>首页→进入项目→仪表盘</td><td>CPI/SPI/完整度/质量评分4项KPI + 告警列表 + 多项目对比</td></tr>
+<tr><td><strong>计划管理</strong></td><td>首页工具栏</td><td>甘特图可视化 + CPM关键路径法网络图 + Excel计划导入</td></tr>
+<tr><td><strong>供应商库</strong></td><td>首页→供应商</td><td>供应商信息CRUD管理</td></tr>
+<tr><td><strong>造价数据</strong></td><td>首页→造价</td><td>造价数据管理与成本分析</td></tr>
+<tr><td><strong>AI智能助手</strong></td><td>首页工具栏「AI」按钮</td><td>全页聊天界面 + 项目上下文感知 + 多模型切换 + 视觉识别 + 文件分析</td></tr>
+<tr><td><strong>智能分析中心</strong></td><td>首页→智能分析</td><td>周期性扫描/异常检测/AI建议</td></tr>
+<tr><td><strong>知识库</strong></td><td>首页→知识库</td><td>全文搜索(lunr.js) + 语义搜索(向量化) + 文档上传</td></tr>
+<tr><td><strong>知识图谱</strong></td><td>首页→知识图谱</td><td>工程管理领域知识网络可视化</td></tr>
+<tr><td><strong>政策库/制度规范库</strong></td><td>首页→政策库/制度规范</td><td>政策法规分类浏览/全文搜索/附件管理</td></tr>
+<tr><td><strong>土储中心归档</strong></td><td>首页→土储归档</td><td>86项标准归档清单 + 项目对照 + 示例数据(小红门)</td></tr>
+<tr><td><strong>数据备份</strong></td><td>首页工具栏「备份」</td><td>单项目/全量 ZIP打包下载，安全Header传输token</td></tr>
+<tr><td><strong>管理后台</strong></td><td>首页右上角齿轮图标(管理员)</td><td>用户CRUD、权限分配、账号审批、项目管理</td></tr>
+</table>
+<h3>安全机制总览</h3>
+<table>
+<tr><th>防护项</th><th>实现</th></tr>
+<tr><td>SQL注入</td><td>所有查询参数化(?占位符)</td></tr>
+<tr><td>路径遍历</td><td>isPathSafe()验证 + path.basename()净化</td></tr>
+<tr><td>文件类型</td><td>13种白名单，拒绝.exe等</td></tr>
+<tr><td>文件大小</td><td>单文件≤50MB, JSON≤100MB</td></tr>
+<tr><td>暴力破解</td><td>登录15分/10次, 注册1小时/5次</td></tr>
+<tr><td>密码</td><td>bcrypt 10轮salt哈希</td></tr>
+<tr><td>认证</td><td>UUID Session Token + 24h过期</td></tr>
+<tr><td>CORS</td><td>生产环境未配置时拒绝跨域</td></tr>
+</table>
+</section>
+
+</div>
+<footer><p><strong>全过程工程咨询管理服务平台</strong> v1.7.0 · 使用说明 · 2026年6月12日</p>
+<p>7张界面截图 · 9个功能章节 · 20+功能模块详解</p></footer>
+</body></html>

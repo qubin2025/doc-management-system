@@ -383,3 +383,54 @@ export function getBackupUrl(projectId?: number | string): string {
   const url = projectId ? `${base}/project/${projectId}${token}` : `${base}/all${token}`;
   return url;
 }
+
+// ========== 知识图谱 ==========
+export async function fetchKnowledgeGraph(type?: string): Promise<{ available: boolean; nodes: any[]; edges: any[]; updatedAt: string }> {
+  try {
+    const qs = type && type !== 'all' ? `?type=${encodeURIComponent(type)}` : '';
+    const res = await fetch(`${API_BASE}/kg${qs}`, { headers: headers() });
+    if (!res.ok) throw new Error('KG fetch failed');
+    return await res.json();
+  } catch {
+    return { available: false, nodes: [], edges: [], updatedAt: '' };
+  }
+}
+
+export async function syncKnowledgeGraph(nodes: any[], edges: any[]): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/kg/sync`, {
+      method: 'POST', body: JSON.stringify({ nodes, edges }), headers: headers(),
+    });
+  } catch {}
+}
+
+// ========== LightRAG 微服务（方案B） ==========
+const LIGHTRAG_BASE = import.meta.env.VITE_LIGHTRAG_URL || 'http://localhost:8000/api/lightrag';
+
+export async function lightragHealth(): Promise<{ status: string; total_docs: number }> {
+  const res = await fetch(`${LIGHTRAG_BASE}/health`);
+  return res.json();
+}
+
+export async function lightragIndex(file: File, project?: string): Promise<{ doc_id: string; chunks: number; entities: any }> {
+  const form = new FormData();
+  form.append('file', file);
+  if (project) form.append('project', project);
+  const res = await fetch(`${LIGHTRAG_BASE}/index`, { method: 'POST', body: form });
+  if (!res.ok) throw new Error('索引失败');
+  return res.json();
+}
+
+export async function lightragSearch(query: string, topK = 5, mode = 'hybrid'): Promise<{ results: any[]; total: number }> {
+  const res = await fetch(`${LIGHTRAG_BASE}/search`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, top_k: topK, mode }),
+  });
+  if (!res.ok) throw new Error('搜索失败');
+  return res.json();
+}
+
+export async function lightragGraph(): Promise<{ nodes: any[]; edges: any[] }> {
+  const res = await fetch(`${LIGHTRAG_BASE}/graph`);
+  return res.json();
+}

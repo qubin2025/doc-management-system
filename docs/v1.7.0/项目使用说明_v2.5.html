@@ -1,0 +1,164 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>全过程工程咨询管理服务平台 — 使用说明 v2.5.0</title>
+<style>
+:root{--p:#2563eb;--bg:#f8fafc;--card:#fff;--tx:#1e293b;--mu:#64748b;--bd:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx);line-height:1.9}
+.container{max-width:1000px;margin:0 auto;padding:20px}
+header{background:linear-gradient(135deg,#0f172a,#1e3a8a,#3b82f6);color:#fff;padding:60px 20px;text-align:center}
+header h1{font-size:2.4em;margin-bottom:8px}header p{font-size:1.1em;opacity:.85}
+.hb-row{display:flex;justify-content:center;gap:16px;margin-top:20px;flex-wrap:wrap}
+.hb{background:rgba(255,255,255,.12);border-radius:10px;padding:12px 18px;min-width:100px;text-align:center}
+.hb .n{font-size:2em;font-weight:800}.hb .l{font-size:.75em;opacity:.75}
+.toc{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:28px;margin:28px 0}
+.toc h3{margin-bottom:12px;color:var(--p)}.toc ol{columns:2;padding-left:20px}.toc li{margin:4px 0}.toc a{color:var(--p);text-decoration:none}
+section{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:32px 38px;margin:28px 0;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+h2{color:var(--p);border-bottom:3px solid var(--p);padding-bottom:10px;margin-bottom:20px;font-size:1.5em}
+h3{color:#334155;margin:18px 0 10px}
+table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid var(--bd);padding:10px 14px;font-size:.92em}
+th{background:#eff6ff;color:#1e40af;font-weight:600}
+.step{background:#eff6ff;border-left:4px solid var(--p);padding:12px 18px;margin:10px 0;border-radius:0 8px 8px 0}.step strong{color:var(--p)}
+.note{background:#fef3c7;border:1px solid #fcd34d;padding:14px 18px;border-radius:8px;margin:14px 0;font-size:.9em}
+.tip{background:#dcfce7;border:1px solid #86efac;padding:14px 18px;border-radius:8px;margin:14px 0;font-size:.9em}
+.ft-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:14px 0}
+.ft{background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:16px}
+.ft .fn{color:var(--p);font-weight:700;font-size:1.05em;margin-bottom:4px}.ft .fd{font-size:.82em;color:var(--mu)}
+footer{text-align:center;padding:36px;color:var(--mu);font-size:.85em;border-top:1px solid var(--bd);margin-top:28px}
+@media(max-width:768px){.toc ol{columns:1}}
+</style></head><body>
+
+<header><h1>全过程工程咨询管理服务平台</h1><p>使用说明 · v2.5.0 · 2026年6月</p>
+<div class="hb-row">
+<div class="hb"><div class="n">34</div><div class="l">功能组件</div></div>
+<div class="hb"><div class="n">28</div><div class="l">API接口</div></div>
+<div class="hb"><div class="n">22</div><div class="l">测试用例</div></div>
+<div class="hb"><div class="n">5</div><div class="l">阶段完成</div></div>
+</div></header>
+
+<div class="container">
+
+<div class="toc"><h3>目录</h3><ol>
+<li><a href="#s1">快速启动</a></li><li><a href="#s2">登录与账号</a></li><li><a href="#s3">项目入口</a></li>
+<li><a href="#s4">工程资料管理</a></li><li><a href="#s5">指南工作模块</a></li><li><a href="#s6">知识图谱3D</a></li>
+<li><a href="#s7">施工组织设计审查</a></li><li><a href="#s8">合同审查</a></li><li><a href="#s9">招投标文件审查</a></li>
+<li><a href="#s10">AI方案生成</a></li><li><a href="#s11">知识库</a></li><li><a href="#s12">管理后台</a></li>
+<li><a href="#s13">部署与安全</a></li>
+</ol></div>
+
+<section id="s1"><h2>一、快速启动</h2>
+<div class="step"><strong>方式一：Docker 一键部署</strong><br><code>docker-compose up -d</code> — 自动启动前端(80)+后端(3000)+Neo4j(7687)+LightRAG(8000)</div>
+<div class="step"><strong>方式二：手动启动</strong><br>Windows: 双击 <code>deploy\start.bat</code><br>Linux: <code>bash deploy/deploy.sh</code></div>
+<div class="step"><strong>方式三：开发模式</strong><br><code>cd backend && node server.js</code>（后端）<br><code>npm run dev</code>（前端）</div>
+<div class="tip">首次部署需配置 <code>backend/.env</code> 中的 DEEPSEEK_API_KEY 以启用AI功能。Neo4j和LightRAG为可选服务。</div>
+</section>
+
+<section id="s2"><h2>二、登录与账号管理</h2>
+<p>默认账号: <code>admin</code> / 首次部署密码见部署说明</p>
+<table><tr><th>角色</th><th>权限</th></tr>
+<tr><td>admin</td><td>系统管理员：用户管理、全量备份、所有功能</td></tr>
+<tr><td>project_manager</td><td>项目经理：创建项目、上传下载、使用AI</td></tr>
+<tr><td>construction_unit</td><td>建设单位：上传下载文档</td></tr>
+<tr><td>viewer</td><td>查看者：仅下载查看</td></tr></table>
+<div class="note">安全保护：登录限流15分/10次、bcrypt密码加密、Session24h过期、账号枚举防护</div>
+</section>
+
+<section id="s3"><h2>三、项目入口</h2>
+<p>登录后进入项目列表页。支持：创建项目、搜索筛选、双击重命名、查看指南进度、编辑项目详情。</p>
+<p>项目详情支持AI自动填写（根据项目名称或上传文档智能提取建设规模/投资额等信息）。</p>
+<p>底部AI输入框可发送工程咨询问题，DeepSeek上下文感知回答。</p>
+</section>
+
+<section id="s4"><h2>四、工程资料管理</h2>
+<p>支持 DB11/T695-2025（建筑）和 DB11/T808-2020（市政）双规程。</p>
+<ul>
+<li><strong>资料分类</strong>：A类(决策立项)、B类(招标采购)、C类(工程施工)、D类(竣工验收)</li>
+<li><strong>上传</strong>：PDF/Word/Excel/图片/CAD/ZIP/TXT/CSV，≤50MB，自动版本管理</li>
+<li><strong>下载/导出</strong>：单文件下载、CSV导出、ZIP打包</li>
+<li><strong>安全</strong>：文件类型白名单13种、路径穿越防护、参数化SQL</li>
+</ul>
+</section>
+
+<section id="s5"><h2>五、指南工作模块</h2>
+<p>按《全过程项目管理工作指南》设计4章工作流：前期工作→招标采购→工程施工→竣工验收。</p>
+<ul>
+<li><strong>工作项勾选</strong>：蓝色=计划中，绿色=已完成，两步确认</li>
+<li><strong>自定义工作项</strong>：添加/编辑/删除，设置时长、前后置依赖</li>
+<li><strong>附件上传</strong>：自动版本编号V1/V2/V3…，上传人/日期自动记录</li>
+<li><strong>时序逻辑图</strong>：draw.io嵌入式编辑器，泳道图可视化</li>
+<li><strong>附表清单</strong>：样本预览、上传、AI自动填写、导出</li>
+</ul>
+</section>
+
+<section id="s6"><h2>六、知识图谱3D</h2>
+<div class="ft-grid">
+<div class="ft"><div class="fn">🎨 5种主题</div><div class="fd">深空黑/暮光紫/星光蓝/破晓金/月光白，动态光效+雾效</div></div>
+<div class="ft"><div class="fn">🖱 3D交互</div><div class="fd">力导向球体图，点击查看详情，拖拽旋转缩放，自由停泊</div></div>
+<div class="ft"><div class="fn">🔄 双模切换</div><div class="fd">2D vis-network ↔ 3D ForceGraph 一键切换</div></div>
+<div class="ft"><div class="fn">🔗 14种节点</div><div class="fd">项目/章节/子模块/工作项/表单/资料/供应商/造价/人员/施工方案/标准条款/审核项/风险点/合同/招投标</div></div>
+<div class="ft"><div class="fn">📝 编辑能力</div><div class="fd">新建节点/连线、材质质感8种、字体大小颜色自定义</div></div>
+<div class="ft"><div class="fn">📌 父链追溯</div><div class="fd">点击任意节点查看完整父节点链(蓝色面包屑)</div></div>
+<div class="ft"><div class="fn">💾 保存恢复</div><div class="fd">多版本图谱布局保存/恢复</div></div>
+<div class="ft"><div class="fn">🔍 搜索筛选</div><div class="fd">按名称搜索+按类型筛选</div></div>
+</div>
+</section>
+
+<section id="s7"><h2>七、施工组织设计审查（含专项方案）</h2>
+<div class="step"><strong>操作流程：</strong><br>1. 上传施工方案（支持PDF/Word/Excel/TXT，可批量多文件）<br>2. 自动解析文档内容（PDF前100页/40000字）<br>3. RAG检索匹配DB11/T695相关标准条款<br>4. AI逐章审查：合规/注意/不合格三级标记<br>5. 同步审查结果到知识图谱<br>6. 导出Word/TXT审查报告</div>
+<div class="note"><strong>离线模式</strong>：AI不可用时自动切换为关键词匹配分析（6项检查：编制依据/工程概况/施工部署/进度/质量/安全）</div>
+</section>
+
+<section id="s8"><h2>八、合同审查</h2>
+<p>上传合同文件 → AI逐条审查。检查8类风险条款：违约责任/工期延误/付款条件/争议解决/不可抗力/索赔/变更/解除合同。</p>
+<p>风险等级：低🟢/中🟡/高🔴，每条列出问题和修改建议。</p>
+<p>审查结果可同步知识图谱（合同节点→项目），导出Word报告。</p>
+</section>
+
+<section id="s9"><h2>九、招投标文件审查</h2>
+<p>上传招投标文件 → AI逐项检查7要素：投标人资格/评标办法/合同条款/技术规范/工程量清单/投标保证金/履约担保。</p>
+<p>标记合规/注意/不合格项，注明法规依据，识别排他性条款。</p>
+</section>
+
+<section id="s10"><h2>十、AI方案生成</h2>
+<div class="step"><strong>操作流程：</strong><br>1. 选择方案类型（7种：施工组织设计/深基坑/塔吊安拆/模板支架/脚手架/临时用电/消防）<br>2. 填写项目参数（规模/地点/投资/类型/深度等）<br>3. AI逐章生成10个章节（编制依据/安全措施等4章100%自动注入标准条款）<br>4. 在线编辑各章内容<br>5. 完整性校验（关键词+字数+章节缺失检测）<br>6. 导出PDF/Word/TXT</div>
+<div class="tip">支持保存模板类型、自动分块索引（段落级+重叠窗口）</div>
+</section>
+
+<section id="s11"><h2>十一、知识库</h2>
+<ul><li><strong>全文搜索</strong>：Lunr.js 浏览器端倒排索引</li>
+<li><strong>语义搜索</strong>：通义Embedding 768维向量 + 余弦相似度</li>
+<li><strong>知识图谱</strong>：vis-network 2D + ForceGraph3D 3D双视图</li>
+<li><strong>LightRAG</strong>：Python微服务，文档自动实体抽取+混合检索</li>
+<li><strong>政策库/制度规范库</strong>：分类浏览、全文搜索、附件管理</li>
+<li><strong>土储中心归档</strong>：86项标准清单，示例数据</li></ul>
+</section>
+
+<section id="s12"><h2>十二、管理后台</h2>
+<p>管理员入口：首页右上角齿轮图标。</p>
+<ul><li>用户CRUD + 角色权限分配</li><li>实时系统统计：项目数/文档数/用户数/运行时间</li>
+<li>系统健康状态：Neo4j连接/AI引擎/内存使用</li>
+<li>数据备份：单项目/全量ZIP打包</li></ul>
+</section>
+
+<section id="s13"><h2>十三、部署与安全</h2>
+<h3>部署方式</h3>
+<table><tr><th>方式</th><th>适用</th><th>命令</th></tr>
+<tr><td>Docker Compose</td><td>生产推荐</td><td><code>docker compose -p doc-mgmt up -d</code></td></tr>
+<tr><td>PM2+Nginx</td><td>Linux生产</td><td><code>bash deploy/deploy.sh</code></td></tr>
+<tr><td>Windows脚本</td><td>开发/演示</td><td><code>deploy\start.bat</code></td></tr></table>
+
+<h3>15项安全防护</h3>
+<table><tr><th>措施</th><th>说明</th></tr>
+<tr><td>SQL注入防护</td><td>全部参数化查询</td></tr>
+<tr><td>路径遍历防护</td><td>isPathSafe+basename净化</td></tr>
+<tr><td>文件类型白名单</td><td>13种允许，拒绝.exe等</td></tr>
+<tr><td>文件大小限制</td><td>≤50MB</td></tr>
+<tr><td>暴力破解防护</td><td>登录15分/10次</td></tr>
+<tr><td>账号枚举防护</td><td>禁用与密码错误统一返回</td></tr>
+<tr><td>密码安全</td><td>bcrypt 10轮salt</td></tr>
+<tr><td>Token安全</td><td>UUID Session+24h过期</td></tr>
+<tr><td>CORS安全</td><td>生产环境白名单</td></tr>
+</table>
+
+</section></div>
+<footer><p>全过程工程咨询管理服务平台 · 使用说明 v2.5.0 · 2026年6月</p></footer>
+</body></html>

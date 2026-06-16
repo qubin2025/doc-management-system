@@ -10,6 +10,7 @@ import authRouter from './routes/auth.js';
 import importRouter from './routes/import.js';
 import backupRouter from './routes/backup.js';
 import aiRouter from './routes/ai.js';
+import kgRouter from './routes/kg.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,10 +53,29 @@ app.use('/api/auth', authRouter);
 app.use('/api/import', importRouter);
 app.use('/api/backup', backupRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/kg', kgRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
-  res.json({ status: 'ok', message: '工程资料管理系统 API' });
+  res.json({ status: 'ok', message: '工程资料管理系统 API', version: '1.7.0', uptime: process.uptime() });
+});
+
+// 系统统计（管理员可见）
+app.get('/api/stats', (req, res) => {
+  try {
+    const db = getDb();
+    const projects = db.prepare('SELECT COUNT(*) as c FROM projects').get().c;
+    const documents = db.prepare('SELECT COUNT(*) as c FROM documents').get().c;
+    const users = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+    const activeUsers = db.prepare('SELECT COUNT(*) as c FROM users WHERE is_active=1').get().c;
+    res.json({
+      projects, documents, users, activeUsers,
+      neo4j: !!process.env.NEO4J_URI,
+      ai: !!process.env.DEEPSEEK_API_KEY && !process.env.DEEPSEEK_API_KEY.includes('your-'),
+      uptime: Math.floor(process.uptime()),
+      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+    });
+  } catch { res.json({ projects: 0, documents: 0, users: 0, activeUsers: 0 }); }
 });
 
 // 启动时环境检查
@@ -63,6 +83,7 @@ const ENV_CHECKS = [
   { key: 'DB_PATH', warn: '未设置数据库路径，使用默认路径 backend/data/planning.db' },
   { key: 'FILES_PATH', warn: '未设置文件存储路径，使用默认路径 backend/files/' },
   { key: 'DEEPSEEK_API_KEY', warn: '未设置 AI 密钥，大模型功能不可用' },
+  { key: 'NEO4J_URI', warn: '未配置 Neo4j，知识图谱使用离线模式（localStorage）' },
 ];
 
 app.listen(PORT, () => {

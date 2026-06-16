@@ -592,7 +592,16 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
                 className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
                 导出文本
               </button>
-              <button onClick={() => setFormEditModal(null)}
+              <button onClick={() => {
+                // 持久化表单内容，供知识图谱读取
+                if (formEditModal && formEditContent.trim().length > 10) {
+                  const key = `form-content-${initialChapter.id}-${formEditModal.code}`;
+                  localStorage.setItem(key, JSON.stringify({ content: formEditContent, lastModified: new Date().toISOString() }));
+                  const fKey = `form-fields-${initialChapter.id}-${formEditModal.code}`;
+                  try { const auth = JSON.parse(localStorage.getItem('doc-system-auth') || '{}'); localStorage.setItem(fKey, JSON.stringify({ creator: auth?.user?.username || 'admin' })); } catch {}
+                }
+                setFormEditModal(null);
+              }}
                 className="px-4 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600">完成</button>
             </div>
           </div>

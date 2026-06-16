@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程资料管理系统 v1.7.0 — 开发文档</title>
+<style>
+  :root { --primary:#7c3aed; --bg:#faf9ff; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.8}
+  .container{max-width:1100px;margin:0 auto;padding:20px}
+  header{background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff;padding:60px 20px;text-align:center}
+  header h1{font-size:2.4em;margin-bottom:12px}
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:30px;margin:30px 0}
+  .toc h3{margin-bottom:16px;color:var(--primary)}
+  .toc ol{columns:2;padding-left:20px}
+  .toc li{margin:6px 0}
+  .toc a{color:var(--primary);text-decoration:none}
+  section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:35px;margin:25px 0}
+  h2{color:var(--primary);border-bottom:3px solid var(--primary);padding-bottom:10px;margin-bottom:20px}
+  h3{color:#334155;margin:18px 0 10px}
+  pre{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:.85em;line-height:1.6}
+  code{font-family:"Cascadia Code","Fira Code","Consolas",monospace;font-size:.9em}
+  :not(pre)>code{background:#f1f5f9;color:#e11d48;padding:2px 6px;border-radius:4px}
+  table{width:100%;border-collapse:collapse;margin:15px 0}
+  th,td{border:1px solid var(--border);padding:10px 14px;text-align:left;font-size:.9em}
+  th{background:#f1f5f9;font-weight:600}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75em;font-weight:600}
+  .badge-get{background:#dcfce7;color:#166534}
+  .badge-post{background:#dbeafe;color:#1e40af}
+  .badge-del{background:#fee2e2;color:#991b1b}
+  footer{text-align:center;padding:30px;color:var(--muted);font-size:.9em}
+  @media(max-width:768px){.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>工程资料管理系统</h1>
+  <p>全过程工程咨询管理服务平台 · 开发文档 · v1.7.0</p>
+</header>
+
+<div class="container">
+<div class="toc">
+<h3>目录</h3>
+<ol>
+  <li><a href="#tech">技术架构</a></li>
+  <li><a href="#structure">项目结构</a></li>
+  <li><a href="#install">环境搭建</a></li>
+  <li><a href="#api">API 接口文档</a></li>
+  <li><a href="#db">数据库设计</a></li>
+  <li><a href="#security">安全设计</a></li>
+  <li><a href="#deploy">部署指南</a></li>
+  <li><a href="#test">测试体系</a></li>
+  <li><a href="#version">版本历史</a></li>
+</ol>
+</div>
+
+<section id="tech">
+<h2>1. 技术架构</h2>
+<table>
+<tr><th>层级</th><th>技术栈</th><th>版本</th></tr>
+<tr><td>前端框架</td><td>React + TypeScript</td><td>18.x / 5.2</td></tr>
+<tr><td>构建工具</td><td>Vite</td><td>5.4</td></tr>
+<tr><td>UI样式</td><td>TailwindCSS</td><td>3.4</td></tr>
+<tr><td>流程图</td><td>draw.io 嵌入式 + vis-network + dagre</td><td>-</td></tr>
+<tr><td>图标库</td><td>lucide-react</td><td>0.344</td></tr>
+<tr><td>文件处理</td><td>jszip + xlsx + pdfjs-dist + mammoth</td><td>-</td></tr>
+<tr><td>后端框架</td><td>Express.js</td><td>4.x</td></tr>
+<tr><td>数据库</td><td>better-sqlite3 (SQLite WAL)</td><td>11.x</td></tr>
+<tr><td>认证</td><td>bcrypt + UUID Session Token</td><td>5.x</td></tr>
+<tr><td>AI集成</td><td>DeepSeek API + 通义 Embedding + GLM-4V Vision</td><td>-</td></tr>
+<tr><td>全文搜索</td><td>lunr.js</td><td>2.3</td></tr>
+<tr><td>部署</td><td>Docker + PM2 + Nginx</td><td>-</td></tr>
+<tr><td>测试</td><td>vitest + @testing-library/react</td><td>4.x</td></tr>
+</table>
+</section>
+
+<section id="structure">
+<h2>2. 项目结构</h2>
+<pre>工程资料管理系统源码/
+├── src/                        # 前端源码
+│   ├── components/             # React 组件 (31个)
+│   │   ├── AdminPanel.tsx      # 管理后台
+│   │   ├── AiChat.tsx          # AI浮窗
+│   │   ├── AiChatPage.tsx      # AI全页聊天
+│   │   ├── AnalysisCenter.tsx  # 智能分析中心
+│   │   ├── BackupModal.tsx     # 备份弹窗
+│   │   ├── CostManager.tsx     # 造价管理
+│   │   ├── Dashboard.tsx       # 项目仪表盘
+│   │   ├── DocumentTable.tsx   # 资料表格
+│   │   ├── FilterBar.tsx       # 筛选栏
+│   │   ├── GanttChart.tsx      # 甘特图
+│   │   ├── GuideChapter.tsx    # 指南章节(~700行)
+│   │   ├── KnowledgeBase.tsx   # 知识库
+│   │   ├── KnowledgeGraph.tsx  # 知识图谱
+│   │   ├── LandReserveArchive.tsx # 土储归档
+│   │   ├── LogicDiagram.tsx    # draw.io逻辑图
+│   │   ├── LoginPage.tsx       # 登录页
+│   │   ├── NetworkDiagram.tsx  # CPM网络图
+│   │   ├── PlanManager.tsx     # 计划管理
+│   │   ├── PolicyLibrary.tsx   # 政策库
+│   │   ├── ProjectEntryPage.tsx # 项目入口
+│   │   ├── RegulationsLibrary.tsx # 制度规范库
+│   │   ├── SupplierManager.tsx # 供应商库
+│   │   └── Toast.tsx           # Toast提示
+│   ├── data/                   # 数据层
+│   │   ├── api.ts              # REST API客户端
+│   │   ├── aiAgent.ts          # AI智能体
+│   │   ├── appendixA.ts        # 建筑规程附录A
+│   │   ├── appendixA_municipal.ts # 市政规程附录A
+│   │   ├── cpmEngine.ts        # CPM关键路径引擎
+│   │   ├── dataPipeline.ts     # 数据管道
+│   │   ├── documentParser.ts   # 文档解析器
+│   │   ├── exportService.ts    # 导出服务
+│   │   ├── guideModules.ts     # 指南章节数据
+│   │   ├── indicatorEngine.ts  # 指标KPI引擎
+│   │   ├── knowledgeGraph.ts   # 知识图谱数据
+│   │   ├── landReserveArchive.ts # 土储归档数据
+│   │   ├── qualityEngine.ts    # 质量引擎
+│   │   ├── ragService.ts       # RAG检索增强
+│   │   └── vectorStore.ts      # 向量存储
+│   ├── types/                  # 类型定义
+│   │   └── index.ts            # 核心类型(184行)
+│   ├── __tests__/              # 测试文件
+│   └── assets/                 # 静态资源
+├── backend/                    # 后端源码
+│   ├── server.js               # Express入口
+│   ├── db.js                   # SQLite初始化+迁移+种子
+│   ├── routes/                 # API路由
+│   │   ├── auth.js             # 认证(登录/注册/用户管理)
+│   │   ├── projects.js         # 项目CRUD
+│   │   ├── documents.js        # 文档管理(上传/下载/删除)
+│   │   ├── import.js           # 数据导入
+│   │   ├── backup.js           # ZIP备份
+│   │   └── ai.js               # AI服务代理
+│   ├── middleware/
+│   │   └── auth.js             # JWT认证中间件
+│   ├── scripts/                # 工具脚本
+│   ├── data/planning.db        # SQLite数据文件
+│   └── files/                  # 上传文件存储
+├── deploy/                     # 部署配置
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── nginx.conf / nginx-docker.conf
+│   ├── deploy.sh / start.bat
+│   ├── ecosystem.config.cjs    # PM2配置
+│   └── 安全交付清单.md
+├── package.json                # 前端依赖 (v1.7.0)
+├── vite.config.ts              # Vite构建配置
+├── vitest.config.ts            # 测试配置
+└── tsconfig.json               # TypeScript配置
+</pre>
+</section>
+
+<section id="install">
+<h2>3. 环境搭建</h2>
+<h3>3.1 系统要求</h3>
+<table><tr><th>环境</th><th>要求</th></tr>
+<tr><td>Node.js</td><td>18+ LTS</td></tr>
+<tr><td>操作系统</td><td>Windows 10+ / Linux (Ubuntu 20.04+推荐) / macOS</td></tr>
+<tr><td>浏览器</td><td>Chrome 90+ / Edge 90+ / Firefox 90+</td></tr></table>
+
+<h3>3.2 本地开发启动</h3>
+<pre># 1. 克隆仓库
+git clone git@github.com:qubin2025/doc-management-system.git
+cd doc-management-system
+
+# 2. 安装前端依赖
+npm install
+
+# 3. 安装后端依赖
+cd backend && npm install && cd ..
+
+# 4. 配置环境变量
+cp .env.example .env          # 编辑前端环境
+cp backend/.env.example backend/.env  # 编辑后端环境（填入API Keys）
+
+# 5. 启动开发服务器
+npm run dev                   # 前端 localhost:5173
+cd backend && node server.js  # 后端 localhost:3000</pre>
+
+<h3>3.3 生产构建</h3>
+<pre>npm run build     # 前端构建 → dist/
+cd backend && node server.js  # 启动后端</pre>
+</section>
+
+<section id="api">
+<h2>4. API 接口文档</h2>
+<table>
+<tr><th>方法</th><th>路径</th><th>认证</th><th>说明</th></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api</td><td>无</td><td>健康检查</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/auth/login</td><td>无</td><td>用户登录（限流15分/10次）</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/auth/register</td><td>无</td><td>用户注册（限流1小时/5次）</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/auth/logout</td><td>无</td><td>登出</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/auth/me</td><td>requireAuth</td><td>获取当前用户信息</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/auth/users</td><td>admin</td><td>用户列表</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/auth/users</td><td>admin</td><td>创建用户</td></tr>
+<tr><td><span class="badge badge-del">DELETE</span></td><td>/api/auth/users/:id</td><td>admin</td><td>删除用户</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/projects</td><td>requireAuth</td><td>项目列表</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/projects</td><td>admin/pm</td><td>创建项目</td></tr>
+<tr><td><span class="badge badge-del">DELETE</span></td><td>/api/projects/:id</td><td>admin</td><td>删除项目</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/documents/project/:pid</td><td>requireAuth</td><td>项目文档列表</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/documents/upload</td><td>can_upload</td><td>上传文档（类型白名单+50MB+路径安全）</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/documents/download/:id</td><td>requireAuth</td><td>下载文档（路径包含验证）</td></tr>
+<tr><td><span class="badge badge-del">DELETE</span></td><td>/api/documents/:id</td><td>can_upload</td><td>删除文档（权限+路径安全）</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/documents/stats/:pid</td><td>requireAuth</td><td>文档统计</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/import</td><td>requireAuth</td><td>批量导入</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/backup/project/:pid</td><td>requireAuth</td><td>单项目备份ZIP</td></tr>
+<tr><td><span class="badge badge-get">GET</span></td><td>/api/backup/all</td><td>admin</td><td>全量备份ZIP</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/ai/chat</td><td>can_use_ai</td><td>AI聊天</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/ai/embed</td><td>can_use_ai</td><td>文本向量化</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/ai/vision</td><td>can_use_ai</td><td>视觉模型</td></tr>
+<tr><td><span class="badge badge-post">POST</span></td><td>/api/ai/fill-form</td><td>can_use_ai</td><td>AI表单填写</td></tr>
+</table>
+</section>
+
+<section id="db">
+<h2>5. 数据库设计</h2>
+<pre>-- projects 项目表
+CREATE TABLE projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- documents 文档表
+CREATE TABLE documents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  doc_id TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_data TEXT,
+  file_path TEXT,
+  upload_time TEXT,
+  uploader TEXT,
+  version TEXT DEFAULT 'V1.0',
+  standard TEXT DEFAULT 'DB11/T695-2025'
+);
+CREATE INDEX idx_documents_project ON documents(project_id);
+CREATE INDEX idx_documents_doc_id ON documents(doc_id);
+CREATE INDEX idx_documents_standard ON documents(standard);
+
+-- users 用户表
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  display_name TEXT DEFAULT '',
+  role TEXT CHECK(role IN ('admin','project_manager','construction_unit','viewer')),
+  permissions TEXT DEFAULT '{}',
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- sessions 会话表
+CREATE TABLE sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_sessions_token ON sessions(token);
+</pre>
+<p>数据库文件路径：<code>backend/data/planning.db</code>（WAL模式），支持自动Schema迁移和种子数据插入。</p>
+</section>
+
+<section id="security">
+<h2>6. 安全设计</h2>
+<table>
+<tr><th>安全措施</th><th>实现位置</th><th>说明</th></tr>
+<tr><td>SQL注入防护</td><td>全部路由</td><td>所有查询使用better-sqlite3参数化(? 占位符)</td></tr>
+<tr><td>路径遍历防护</td><td>documents.js:13-15</td><td>isPathSafe() 验证路径包含 + path.basename() 净化文件名</td></tr>
+<tr><td>文件类型白名单</td><td>documents.js:18</td><td>13种允许类型，拒绝.exe等可执行文件</td></tr>
+<tr><td>文件大小限制</td><td>documents.js:92</td><td>单文件50MB上限</td></tr>
+<tr><td>暴力破解防护</td><td>auth.js:14-28</td><td>登录15分/10次，注册1小时/5次</td></tr>
+<tr><td>账号枚举防护</td><td>auth.js:41</td><td>禁用账号统一返回401（与密码错误相同）</td></tr>
+<tr><td>CORS</td><td>server.js:19-23</td><td>生产环境无配置时拒绝跨域</td></tr>
+<tr><td>全局限流</td><td>server.js:28-34</td><td>开发1000次/分，生产200次/分</td></tr>
+<tr><td>密码安全</td><td>auth.js / db.js</td><td>bcrypt哈希存储，10轮salt</td></tr>
+<tr><td>Token安全</td><td>middleware/auth.js</td><td>UUID Session Token + 24h过期 + 数据库验证</td></tr>
+<tr><td>安全头</td><td>server.js:37-42</td><td>X-Content-Type-Options, X-Frame-Options, X-XSS-Protection</td></tr>
+<tr><td>备份Token</td><td>BackupModal.tsx</td><td>Authorization Header（非URL参数）</td></tr>
+</table>
+</section>
+
+<section id="deploy">
+<h2>7. 部署指南</h2>
+<h3>7.1 Docker 部署（推荐）</h3>
+<pre>cp backend/.env.example backend/.env  # 填入真实 API Keys
+docker-compose up -d                   # 前端80端口, API内部代理</pre>
+<h3>7.2 PM2 + Nginx 部署</h3>
+<pre>bash deploy/deploy.sh                  # 自动构建+启动
+# Nginx配置: deploy/nginx.conf → /etc/nginx/sites-available/</pre>
+<h3>7.3 环境变量清单</h3>
+<table>
+<tr><th>变量</th><th>说明</th></tr>
+<tr><td>JWT_SECRET</td><td>32位以上随机字符串（必填）</td></tr>
+<tr><td>DEEPSEEK_API_KEY</td><td>DeepSeek API密钥（AI功能必填）</td></tr>
+<tr><td>ZHIPU_API_KEY</td><td>智谱API密钥（视觉模型）</td></tr>
+<tr><td>QWEN_API_KEY / DASHSCOPE_API_KEY</td><td>千问API密钥（Embedding/视觉回退）</td></tr>
+<tr><td>NODE_ENV</td><td>设为production启用CORS限制</td></tr>
+<tr><td>CORS_ORIGIN</td><td>生产环境指定允许的跨域域名</td></tr>
+</table>
+</section>
+
+<section id="test">
+<h2>8. 测试体系</h2>
+<p>v1.7.0 引入 vitest 测试框架，22个测试用例全部通过：</p>
+<table>
+<tr><th>测试文件</th><th>用例数</th><th>覆盖内容</th></tr>
+<tr><td>src/__tests__/guideModules.test.ts</td><td>5</td><td>章节结构完整性、ID唯一性、字段必填检查</td></tr>
+<tr><td>src/__tests__/cpmEngine.test.ts</td><td>10</td><td>ES/EF/LS/LF计算、关键路径识别、浮时分析、Excel解析</td></tr>
+<tr><td>src/__tests__/api.test.ts</td><td>7</td><td>Token管理、备份URL生成、localStorage持久化</td></tr>
+</table>
+<pre># 运行测试
+npx vitest run
+# 监听模式
+npx vitest</pre>
+</section>
+
+<section id="version">
+<h2>9. 版本历史</h2>
+<table>
+<tr><th>版本</th><th>日期</th><th>主要更新</th></tr>
+<tr><td>v1.7.0</td><td>2026-06</td><td>15项安全加固、附件上传+版本管理、项目概况文件上传、22个测试、代码重构</td></tr>
+<tr><td>v1.6.0</td><td>2026-05</td><td>首页改版、指南工作模块、技术架构优化</td></tr>
+<tr><td>v1.5.0-demo</td><td>2026-05</td><td>权限系统、AI集成、数据安全</td></tr>
+</table>
+</section>
+
+</div>
+<footer>
+<p>全过程工程咨询管理服务平台 v1.7.0 · 开发文档 · 2026年6月</p>
+</footer>
+</body>
+</html>

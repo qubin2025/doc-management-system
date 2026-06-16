@@ -47,6 +47,46 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Neo4j 图数据库（知识图谱引擎）
+  neo4j:
+    image: neo4j:5-community
+    container_name: doc-mgmt-neo4j
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7474:7474"   # HTTP
+      - "127.0.0.1:7687:7687"   # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-changeme123}
+      - NEO4J_server_memory_heap_initial__size=256m
+      - NEO4J_server_memory_heap_max__size=512m
+      - NEO4J_server_memory_pagecache_size=128m
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # LightRAG 知识引擎（方案B）
+  lightrag:
+    build: ./services/lightrag-server
+    container_name: doc-mgmt-lightrag
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - lightrag-data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   db-data:
   files-data:
+  neo4j-data:
+  neo4j-logs:
+  lightrag-data:

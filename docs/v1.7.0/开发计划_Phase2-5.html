@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>全过程工程咨询管理服务平台 — 开发计划 v1.7→v2.5</title>
+<style>
+:root{--p:#2563eb;--bg:#f8fafc;--card:#fff;--tx:#1e293b;--mu:#64748b;--bd:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx);line-height:1.9}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+header{background:linear-gradient(135deg,#0f172a,#1e3a8a,#3b82f6);color:#fff;padding:60px 20px;text-align:center}
+header h1{font-size:2.4em;margin-bottom:8px}
+header p{font-size:1.1em;opacity:.85}
+h2{color:var(--p);border-bottom:3px solid var(--p);padding-bottom:10px;margin:30px 0 18px;font-size:1.5em}
+h3{color:#334155;margin:20px 0 10px;font-size:1.15em}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92em}
+th,td{border:1px solid var(--bd);padding:10px 14px;text-align:left}
+th{background:#eff6ff;color:#1e40af;font-weight:600}
+.todo{color:#d97706}.done{color:#059669}.warn{color:#dc2626}
+.phase-card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:30px 35px;margin:20px 0;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.phase-card h3{border-bottom:2px solid var(--bd);padding-bottom:8px;margin-top:0}
+.comparison td:first-child{font-weight:600;width:30%}
+footer{text-align:center;padding:40px;color:var(--mu);font-size:.85em;border-top:1px solid var(--bd);margin-top:30px}
+@media(max-width:768px){.comparison td:first-child{width:40%}}
+</style></head><body>
+<header><h1>全过程工程咨询管理服务平台</h1><p>开发计划书 · v1.7 → v2.5 · 基于2026年6月技术问答建议</p></header>
+<div class="container">
+
+<h2>一、版本路线图总览</h2>
+<table>
+<tr><th>阶段</th><th>版本</th><th>工期</th><th>核心目标</th><th>状态</th></tr>
+<tr><td>Phase 1</td><td>v1.7.0</td><td>已完成</td><td>安全加固+附件上传+测试体系+知识图谱3D</td><td class="done">✅ 已完成</td></tr>
+<tr><td>Phase 2</td><td>v2.0.0</td><td>8周</td><td>施工组织设计审查+合同审查+招投标审查+模板引擎</td><td class="todo">📋 计划中</td></tr>
+<tr><td>Phase 3</td><td>v2.2.0</td><td>6周</td><td>LightRAG集成+多模态文档解析+方案生成</td><td class="todo">📋 计划中</td></tr>
+<tr><td>Phase 4</td><td>v2.4.0</td><td>6周</td><td>Structured Output+Instructor约束生成+完整方案导出</td><td class="todo">📋 计划中</td></tr>
+<tr><td>Phase 5</td><td>v2.5.0</td><td>4周</td><td>SaaS多租户+商业化+运维监控</td><td class="todo">📋 计划中</td></tr>
+</table>
+
+<h2>二、Phase 2 (v2.0.0) — 施工方案审查 + 合同审查 + 招投标审查</h2>
+
+<div class="phase-card"><h3>2.1 施工组织设计审查（含专项方案）</h3>
+<table>
+<tr><th>#</th><th>开发任务</th><th>关联模块</th><th>工时</th></tr>
+<tr><td>2.1.1</td><td>创建施工方案审查组件 <code>ConstructionReview.tsx</code></td><td>前端</td><td>3天</td></tr>
+<tr><td>2.1.2</td><td>方案上传→unstructured.io解析→结构化存储</td><td>后端+文档解析</td><td>2天</td></tr>
+<tr><td>2.1.3</td><td>标准条款自动提取：知识库RAG检索DB11/T695对应条文</td><td>知识库</td><td>2天</td></tr>
+<tr><td>2.1.4</td><td>合规对照引擎：方案章节↔标准条款逐条对比</td><td>知识图谱</td><td>3天</td></tr>
+<tr><td>2.1.5</td><td>知识图谱新增节点类型: 施工方案/标准条款/审核意见/风险点</td><td>知识图谱</td><td>1天</td></tr>
+<tr><td>2.1.6</td><td>审核报告生成：LLM逐项分析→格式→审核意见导出</td><td>AI+知识库</td><td>2天</td></tr>
+<tr><td>2.1.7</td><td>首页模块卡片"施工组织设计审查"路由激活</td><td>前端</td><td>0.5天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td></td><td><strong>13.5天</strong></td></tr>
+</table>
+
+<h3>2.2 合同审查</h3>
+<table>
+<tr><th>#</th><th>开发任务</th><th>关联模块</th><th>工时</th></tr>
+<tr><td>2.2.1</td><td>创建合同审查组件 <code>ContractReview.tsx</code></td><td>前端</td><td>2天</td></tr>
+<tr><td>2.2.2</td><td>合同条款解析：关键条款提取（价款/工期/违约责任/争议解决）</td><td>文档解析</td><td>2天</td></tr>
+<tr><td>2.2.3</td><td>风险条款识别：知识库→常见风险条款库→LLM比对</td><td>知识库</td><td>2天</td></tr>
+<tr><td>2.2.4</td><td>合规对照：合同条款↔招标文件条款↔法规要求</td><td>知识图谱</td><td>2天</td></tr>
+<tr><td>2.2.5</td><td>审查报告生成：风险项列表+修改建议+法规依据</td><td>AI</td><td>1.5天</td></tr>
+<tr><td>2.2.6</td><td>首页模块卡片"合同审查"路由激活</td><td>前端</td><td>0.5天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td></td><td><strong>10天</strong></td></tr>
+</table>
+
+<h3>2.3 招投标文件审查</h3>
+<table>
+<tr><th>#</th><th>开发任务</th><th>关联模块</th><th>工时</th></tr>
+<tr><td>2.3.1</td><td>创建招投标审查组件 <code>BidReview.tsx</code></td><td>前端</td><td>2天</td></tr>
+<tr><td>2.3.2</td><td>招标文件合规性审查：投标人资格/评标办法/合同条款完整性</td><td>知识库</td><td>2天</td></tr>
+<tr><td>2.3.3</td><td>评标要素自动提取：技术标/商务标评分因子结构化</td><td>文档解析</td><td>1.5天</td></tr>
+<tr><td>2.3.4</td><td>异常条款检测：倾向性/排他性条款标记</td><td>AI+知识库</td><td>2天</td></tr>
+<tr><td>2.3.5</td><td>审查报告生成+导出</td><td>AI</td><td>1天</td></tr>
+<tr><td>2.3.6</td><td>首页模块卡片"招投标文件审查"路由激活</td><td>前端</td><td>0.5天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td></td><td><strong>9天</strong></td></tr>
+</table>
+
+<h3>2.4 知识图谱新增节点与关系</h3>
+<table>
+<tr><th>新增节点类型</th><th>颜色</th><th>说明</th></tr>
+<tr><td>construction-plan</td><td>🟠 橙色</td><td>施工方案节点</td></tr>
+<tr><td>standard-clause</td><td>🔵 蓝色</td><td>标准条款节点</td></tr>
+<tr><td>review-item</td><td>🟡 黄色</td><td>审核项节点</td></tr>
+<tr><td>risk-point</td><td>🔴 红色</td><td>风险点节点</td></tr>
+<tr><td>contract</td><td>🟣 紫色</td><td>合同节点</td></tr>
+<tr><td>bid-document</td><td>🟢 绿色</td><td>招投标文件节点</td></tr>
+</table>
+</div>
+
+<h2>三、Phase 3 (v2.2.0) — LightRAG集成 + 方案生成</h2>
+
+<div class="phase-card"><h3>3.1 LightRAG知识引擎集成</h3>
+<table>
+<tr><th>#</th><th>开发任务</th><th>技术栈</th><th>工时</th></tr>
+<tr><td>3.1.1</td><td>Python后端服务搭建(LightRAG + FastAPI)</td><td>Python/FastAPI/LightRAG</td><td>3天</td></tr>
+<tr><td>3.1.2</td><td>文档自动实体抽取+图谱构建</td><td>LightRAG</td><td>2天</td></tr>
+<tr><td>3.1.3</td><td>混合检索接口：BM25+向量+图谱三路</td><td>LightRAG API</td><td>2天</td></tr>
+<tr><td>3.1.4</td><td>前端对接LightRAG检索API</td><td>React+TypeScript</td><td>1.5天</td></tr>
+<tr><td>3.1.5</td><td>LanceDB向量存储迁移（替代localStorage）</td><td>LanceDB</td><td>1天</td></tr>
+<tr><td>3.1.6</td><td>unstructured.io文档解析增强(PDF/DOCX/XLSX→纯文本+结构)</td><td>unstructured.io</td><td>1.5天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td></td><td><strong>11天</strong></td></tr>
+</table>
+
+<h3>3.2 专项方案生成</h3>
+<table>
+<tr><th>#</th><th>开发任务</th><th>技术栈</th><th>工时</th></tr>
+<tr><td>3.2.1</td><td>方案模板库：docx模板+占位符系统</td><td>docx-templates</td><td>2天</td></tr>
+<tr><td>3.2.2</td><td>模板填充引擎：项目参数→占位符自动填充</td><td>docx-templates</td><td>2天</td></tr>
+<tr><td>3.2.3</td><td>LLM章节生成：逐章生成+JSON Schema约束</td><td>DeepSeek+Instructor</td><td>3天</td></tr>
+<tr><td>3.2.4</td><td>标准条款自动注入：编制依据章节100%自动</td><td>知识库RAG</td><td>1天</td></tr>
+<tr><td>3.2.5</td><td>施工组织设计生成：进度/资源/质量/安全四章</td><td>LLM+知识图谱</td><td>2天</td></tr>
+<tr><td>3.2.6</td><td>导出.docx完整方案</td><td>docx-templates</td><td>1天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td></td><td><strong>11天</strong></td></tr>
+</table>
+</div>
+
+<h2>四、Phase 4 (v2.4.0) — Structured Output + 完整方案导出</h2>
+
+<div class="phase-card"><h3>4.1 Instructor约束生成</h3>
+<table><tr><th>#</th><th>开发任务</th><th>工时</th></tr>
+<tr><td>4.1.1</td><td>JSON Schema定义：方案章节结构/合同条款模型/招标要素模型</td><td>2天</td></tr>
+<tr><td>4.1.2</td><td>Instructor集成：LLM输出严格约束为JSON</td><td>2天</td></tr>
+<tr><td>4.1.3</td><td>json-repair容错：修复LLM输出破损JSON</td><td>0.5天</td></tr>
+<tr><td>4.1.4</td><td>方案完整性校验：必填章节检查+标准引用验证</td><td>2天</td></tr>
+<tr><td>4.1.5</td><td>Guidance约束式生成(正则/CFG)用于安全措施等规则化章节</td><td>1.5天</td></tr>
+<tr><td>4.1.6</td><td>批量生成+人工审核界面</td><td>2天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td><strong>10天</strong></td></tr>
+</table>
+</div>
+
+<h2>五、Phase 5 (v2.5.0) — SaaS多租户 + 商业化</h2>
+
+<div class="phase-card"><h3>5.1 多租户SaaS架构</h3>
+<table><tr><th>#</th><th>开发任务</th><th>工时</th></tr>
+<tr><td>5.1.1</td><td>PostgreSQL迁移（替代SQLite）</td><td>3天</td></tr>
+<tr><td>5.1.2</td><td>租户隔离：Schema级隔离+数据加密</td><td>2天</td></tr>
+<tr><td>5.1.3</td><td>用户订阅+计费系统</td><td>3天</td></tr>
+<tr><td>5.1.4</td><td>系统监控：Prometheus+Grafana</td><td>2天</td></tr>
+<tr><td>5.1.5</td><td>管理后台增强：租户管理+用量统计</td><td>2天</td></tr>
+<tr><td colspan="2"><strong>小计</strong></td><td><strong>12天</strong></td></tr>
+</table>
+</div>
+
+<h2>六、技术问答复核清单</h2>
+
+<table>
+<tr><th>问答序号</th><th>建议内容</th><th>对应任务</th><th>状态</th></tr>
+<tr><td>Q1</td><td>知识图谱技术栈对比(GitHub TOP3)</td><td>已记录于开发文档</td><td class="done">✅</td></tr>
+<tr><td>Q2</td><td>模块打通：供应商Key不匹配Bug修复</td><td>knowledgeGraph.ts修复</td><td class="done">✅</td></tr>
+<tr><td>Q3</td><td>模块打通：计划/土地/政策/制度/表单纳入图谱</td><td>knowledgeGraph.ts 3e-3h</td><td class="done">✅</td></tr>
+<tr><td>Q4</td><td>表单编辑器：localStorage持久化</td><td>GuideChapter.tsx 完成按钮</td><td class="done">✅</td></tr>
+<tr><td>Q5</td><td>LightRAG混合检索架构推荐</td><td>Phase 3.1</td><td class="todo">Phase3</td></tr>
+<tr><td>Q6</td><td>施工方案审查：标准→方案逐条验证</td><td>Phase 2.1</td><td class="todo">Phase2</td></tr>
+<tr><td>Q7</td><td>合同审查：关键条款提取+风险识别</td><td>Phase 2.2</td><td class="todo">Phase2</td></tr>
+<tr><td>Q8</td><td>招投标审查：合规+异常条款检测</td><td>Phase 2.3</td><td class="todo">Phase2</td></tr>
+<tr><td>Q9</td><td>方案生成：模板引擎+知识注入+约束验证</td><td>Phase 3.2+4</td><td class="todo">Phase3+4</td></tr>
+<tr><td>Q10</td><td>Instructor结构化输出+Guidance约束</td><td>Phase 4</td><td class="todo">Phase4</td></tr>
+<tr><td>Q11</td><td>免人工审核章节（编制依据/安全措施100%自动）</td><td>Phase 3.2</td><td class="todo">Phase3</td></tr>
+<tr><td>Q12</td><td>首页新增三模块卡片+知识库/图谱关联</td><td>App.tsx已完成</td><td class="done">✅</td></tr>
+<tr><td>Q13</td><td>docx-templates+unstructured.io+Instructor</td><td>Phase 3+4</td><td class="todo">Phase3+4</td></tr>
+</table>
+
+<h2>七、模块与知识库/知识图谱关联矩阵</h2>
+
+<table>
+<tr><th>模块</th><th>知识库</th><th>知识图谱</th><th>AI能力</th></tr>
+<tr><td><strong>施工组织设计审查</strong></td><td>DB11/T695条文检索<br>历史案例相似匹配</td><td>方案↔标准条款合规图<br>标准变更影响追溯</td><td>逐条对比分析<br>审核意见生成</td></tr>
+<tr><td><strong>合同审查</strong></td><td>风险条款库<br>法规对照库</td><td>合同条款↔招标↔法规<br>历史合同风险网络</td><td>关键条款提取<br>风险项识别</td></tr>
+<tr><td><strong>招投标文件审查</strong></td><td>法规合规库<br>评标办法模板</td><td>招标↔投标↔合同<br>异常条款关联</td><td>合规检查<br>倾向性标记</td></tr>
+</table>
+
+<h2>八、总工时估算</h2>
+<table>
+<tr><th>阶段</th><th>开发</th><th>测试</th><th>文档</th><th>合计</th></tr>
+<tr><td>Phase 2</td><td>32.5天</td><td>6天</td><td>3天</td><td><strong>41.5天 (≈8周)</strong></td></tr>
+<tr><td>Phase 3</td><td>22天</td><td>4天</td><td>2天</td><td><strong>28天 (≈6周)</strong></td></tr>
+<tr><td>Phase 4</td><td>10天</td><td>3天</td><td>1天</td><td><strong>14天 (≈3周)</strong></td></tr>
+<tr><td>Phase 5</td><td>12天</td><td>4天</td><td>2天</td><td><strong>18天 (≈4周)</strong></td></tr>
+<tr><td><strong>总计</strong></td><td><strong>76.5天</strong></td><td><strong>17天</strong></td><td><strong>8天</strong></td><td><strong>101.5天 (≈21周)</strong></td></tr>
+</table>
+</div>
+<footer><p>全过程工程咨询管理服务平台 · 开发计划书 · Phase 2-5 · 2026年6月</p></footer>
+</body></html>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -20,6 +20,10 @@ import KnowledgeBase from './components/KnowledgeBase';
 import KnowledgeGraphView from './components/KnowledgeGraph';
 import PolicyLibrary from './components/PolicyLibrary';
 import RegulationsLibrary from './components/RegulationsLibrary';
+import ConstructionReview from './components/ConstructionReview';
+import ContractReview from './components/ContractReview';
+import BidReview from './components/BidReview';
+import PlanGenerator from './components/PlanGenerator';
 import { guideChapters } from './data/guideModules';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
@@ -425,6 +429,26 @@ const App: React.FC = () => {
     }
   }
 
+  // ===== 施工组织设计审查 =====
+  if (view === 'construction-review' && currentProject) {
+    return <ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 合同审查 =====
+  if (view === 'contract-review' && currentProject) {
+    return <ContractReview projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 招投标文件审查 =====
+  if (view === 'bid-review' && currentProject) {
+    return <BidReview projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 方案生成 =====
+  if (view === 'plan-generator' && currentProject) {
+    return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
   // ===== 登录页 =====
   if (view === 'login') {
     return <LoginPage onLogin={handleLogin} />;
@@ -682,6 +706,50 @@ const App: React.FC = () => {
                 <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">AI综合项目分析、风险预警、知识图谱、智能建议</p>
+            </button>
+            {/* 施工组织设计审查 */}
+            <button onClick={() => setView('construction-review')}
+              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-amber-300 group cursor-pointer bg-gradient-to-br from-white to-amber-50/30">
+              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FileCheck className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">施工组织设计审查</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">专项方案+施组审查、标准合规验证、知识图谱追溯</p>
+            </button>
+            {/* 合同审查 */}
+            <button onClick={() => setView('contract-review')}
+              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer bg-gradient-to-br from-white to-blue-50/30">
+              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-100 to-sky-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">合同审查</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">合同条款合规审查、风险条款识别、知识库标准对照</p>
+            </button>
+            {/* 方案生成 - Phase3 */}
+            <button onClick={() => setView('plan-generator')}
+              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-green-300 group cursor-pointer bg-gradient-to-br from-white to-green-50/30">
+              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Sparkles className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">AI方案生成</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">Phase3</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">AI逐章生成施工方案、标准条款自动注入、Word导出</p>
+            </button>
+            {/* 招投标文件审查 */}
+            <button onClick={() => setView('bid-review')}
+              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-indigo-300 group cursor-pointer bg-gradient-to-br from-white to-indigo-50/30">
+              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FileSearch className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">招投标文件审查</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">招标文件合规性审查、评标要素提取、知识库辅助</p>
             </button>
           </div>
         </div>

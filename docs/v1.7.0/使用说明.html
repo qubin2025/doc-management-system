@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程资料管理系统 v1.7.0 — 使用说明</title>
+<style>
+  :root { --primary: #2563eb; --bg:#f8fafc; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.8}
+  .container{max-width:1100px;margin:0 auto;padding:20px}
+  header{background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;padding:60px 20px;text-align:center}
+  header h1{font-size:2.4em;margin-bottom:12px}
+  header p{font-size:1.1em;opacity:.9}
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:30px;margin:30px 0}
+  .toc h3{margin-bottom:16px;color:var(--primary)}
+  .toc ol{padding-left:20px;columns:2}
+  .toc li{margin:6px 0}
+  .toc a{color:var(--primary);text-decoration:none}
+  section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:35px;margin:25px 0}
+  h2{color:var(--primary);border-bottom:3px solid var(--primary);padding-bottom:10px;margin-bottom:20px;font-size:1.5em}
+  h3{color:#334155;margin:18px 0 10px;font-size:1.15em}
+  table{width:100%;border-collapse:collapse;margin:15px 0}
+  th,td{border:1px solid var(--border);padding:10px 14px;text-align:left;font-size:.95em}
+  th{background:#f1f5f9;font-weight:600}
+  .tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.8em;margin-right:6px}
+  .tag-blue{background:#dbeafe;color:#1e40af}
+  .tag-green{background:#dcfce7;color:#166534}
+  .step{background:#eff6ff;border-left:4px solid var(--primary);padding:12px 18px;margin:10px 0;border-radius:0 8px 8px 0}
+  .step strong{color:var(--primary)}
+  .note{background:#fef3c7;border:1px solid #fcd34d;padding:14px 18px;border-radius:8px;margin:15px 0;font-size:.9em}
+  .tip{background:#dcfce7;border:1px solid #86efac;padding:14px 18px;border-radius:8px;margin:15px 0;font-size:.9em}
+  footer{text-align:center;padding:30px;color:var(--muted);font-size:.9em}
+  img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+  @media(max-width:768px){.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header>
+  <h1>工程资料管理系统</h1>
+  <p>全过程工程咨询管理服务平台 · 使用说明 · v1.7.0</p>
+  <p style="font-size:.9em;margin-top:8px;opacity:.75">支持 DB11/T695-2025（建筑）和 DB11/T808-2020（市政）双规程</p>
+</header>
+
+<div class="container">
+
+<div class="toc">
+<h3>目录</h3>
+<ol>
+  <li><a href="#overview">系统概述</a></li>
+  <li><a href="#quickstart">快速入门</a></li>
+  <li><a href="#login">登录与账号管理</a></li>
+  <li><a href="#project">项目管理</a></li>
+  <li><a href="#documents">工程资料管理</a></li>
+  <li><a href="#guide">指南工作模块</a></li>
+  <li><a href="#logic">时序逻辑图</a></li>
+  <li><a href="#forms">附表清单</a></li>
+  <li><a href="#dashboard">项目仪表盘</a></li>
+  <li><a href="#plan">计划与甘特图</a></li>
+  <li><a href="#supplier">供应商与造价</a></li>
+  <li><a href="#ai">AI智能助手</a></li>
+  <li><a href="#analysis">智能分析中心</a></li>
+  <li><a href="#knowledge">知识库体系</a></li>
+  <li><a href="#landreserve">土储中心归档</a></li>
+  <li><a href="#backup">数据备份与恢复</a></li>
+  <li><a href="#faq">常见问题</a></li>
+</ol>
+</div>
+
+<section id="overview">
+<h2>1. 系统概述</h2>
+<p>全过程工程咨询管理服务平台是一套面向建设工程领域的工程资料管理、全过程咨询指南执行跟踪、AI智能辅助分析的综合管理系统。系统覆盖项目从前期立项到竣工验收的全生命周期，提供资料归档、工作指南、进度管理、AI分析等核心能力。</p>
+
+<table>
+<tr><th>项目</th><th>说明</th></tr>
+<tr><td>系统名称</td><td>全过程工程咨询管理服务平台</td></tr>
+<tr><td>版本号</td><td>v1.7.0</td></tr>
+<tr><td>支持规程</td><td>DB11/T695-2025（建筑）、DB11/T808-2020（市政）</td></tr>
+<tr><td>访问方式</td><td>浏览器访问（Chrome / Edge / Firefox 推荐）</td></tr>
+<tr><td>部署模式</td><td>Docker 一键部署 / Node.js 手动部署 / Nginx 反向代理</td></tr>
+<tr><td>数据存储</td><td>SQLite 数据库 + localStorage 离线双模式</td></tr>
+</table>
+</section>
+
+<section id="quickstart">
+<h2>2. 快速入门</h2>
+<div class="step"><strong>第1步：启动系统</strong><br>双击 <code>deploy/start.bat</code>（Windows）或运行 <code>bash deploy/deploy.sh</code>（Linux），系统自动启动前端（5173端口）和后端（3000端口）。</div>
+<div class="step"><strong>第2步：登录</strong><br>浏览器打开 http://localhost:5173，输入管理员账号登录。首次部署密码请在部署说明中查看。</div>
+<div class="step"><strong>第3步：创建项目</strong><br>在项目入口页点击「创建项目」，输入项目名称即可开始使用。</div>
+<div class="step"><strong>第4步：选择规程</strong><br>进入项目后选择建筑或市政规程，系统自动加载对应的资料分类表。</div>
+<div class="step"><strong>第5步：开始工作</strong><br>上传工程资料、跟踪指南进度、查看仪表盘、使用AI助手。</div>
+<div class="tip">系统支持离线模式：后端不可用时，数据自动存储到浏览器本地，后端恢复后自动同步。</div>
+</section>
+
+<section id="login">
+<h2>3. 登录与账号管理</h2>
+<h3>3.1 登录</h3>
+<p>输入用户名和密码即可登录。系统支持以下角色：</p>
+<table>
+<tr><th>角色</th><th>权限说明</th></tr>
+<tr><td>admin</td><td>系统管理员：用户管理、全量备份、所有项目访问</td></tr>
+<tr><td>project_manager</td><td>项目经理：创建项目、上传下载文档、使用AI</td></tr>
+<tr><td>construction_unit</td><td>建设单位：上传下载文档</td></tr>
+<tr><td>viewer</td><td>查看者：仅下载查看</td></tr>
+</table>
+<h3>3.2 注册新用户</h3>
+<p>登录页点击「注册」按钮，填写信息后提交。默认注册用户为待审批状态，需管理员在管理后台启用。</p>
+<div class="note">安全提示：登录接口设置了防暴力破解限流（15分钟内最多10次），连续失败将被临时锁定。</div>
+<h3>3.3 管理后台</h3>
+<p>管理员可进入管理后台进行：用户创建/编辑/删除、权限分配、账号启用/禁用等操作。</p>
+</section>
+
+<section id="project">
+<h2>4. 项目管理</h2>
+<h3>4.1 项目列表</h3>
+<p>登录后进入项目入口页，展示所有已创建项目的卡片列表。每个卡片显示：项目名称、创建时间、指南进度条、项目健康度指标。</p>
+<h3>4.2 创建项目</h3>
+<p>点击「创建项目」按钮，输入项目名称即可。可双击项目名称进行重命名。</p>
+<h3>4.3 编辑项目信息</h3>
+<p>悬停项目卡片，右下角出现「编辑」按钮。点击进入编辑对话框：</p>
+<ul>
+  <li><strong>基本信息</strong>：项目概况、建筑面积、建设规模、投资额、市政管线</li>
+  <li><strong>项目概况文件上传</strong>：上传项目相关的 PDF/Word/Excel 等文档</li>
+  <li><strong>AI 自动填写</strong>：根据项目名称或上传的文档内容，AI 自动填充各字段</li>
+  <li><strong>AI 分析报告</strong>：生成项目风险分析、进度评估、成本优化等专业报告</li>
+  <li><strong>自定义字段</strong>：可添加任意自定义键值对</li>
+</ul>
+</section>
+
+<section id="documents">
+<h2>5. 工程资料管理</h2>
+<h3>5.1 资料列表</h3>
+<p>进入项目后，左侧为资料分类目录（A类/B类/C类/D类），右侧为对应分类下资料表格。支持按类别筛选、关键词搜索。</p>
+<h3>5.2 上传资料</h3>
+<div class="step"><strong>上传步骤：</strong><br>
+1. 点击资料行右侧的「上传」按钮<br>
+2. 选择文件（支持 PDF/Word/Excel/图片/CAD/ZIP/TXT/CSV，单文件≤50MB）<br>
+3. 系统自动记录版本号（V1.0起）、上传人、上传时间</div>
+<h3>5.3 文件安全</h3>
+<div class="note">系统对上传文件进行多项安全检查：文件类型白名单验证、文件名路径穿越防护、路径包含验证。不含法文件类型将被拒绝。</div>
+<h3>5.4 下载与导出</h3>
+<p>支持单文件下载、批量 CSV 导出、ZIP 打包下载。导出功能在工具栏可找到。</p>
+</section>
+
+<section id="guide">
+<h2>6. 指南工作模块</h2>
+<p>按照《全过程项目管理工作指南（二次修订版）》设计的4大章节工作流：</p>
+<table>
+<tr><th>章节</th><th>内容</th><th>子模块数</th></tr>
+<tr><td>第1章 前期工作</td><td>项目立项、可行性研究、用地规划许可、建设许可、施工许可</td><td>10+</td></tr>
+<tr><td>第2章 招标采购</td><td>招标方案编制、资格预审、招标文件、评标定标、合同签订</td><td>8+</td></tr>
+<tr><td>第3章 工程施工</td><td>开工准备、质量控制、进度管理、安全生产、变更签证</td><td>12+</td></tr>
+<tr><td>第4章 竣工验收及移交</td><td>竣工预验收、专项验收、资料归档、工程移交、竣工结算</td><td>10+</td></tr>
+</table>
+<h3>6.1 工作项勾选</h3>
+<p>每个子模块下有具体工作项，可逐个勾选纳入计划（蓝色）或标记完成（绿色）。支持一键全选/取消。</p>
+<h3>6.2 自定义工作项</h3>
+<p>点击子模块旁的「+」按钮添加自定义工作项，可设置：名称、时长、前置/后置子模块关联。自定义项可编辑和删除。</p>
+<h3>6.3 附件上传与版本管理</h3>
+<div class="step"><strong>上传附件：</strong><br>
+1. 点击工作项旁的「修改」按钮<br>
+2. 在对话框中选择文件上传<br>
+3. 系统自动编号版本（V1, V2, V3...）<br>
+4. 勾选工作项后，右侧显示附件数量 📎N<br>
+5. 点击附件数展开详情，可查看文件名、版本号，悬停显示删除按钮</div>
+<h3>6.4 进度跟踪</h3>
+<p>头部显示实时进度条（已选/总量），支持撤销操作（最近5步）。子模块可保存为模板，供其他章节复用。</p>
+</section>
+
+<section id="logic">
+<h2>7. 时序逻辑图</h2>
+<p>切换到「时序逻辑图」标签页，系统自动将已勾选的工作项生成时序逻辑关系图。基于 draw.io 嵌入式编辑器：</p>
+<ul>
+  <li><strong>自动布局</strong>：按子模块分列，工作项以卡片显示</li>
+  <li><strong>连线管理</strong>：蓝色虚线=计划中，绿色实线=已完成</li>
+  <li><strong>编辑器</strong>：支持拖拽节点、创建连线、同步连线到工作模块</li>
+  <li><strong>缩放</strong>：25%-200% 自由缩放，支持适应页面</li>
+  <li><strong>重置</strong>：一键恢复默认布局</li>
+</ul>
+</section>
+
+<section id="forms">
+<h2>8. 附表清单</h2>
+<p>各章节包含对应附表清单，与《全过程项目管理工作指南》附表格式一致：</p>
+<ul>
+  <li><strong>样本预览</strong>：点击「样本」查看附表模板格式</li>
+  <li><strong>文件上传</strong>：上传实际填写的表单文件</li>
+  <li><strong>AI 自动填写</strong>：点击「AI 自动填写」智能填充表单内容</li>
+  <li><strong>编辑</strong>：在线编辑表单文本，支持导出</li>
+</ul>
+</section>
+
+<section id="dashboard">
+<h2>9. 项目仪表盘</h2>
+<p>进入项目后点击「仪表盘」入口，展示项目关键指标：</p>
+<ul>
+  <li><strong>CPI（成本绩效指数）</strong>：已签合同/概算金额比</li>
+  <li><strong>SPI（进度绩效指数）</strong>：实际进度/计划进度比</li>
+  <li><strong>完整度评分</strong>：已上传资料/应有资料比</li>
+  <li><strong>质量评分</strong>：综合评估质量等级</li>
+  <li><strong>告警列表</strong>：超期/异常指标自动告警</li>
+  <li><strong>多项目对比</strong>：切换不同项目查看指标变化</li>
+</ul>
+</section>
+
+<section id="plan">
+<h2>10. 计划管理</h2>
+<h3>10.1 甘特图</h3>
+<p>在「计划管理」中查看项目计划的甘特图视图，支持任务时间线可视化。</p>
+<h3>10.2 网络图（CPM）</h3>
+<p>基于关键路径法（CPM）的项目网络图，支持：ES/EF/LS/LF 计算、关键路径识别、浮时分析、Excel计划数据导入。</p>
+</section>
+
+<section id="supplier">
+<h2>11. 供应商库与造价管理</h2>
+<h3>11.1 供应商库</h3>
+<p>维护合作供应商信息，包括：企业名称、资质等级、联系人、合作项目记录等。</p>
+<h3>11.2 造价数据</h3>
+<p>管理项目造价相关数据，支持指标计算与对比分析。</p>
+</section>
+
+<section id="ai">
+<h2>12. AI 智能助手</h2>
+<p>系统集成 DeepSeek 大语言模型，提供以下 AI 能力：</p>
+<table>
+<tr><th>功能</th><th>说明</th></tr>
+<tr><td>AI 对话</td><td>底部 AI 输入框 / 全页 AI 聊天界面，支持项目上下文感知</td></tr>
+<tr><td>AI 表单填写</td><td>根据表单类型和项目信息，自动生成填写内容</td></tr>
+<tr><td>AI 项目分析</td><td>基于项目数据生成风险分析、进度评估、成本优化建议</td></tr>
+<tr><td>AI 文档感知</td><td>上传项目文档后，AI 可读取文档内容智能提取关键字段</td></tr>
+<tr><td>视觉模型</td><td>支持 GLM-4V / Qwen-VL 多模态图像识别</td></tr>
+<tr><td>语义搜索</td><td>基于向量化的知识库语义检索</td></tr>
+</table>
+<div class="note">AI 功能需要配置 API Key（DeepSeek / 智谱 / 千问）。后端优先代理请求，前端作为 fallback。</div>
+</section>
+
+<section id="analysis">
+<h2>13. 智能分析中心</h2>
+<p>「智能分析」入口提供：</p>
+<ul>
+  <li><strong>周期性扫描</strong>：自动检查工作项完成情况、表单缺失、指标异常</li>
+  <li><strong>异常检测</strong>：识别进度滞后、成本超支等风险</li>
+  <li><strong>AI 建议</strong>：基于检测结果生成针对性改进建议</li>
+</ul>
+</section>
+
+<section id="knowledge">
+<h2>14. 知识库体系</h2>
+<h3>14.1 知识库</h3>
+<p>工程管理相关知识文档的存储与全文检索，支持语义搜索。</p>
+<h3>14.2 知识图谱</h3>
+<p>工程管理领域知识的关系网络可视化展示。</p>
+<h3>14.3 政策库 & 制度规范库</h3>
+<p>政策法规与制度规范的分类浏览、全文搜索、附件管理。</p>
+</section>
+
+<section id="landreserve">
+<h2>15. 土储中心归档</h2>
+<p>提供土地储备中心归档移交资料的管理，包含86项标准归档资料清单。支持按项目对照填写，附带小红门再生水调水干线项目示例数据。</p>
+</section>
+
+<section id="backup">
+<h2>16. 数据备份与恢复</h2>
+<h3>16.1 备份</h3>
+<p>首页工具栏中「备份」按钮：</p>
+<ul>
+  <li><strong>全部项目备份</strong>：数据库 + 所有上传文件打包 ZIP（需管理员权限）</li>
+  <li><strong>指定项目备份</strong>：单个项目的文档记录和文件 ZIP</li>
+</ul>
+<div class="tip">备份通过安全加密的 Authorization Header 传输认证信息，不会在 URL 中暴露 token。</div>
+<h3>16.2 数据恢复</h3>
+<p>通过「导入」功能从 JSON 格式数据批量恢复文档记录。backup ZIP 解压后包含完整数据库文件和文件目录。</p>
+</section>
+
+<section id="faq">
+<h2>17. 常见问题</h2>
+<h3>Q: 忘记管理员密码怎么办？</h3>
+<p>进入 backend 目录，运行：<code>node -e "const bcrypt=require('bcrypt');const{getDb}=require('./db.js');getDb().prepare('UPDATE users SET password_hash=? WHERE username=?').run(bcrypt.hashSync('新密码',10),'admin')"</code></p>
+<h3>Q: 上传文件失败？</h3>
+<p>检查：1) 文件类型是否在支持列表中 2) 文件大小是否超过50MB 3) 文件路径是否有特殊字符 4) 后端 files 目录是否有写入权限</p>
+<h3>Q: AI功能提示"Key未配置"？</h3>
+<p>编辑 backend/.env 文件，填入 DEEPSEEK_API_KEY 等 AI Key 后重启后端服务。</p>
+<h3>Q: 数据是否会丢失？</h3>
+<p>系统采用双重存储策略：数据同时保存在后端 SQLite 数据库和浏览器 localStorage 中。建议定期使用备份功能导出 ZIP。</p>
+<h3>Q: 支持多少用户同时使用？</h3>
+<p>SQLite单机模式下建议10人以内。如需更大并发，可考虑迁移至 PostgreSQL。</p>
+</section>
+
+</div>
+<footer>
+<p>全过程工程咨询管理服务平台 v1.7.0 · 使用说明 · 2026年6月</p>
+</footer>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, X, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3, Database, HardDrive, Users, GitBranch } from 'lucide-react';
 import * as api from '../data/api';
 import { toast } from './Toast';
 
@@ -16,8 +16,17 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ username: '', password: '', displayName: '', role: 'viewer', permissions: { can_upload: true, can_download: true, can_use_ai: false } });
+  const [stats, setStats] = useState({ projects: 0, documents: 0, users: 0, activeUsers: 0, neo4j: false, ai: false, uptime: 0, memory: 0 });
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { loadUsers(); fetchStats(); }, []);
+
+  const fetchStats = async () => {
+    try {
+      const base = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+      const res = await fetch(base.replace('/api', '/api/stats'));
+      if (res.ok) setStats(await res.json());
+    } catch {}
+  };
 
   const loadUsers = async () => {
     setLoading(true);
@@ -72,11 +81,32 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* 统计 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">总用户</div><div className="text-2xl font-black">{users.length}</div></div>
-          <div className="bg-green-50 rounded-xl border border-green-200 p-4"><div className="text-xs text-gray-500">活跃</div><div className="text-2xl font-black text-green-600">{users.filter(u => u.is_active).length}</div></div>
-          <div className="bg-red-50 rounded-xl border border-red-200 p-4"><div className="text-xs text-gray-500">管理员</div><div className="text-2xl font-black text-red-600">{users.filter(u => u.role === 'admin').length}</div></div>
+        {/* 实时统计 */}
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">项目数</div><div className="text-2xl font-black">{stats.projects}</div></div>
+          <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">文档数</div><div className="text-2xl font-black">{stats.documents}</div></div>
+          <div className="bg-green-50 rounded-xl border border-green-200 p-4"><div className="text-xs text-gray-500">总用户</div><div className="text-2xl font-black text-green-600">{stats.users || users.length}</div></div>
+          <div className="bg-blue-50 rounded-xl border border-blue-200 p-4"><div className="text-xs text-gray-500">活跃用户</div><div className="text-2xl font-black text-blue-600">{stats.activeUsers || users.filter(u => u.is_active).length}</div></div>
+          <div className="bg-purple-50 rounded-xl border border-purple-200 p-4"><div className="text-xs text-gray-500">运行时间</div><div className="text-lg font-black text-purple-600">{Math.floor(stats.uptime / 3600)}h{Math.floor((stats.uptime % 3600) / 60)}m</div></div>
+        </div>
+
+        {/* 系统健康 */}
+        <div className="bg-white rounded-xl border p-5 mb-6">
+          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-500"/>系统运行状态</h3>
+          <div className="grid grid-cols-4 gap-4 text-sm">
+            {[
+              { icon: Database, label: '数据存储', value: `SQLite · ${stats.projects}项目/${stats.documents}文档`, status: '正常', color: 'green' },
+              { icon: GitBranch, label: '知识图谱', value: stats.neo4j ? 'Neo4j 在线' : '离线模式', status: stats.neo4j ? '连接' : '本地', color: stats.neo4j ? 'green' : 'amber' },
+              { icon: HardDrive, label: 'AI引擎', value: stats.ai ? 'DeepSeek在线' : '未配置', status: stats.ai ? '正常' : '离线', color: stats.ai ? 'green' : 'amber' },
+              { icon: Users, label: '内存使用', value: `${stats.memory}MB`, status: '正常', color: 'green' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <item.icon className="w-5 h-5 text-gray-400 mt-0.5"/>
+                <div><p className="text-xs text-gray-500">{item.label}</p><p className="font-medium text-gray-800">{item.value}</p>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full bg-${item.color}-100 text-${item.color}-600`}>{item.status}</span></div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {loading ? (

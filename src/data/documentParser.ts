@@ -15,14 +15,17 @@ export async function parsePDF(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const texts: string[] = [];
-    const maxPages = Math.min(pdf.numPages, 20); // 限制前20页
+    const maxPages = 100; // 上限100页，防内存溢出
+    const targetChars = 40000; // 目标提取4万字符，足够AI审查
 
-    for (let i = 1; i <= maxPages; i++) {
+    for (let i = 1; i <= Math.min(pdf.numPages, maxPages); i++) {
       try {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const pageText = content.items.map((item: any) => item.str).join(' ');
         if (pageText.trim()) texts.push(pageText);
+        // 提前终止：已提取足够文本
+        if (texts.join('').length >= targetChars) break;
       } catch { /* 跳过无法解析的页面 */ }
     }
     return texts.join('\n').trim() || '(PDF文本提取为空)';

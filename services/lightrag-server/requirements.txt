@@ -1,0 +1,7 @@
+fastapi>=0.100.0
+uvicorn>=0.23.0
+python-multipart>=0.0.6
+# 可选增强
+# lightrag-hku  # RAG引擎
+# lancedb       # 向量存储
+# unstructured[pdf,docx,xlsx]  # 专业文档解析

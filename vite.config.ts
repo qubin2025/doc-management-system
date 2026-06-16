@@ -5,6 +5,14 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   server: {
+    port: 5173,
+    strictPort: true,
+    host: '0.0.0.0', // 开放局域网访问
+    hmr: {
+      protocol: 'ws',
+      host: '0.0.0.0',
+      port: 5173,
+    },
     proxy: {
       '/drawio-proxy': {
         target: 'https://embed.diagrams.net',
