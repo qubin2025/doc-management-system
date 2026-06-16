@@ -55,7 +55,7 @@ const RegulationsLibrary: React.FC<Props> = ({ onBack }) => {
   if (selectedDoc) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm border-b"><div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+        <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
           <button onClick={() => setSelectedDoc(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></button>
           <div className="flex-1"><h1 className="text-lg font-bold">{selectedDoc.title}</h1><p className="text-xs text-gray-400">{selectedDoc.fileNo} · {selectedDoc.department} · {selectedDoc.publishDate}</p></div>
           {admin && (<div className="flex gap-1"><button onClick={() => { setEditDoc(selectedDoc); setSelectedDoc(null); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"><Edit3 className="w-4 h-4" /></button><button onClick={() => deleteDoc(selectedDoc.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4" /></button></div>)}

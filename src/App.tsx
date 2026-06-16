@@ -516,7 +516,7 @@ const App: React.FC = () => {
   if (view === 'homepage') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           {/* 项目状态提醒条 — 全宽醒目 */}
           <div className={`text-center py-1.5 text-xs font-bold ${currentProject ? 'bg-green-500 text-white' : 'bg-amber-400 text-white'}`}>
             {currentProject ? `📍 当前项目：${currentProject}` : '🌐 全局模式 — 未进入具体项目，AI将回答全局信息'}
@@ -801,7 +801,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* 头部 */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">

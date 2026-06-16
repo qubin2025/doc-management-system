@@ -264,7 +264,7 @@ const AiChatPage: React.FC<{
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* ===== 顶部固定栏 ===== */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
+      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
           <h1 className="text-base font-semibold text-gray-800">{active?.title || 'AI 对话'}</h1>
