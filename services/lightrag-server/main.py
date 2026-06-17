@@ -249,6 +249,62 @@ async def sync_graph(req: SyncRequest):
         graph_adj[e.get("from","")].append(e.get("to",""))
     return {"ok":True,"nodes":len(graph_nodes),"edges":len(graph_edges)}
 
+# ========== 文档解析 API ==========
+class ParseRequest(BaseModel):
+    content: str = ""  # base64编码的文件内容
+    filename: str = ""
+    mime_type: str = ""
+
+@app.post("/api/lightrag/parse")
+async def parse_document(req: ParseRequest):
+    """解析文档文本（支持PDF/Word/TXT，增强版）"""
+    import base64, tempfile, os
+    text = ""
+    fname = req.filename.lower()
+
+    # 如果直接传了文本
+    if req.content and not req.content.startswith(("JVBER", "UEsDB", "0M8R")):
+        if len(req.content) > 100:
+            return {"ok": True, "text": req.content[:50000], "method": "direct"}
+
+    # 尝试解码 base64
+    try:
+        raw = base64.b64decode(req.content) if req.content else b""
+    except:
+        return {"ok": False, "error": "无效的文件内容"}
+
+    if fname.endswith('.pdf') or req.mime_type == 'application/pdf':
+        try:
+            import pdfplumber
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as f:
+                f.write(raw); f.flush(); tmp = f.name
+            try:
+                with pdfplumber.open(tmp) as pdf:
+                    texts = [page.extract_text() or '' for page in pdf.pages[:50]]
+                text = '\n'.join(texts)
+                if not text.strip():
+                    text = "PDF解析结果为空（可能是扫描件，建议转Word后上传）"
+            finally: os.unlink(tmp)
+            return {"ok": True, "text": text[:50000], "method": "pdfplumber"}
+        except ImportError:
+            pass  # 降级到node端解析
+
+    if fname.endswith(('.docx', '.doc')) or 'word' in req.mime_type:
+        # docx is handled by mammoth on node side
+        if not text:
+            text = "(Word文档请在浏览器端解析)"
+        return {"ok": True, "text": text, "method": "passthrough"}
+
+    if fname.endswith('.txt') or req.mime_type == 'text/plain':
+        try:
+            text = raw.decode('utf-8')
+        except:
+            try: text = raw.decode('gbk')
+            except: text = raw.decode('latin-1')
+        return {"ok": True, "text": text[:50000], "method": "text"}
+
+    return {"ok": False, "error": f"不支持的文件类型: {fname.split('.')[-1]}"}
+
 @app.delete("/api/lightrag/clear")
 async def clear():
     documents.clear(); graph_nodes.clear(); graph_edges.clear(); graph_adj.clear(); vectors.clear()

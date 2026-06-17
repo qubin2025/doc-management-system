@@ -168,6 +168,89 @@ AI服务未能响应(${errMsg.slice(0,60)})，已切换为本地关键词分析�
     finally { setReviewing(false); }
   };
 
+  // 批量审查所有文件
+  const startBatchReview = async () => {
+    if (files.length === 0) return;
+    setReviewing(true); setResults([]); setReport('');
+
+    let allResults: { section: string; status: 'pass'|'warn'|'fail'; standard: string; comment: string; file?: string }[] = [];
+    let batchReport = `【批量审查报告】\n共审查 ${files.length} 个文件\n\n`;
+
+    for (let fi = 0; fi < files.length; fi++) {
+      const f = files[fi];
+      setCurrentFileName(f.name);
+      toast(`正在审查: ${f.name} (${fi+1}/${files.length})`, 'info');
+
+      // 解析文件
+      let content = '';
+      try {
+        content = (await parseDocument(f)).slice(0, 40000);
+      } catch { content = `[无法解析: ${f.name}]`; }
+
+      if (!content || content.length < 10) {
+        batchReport += `## ${f.name}\n文件无法解析，已跳过\n\n`;
+        allResults.push({ section: f.name, status: 'warn' as const, standard: '—', comment: '文件无法解析' });
+        continue;
+      }
+
+      // AI审查当前文件
+      let localResults: typeof allResults = [];
+      let aiSuccess = false;
+      try {
+        const prompt = `你是AI审查专家。审查以下施工方案。
+
+项目: ${projectName}
+适用标准: ${STANDARDS.join(', ')}
+
+按JSON输出（只输出JSON）：
+[{"section":"章节名","status":"pass|warn|fail","standard":"标准条款","comment":"审查意见"}]
+
+文档内容(${f.name})：
+${content}`;
+
+        const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: aiModel });
+        try {
+          const parsed = JSON.parse(reply.replace(/```json\n?|\n?```/g, '').trim());
+          if (Array.isArray(parsed)) {
+            localResults = parsed.map((r: any) => ({ ...r, file: f.name }));
+            aiSuccess = true;
+          }
+        } catch {}
+      } catch {}
+
+      if (!aiSuccess) {
+        // 离线关键词检测
+        const checks = [
+          { kw: ['编制依据','标准','规范','DB','GB'], name: '编制依据' },
+          { kw: ['工程概况','概况'], name: '工程概况' },
+          { kw: ['施工部署','部署'], name: '施工部署' },
+          { kw: ['进度','工期'], name: '进度计划' },
+          { kw: ['质量','验收'], name: '质量控制' },
+          { kw: ['安全','防护'], name: '安全措施' },
+        ];
+        localResults = checks.map(c => ({
+          section: c.name, file: f.name,
+          status: c.kw.some(k=>content.includes(k)) ? 'pass' as const : 'fail' as const,
+          standard: '本地检测', comment: c.kw.some(k=>content.includes(k)) ? '包含相关内容' : '未检测到'
+        }));
+      }
+
+      allResults = [...allResults, ...localResults];
+      batchReport += `## ${f.name}\n审查${localResults.length}项，${localResults.filter(r=>r.status==='fail').length}项不合格\n`;
+      // 填充关键词摘要
+      const hasItems = localResults.filter(r => r.status !== 'fail').map(r => r.section);
+      const missingItems = localResults.filter(r => r.status === 'fail').map(r => r.section);
+      batchReport += `✅ ${hasItems.join('、') || '无'}\n`;
+      if (missingItems.length > 0) batchReport += `❌ ${missingItems.join('、')}\n`;
+      batchReport += `\n`;
+    }
+
+    setResults(allResults);
+    setReport(batchReport + `\n---\n总计${allResults.length}项，不合格${allResults.filter(r=>r.status==='fail').length}项`);
+    setReviewing(false);
+    toast(`批量审查完成: ${files.length}个文件`, 'success');
+  };
+
   const exportReport = (format: 'txt' | 'docx' = 'txt') => {
     if (format === 'docx') {
       const rows = results.map((r, i) => `<tr><td>${i + 1}</td><td>${r.section}</td><td style="color:${r.status === 'pass' ? 'green' : r.status === 'warn' ? 'orange' : 'red'}">${r.status === 'pass' ? '合规' : r.status === 'warn' ? '注意' : '不合格'}</td><td>${r.standard}</td><td>${r.comment}</td></tr>`).join('');
@@ -245,9 +328,12 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
               </div>
             )}
             <div className="flex items-center gap-3 mb-4"><FileText className="w-8 h-8 text-amber-500"/><div><p className="font-semibold">{currentFileName || files[0]?.name}</p><p className="text-xs text-gray-500">{files.length}个文件 · 适用标准: {STANDARDS.join(', ')}</p></div>
-              <button onClick={() => { setFiles([]); setFileContent(''); setCurrentFileName(''); }} className="ml-auto text-gray-400 hover:text-red-500"><X className="w-5 h-5"/></button>
+              <button onClick={() => { setFiles([]); setFileContent(''); setCurrentFileName(''); setResults([]); setReport(''); }} className="ml-auto text-gray-400 hover:text-red-500"><X className="w-5 h-5"/></button>
             </div>
-            <button onClick={startReview} className="w-full py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-medium flex items-center justify-center gap-2"><Search className="w-4 h-4"/>开始AI审查</button>
+            <div className="flex gap-2">
+              <button onClick={startReview} className="flex-1 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-medium flex items-center justify-center gap-2 text-sm"><Search className="w-4 h-4"/>审查当前文件</button>
+              {files.length > 1 && <button onClick={() => startBatchReview()} className="flex-1 py-3 bg-amber-600 text-white rounded-xl hover:bg-amber-700 font-medium flex items-center justify-center gap-2 text-sm"><Upload className="w-4 h-4"/>审查全部({files.length}个)</button>}
+            </div>
           </div>
         )}
 
