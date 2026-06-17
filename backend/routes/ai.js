@@ -4,12 +4,11 @@ import { sanitizeText } from '../utils/sanitize.js';
 import { getDb } from '../db.js';
 
 const router = Router();
-const DEEPSEEK_BASE = 'https://api.deepseek.com';
 
 // 简单内存限流
 const rateMap = new Map();
-const RATE_LIMIT = 20;       // 每分钟20次
-const RATE_WINDOW = 60000;   // 1分钟
+const RATE_LIMIT = 60;
+const RATE_WINDOW = 60000;
 
 function checkRate(userId) {
   const now = Date.now();
@@ -23,159 +22,139 @@ function checkRate(userId) {
   return true;
 }
 
-// 构建项目上下文
 function buildProjectContext(projectName, standard) {
   if (!projectName) return '';
   const db = getDb();
   const project = db.prepare('SELECT id FROM projects WHERE name = ?').get(projectName);
   if (!project) return '';
-
-  let query = 'SELECT doc_id, file_name, uploader, upload_time, version FROM documents WHERE project_id = ?';
-  const params = [project.id];
-  if (standard) { query += ' AND standard = ?'; params.push(standard); }
-  query += ' ORDER BY doc_id, upload_time DESC LIMIT 100';
-
-  const docs = db.prepare(query).all(...params);
-  if (docs.length === 0) return `当前项目"${projectName}"暂无上传资料。`;
-
-  let ctx = `当前项目"${projectName}"共有 ${docs.length} 条文档记录。\n`;
-  ctx += '文档列表：\n';
-  for (const d of docs) {
-    ctx += `  [${d.doc_id}] ${d.file_name} (上传者:${d.uploader}, 版本:${d.version}, 时间:${d.upload_time})\n`;
-  }
-  return sanitizeText(ctx);
+  const docs = db.prepare('SELECT filename FROM documents WHERE project_id = ? ORDER BY id DESC LIMIT 10').all(project.id);
+  return docs.map(d => d.filename).join(', ');
 }
 
-// AI 聊天
-router.post('/chat', requirePermission('can_use_ai'), async (req, res) => {
-  const { messages, context, projectName, standard } = req.body;
+// ========== 模型配置 ==========
+const MODELS = {
+  'deepseek-chat': {
+    name: 'DeepSeek-V3',
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    key: process.env.DEEPSEEK_API_KEY,
+    system: '你是一个全过程工程咨询管理平台的AI助手。',
+  },
+  'deepseek-r1': {
+    name: 'DeepSeek-R1',
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    key: process.env.DEEPSEEK_API_KEY,
+    system: '你是一个全过程工程咨询管理平台的AI助手，分析深入、推理严谨。',
+  },
+  'ollama-qwen': {
+    name: '本地Ollama(通义千问)',
+    endpoint: 'http://localhost:11434/v1/chat/completions',
+    key: 'ollama',
+    model: 'qwen2.5:7b',
+    system: '你是一个全过程工程咨询管理平台的AI助手。',
+  },
+  'ollama-llama': {
+    name: '本地Ollama(Llama3)',
+    endpoint: 'http://localhost:11434/v1/chat/completions',
+    key: 'ollama',
+    model: 'llama3.1:8b',
+    system: '你是一个全过程工程咨询管理平台的AI助手。',
+  },
+};
 
-  if (!req.user.permissions?.can_use_ai) {
-    return res.status(403).json({ error: 'AI 功能未授权' });
+// GET /api/ai/models — 列出可用模型
+router.get('/models', requireAuth, (req, res) => {
+  const available = Object.entries(MODELS).map(([id, cfg]) => {
+    let status = 'unknown';
+    if (id.startsWith('deepseek')) status = cfg.key ? 'online' : 'offline';
+    if (id.startsWith('ollama')) status = 'optional';
+    return { id, name: cfg.name, status };
+  });
+  res.json({ models: available });
+});
+
+// POST /api/ai/chat
+router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) => {
+  if (!checkRate(req.user?.id)) {
+    return res.status(429).json({ error: '请求过于频繁，请稍后' });
   }
 
-  if (!checkRate(req.user.id)) {
-    return res.status(429).json({ error: '请求过于频繁，请稍后重试' });
-  }
+  const { messages, context, projectName, standard, model: reqModel } = req.body;
+  const requestedModel = reqModel || 'deepseek-chat';
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({ error: 'AI 服务未配置' });
-  }
-
-  // 构建消息列表
-  const msgs = [
-    { role: 'system', content: '你是一个全过程工程咨询管理平台的AI助手。你帮助用户分析工程资料、项目进展、施工质量管理等。回答专业、简洁、准确。' },
-  ];
-
-  // 加入项目上下文
+  // Build context msgs
+  const ctxMsgs = [];
   const ctx = projectName ? buildProjectContext(projectName, standard) : (context || '');
   if (ctx) {
-    msgs.push({ role: 'system', content: `当前项目资料信息：\n${sanitizeText(ctx)}` });
+    ctxMsgs.push({ role: 'system', content: `当前项目资料信息：\n${sanitizeText(ctx)}` });
   }
+  const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
-  // 用户历史消息
-  if (messages && Array.isArray(messages)) {
-    msgs.push(...messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })));
-  }
+  // Try requested model, fallback to offline if all fail
+  tryChat(requestedModel, ctxMsgs, userMsgs)
+    .then(reply => res.json({ reply, model: requestedModel }))
+    .catch(async e1 => {
+      // 如果不是auto且primary失败, 尝试auto
+      if (requestedModel !== 'auto') {
+        try {
+          const reply = await tryChat('auto', ctxMsgs, userMsgs);
+          return res.json({ reply, model: 'auto', note: `自动降级，原模型不可用: ${e1.message?.slice(0,60)}` });
+        } catch (e2) {
+          return res.status(500).json({ error: `AI调用失败: ${e1.message?.slice(0,80)}` });
+        }
+      }
+      res.status(500).json({ error: `AI不可用: ${e1.message?.slice(0,80)}` });
+    });
+});
 
-  try {
-    const resp = await fetch(`${DEEPSEEK_BASE}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
+async function tryChat(modelId, ctxMsgs, userMsgs) {
+  // auto模式: 按优先级 DeepSeek->DeepSeekR1->OllamaQwen->OllamaLlama
+  const candidates = modelId === 'auto'
+    ? ['deepseek-chat', 'deepseek-r1', 'ollama-qwen', 'ollama-llama']
+    : [modelId];
+
+  for (const mid of candidates) {
+    const cfg = MODELS[mid];
+    if (!cfg) continue;
+    if (mid.startsWith('deepseek') && !cfg.key) continue;
+
+    try {
+      const msgs = [
+        { role: 'system', content: cfg.system },
+        ...ctxMsgs,
+        ...userMsgs,
+      ];
+      const body = {
+        model: cfg.model || 'deepseek-chat',
         messages: msgs,
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
+        max_tokens: 4096,
+        temperature: 0.3,
+      };
 
-    const data = await resp.json();
-    if (!resp.ok) {
-      console.error('DeepSeek API error:', data);
-      return res.status(502).json({ error: 'AI 服务异常：' + (data.error?.message || resp.status) });
+      const resp = await fetch(cfg.endpoint + '?t=' + Date.now(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${cfg.key}`,
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(60000),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.text().catch(() => '');
+        throw new Error(`${mid} HTTP ${resp.status}: ${err.slice(0, 80)}`);
+      }
+      const data = await resp.json();
+      const reply = data.choices?.[0]?.message?.content || '';
+      if (!reply) throw new Error(`${mid} 返回空内容`);
+      return reply;
+    } catch (e) {
+      // Continue to next candidate
+      if (modelId !== 'auto') throw e;
     }
-
-    const reply = data.choices?.[0]?.message?.content || '(无回复)';
-    res.json({ reply });
-  } catch (e) {
-    if (e.name === 'TimeoutError') {
-      res.status(504).json({ error: 'AI 响应超时' });
-    } else {
-      res.status(500).json({ error: 'AI 请求失败：' + e.message });
-    }
   }
-});
-
-// Embedding 向量化代理（通义 text-embedding-v1）
-router.post('/embed', requirePermission('can_use_ai'), async (req, res) => {
-  const { text } = req.body;
-  if (!text) return res.status(400).json({ error: '缺少text参数' });
-  const apiKey = process.env.QWEN_API_KEY || process.env.DASHSCOPE_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'Embedding服务未配置' });
-
-  try {
-    const resp = await fetch('https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'text-embedding-v1', input: { texts: [text] }, parameters: { text_type: 'document' } }),
-      signal: AbortSignal.timeout(15000),
-    });
-    const data = await resp.json();
-    if (!resp.ok) return res.status(502).json({ error: 'Embedding API错误: ' + JSON.stringify(data) });
-    res.json({ embedding: data.output?.embeddings?.[0]?.embedding || [] });
-  } catch (e) {
-    res.status(500).json({ error: 'Embedding请求失败: ' + e.message });
-  }
-});
-
-// 视觉模型代理（GLM-4V）
-router.post('/vision', requirePermission('can_use_ai'), async (req, res) => {
-  const { messages, images } = req.body;
-  const apiKey = process.env.ZHIPU_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: '视觉模型未配置' });
-
-  try {
-    const resp = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'glm-4v', messages, temperature: 0.7, max_tokens: 2000 }),
-      signal: AbortSignal.timeout(30000),
-    });
-    const data = await resp.json();
-    if (!resp.ok) return res.status(502).json({ error: '视觉模型错误' });
-    res.json({ reply: data.choices?.[0]?.message?.content || '' });
-  } catch (e) {
-    res.status(500).json({ error: '视觉模型请求失败: ' + e.message });
-  }
-});
-
-// 表单填写代理
-router.post('/fill-form', requirePermission('can_use_ai'), async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: '缺少prompt参数' });
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'AI服务未配置' });
-
-  try {
-    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 2000 }),
-      signal: AbortSignal.timeout(60000),
-    });
-    const data = await resp.json();
-    if (!resp.ok) return res.status(502).json({ error: 'AI服务异常' });
-    res.json({ reply: data.choices?.[0]?.message?.content || '' });
-  } catch (e) {
-    res.status(500).json({ error: '表单填写请求失败: ' + e.message });
-  }
-});
+  throw new Error('所有模型均不可用');
+}
 
 export default router;

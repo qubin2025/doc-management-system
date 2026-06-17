@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Upload, FileText, Loader, Download, Shield, X, GitBranch } from 'lucide-react';
 import * as api from '../data/api';
 import { parseDocument } from '../data/documentParser';
@@ -11,20 +11,34 @@ const ContractReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [file, setFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
+  const [aiModel, setAiModel] = useState('auto');
+  const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
+    {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
+    {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
+    {id:'ollama-qwen',name:'本地通义千问',status:'optional'},
+    {id:'ollama-llama',name:'本地Llama3',status:'optional'},
+  ]);
+  useEffect(() => {(async()=>{try{const t=localStorage.getItem('doc-system-token')||'';const r=await fetch('/api/ai/models',{headers:{'Content-Type':'application/json',Authorization:`Bearer ${t}`}});if(r.ok){const d=await r.json();setAvailableModels(d.models||availableModels);setAiStatus(d.models?.some((m:any)=>m.status==='online')?'online':'offline')}}catch{/*保持默认*/}})()},[]);
   const [clauses, setClauses] = useState<{ clause: string; risk: 'low'|'medium'|'high'; issue: string; suggestion: string }[]>([]);
   const [report, setReport] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (f: File) => {
-    setFile(f);
+    setFile(f); setFileContent(''); setClauses([]); setReport('');
     try {
       const text = await parseDocument(f);
+      if (!text || text.length < 10) {
+        toast('文件内容过短或无法解析，请检查文件格式', 'warning');
+        return;
+      }
       setFileContent(text.slice(0, 40000));
-    } catch (e: any) { toast('文件解析失败: ' + e.message, 'error'); }
+      toast(`已解析 ${text.length} 字符${text.length >= 40000 ? '(已达上限)' : ''}`, 'success');
+    } catch (e: any) { toast('文件解析失败: ' + e.message, 'error'); setFile(null); }
   };
 
   const startReview = async () => {
-    if (!fileContent) { toast('请先上传合同文件', 'warning'); return; }
+    if (!fileContent) { toast('请先上传有效合同文件并确保解析成功', 'warning'); return; }
     setReviewing(true); setClauses([]); setReport('');
     try {
       const prompt = `你是全过程工程咨询管理系统合同审查专家。请审查以下合同文件。
@@ -43,7 +57,7 @@ const ContractReview: React.FC<Props> = ({ projectName, onBack }) => {
 合同内容：
 ${fileContent}`;
 
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: 'auto' });
+      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: aiModel });
       try {
         const parsed = JSON.parse(reply.replace(/```json\n?|\n?```/g, '').trim());
         if (Array.isArray(parsed)) setClauses(parsed);
@@ -53,7 +67,7 @@ ${fileContent}`;
       const stats = clauses.length;
       const highRisk = clauses.filter(c => c.risk === 'high').length;
       const reportPrompt = `请基于以下合同审查结果生成综合审查报告。包括：总体评价、风险等级统计（高风险${highRisk}项/总计${stats}项）、主要风险点、修改建议汇总。项目: ${projectName}。`;
-      const rpt = await api.aiChat([{ role: 'user', content: reportPrompt }], '', { projectName, model: 'auto' });
+      const rpt = await api.aiChat([{ role: 'user', content: reportPrompt }], '', { projectName, model: aiModel });
       setReport(rpt);
     } catch (e: any) {
       const msg = e.message || '';
@@ -93,7 +107,11 @@ ${fileContent}`;
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-500 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-white"/></div>
-          <div><h1 className="text-lg font-bold text-gray-800">合同审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 关键条款提取 · 风险识别</p></div>
+          <div className="flex items-center gap-3">
+            <div><h1 className="text-lg font-bold text-gray-800">合同审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 关键条款提取 · 风险识别</p></div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded text-[10px] bg-white"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
+          </div>
         </div>
         {clauses.length > 0 && (
           <button onClick={async () => {
@@ -124,7 +142,7 @@ ${fileContent}`;
 
         {file && !reviewing && clauses.length === 0 && (
           <div className="bg-white rounded-xl border p-6">
-            <div className="flex items-center gap-3 mb-4"><FileText className="w-8 h-8 text-blue-500"/><div><p className="font-semibold">{file.name}</p><p className="text-xs text-gray-500">{(file.size/1024).toFixed(0)}KB · 重点审查: {RISK_CLAUSES.slice(0,4).join(', ')}等</p></div>
+            <div className="flex items-center gap-3 mb-4"><FileText className="w-8 h-8 text-blue-500"/><div><p className="font-semibold">{file.name}</p><p className="text-xs text-gray-500">{(file.size/1024).toFixed(0)}KB · 已解析{fileContent.length}字 · 审查{RISK_CLAUSES.slice(0,4).join(', ')}等</p></div>
               <button onClick={() => { setFile(null); setFileContent(''); }} className="ml-auto text-gray-400 hover:text-red-500"><X className="w-5 h-5"/></button>
             </div>
             <button onClick={startReview} className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-medium flex items-center justify-center gap-2">开始AI审查</button>

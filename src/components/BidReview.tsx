@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Upload, FileText, Loader, Download, AlertTriangle, CheckCircle, X, FileSearch, GitBranch } from 'lucide-react';
 import * as api from '../data/api';
 import { parseDocument } from '../data/documentParser';
@@ -11,6 +11,15 @@ const BidReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [file, setFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
+  const [aiModel, setAiModel] = useState('auto');
+  const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
+    {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
+    {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
+    {id:'ollama-qwen',name:'本地通义千问',status:'optional'},
+    {id:'ollama-llama',name:'本地Llama3',status:'optional'},
+  ]);
+  useEffect(() => {(async()=>{try{const t=localStorage.getItem('doc-system-token')||'';const r=await fetch('/api/ai/models',{headers:{'Content-Type':'application/json',Authorization:`Bearer ${t}`}});if(r.ok){const d=await r.json();setAvailableModels(d.models||availableModels);setAiStatus(d.models?.some((m:any)=>m.status==='online')?'online':'offline')}}catch{/*保持默认*/}})()},[]);
   const [items, setItems] = useState<{ item: string; status: 'pass'|'warn'|'fail'; issue: string; regulation: string }[]>([]);
   const [report, setReport] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -44,7 +53,7 @@ const BidReview: React.FC<Props> = ({ projectName, onBack }) => {
 文件内容：
 ${fileContent}`;
 
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: 'auto' });
+      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: aiModel });
       try {
         const parsed = JSON.parse(reply.replace(/```json\n?|\n?```/g, '').trim());
         if (Array.isArray(parsed)) setItems(parsed);
@@ -53,7 +62,7 @@ ${fileContent}`;
 
       const failCount = items.filter(i => i.status === 'fail').length;
       const reportPrompt = `请基于以下招投标文件审查结果生成综合审查报告。包括：总体合规评价、不合规项统计(${failCount}项)、修改建议、法规依据汇总。项目: ${projectName}。`;
-      const rpt = await api.aiChat([{ role: 'user', content: reportPrompt }], '', { projectName, model: 'auto' });
+      const rpt = await api.aiChat([{ role: 'user', content: reportPrompt }], '', { projectName, model: aiModel });
       setReport(rpt);
     } catch (e: any) {
       const msg = e.message || '';
@@ -93,7 +102,11 @@ ${fileContent}`;
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center"><FileSearch className="w-5 h-5 text-white"/></div>
-          <div><h1 className="text-lg font-bold text-gray-800">招投标文件审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 合规性检查 · 异常条款识别</p></div>
+          <div className="flex items-center gap-3">
+            <div><h1 className="text-lg font-bold text-gray-800">招投标文件审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 合规性检查 · 异常条款识别</p></div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded text-[10px] bg-white"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
+          </div>
         </div>
         {items.length > 0 && (
           <button onClick={async () => {

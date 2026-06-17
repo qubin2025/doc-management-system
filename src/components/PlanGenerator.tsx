@@ -35,6 +35,29 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
   const [useKb, setUseKb] = useState(true);
   const [useProjectData, setUseProjectData] = useState(true);
   const [projectDocs, setProjectDocs] = useState<{name:string;content:string}[]>([]);
+  const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
+  const [aiModel, setAiModel] = useState('auto');
+  const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
+    {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
+    {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
+    {id:'ollama-qwen',name:'本地通义千问',status:'optional'},
+    {id:'ollama-llama',name:'本地Llama3',status:'optional'},
+  ]);
+
+  // 异步同步实际AI状态
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = localStorage.getItem('doc-system-token') || '';
+        const r = await fetch('/api/ai/models', { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+        if (r.ok) {
+          const d = await r.json();
+          setAvailableModels(d.models || availableModels);
+          setAiStatus(d.models?.some((m:any)=>m.status==='online') ? 'online' : 'offline');
+        }
+      } catch { /* 保持默认在线 + 全模型 */ }
+    })();
+  }, []);
 
   // 自动从项目数据填充参数
   useEffect(() => {
@@ -116,7 +139,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
         const prompt = isAutoChapter
           ? `你是全过程工程咨询AI。请为"${planType}"方案生成【${ch}】章节。${context}。要求：1.直接引用标准条文编号和内容 2.输出${wordCount.min}-${wordCount.max}字 3.分条详述每条约50-100字 4.只输出正文，不要标题。`
           : `你是全过程工程咨询AI。请为"${planType}"方案生成【${ch}】章节。${context}。要求：1.输出${wordCount.min}-${wordCount.max}字详细内容 2.包含技术参数和规范要求 3.分条列出要点。只输出正文，不要标题。`;
-        const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: 'auto' });
+        const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: aiModel });
         localChapters[i].content = reply;
         setChapters(prev => prev.map((c, j) => j === i ? { ...c, content: reply, loading: false } : c));
       } catch (e: any) {
@@ -161,7 +184,15 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center"><FileText className="w-5 h-5 text-white"/></div>
-          <div><h1 className="text-lg font-bold text-gray-800">AI方案生成</h1><p className="text-xs text-gray-500">项目: {projectName}</p></div>
+          <div className="flex items-center gap-3">
+            <div><h1 className="text-lg font-bold text-gray-800">AI方案生成</h1><p className="text-xs text-gray-500">项目: {projectName}</p></div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus === 'online' ? 'AI大模型在线' : aiStatus === 'offline' ? '离线模式（使用本地模板）' : '检测中...'}>
+              <span className={`w-2 h-2 rounded-full ${aiStatus === 'online' ? 'bg-green-500 animate-pulse' : aiStatus === 'offline' ? 'bg-amber-500' : 'bg-gray-400 animate-pulse'}`} />
+              <span className={`text-[10px] font-medium ${aiStatus === 'online' ? 'text-green-600' : aiStatus === 'offline' ? 'text-amber-600' : 'text-gray-400'}`}>
+                {aiStatus === 'online' ? 'AI在线' : aiStatus === 'offline' ? '离线模式' : '检测中'}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {allDone && <button onClick={exportPDF} className="px-3 py-1.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100"><Printer className="w-3.5 h-3.5"/>PDF</button>}
@@ -179,6 +210,17 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
           <div className="bg-white rounded-xl border p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-green-500"/>AI方案生成设置</h3>
             <div className="space-y-4">
+              {/* 大模型选择 */}
+              <div className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
+                <label className="text-xs font-medium text-indigo-700 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5"/>AI引擎</label>
+                <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-indigo-200 rounded text-xs bg-white w-40">
+                  <option value="auto">自动 (推荐)</option>
+                  {availableModels.map(m => (
+                    <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* 方案类型 */}
               <div><label className="block text-xs font-medium text-gray-600 mb-1">方案类型</label>
                 <select value={planType} onChange={e => setPlanType(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">{PLAN_TEMPLATES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
