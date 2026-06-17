@@ -189,6 +189,7 @@ export async function aiChat(
         context: context || '',
         projectName: opts?.projectName || '',
         standard: opts?.standard || '',
+        model: opts?.model || 'auto',
       }), headers: headers(),
     });
     if (res.ok) {

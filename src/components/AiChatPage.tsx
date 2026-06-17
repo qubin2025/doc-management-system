@@ -4,7 +4,7 @@ import * as api from '../data/api';
 import { ChatMessage } from '../types';
 import { ragQuery, getIndexStats } from '../data/ragService';
 
-const MODELS = ['自动选择', 'deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-reasoner', 'gpt-4o', 'glm-4v', 'qwen-vl-max'];
+const MODELS = ['自动选择', 'deepseek-chat', 'deepseek-r1', 'ollama-qwen', 'ollama-llama'];
 const REPORT_TEMPLATES: Record<string, string> = {
   '自由对话': '',
   '项目进度报告': '请按以下格式输出：项目进度报告\n• 项目名称\n• 报告周期\n• 总体进度\n• 已完成里程碑\n• 进行中工作\n• 风险与问题\n• 下期计划',
@@ -176,7 +176,12 @@ const AiChatPage: React.FC<{
     setFiles([]);
     setLoading(true);
     try { await doChat(q, id, [{ role: 'user', content: q }]); }
-    catch (e: any) { setSessions(prev => prev.map(s => s.id === id ? { ...s, messages: [...s.messages, { role: 'assistant', content: '请求失败: ' + (e.message || '') }] } : s)); }
+    catch (e: any) {
+      const msg = e.message || '';
+      const hint = msg.includes('Failed to fetch') ? ' [后端未运行或网络不通，请检查 localhost:3000]' :
+                   msg.includes('401') ? ' [登录已过期，请重新登录]' : '';
+      setSessions(prev => prev.map(s => s.id === id ? { ...s, messages: [...s.messages, { role: 'assistant', content: `AI请求失败: ${msg}${hint}\n\n请在 backend/.env 中确认 DEEPSEEK_API_KEY 已正确配置。` }] } : s));
+    }
     finally { setLoading(false); }
   };
 
