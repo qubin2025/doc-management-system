@@ -16,20 +16,48 @@ logger = logging.getLogger("paddleparser")
 app = FastAPI(title="PaddleOCR Document Parser v2.5", version="2.5.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# 延迟初始化(避免启动卡死)
+# 延迟初始化(优先EasyOCR→PaddleOCR→tesseract)
 _ocr = None
+_ocr_engine = None  # 'easyocr' | 'paddleocr' | 'tesseract' | None
 
 def get_ocr():
-    global _ocr
-    if _ocr is None:
-        try:
-            from paddleocr import PaddleOCR
-            _ocr = PaddleOCR(lang='ch', use_doc_orientation_classify=False, use_doc_unwarping=False)
-            logger.info("PaddleOCR 初始化完成")
-        except Exception as e:
-            logger.warning(f"PaddleOCR 初始化失败: {e}，OCR功能将以降级模式运行")
-            _ocr = False
-    return _ocr if _ocr is not False else None
+    global _ocr, _ocr_engine
+    if _ocr is not None:
+        return _ocr if _ocr is not False else None
+
+    # 1) EasyOCR（最稳定，模型内置pip包）
+    try:
+        import easyocr
+        _ocr = easyocr.Reader(['ch_sim', 'en'], gpu=False, verbose=False)
+        _ocr_engine = 'easyocr'
+        logger.info("EasyOCR 初始化完成 (中文+英文)")
+        return _ocr
+    except Exception as e:
+        logger.warning(f"EasyOCR失败: {e}")
+
+    # 2) PaddleOCR（需要联网下载模型）
+    try:
+        os.environ.setdefault('PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK', 'True')
+        from paddleocr import PaddleOCR
+        _ocr = PaddleOCR(lang='ch', use_doc_orientation_classify=False, use_doc_unwarping=False)
+        _ocr_engine = 'paddleocr'
+        logger.info("PaddleOCR 初始化完成")
+        return _ocr
+    except Exception as e:
+        logger.warning(f"PaddleOCR失败: {e}")
+
+    # 3) Tesseract（最后降级）
+    try:
+        import pytesseract
+        _ocr = pytesseract
+        _ocr_engine = 'tesseract'
+        logger.info("Tesseract OCR 可用")
+        return _ocr
+    except Exception as e:
+        logger.warning(f"Tesseract失败: {e}")
+
+    _ocr = False
+    return None
 
 # ========== 数据模型 ==========
 class ParseRequest(BaseModel):
@@ -91,6 +119,7 @@ def parse_pdf_ocr(raw: bytes, max_chars: int = 50000) -> tuple[str, int]:
     ocr = get_ocr()
     if not ocr: return "", 0
     from PIL import Image
+    import numpy as np
     import fitz  # pymupdf
     text_parts = []
     ocr_pages = 0
@@ -100,17 +129,25 @@ def parse_pdf_ocr(raw: bytes, max_chars: int = 50000) -> tuple[str, int]:
         doc = fitz.open(tmp)
         for page_num in range(min(len(doc), 50)):
             page = doc[page_num]
-            # 先尝试提取文字
             page_text = page.get_text()
             if page_text.strip() and len(page_text) > 100:
                 text_parts.append(page_text)
             else:
-                # 文字层空 → OCR
                 pix = page.get_pixmap(dpi=200)
-                img = Image.open(io.BytesIO(pix.tobytes("png")))
-                result = ocr.ocr(np.array(img), cls=True)
-                if result and result[0]:
-                    ocr_text = '\n'.join(line[1][0] for line in result[0] if line)
+                img = Image.open(io.BytesIO(pix.tobytes("png"))).convert('RGB')
+                img_arr = np.array(img)
+                # 引擎适配
+                if _ocr_engine == 'easyocr':
+                    results = ocr.readtext(img_arr)
+                    ocr_text = '\n'.join(text for _, text, conf in results if conf > 0.3)
+                elif _ocr_engine == 'paddleocr':
+                    result = ocr.ocr(img_arr, cls=True)
+                    ocr_text = '\n'.join(line[1][0] for line in result[0] if line) if result and result[0] else ''
+                elif _ocr_engine == 'tesseract':
+                    ocr_text = ocr.image_to_string(img, lang='chi_sim+eng')
+                else:
+                    ocr_text = ''
+                if ocr_text.strip():
                     text_parts.append(ocr_text)
                     ocr_pages += 1
             if sum(len(t) for t in text_parts) >= max_chars: break
@@ -180,15 +217,23 @@ def parse_xls_text(raw: bytes, max_chars: int = 50000) -> str:
     finally: os.unlink(tmp)
 
 def parse_image_ocr(raw: bytes) -> str:
-    """OCR识别图片"""
+    """OCR识别图片(自动选择引擎)"""
     ocr = get_ocr()
     if not ocr: return ""
     from PIL import Image
     import numpy as np
-    img = Image.open(io.BytesIO(raw))
-    result = ocr.ocr(np.array(img), cls=True)
-    if result and result[0]:
-        return '\n'.join(line[1][0] for line in result[0] if line)
+    img = Image.open(io.BytesIO(raw)).convert('RGB')
+    img_arr = np.array(img)
+
+    if _ocr_engine == 'easyocr':
+        results = ocr.readtext(img_arr)
+        return '\n'.join(text for _, text, conf in results if conf > 0.3)
+    elif _ocr_engine == 'paddleocr':
+        result = ocr.ocr(img_arr, cls=True)
+        if result and result[0]:
+            return '\n'.join(line[1][0] for line in result[0] if line)
+    elif _ocr_engine == 'tesseract':
+        return ocr.image_to_string(img, lang='chi_sim+eng')
     return ""
 
 def _table_to_text(table: list) -> str:
@@ -209,6 +254,7 @@ async def health():
         "status": "ok",
         "version": "2.5.0",
         "ocr_available": ocr is not None,
+        "ocr_engine": _ocr_engine or "none",
         "formats": ["pdf","doc","docx","xls","xlsx","png","jpg","jpeg","bmp","tiff","txt","csv"],
     }
 
