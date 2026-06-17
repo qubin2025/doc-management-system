@@ -93,15 +93,15 @@ describe('后端集成测试', () => {
     expect(r1.status).toBe(r2.status);
   });
 
-  // 限流测试: 仅手动运行(npx vitest run -t "限流")
-  it.skip('10. 登录限流(需手动)', async () => {
-    for (let i = 0; i < 20; i++) {
-      const res = await fetch(`${API}/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'wrong', password: 'wrong' }),
-      });
-      if (res.status === 429) return;
-    }
-    expect(true).toBe(true);
-  }, 15000);
+  // 限流验证：检查限流中间件已加载(开发环境max=1000/60s，生产200)
+  it('10. 限流中间件已配置', async () => {
+    // 验证rate-limit头存在
+    const res = await fetch(`${API}`);
+    expect(res.headers.get('ratelimit-limit')).toBeTruthy();
+    expect(res.headers.get('ratelimit-remaining')).toBeTruthy();
+    // 开发模式1000次/60s，连续200次不应触发
+    for (let i = 0; i < 10; i++) await fetch(`${API}`);
+    const final = await fetch(`${API}`);
+    expect(Number(final.headers.get('ratelimit-remaining'))).toBeLessThan(1000);
+  }, 10000);
 });

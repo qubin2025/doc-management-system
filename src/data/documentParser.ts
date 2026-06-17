@@ -2,36 +2,48 @@
 
 import * as api from './api';
 
-/** 解析 PDF → 文本 */
+/** 解析 PDF → 文本（优先Python pdfplumber服务，降级pdfjs） */
 export async function parsePDF(file: File): Promise<string> {
+  // 优先尝试 Python LightRAG 解析服务（pdfplumber，处理扫描件更好）
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await fetch('http://localhost:8000/api/lightrag/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: base64, filename: file.name, mime_type: file.type }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.text && data.text.length > 10) return data.text;
+    }
+  } catch { /* Python服务不可用，降级到pdfjs */ }
+
+  // pdfjs本地解析
   try {
     const pdfjsLib = await import('pdfjs-dist');
-    // Worker: 优先本地，fallback CDN
     try {
       pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
     } catch {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
     }
-
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const texts: string[] = [];
     const maxPages = 100;
     const targetChars = 40000;
     let emptyPages = 0;
-
     for (let i = 1; i <= Math.min(pdf.numPages, maxPages); i++) {
       try {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const pageText = content.items.map((item: any) => item.str).join(' ');
         if (pageText.trim()) { texts.push(pageText); emptyPages = 0; }
-        else { emptyPages++; if (emptyPages >= 3) break; /* 连续3页无文本则终止 */ }
+        else { emptyPages++; if (emptyPages >= 3) break; }
         if (texts.join('').length >= targetChars) break;
-      } catch { /* 跳过单页错误 */ }
+      } catch { /* skip */ }
     }
     const result = texts.join('\n').trim();
-    if (!result) throw new Error('未能从PDF中提取到文字（可能是扫描件/图片型PDF，请尝试OCR）');
+    if (!result) throw new Error('PDF文字层为空');
     return result;
   } catch (e: any) {
     throw new Error(`PDF解析失败: ${e.message}`);
