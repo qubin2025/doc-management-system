@@ -148,7 +148,7 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
             <div className="bg-white rounded-xl border p-12 text-center text-gray-400">
               <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm">知识库为空</p>
-              <p className="text-xs mt-1">上传文件后自动索引到知识库，可在此搜索</p>
+              <p className="text-xs mt-1">在项目资料管理页上传文件后自动索引至此处</p>
             </div>
           ) : (
             results.map((doc, i) => (

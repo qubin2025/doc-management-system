@@ -34,6 +34,8 @@ const ContractReview: React.FC<Props> = ({ projectName, onBack }) => {
       }
       setFileContent(text.slice(0, 40000));
       toast(`已解析 ${text.length} 字符${text.length >= 40000 ? '(已达上限)' : ''}`, 'success');
+      // 索引到知识库
+      import('../data/ragService').then(m => m.indexDocument(f, projectName).catch(() => {}));
     } catch (e: any) { toast('文件解析失败: ' + e.message, 'error'); setFile(null); }
   };
 

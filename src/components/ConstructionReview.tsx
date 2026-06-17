@@ -47,6 +47,7 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
       try {
         const text = await parseDocument(f);
         setFileContent(text.slice(0, 40000));
+        import('../data/ragService').then(m => m.indexDocument(f, projectName).catch(() => {}));
       } catch (e: any) { toast('文件解析失败: ' + e.message, 'error'); }
     }
   };
@@ -58,6 +59,7 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
     try {
       const text = await parseDocument(f);
       setFileContent(text.slice(0, 40000));
+      import('../data/ragService').then(m => m.indexDocument(f, projectName).catch(() => {}));
     } catch (e: any) { toast('文件解析失败: ' + e.message, 'error'); }
   };
 
