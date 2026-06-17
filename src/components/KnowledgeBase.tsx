@@ -9,8 +9,9 @@ interface Props { onBack: () => void; }
 
 const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [search, setSearch] = useState('');
-  const [semanticSearch, setSemanticSearch] = useState(false);
+  const [searchMode, setSearchMode] = useState<'fulltext'|'semantic'|'hybrid'>('fulltext');
   const [results, setResults] = useState<VectorDoc[]>([]);
+  const [graphResults, setGraphResults] = useState<{nodes:any[];edges:any[]}|null>(null);
   const [loading, setLoading] = useState(false);
   const [allDocs, setAllDocs] = useState<VectorDoc[]>([]);
 
@@ -31,18 +32,35 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
 
   const handleSearch = async () => {
     if (!search.trim()) return;
-    setLoading(true);
+    setLoading(true); setGraphResults(null);
     try {
-      if (semanticSearch) {
-        // 语义搜索
+      if (searchMode === 'hybrid') {
+        // 混合检索：优先LightRAG，降级本地
+        try {
+          const r = await api.lightragSearch(search.trim(), 10, 'hybrid');
+          if (r?.results) {
+            const docs = r.results.filter((x:any)=>x.type!=='graph').map((x:any) => ({
+              id: x.source||'', text: x.content||'', embedding: [0], metadata: {fileName:x.source||'', source:x.source||''}, score: x.score||0
+            })) as any;
+            setResults(docs);
+            const g = r.results.find((x:any)=>x.type==='graph');
+            if (g) setGraphResults(g);
+            return;
+          }
+        } catch {}
+        // 降级：本地全文+向量融合
+        const fulltext: VectorDoc[] = lunrIdx ? lunrIdx.search(search.trim()).map((h:any)=>allDocs.find(d=>d.id===h.ref)!).filter(Boolean) : [];
         const qEmbed = await api.embedText(search.trim(), 'query');
-        const hits = vectorStore.searchAll(qEmbed, 10);
-        setResults(hits);
+        const vecHits = vectorStore.searchAll(qEmbed, 10);
+        const ids = new Set<string>(); const merged: VectorDoc[] = [];
+        for (const d of [...fulltext.slice(0,5), ...vecHits]) { if(!ids.has(d.id)){ids.add(d.id);merged.push(d);} }
+        setResults(merged.slice(0,15));
+      } else if (searchMode === 'semantic') {
+        const qEmbed = await api.embedText(search.trim(), 'query');
+        setResults(vectorStore.searchAll(qEmbed, 10));
       } else {
-        // 全文搜索
         if (!lunrIdx) { setResults([]); setLoading(false); return; }
-        const hits = lunrIdx.search(search.trim());
-        setResults(hits.map((h: any) => allDocs.find(d => d.id === h.ref)!).filter(Boolean));
+        setResults(lunrIdx.search(search.trim()).map((h: any) => allDocs.find(d => d.id === h.ref)!).filter(Boolean));
       }
     } catch (e: any) { toast('搜索失败: ' + e.message, 'error'); }
     finally { setLoading(false); }
@@ -90,11 +108,14 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
               placeholder="输入关键词搜索..." className="w-full pl-9 pr-8 py-2 border rounded-lg text-sm" />
             {search && <button onClick={handleClear} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><X className="w-4 h-4" /></button>}
           </div>
-          <button onClick={() => setSemanticSearch(!semanticSearch)}
-            className={`px-3 py-1.5 text-xs rounded-lg border ${semanticSearch ? 'bg-purple-50 border-purple-200 text-purple-600' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
-            title="语义搜索使用AI向量匹配，更精准但较慢">
-            <Sparkles className="w-3.5 h-3.5 inline mr-1" />语义
-          </button>
+          <div className="flex rounded-lg border overflow-hidden text-xs">
+            {(['fulltext','semantic','hybrid'] as const).map(m => (
+              <button key={m} onClick={() => setSearchMode(m)}
+                className={`px-2.5 py-1.5 ${searchMode===m?'bg-blue-500 text-white':'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                {m==='fulltext'?'全文':m==='semantic'?<><Sparkles className="w-3 h-3 inline mr-0.5"/>语义</>:<><Sparkles className="w-3 h-3 inline mr-0.5"/>混合</>}
+              </button>
+            ))}
+          </div>
           <button onClick={handleSearch} disabled={loading} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : '搜索'}
           </button>
@@ -109,9 +130,21 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
           ))}
         </div>
 
+        {/* 图谱搜索结果 */}
+        {graphResults && graphResults.nodes && graphResults.nodes.length > 0 && (
+          <div className="bg-white rounded-xl border p-4 mb-4">
+            <h3 className="text-xs font-semibold text-purple-600 mb-2">知识图谱匹配 ({graphResults.nodes.length}节点 · {graphResults.edges?.length||0}关系)</h3>
+            <div className="flex flex-wrap gap-2">
+              {graphResults.nodes.map((n:any) => (
+                <span key={n.id} className={`px-2 py-0.5 rounded-full text-[10px] ${n.type==='STANDARD'?'bg-blue-50 text-blue-600':n.type==='LOCATION'?'bg-green-50 text-green-600':'bg-gray-100 text-gray-600'}`}>{n.label}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 搜索结果 */}
         <div className="space-y-3">
-          {results.length === 0 && !loading ? (
+          {(results.length === 0 && !graphResults) || (results.length === 0 && searchMode!=='hybrid') ? (
             <div className="bg-white rounded-xl border p-12 text-center text-gray-400">
               <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm">知识库为空</p>

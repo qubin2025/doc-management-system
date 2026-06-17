@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Upload, FileText, Loader, Download, Shield, AlertTriangle, CheckCircle, X, Search, GitBranch, BookOpen } from 'lucide-react';
 import * as api from '../data/api';
 import { parseDocument } from '../data/documentParser';
@@ -11,6 +11,28 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [files, setFiles] = useState<File[]>([]);
   const [fileContent, setFileContent] = useState('');
   const [currentFileName, setCurrentFileName] = useState('');
+  const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
+  const [aiModel, setAiModel] = useState('auto');
+  const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
+    {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
+    {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
+    {id:'ollama-qwen',name:'本地通义千问',status:'optional'},
+    {id:'ollama-llama',name:'本地Llama3',status:'optional'},
+  ]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = localStorage.getItem('doc-system-token') || '';
+        const r = await fetch('/api/ai/models', { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+        if (r.ok) {
+          const d = await r.json();
+          setAvailableModels(d.models || availableModels);
+          setAiStatus(d.models?.some((m:any)=>m.status==='online') ? 'online' : 'offline');
+        }
+      } catch { /*保持默认*/ }
+    })();
+  }, []);
   const [reviewing, setReviewing] = useState(false);
   const [results, setResults] = useState<{ section: string; status: 'pass'|'warn'|'fail'; standard: string; comment: string }[]>([]);
   const [report, setReport] = useState('');
@@ -47,10 +69,18 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
     setReviewing(true);
     setResults([]); setReport(''); setRagClauses([]);
 
-    // Step 0: RAG检索相关标准条款
+    // 本地变量，避免React异步state竞态
+    let localResults: { section: string; status: 'pass'|'warn'|'fail'; standard: string; comment: string }[] = [];
+    let localReport = '';
+    let aiSuccess = false;
+
+    // Step 0: RAG检索
     try {
-      const ragPrompt = `请从以下标准规范中，提取与施工方案内容最相关的10条标准条款。只输出条款编号和条款内容，每条一行。格式："条文X.X: 内容"。\n\n方案内容:\n${fileContent.slice(0, 6000)}`;
-      const ragReply = await api.aiChat([{ role: 'user', content: ragPrompt }], '', { projectName, model: 'auto' });
+      const ragPrompt = `请列出与以下施工方案最相关的10条标准条款编号和内容。每行一条，格式"条文X: 内容"。
+
+方案内容:
+${fileContent.slice(0, 6000)}`;
+      const ragReply = await api.aiChat([{ role: 'user', content: ragPrompt }], '', { projectName, model: aiModel });
       const parsed = ragReply.split('\n').filter(l => l.match(/条文|条款|第.*条|\d+\.\d+/)).map(l => {
         const m = l.match(/(.+?)[:：](.+)/);
         return { clause: (m?.[1] || l).trim(), standard: 'DB11/T695-2025', relevance: (m?.[2] || '').trim().slice(0, 100) };
@@ -58,37 +88,48 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
       if (parsed.length > 0) setRagClauses(parsed);
     } catch {}
 
+    // 核心审查 + 报告
     try {
-      const prompt = `你是全过程工程咨询管理系统AI审查专家。请审查以下施工方案/施工组织设计文件。
-项目: ${projectName} | 适用标准: ${STANDARDS.join(', ')}
+      // 第一步：AI逐章审查
+      const reviewPrompt = `你是全过程工程咨询管理系统AI审查专家。请审查以下施工方案/施工组织设计文件。
+
+项目: ${projectName}
+适用标准: ${STANDARDS.join(', ')}
 
 审查要求：
-1. 逐章检查是否符合上述标准规范要求
-2. 标记缺失的关键章节（如缺编制依据、施工部署、安全措施等）
+1. 逐章检查是否符合上述标准规范
+2. 标记缺失的关键章节
 3. 检查标准条款引用是否正确
-4. 识别技术方案中的风险点
+4. 识别风险点
 
-请按以下JSON格式输出（只输出JSON，不要其他文字）：
-[{"section":"章节名","status":"pass|warn|fail","standard":"引用的标准条款","comment":"审查意见"}]
+请按JSON格式输出（只输出JSON）：
+[{"section":"章节名","status":"pass|warn|fail","standard":"标准条款","comment":"审查意见"}]
 
 文档内容：
 ${fileContent}`;
 
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { projectName, model: 'auto' });
+      const reply = await api.aiChat([{ role: 'user', content: reviewPrompt }], '', { projectName, model: aiModel });
       try {
         const parsed = JSON.parse(reply.replace(/```json\n?|\n?```/g, '').trim());
-        if (Array.isArray(parsed)) setResults(parsed);
-        else throw new Error('格式错误');
-      } catch { setResults([{ section: '全文', status: 'warn', standard: '—', comment: reply.slice(0, 300) }]); }
+        if (Array.isArray(parsed)) localResults = parsed;
+        else localResults = [{ section: '全文', status: 'warn', standard: '—', comment: reply.slice(0, 300) }];
+      } catch { localResults = [{ section: '全文', status: 'warn', standard: '—', comment: reply.slice(0, 300) }]; }
+      setResults(localResults);
+      aiSuccess = true;
 
-      // 生成综合报告
-      const reportPrompt = `请基于以下审查结果生成一份施工方案审查综合报告。包括：总体评价、主要问题、修改建议、标准合规率。项目: ${projectName}。审查结果: ${JSON.stringify(results)}`;
-      const rpt = await api.aiChat([{ role: 'user', content: reportPrompt }], '', { projectName, model: 'auto' });
+      // 第二步：基于实际审查结果生成报告（使用本地变量，不依赖React state）
+      const rptPrompt = `请基于以下审查结果生成施工方案审查综合报告。包含：总体评价、主要问题、修改建议、标准合规率。
+
+项目: ${projectName}
+审查结果: ${JSON.stringify(localResults)}`;
+      const rpt = await api.aiChat([{ role: 'user', content: rptPrompt }], '', { projectName, model: aiModel });
+      localReport = rpt;
       setReport(rpt);
     } catch (e: any) {
-      const msg = e.message || '';
-      if (msg.includes('fetch') || msg.includes('Failed to fetch')) {
-        // Fallback: 本地分析（不依赖AI）
+      const errMsg = e.message || '';
+      console.warn('AI审查异常:', errMsg);
+      if (!aiSuccess) {
+        // AI完全不可用 → 离线关键词分析
         const hasKeywords: string[] = [];
         const missingKeywords: string[] = [];
         const checks = [
@@ -103,17 +144,26 @@ ${fileContent}`;
           if (c.kw.some(k => fileContent.includes(k))) hasKeywords.push(c.name);
           else missingKeywords.push(c.name);
         });
-        const localResults = [
-          ...hasKeywords.map(k => ({ section: k, status: 'pass' as const, standard: '本地关键词检测', comment: `方案中包含"${k}"相关内容` })),
-          ...missingKeywords.map(k => ({ section: k, status: 'fail' as const, standard: '本地关键词检测', comment: `方案中未检测到"${k}"关键词，建议补充` })),
+        localResults = [
+          ...hasKeywords.map(k => ({ section: k, status: 'pass' as const, standard: '本地检测', comment: `方案中包含"${k}"相关内容` })),
+          ...missingKeywords.map(k => ({ section: k, status: 'fail' as const, standard: '本地检测', comment: `方案中未检测到"${k}"关键词，建议补充` })),
         ];
         setResults(localResults);
-        setReport(`【离线分析模式】\nAI服务未配置或不可用。以下是基于关键词检测的方案完整性分析：\n\n✅ 包含章节: ${hasKeywords.join('、') || '无'}\n❌ 缺失章节: ${missingKeywords.join('、') || '无'}\n\n💡 如需AI智能审查，请在 backend/.env 中配置有效的 DEEPSEEK_API_KEY 并重启后端。`);
-        toast('AI不可用，已切换为本地关键词分析', 'warning');
-        setReviewing(false);
-        return;
+        localReport = `【离线关键词分析】
+AI服务未能响应(${errMsg.slice(0,60)})，已切换为本地关键词分析：
+
+✅ 包含: ${hasKeywords.join('、') || '无'}
+❌ 缺失: ${missingKeywords.join('、') || '无'}
+
+💡 提示: AI当前可用但本次请求失败，请重试或检查网络。`;
+        setReport(localReport);
+        toast('AI本次调用失败，已切换本地分析', 'warning');
+      } else {
+        // AI审查成功但报告生成失败 → 保留审查结果
+        localReport = `【AI审查完成，报告生成失败】\n${errMsg}\n\n审查结果已正常显示，请查看上方逐章审查详情。`;
+        setReport(localReport);
+        toast('审查完成，报告生成失败', 'warning');
       }
-      toast('审查失败: ' + (msg || '请重试'), 'error');
     }
     finally { setReviewing(false); }
   };
@@ -142,7 +192,17 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-white"/></div>
-          <div><h1 className="text-lg font-bold text-gray-800">施工组织设计审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 含专项方案审查</p></div>
+          <div className="flex items-center gap-2">
+            <div><h1 className="text-lg font-bold text-gray-800">施工组织设计审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 含专项方案审查</p></div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线关键词分析':'检测中'}>
+              <span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/>
+              <span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span>
+            </div>
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded text-[10px] bg-white">
+              <option value="auto">自动</option>
+              {availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}
+            </select>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {results.length > 0 && (

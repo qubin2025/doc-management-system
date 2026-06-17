@@ -1,7 +1,7 @@
 fastapi>=0.100.0
 uvicorn>=0.23.0
 python-multipart>=0.0.6
-# 可选增强
-# lightrag-hku  # RAG引擎
-# lancedb       # 向量存储
-# unstructured[pdf,docx,xlsx]  # 专业文档解析
+requests>=2.28.0
+numpy>=1.24.0
+pydantic>=2.0.0
+pdfplumber>=0.9.0  # 轻量PDF解析（替代unstructured）

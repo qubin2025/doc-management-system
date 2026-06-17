@@ -2,47 +2,58 @@
 
 import * as api from './api';
 
-/** 解析 PDF → 文本（前20页，确保稳定） */
+/** 解析 PDF → 文本 */
 export async function parsePDF(file: File): Promise<string> {
   try {
     const pdfjsLib = await import('pdfjs-dist');
-    // 使用本地 worker，避免 CDN 跨域/网络问题
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url,
-    ).toString();
+    // Worker: 优先本地，fallback CDN
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    } catch {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const texts: string[] = [];
-    const maxPages = 100; // 上限100页，防内存溢出
-    const targetChars = 40000; // 目标提取4万字符，足够AI审查
+    const maxPages = 100;
+    const targetChars = 40000;
+    let emptyPages = 0;
 
     for (let i = 1; i <= Math.min(pdf.numPages, maxPages); i++) {
       try {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const pageText = content.items.map((item: any) => item.str).join(' ');
-        if (pageText.trim()) texts.push(pageText);
-        // 提前终止：已提取足够文本
+        if (pageText.trim()) { texts.push(pageText); emptyPages = 0; }
+        else { emptyPages++; if (emptyPages >= 3) break; /* 连续3页无文本则终止 */ }
         if (texts.join('').length >= targetChars) break;
-      } catch { /* 跳过无法解析的页面 */ }
+      } catch { /* 跳过单页错误 */ }
     }
-    return texts.join('\n').trim() || '(PDF文本提取为空)';
+    const result = texts.join('\n').trim();
+    if (!result) throw new Error('未能从PDF中提取到文字（可能是扫描件/图片型PDF，请尝试OCR）');
+    return result;
   } catch (e: any) {
     throw new Error(`PDF解析失败: ${e.message}`);
   }
 }
 
-/** 解析 Word (.docx) → 文本 */
+/** 解析 Word (.docx) → 文本，mammoth仅支持.docx */
 export async function parseWord(file: File): Promise<string> {
+  const isDoc = file.name.toLowerCase().endsWith('.doc') && !file.name.toLowerCase().endsWith('.docx');
+  if (isDoc) {
+    throw new Error('不支持旧版 .doc 格式，请用Word打开后另存为 .docx 再上传');
+  }
   try {
     const mammoth = await import('mammoth');
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.extractRawText({ arrayBuffer });
-    return result.value.trim();
+    const text = result.value.trim();
+    if (!text) throw new Error('Word文档内容为空或无法提取文字');
+    return text;
   } catch (e: any) {
-    throw new Error(`Word解析失败: ${e.message}`);
+    if (e.message.includes('不支持')) throw e;
+    throw new Error(`Word解析失败: ${e.message?.slice(0, 80)}`);
   }
 }
 

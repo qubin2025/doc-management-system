@@ -283,6 +283,8 @@ export function buildGraph(): KnowledgeGraph {
 
   const graph: KnowledgeGraph = { nodes, edges, updatedAt: new Date().toISOString() };
   localStorage.setItem(KG_KEY, JSON.stringify(graph));
+  // 自动同步到Neo4j（后台静默，失败不影响前端）
+  autoSyncToNeo4j(nodes, edges);
   return graph;
 }
 
@@ -352,4 +354,28 @@ export function getParentChain(nodeId: string, allNodes: GraphNode[], allEdges: 
 /** 获取已构建的知识图谱 */
 export function getGraph(): KnowledgeGraph | null {
   try { return JSON.parse(localStorage.getItem(KG_KEY) || 'null'); } catch { return null; }
+}
+
+/** 自动同步图谱到Neo4j后端（后台静默，失败不影响前端） */
+let _syncTimer: any = null;
+let _pendingSync: { nodes: GraphNode[]; edges: GraphEdge[] } | null = null;
+
+function autoSyncToNeo4j(nodes: GraphNode[], edges: GraphEdge[]) {
+  // 防抖：300ms内多次调用只执行最后一次
+  _pendingSync = { nodes, edges };
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(async () => {
+    const data = _pendingSync;
+    if (!data) return;
+    _pendingSync = null;
+    try {
+      const token = localStorage.getItem('doc-system-token') || '';
+      const res = await fetch('/api/kg/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nodes: data.nodes.slice(0, 200), edges: data.edges.slice(0, 500) }),
+      });
+      if (res.ok) console.log('✅ 图谱已自动同步到Neo4j');
+    } catch { /* 静默失败，不影响前端 */ }
+  }, 300);
 }
