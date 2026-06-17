@@ -106,7 +106,7 @@ ${fileContent}`;
           <div className="flex items-center gap-3">
             <div><h1 className="text-lg font-bold text-gray-800">招投标文件审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 合规性检查 · 异常条款识别</p></div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded text-[10px] bg-white"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
           </div>
         </div>
         {items.length > 0 && (
