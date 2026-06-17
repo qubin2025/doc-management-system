@@ -192,6 +192,10 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                 {aiStatus === 'online' ? 'AI在线' : aiStatus === 'offline' ? '离线模式' : '检测中'}
               </span>
             </div>
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600">
+              <option value="auto">自动</option>
+              {availableModels.map(m => <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>)}
+            </select>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -210,17 +214,6 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
           <div className="bg-white rounded-xl border p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-green-500"/>AI方案生成设置</h3>
             <div className="space-y-4">
-              {/* 大模型选择 */}
-              <div className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
-                <label className="text-xs font-medium text-indigo-700 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5"/>AI引擎</label>
-                <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600">
-                  <option value="auto">自动</option>
-                  {availableModels.map(m => (
-                    <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>
-                  ))}
-                </select>
-              </div>
-
               {/* 方案类型 */}
               <div><label className="block text-xs font-medium text-gray-600 mb-1">方案类型</label>
                 <select value={planType} onChange={e => setPlanType(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">{PLAN_TEMPLATES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
