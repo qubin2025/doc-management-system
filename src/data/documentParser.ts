@@ -1,24 +1,65 @@
-// 文档解析器 — PDF/Word/Excel/图片 → 文本提取（全异步、错误安全）
+/**
+ * 全局文档解析器 — v2.5.0 PaddleOCR 统一方案
+ * 所有文件上传统一调用 PaddleOCR 解析服务 (localhost:8001)
+ *
+ * 覆盖: PDF(文字+扫描件) | DOC | DOCX | XLS | XLSX | PNG/JPG/BMP | TXT/CSV
+ * 降级: PaddleOCR不可用时 → pdfjs + mammoth + xlsx + AI Vision
+ */
 
 import * as api from './api';
 
-/** 解析 PDF → 文本（优先Python pdfplumber服务，降级pdfjs） */
-export async function parsePDF(file: File): Promise<string> {
-  // 优先尝试 Python LightRAG 解析服务（pdfplumber，处理扫描件更好）
-  try {
-    const base64 = await fileToBase64(file);
-    const res = await fetch('http://localhost:8000/api/lightrag/parse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: base64, filename: file.name, mime_type: file.type }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.ok && data.text && data.text.length > 10) return data.text;
-    }
-  } catch { /* Python服务不可用，降级到pdfjs */ }
+const PADDLE_API = 'http://localhost:8001/api/parse/document';
+const PADDLE_HEALTH = 'http://localhost:8001/api/parse/health';
 
-  // pdfjs本地解析
+let _paddleAvailable: boolean | null = null;
+
+/** 检测PaddleOCR服务是否可用（缓存结果） */
+async function checkPaddleHealth(): Promise<boolean> {
+  if (_paddleAvailable !== null) return _paddleAvailable;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
+    const res = await fetch(PADDLE_HEALTH, { signal: ctrl.signal });
+    clearTimeout(timer);
+    _paddleAvailable = res.ok;
+  } catch { _paddleAvailable = false; }
+  return _paddleAvailable;
+}
+
+/** 统一文档解析 — 优先PaddleOCR，降级本地解析 */
+export async function parseDocument(file: File): Promise<string> {
+  const paddleOk = await checkPaddleHealth();
+  if (paddleOk) {
+    const text = await parseViaPaddleOCR(file);
+    if (text && text.length > 10) return text;
+  }
+  // 降级本地解析
+  return parseFallback(file);
+}
+
+/** PaddleOCR 服务解析 */
+async function parseViaPaddleOCR(file: File): Promise<string> {
+  const base64 = await fileToBase64(file);
+  const res = await fetch(PADDLE_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      content: base64,
+      filename: file.name,
+      mime_type: file.type,
+      max_chars: 50000,
+    }),
+  });
+  if (!res.ok) throw new Error(`解析服务错误: HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || '解析失败');
+  return data.text || '';
+}
+
+// ========== 降级解析器 (PaddleOCR不可用时) ==========
+
+/** PDF - pdfjs降级 */
+async function parsePDFLocal(file: File): Promise<string> {
   try {
     const pdfjsLib = await import('pdfjs-dist');
     try {
@@ -29,119 +70,92 @@ export async function parsePDF(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const texts: string[] = [];
-    const maxPages = 100;
-    const targetChars = 40000;
     let emptyPages = 0;
-    for (let i = 1; i <= Math.min(pdf.numPages, maxPages); i++) {
+    for (let i = 1; i <= Math.min(pdf.numPages, 100); i++) {
       try {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        const pageText = content.items.map((item: any) => item.str).join(' ');
-        if (pageText.trim()) { texts.push(pageText); emptyPages = 0; }
+        const pt = content.items.map((item: any) => item.str).join(' ');
+        if (pt.trim()) { texts.push(pt); emptyPages = 0; }
         else { emptyPages++; if (emptyPages >= 3) break; }
-        if (texts.join('').length >= targetChars) break;
+        if (texts.join('').length >= 40000) break;
       } catch { /* skip */ }
     }
     const result = texts.join('\n').trim();
-    if (!result) throw new Error(
-      '此PDF为图片扫描件，无文字层。请：\n1. 使用Word版本文档（推荐）\n2. 用Adobe Acrobat的OCR功能识别文字后重新保存\n3. 将扫描件截图后用AI图片识别'
-    );
+    if (!result) throw new Error('此PDF可能为扫描件，PaddleOCR服务未启动。请确保Python解析服务运行中。');
     return result;
-  } catch (e: any) {
-    throw new Error(`PDF解析失败: ${e.message}`);
-  }
+  } catch (e: any) { throw new Error(`PDF解析失败: ${e.message}`); }
 }
 
-/** 解析 Word (.docx) → 文本，mammoth仅支持.docx */
-export async function parseWord(file: File): Promise<string> {
-  const isDoc = file.name.toLowerCase().endsWith('.doc') && !file.name.toLowerCase().endsWith('.docx');
-  if (isDoc) {
-    throw new Error('不支持旧版 .doc 格式，请用Word打开后另存为 .docx 再上传');
+/** Word - mammoth降级(.docx only) */
+async function parseWordLocal(file: File): Promise<string> {
+  if (file.name.toLowerCase().endsWith('.doc') && !file.name.toLowerCase().endsWith('.docx')) {
+    throw new Error('旧版.doc格式需要PaddleOCR服务支持。请用Word另存为.docx。');
   }
   try {
     const mammoth = await import('mammoth');
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
     const text = result.value.trim();
-    if (!text) throw new Error('Word文档内容为空或无法提取文字');
+    if (!text) throw new Error('Word文档内容为空');
     return text;
-  } catch (e: any) {
-    if (e.message.includes('不支持')) throw e;
-    throw new Error(`Word解析失败: ${e.message?.slice(0, 80)}`);
-  }
+  } catch (e: any) { throw new Error(`Word解析失败: ${e.message}`); }
 }
 
-/** 解析 Excel (.xlsx/.xls) → Markdown表格文本 */
-export async function parseExcel(file: File): Promise<string> {
+/** Excel - xlsx降级 */
+async function parseExcelLocal(file: File): Promise<string> {
   try {
     const XLSX = await import('xlsx');
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
     const results: string[] = [];
-
-    for (const sheetName of workbook.SheetNames) {
-      const sheet = workbook.Sheets[sheetName];
-      const csvText = XLSX.utils.sheet_to_csv(sheet);
-      results.push(`## ${sheetName}\n\`\`\`\n${csvText}\n\`\`\``);
+    for (const sname of workbook.SheetNames) {
+      const sheet = workbook.Sheets[sname];
+      results.push(`## ${sname}\n${XLSX.utils.sheet_to_csv(sheet)}`);
     }
     return results.join('\n\n').trim();
-  } catch (e: any) {
-    throw new Error(`Excel解析失败: ${e.message}`);
-  }
+  } catch (e: any) { throw new Error(`Excel解析失败: ${e.message}`); }
 }
 
-/** 图片 OCR — 调视觉模型识别文字 */
-export async function parseImage(file: File): Promise<string> {
+/** 图片 - AI Vision降级 */
+async function parseImageLocal(file: File): Promise<string> {
   try {
     const base64 = await fileToBase64(file);
     const messages = [{
       role: 'user',
       content: `请识别并输出这张图片中的所有文字内容（包括表格中的文字），只输出文字，不要任何解释。图片: [图片: data:${file.type};base64,${base64}]`,
     }];
-    const result = await api.aiChat(messages, 'ocr', { model: 'glm-4v' });
-    return result.trim();
-  } catch (e: any) {
-    throw new Error(`图片识别失败: ${e.message}`);
-  }
+    return await api.aiChat(messages, 'ocr', { model: 'glm-4v' });
+  } catch (e: any) { throw new Error(`图片识别失败: ${e.message}`); }
 }
 
-/** 通用解析 — 根据文件类型自动选择解析器 */
-export async function parseDocument(file: File): Promise<string> {
-  const type = file.type.toLowerCase();
+/** 降级解析入口 */
+async function parseFallback(file: File): Promise<string> {
   const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
 
-  if (type === 'application/pdf' || name.endsWith('.pdf')) {
-    return parsePDF(file);
-  }
-  if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      type === 'application/msword' || name.endsWith('.docx') || name.endsWith('.doc')) {
-    return parseWord(file);
-  }
-  if (type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-      type === 'application/vnd.ms-excel' || name.endsWith('.xlsx') || name.endsWith('.xls')) {
-    return parseExcel(file);
-  }
-  if (type.startsWith('image/') || /\.(png|jpg|jpeg|gif|bmp|webp)$/i.test(name)) {
-    return parseImage(file);
-  }
-
-  // 纯文本文件
-  if (type === 'text/plain' || /\.(txt|md|csv|json|xml|html)$/i.test(name)) {
-    return file.text();
-  }
+  if (name.endsWith('.pdf') || type === 'application/pdf') return parsePDFLocal(file);
+  if (name.endsWith('.docx') || name.endsWith('.doc') || type.includes('word')) return parseWordLocal(file);
+  if (name.endsWith('.xlsx') || name.endsWith('.xls') || type.includes('excel') || type.includes('spreadsheet')) return parseExcelLocal(file);
+  if (type.startsWith('image/') || /\.(png|jpg|jpeg|gif|bmp|webp)$/i.test(name)) return parseImageLocal(file);
+  if (type === 'text/plain' || /\.(txt|md|csv|json|xml|html)$/i.test(name)) return file.text();
 
   throw new Error(`不支持的文件类型: ${file.type || name.split('.').pop()}`);
 }
 
+// ========== 工具函数 ==========
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      const base64 = result.split(',')[1];
-      resolve(base64);
+      resolve(result.split(',')[1]);
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
+
+// 保持向后兼容
+export { parsePDFLocal as parsePDF };
+export { parseWordLocal as parseWord };
+export { parseExcelLocal as parseExcel };
+export { parseImageLocal as parseImage };

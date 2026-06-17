@@ -89,9 +89,27 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # PaddleOCR 文档解析服务（全局解析入口）
+  paddleocr:
+    build: ./services/paddleocr-server
+    container_name: doc-mgmt-paddleocr
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      - PADDLEOCR_PORT=8001
+    volumes:
+      - paddleocr-cache:/root/.paddleocr
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   db-data:
   files-data:
   neo4j-data:
   neo4j-logs:
   lightrag-data:
+  paddleocr-cache:
