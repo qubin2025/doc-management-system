@@ -283,11 +283,13 @@ async def parse_document(req: ParseRequest):
                     texts = [page.extract_text() or '' for page in pdf.pages[:50]]
                 text = '\n'.join(texts)
                 if not text.strip():
-                    text = "PDF解析结果为空（可能是扫描件，建议转Word后上传）"
+                    return {"ok": False, "error": "PDF文字层为空，可能是扫描件/图片型PDF。请用Word版本或OCR工具处理后上传"}
             finally: os.unlink(tmp)
             return {"ok": True, "text": text[:50000], "method": "pdfplumber"}
         except ImportError:
-            pass  # 降级到node端解析
+            pass  # 降级到node端pdfjs解析
+        except Exception as e:
+            return {"ok": False, "error": f"PDF解析异常: {str(e)[:100]}，请确认文件格式正确"}
 
     if fname.endswith(('.docx', '.doc')) or 'word' in req.mime_type:
         # docx is handled by mammoth on node side

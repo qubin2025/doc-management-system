@@ -43,7 +43,9 @@ export async function parsePDF(file: File): Promise<string> {
       } catch { /* skip */ }
     }
     const result = texts.join('\n').trim();
-    if (!result) throw new Error('PDF文字层为空');
+    if (!result) throw new Error(
+      '此PDF为图片扫描件，无文字层。请：\n1. 使用Word版本文档（推荐）\n2. 用Adobe Acrobat的OCR功能识别文字后重新保存\n3. 将扫描件截图后用AI图片识别'
+    );
     return result;
   } catch (e: any) {
     throw new Error(`PDF解析失败: ${e.message}`);
