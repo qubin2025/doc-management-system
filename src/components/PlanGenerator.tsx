@@ -213,8 +213,8 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
               {/* 大模型选择 */}
               <div className="flex items-center justify-between bg-indigo-50 rounded-lg p-3">
                 <label className="text-xs font-medium text-indigo-700 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5"/>AI引擎</label>
-                <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-indigo-200 rounded-full text-xs bg-white w-40 font-medium">
-                  <option value="auto">自动 (推荐)</option>
+                <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600">
+                  <option value="auto">自动</option>
                   {availableModels.map(m => (
                     <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>
                   ))}
