@@ -435,3 +435,57 @@ export async function lightragGraph(): Promise<{ nodes: any[]; edges: any[] }> {
   const res = await fetch(`${LIGHTRAG_BASE}/graph`);
   return res.json();
 }
+
+// ========== RAGFlow 知识库引擎 ==========
+
+/** 检查 RAGFlow 可用性 */
+export async function ragflowHealth(): Promise<{ available: boolean; version?: string }> {
+  const res = await fetch(`${API_BASE}/ragflow/health`, { headers: headers() });
+  return res.json();
+}
+
+/** 创建知识库 */
+export async function ragflowCreateDataset(name: string, desc = '') {
+  const res = await fetch(`${API_BASE}/ragflow/datasets`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ name, description: desc }),
+  });
+  return res.json();
+}
+
+/** 列出知识库 */
+export async function ragflowListDatasets() {
+  const res = await fetch(`${API_BASE}/ragflow/datasets`, { headers: headers() });
+  return res.json();
+}
+
+/** 上传文档到知识库 */
+export async function ragflowUploadDocument(datasetId: string, file: File, projectName?: string) {
+  const form = new FormData();
+  form.append('file', file);
+  if (projectName) form.append('project', projectName);
+  const res = await fetch(`${API_BASE}/ragflow/datasets/${datasetId}/documents`, {
+    method: 'POST',
+    headers: { Authorization: headers()['Authorization'] || '' },
+    body: form,
+  });
+  return res.json();
+}
+
+/** RAG检索 */
+export async function ragflowRetrieval(query: string, datasetIds: string[], topK = 10) {
+  const res = await fetch(`${API_BASE}/ragflow/retrieval`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ question: query, dataset_ids: datasetIds, top_k: topK }),
+  });
+  return res.json();
+}
+
+/** 知识库对话 */
+export async function ragflowChat(datasetIds: string[], query: string) {
+  const res = await fetch(`${API_BASE}/ragflow/chats`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ dataset_ids: datasetIds, question: query }),
+  });
+  return res.json();
+}
