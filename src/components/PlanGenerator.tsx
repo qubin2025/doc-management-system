@@ -40,8 +40,10 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
   const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
     {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
     {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
-    {id:'ollama-qwen',name:'本地通义千问',status:'optional'},
-    {id:'ollama-llama',name:'本地Llama3',status:'optional'},
+    {id:'qwen-turbo',name:'通义千问(云端)',status:'online'},
+    {id:'glm-4-flash',name:'智谱GLM-4',status:'online'},
+    {id:'ollama-qwen',name:'Ollama通义(本地)',status:'optional'},
+    {id:'ollama-llama',name:'Ollama Llama3(本地)',status:'optional'},
   ]);
 
   // 异步同步实际AI状态

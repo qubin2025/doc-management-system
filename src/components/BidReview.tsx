@@ -16,8 +16,10 @@ const BidReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
     {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
     {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
-    {id:'ollama-qwen',name:'本地通义千问',status:'optional'},
-    {id:'ollama-llama',name:'本地Llama3',status:'optional'},
+    {id:'qwen-turbo',name:'通义千问(云端)',status:'online'},
+    {id:'glm-4-flash',name:'智谱GLM-4',status:'online'},
+    {id:'ollama-qwen',name:'Ollama通义(本地)',status:'optional'},
+    {id:'ollama-llama',name:'Ollama Llama3(本地)',status:'optional'},
   ]);
   useEffect(() => {(async()=>{try{const t=localStorage.getItem('doc-system-token')||'';const r=await fetch('/api/ai/models',{headers:{'Content-Type':'application/json',Authorization:`Bearer ${t}`}});if(r.ok){const d=await r.json();setAvailableModels(d.models||availableModels);setAiStatus(d.models?.some((m:any)=>m.status==='online')?'online':'offline')}}catch{/*保持默认*/}})()},[]);
   const [items, setItems] = useState<{ item: string; status: 'pass'|'warn'|'fail'; issue: string; regulation: string }[]>([]);
