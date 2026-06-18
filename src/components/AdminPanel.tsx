@@ -73,7 +73,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-[10px]">ZHJK</span></div>
+            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-xs">ZHJK</span></div>
             <h1 className="text-lg font-bold text-gray-800">系统管理</h1>
           </div>
           <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"><Plus className="w-4 h-4" />添加用户</button>
@@ -103,7 +103,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
               <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <item.icon className="w-5 h-5 text-gray-400 mt-0.5"/>
                 <div><p className="text-xs text-gray-500">{item.label}</p><p className="font-medium text-gray-800">{item.value}</p>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full bg-${item.color}-100 text-${item.color}-600`}>{item.status}</span></div>
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full bg-${item.color}-100 text-${item.color}-600`}>{item.status}</span></div>
               </div>
             ))}
           </div>
@@ -134,31 +134,31 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
                           <select value={u.role} onChange={e => updateField(u.id, 'role', e.target.value)} className="px-2 py-1 border rounded text-xs">
                             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                           </select>
-                        ) : <span className={`px-2 py-0.5 text-[10px] rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' : u.role === 'project_manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{u.role}</span>}
+                        ) : <span className={`px-2 py-0.5 text-xs rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' : u.role === 'project_manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{u.role}</span>}
                       </td>
                       <td className="px-4 py-3">
                         {isEditing ? (
                           <div className="flex gap-2">
                             {PERM_KEYS.map(k => (
-                              <label key={k} className="flex items-center gap-1 text-[10px]">
+                              <label key={k} className="flex items-center gap-1 text-xs">
                                 <input type="checkbox" checked={perms[k]} onChange={e => updateField(u.id, 'permissions', JSON.stringify({ ...perms, [k]: e.target.checked }))} />
                                 {k.replace('can_', '')}
                               </label>
                             ))}
                           </div>
                         ) : (
-                          <div className="flex gap-1 text-[10px] text-gray-500">
+                          <div className="flex gap-1 text-xs text-gray-500">
                             {PERM_KEYS.map(k => perms[k] ? <span key={k} className="px-1 py-0.5 bg-gray-100 rounded">{k.replace('can_', '')}</span> : null)}
                           </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {isEditing ? (
-                          <button onClick={() => updateField(u.id, 'is_active', u.is_active ? 0 : 1)} className={`px-2 py-0.5 text-[10px] rounded-full ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          <button onClick={() => updateField(u.id, 'is_active', u.is_active ? 0 : 1)} className={`px-2 py-0.5 text-xs rounded-full ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {u.is_active ? '已激活' : '已禁用'}
                           </button>
                         ) : (
-                          <span className={`px-2 py-0.5 text-[10px] rounded-full ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{u.is_active ? '已激活' : '已禁用'}</span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{u.is_active ? '已激活' : '已禁用'}</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400 text-center">{u.created_at?.split('T')[0] || '-'}</td>
