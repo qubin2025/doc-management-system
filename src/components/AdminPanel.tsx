@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3, Database, HardDrive, Users, GitBranch } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3 } from 'lucide-react';
 import * as api from '../data/api';
 import { toast } from './Toast';
 
@@ -16,7 +16,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ username: '', password: '', displayName: '', role: 'viewer', permissions: { can_upload: true, can_download: true, can_use_ai: false } });
-  const [stats, setStats] = useState({ projects: 0, documents: 0, users: 0, activeUsers: 0, neo4j: false, ai: false, uptime: 0, memory: 0 });
+  const [stats, setStats] = useState({ projects: 0, documents: 0, users: 0, activeUsers: 0, health: {} as any, uptime: 0, memory: 0 });
 
   useEffect(() => { loadUsers(); fetchStats(); }, []);
 
@@ -95,15 +95,20 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
           <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-500"/>系统运行状态</h3>
           <div className="grid grid-cols-4 gap-4 text-sm">
             {[
-              { icon: Database, label: '数据存储', value: `SQLite · ${stats.projects}项目/${stats.documents}文档`, status: '正常', color: 'green' },
-              { icon: GitBranch, label: '知识图谱', value: stats.neo4j ? 'Neo4j 在线' : '离线模式', status: stats.neo4j ? '连接' : '本地', color: stats.neo4j ? 'green' : 'amber' },
-              { icon: HardDrive, label: 'AI引擎', value: stats.ai ? 'DeepSeek在线' : '未配置', status: stats.ai ? '正常' : '离线', color: stats.ai ? 'green' : 'amber' },
-              { icon: Users, label: '内存使用', value: `${stats.memory}MB`, status: '正常', color: 'green' },
+              { label: '数据存储', value: `SQLite · ${stats.projects}项目/${stats.documents}文档`, status: '正常', color: 'green' },
+              { label: 'DeepSeek-V3', value: stats.health?.deepseek ? '已配置' : '未配置', ok: stats.health?.deepseek },
+              { label: '通义千问(云端)', value: stats.health?.qwen ? '已配置' : '未配置', ok: stats.health?.qwen },
+              { label: '智谱GLM-4', value: stats.health?.zhipu ? '已配置' : '未配置', ok: stats.health?.zhipu },
+              { label: '通义Embedding', value: stats.health?.dashscope ? '已配置' : '未配置', ok: stats.health?.dashscope },
+              { label: '知识图谱(Neo4j)', value: stats.neo4j ? 'Neo4j 在线' : '离线模式', status: stats.neo4j ? '连接' : '本地', color: stats.neo4j ? 'green' : 'amber' },
+              { label: 'RAGFlow引擎', value: stats.health?.ragflow ? '在线' : '未部署', ok: stats.health?.ragflow },
+              { label: '文档解析(EasyOCR)', value: stats.health?.paddleocr ? '在线' : stats.health?.paddleocr===false?'未运行':'检测中', ok: stats.health?.paddleocr },
+              { label: 'LightRAG引擎', value: stats.health?.lightrag ? '在线' : stats.health?.lightrag===false?'未运行':'检测中', ok: stats.health?.lightrag },
+              { label: '内存使用', value: `${stats.memory}MB`, ok: true },
             ].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <item.icon className="w-5 h-5 text-gray-400 mt-0.5"/>
-                <div><p className="text-xs text-gray-500">{item.label}</p><p className="font-medium text-gray-800">{item.value}</p>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full bg-${item.color}-100 text-${item.color}-600`}>{item.status}</span></div>
+              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div><p className="text-xs text-gray-500">{item.label}</p><p className="font-medium text-gray-800 text-xs">{item.value}</p></div>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${item.ok ? 'bg-green-100 text-green-600' : item.value==='检测中' ? 'bg-gray-100 text-gray-500' : 'bg-amber-100 text-amber-600'}`}>{item.ok ? '✓' : item.value==='检测中' ? '···' : '✗'}</span>
               </div>
             ))}
           </div>

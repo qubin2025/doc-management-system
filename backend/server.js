@@ -63,17 +63,50 @@ app.get('/api', (req, res) => {
 });
 
 // 系统统计（管理员可见）
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
   try {
     const db = getDb();
     const projects = db.prepare('SELECT COUNT(*) as c FROM projects').get().c;
     const documents = db.prepare('SELECT COUNT(*) as c FROM documents').get().c;
     const users = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
     const activeUsers = db.prepare('SELECT COUNT(*) as c FROM users WHERE is_active=1').get().c;
+
+    // 服务健康检查（并发探测）
+    const health = {
+      // AI模型
+      deepseek: !!(process.env.DEEPSEEK_API_KEY && !process.env.DEEPSEEK_API_KEY.includes('your-')),
+      qwen: !!(process.env.QWEN_API_KEY && !process.env.QWEN_API_KEY.includes('your-')),
+      zhipu: !!(process.env.ZHIPU_API_KEY && !process.env.ZHIPU_API_KEY.includes('your-')),
+      dashscope: !!(process.env.DASHSCOPE_API_KEY && !process.env.DASHSCOPE_API_KEY.includes('your-')),
+      // 基础设施
+      neo4j: !!process.env.NEO4J_URI,
+      ragflow: false,
+      paddleocr: false,
+      lightrag: false,
+    };
+
+    // 并发探测外部服务（2秒超时）
+    const probe = async (url) => {
+      try {
+        const ctrl = new AbortController();
+        setTimeout(() => ctrl.abort(), 2000);
+        const r = await fetch(url, { signal: ctrl.signal });
+        return r.ok;
+      } catch { return false; }
+    };
+
+    const [rf, po, lr] = await Promise.all([
+      probe('http://localhost:9380/api/v1/version'),
+      probe('http://localhost:8001/api/parse/health'),
+      probe('http://localhost:8000/api/lightrag/health'),
+    ]);
+    health.ragflow = rf;
+    health.paddleocr = po;
+    health.lightrag = lr;
+
     res.json({
       projects, documents, users, activeUsers,
-      neo4j: !!process.env.NEO4J_URI,
-      ai: !!process.env.DEEPSEEK_API_KEY && !process.env.DEEPSEEK_API_KEY.includes('your-'),
+      health,
       uptime: Math.floor(process.uptime()),
       memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
     });
