@@ -125,6 +125,22 @@ ${fileContent}`;
     finally { setReviewing(false); }
   };
 
+  /** 将 Markdown 文本转换为纯文本（去除 MD 标记） */
+  const stripMarkdown = (md: string): string => {
+    return md
+      .replace(/^#{1,4}\s+/gm, '')          // 去除 # 标题标记
+      .replace(/\*\*(.+?)\*\*/g, '$1')       // 去除 **粗体**
+      .replace(/\*(.+?)\*/g, '$1')           // 去除 *斜体*
+      .replace(/`([^`]+)`/g, '$1')           // 去除 `代码`
+      .replace(/^[-*+]\s+/gm, '· ')          // 列表标记
+      .replace(/^(\d+)[.)]\s+/gm, '$1. ')    // 编号列表
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 去除链接
+      .replace(/^---+$/gm, '')               // 去除分割线
+      .replace(/>\s(.+)/gm, '$1')            // 去除引用
+      .replace(/\n{3,}/g, '\n\n')            // 压缩多余空行
+      .trim();
+  };
+
   const exportDOCX = () => {
     const highCount = clauses.filter(c => c.risk === 'high').length;
     const midCount = clauses.filter(c => c.risk === 'medium').length;
@@ -165,7 +181,7 @@ ${fileContent}`;
 </div>
 
 <h2>综合审查报告</h2>
-<div>${report.replace(/\n/g, '<br>').replace(/^#+\s/gm, '<b>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</div>
+<div>${stripMarkdown(report).replace(/\n/g, '<br>')}</div>
 
 <h2>条款审查详情</h2>
 <table>
@@ -220,7 +236,7 @@ ${fileContent}`;
   <div class="summary-item"><div class="n" style="color:#16a34a">${lowCount}</div><div class="l">低风险</div></div>
   <div class="summary-item"><div class="n">${clauses.length}</div><div class="l">总计</div></div>
 </div>
-<section><h2>综合审查报告</h2><div class="report-body">${report.replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}</div></section>
+<section><h2>综合审查报告</h2><div class="report-body">${stripMarkdown(report).replace(/\n/g, '<br>')}</div></section>
 <section><h2>条款审查详情</h2><table><tr><th>#</th><th>条款</th><th>风险</th><th>问题</th><th>建议</th></tr>${rows}</table></section>
 <footer>全过程工程咨询管理服务平台 · 合同审查模块 v2.5.0 · 自动生成</footer>
 </body></html>`;
@@ -230,7 +246,23 @@ ${fileContent}`;
   };
 
   const exportTXT = () => {
-    const text = `合同审查报告\n${'='.repeat(40)}\n项目: ${projectName}\n文件: ${file?.name || '-'}\n时间: ${new Date().toLocaleString('zh-CN')}\n\n一、审查概要\n高风险: ${clauses.filter(c=>c.risk==='high').length} | 中风险: ${clauses.filter(c=>c.risk==='medium').length} | 低风险: ${clauses.filter(c=>c.risk==='low').length} | 总计: ${clauses.length}\n\n二、综合审查报告\n${report}\n\n三、条款审查详情\n${clauses.map((c,i) => `${i+1}. [${c.risk==='high'?'高风险':c.risk==='medium'?'中风险':'低风险'}] ${c.clause}\n   问题: ${c.issue}\n   建议: ${c.suggestion}`).join('\n\n')}`;
+    const cleanReport = stripMarkdown(report);
+    const text = [
+      `合同审查报告`,
+      `${'='.repeat(40)}`,
+      `项目: ${projectName}`,
+      `文件: ${file?.name || viewingHistory?.fileName || '-'}`,
+      `时间: ${new Date().toLocaleString('zh-CN')}`,
+      ``,
+      `一、审查概要`,
+      `高风险: ${clauses.filter(c=>c.risk==='high').length} | 中风险: ${clauses.filter(c=>c.risk==='medium').length} | 低风险: ${clauses.filter(c=>c.risk==='low').length} | 总计: ${clauses.length}`,
+      ``,
+      `二、综合审查报告`,
+      cleanReport,
+      ``,
+      `三、条款审查详情`,
+      ...clauses.map((c,i) => `${i+1}. [${c.risk==='high'?'高风险':c.risk==='medium'?'中风险':'低风险'}] ${c.clause}\n   问题: ${stripMarkdown(c.issue)}\n   建议: ${stripMarkdown(c.suggestion)}`),
+    ].join('\n');
     const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' });
     downloadBlob(blob, `合同审查报告_${projectName}.txt`);
   };
