@@ -283,9 +283,9 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
             <div><h1 className="text-lg font-bold text-gray-800">施工组织设计审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 含专项方案审查</p></div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线关键词分析':'检测中'}>
               <span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/>
-              <span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span>
+              <span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span>
             </div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600">
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-xs bg-white font-medium text-gray-600">
               <option value="auto">自动</option>
               {availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}
             </select>
@@ -327,7 +327,7 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
             {files.length > 1 && (
               <div className="flex flex-wrap gap-1 mb-3">
                 {files.map((f, idx) => (
-                  <button key={idx} onClick={() => switchFile(idx)} className={`px-2 py-1 text-[10px] rounded-full ${f.name === currentFileName ? 'bg-amber-100 text-amber-700 font-medium' : 'bg-gray-50 text-gray-500'}`}>{f.name.slice(0, 20)}{f.name.length > 20 ? '…' : ''}</button>
+                  <button key={idx} onClick={() => switchFile(idx)} className={`px-2 py-1 text-xs rounded-full ${f.name === currentFileName ? 'bg-amber-100 text-amber-700 font-medium' : 'bg-gray-50 text-gray-500'}`}>{f.name.slice(0, 20)}{f.name.length > 20 ? '…' : ''}</button>
                 ))}
               </div>
             )}
@@ -359,7 +359,7 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
                 <div key={i} className="bg-white rounded-lg p-3 border border-blue-100 text-xs">
                   <span className="font-mono text-blue-600 font-bold">{c.clause}</span>
                   <p className="text-gray-600 mt-1">{c.relevance}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{c.standard}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{c.standard}</p>
                 </div>
               ))}
             </div>
@@ -375,8 +375,8 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
                 {results.map((r, i) => (
                   <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${r.status==='pass'?'bg-green-50':r.status==='warn'?'bg-amber-50':'bg-red-50'}`}>
                     {r.status==='pass'?<CheckCircle className="w-5 h-5 text-green-500 mt-0.5"/>:r.status==='warn'?<AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5"/>:<X className="w-5 h-5 text-red-500 mt-0.5"/>}
-                    <div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-medium text-sm">{r.section}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${r.status==='pass'?'bg-green-100 text-green-600':r.status==='warn'?'bg-amber-100 text-amber-600':'bg-red-100 text-red-600'}`}>{r.status==='pass'?'合规':r.status==='warn'?'注意':'不合格'}</span></div>
-                      <p className="text-xs text-gray-600">{r.comment}</p><p className="text-[10px] text-gray-400 mt-0.5">依据: {r.standard}</p></div>
+                    <div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-medium text-sm">{r.section}</span><span className={`text-xs px-1.5 py-0.5 rounded ${r.status==='pass'?'bg-green-100 text-green-600':r.status==='warn'?'bg-amber-100 text-amber-600':'bg-red-100 text-red-600'}`}>{r.status==='pass'?'合规':r.status==='warn'?'注意':'不合格'}</span></div>
+                      <p className="text-xs text-gray-600">{r.comment}</p><p className="text-xs text-gray-400 mt-0.5">依据: {r.standard}</p></div>
                   </div>
                 ))}
               </div>

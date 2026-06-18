@@ -190,11 +190,11 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
             <div><h1 className="text-lg font-bold text-gray-800">AI方案生成</h1><p className="text-xs text-gray-500">项目: {projectName}</p></div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus === 'online' ? 'AI大模型在线' : aiStatus === 'offline' ? '离线模式（使用本地模板）' : '检测中...'}>
               <span className={`w-2 h-2 rounded-full ${aiStatus === 'online' ? 'bg-green-500 animate-pulse' : aiStatus === 'offline' ? 'bg-amber-500' : 'bg-gray-400 animate-pulse'}`} />
-              <span className={`text-[10px] font-medium ${aiStatus === 'online' ? 'text-green-600' : aiStatus === 'offline' ? 'text-amber-600' : 'text-gray-400'}`}>
+              <span className={`text-xs font-medium ${aiStatus === 'online' ? 'text-green-600' : aiStatus === 'offline' ? 'text-amber-600' : 'text-gray-400'}`}>
                 {aiStatus === 'online' ? 'AI在线' : aiStatus === 'offline' ? '离线模式' : '检测中'}
               </span>
             </div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600">
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-xs bg-white font-medium text-gray-600">
               <option value="auto">自动</option>
               {availableModels.map(m => <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>)}
             </select>
@@ -258,7 +258,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                       {projectDocs.map((d, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs text-gray-600 bg-white rounded px-3 py-1.5">
                           <FileText className="w-3 h-3 text-gray-400"/>{d.name}
-                          <button onClick={() => setProjectDocs(prev => prev.filter((_, j) => j !== i))} className="ml-auto text-red-400 hover:text-red-600 text-[10px]">删除</button>
+                          <button onClick={() => setProjectDocs(prev => prev.filter((_, j) => j !== i))} className="ml-auto text-red-400 hover:text-red-600 text-xs">删除</button>
                         </div>
                       ))}
                     </div>
@@ -313,7 +313,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {chapters.map((ch, i) => (
                 <div key={i} className={`bg-white rounded-xl border p-4 ${ch.loading?'animate-pulse':''} ${ch.auto&&ch.content?'border-l-4 border-l-green-500':''}`}>
-                  <div className="flex items-center justify-between mb-2"><h3 className="font-semibold text-sm flex items-center gap-1.5">{ch.name}{ch.auto&&ch.content&&<span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded">自动</span>}</h3>{ch.loading&&<Loader className="w-4 h-4 text-green-500 animate-spin"/>}</div>
+                  <div className="flex items-center justify-between mb-2"><h3 className="font-semibold text-sm flex items-center gap-1.5">{ch.name}{ch.auto&&ch.content&&<span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">自动</span>}</h3>{ch.loading&&<Loader className="w-4 h-4 text-green-500 animate-spin"/>}</div>
                   {ch.loading?<div className="space-y-2"><div className="h-3 bg-gray-200 rounded w-full"/><div className="h-3 bg-gray-200 rounded w-3/4"/></div>
                   :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border rounded-lg p-3 resize-y focus:ring-2 focus:ring-green-500 outline-none font-mono"/>}
                 </div>

@@ -107,8 +107,8 @@ ${fileContent}`;
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center"><FileSearch className="w-5 h-5 text-white"/></div>
           <div className="flex items-center gap-3">
             <div><h1 className="text-lg font-bold text-gray-800">招投标文件审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 合规性检查 · 异常条款识别</p></div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-xs bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
           </div>
         </div>
         {items.length > 0 && (
@@ -163,8 +163,8 @@ ${fileContent}`;
                 {items.map((it, i) => (
                   <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${it.status==='pass'?'bg-green-50':it.status==='warn'?'bg-amber-50':'bg-red-50'}`}>
                     {it.status==='pass'?<CheckCircle className="w-5 h-5 text-green-500 mt-0.5"/>:it.status==='warn'?<AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5"/>:<X className="w-5 h-5 text-red-500 mt-0.5"/>}
-                    <div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-medium text-sm">{it.item}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${it.status==='pass'?'bg-green-100 text-green-600':it.status==='warn'?'bg-amber-100 text-amber-600':'bg-red-100 text-red-600'}`}>{it.status==='pass'?'合规':it.status==='warn'?'注意':'不合格'}</span></div>
-                      <p className="text-xs text-gray-600">{it.issue}</p><p className="text-[10px] text-gray-400 mt-0.5">依据: {it.regulation}</p></div>
+                    <div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-medium text-sm">{it.item}</span><span className={`text-xs px-1.5 py-0.5 rounded ${it.status==='pass'?'bg-green-100 text-green-600':it.status==='warn'?'bg-amber-100 text-amber-600':'bg-red-100 text-red-600'}`}>{it.status==='pass'?'合规':it.status==='warn'?'注意':'不合格'}</span></div>
+                      <p className="text-xs text-gray-600">{it.issue}</p><p className="text-xs text-gray-400 mt-0.5">依据: {it.regulation}</p></div>
                   </div>
                 ))}
               </div>
