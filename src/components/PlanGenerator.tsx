@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader, Download, Sparkles, FileText, GitBranch, Printer, AlertTriangle, CheckCircle, Upload, Database } from 'lucide-react';
+import { ArrowLeft, Loader, Download, Sparkles, FileText, GitBranch, Printer, AlertTriangle, CheckCircle, Upload, Database, X } from 'lucide-react';
 import * as api from '../data/api';
 import { getPlanSchema, checkCompleteness, CompletenessReport } from '../data/planSchema';
 import { parseDocument } from '../data/documentParser';
@@ -18,9 +18,16 @@ const TEMPLATE_CHAPTERS: Record<string, string[]> = {
 };
 
 interface Chapter { name: string; content: string; loading: boolean; auto: boolean; }
+interface PlanRecord { id: string; planType: string; projectName: string; time: string; chapters: Chapter[]; completeness: any; }
+const PLAN_HISTORY = 'plan-generator-history';
+const loadPlanHistory = () => { try { return JSON.parse(localStorage.getItem(PLAN_HISTORY) || '[]'); } catch { return []; } };
+const savePlanHistory = (items: PlanRecord[]) => { localStorage.setItem(PLAN_HISTORY, JSON.stringify(items.slice(0, 30))); };
 
 const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
   const [planType, setPlanType] = useState(PLAN_TEMPLATES[0]);
+  const [planHistory, setPlanHistory] = useState<PlanRecord[]>(loadPlanHistory);
+  const [showHistory, setShowHistory] = useState(false);
+  const [outputDir, setOutputDir] = useState(() => localStorage.getItem('plan-output-dir') || '');
   const [params, setParams] = useState({ scale: '', location: '', investment: '', type: '', depth: '', special: '' });
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -166,6 +173,11 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
     if (schema) setCompleteness(checkCompleteness(localChapters, schema));
     const isOffline = localChapters.some(c => c.content.startsWith('[生成失败') || c.content.includes('请配置有效的 DEEPSEEK_API_KEY'));
     toast(isOffline ? '离线模板(需AI请配置API Key)' : '方案生成完成', isOffline ? 'warning' : 'success');
+    // 保存到历史
+    const compReport = schema ? checkCompleteness(localChapters, schema) : null;
+    const record: PlanRecord = { id: Date.now().toString(), planType, projectName, time: new Date().toLocaleString('zh-CN'), chapters: localChapters.map(c=>({name:c.name,content:c.content,loading:false,auto:true})), completeness: compReport };
+    const updated = [record, ...planHistory];
+    setPlanHistory(updated); savePlanHistory(updated);
   };
 
   const updateChapter = (i: number, content: string) => { setChapters(prev => prev.map((c, j) => j === i ? { ...c, content, auto: false } : c)); };
@@ -182,7 +194,27 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 历史侧边栏 */}
+      <div className={`${showHistory ? 'w-72' : 'w-0'} bg-white border-r overflow-hidden transition-all duration-200 shrink-0 sticky top-0 h-screen`}>
+        {showHistory && (
+          <div className="h-full flex flex-col">
+            <div className="px-3 py-3 border-b flex items-center justify-between shrink-0"><h3 className="text-xs font-semibold text-gray-700">方案历史</h3><button onClick={() => setShowHistory(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button></div>
+            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('plan-output-dir',e.target.value)}} placeholder="如: D:\方案" className="w-full px-2 py-1 text-xs border rounded"/></div>
+            <div className="flex-1 overflow-hidden hover:overflow-y-auto">
+              {planHistory.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">暂无记录</p> : planHistory.map(r => (
+                <div key={r.id} className="px-3 py-2 border-b border-gray-50 cursor-pointer hover:bg-green-50" onClick={() => { setPlanType(r.planType); setChapters(r.chapters); }}>
+                  <p className="text-xs font-medium text-gray-700 truncate">{r.planType} — {r.projectName}</p><p className="text-xs text-gray-400">{r.time}</p>
+                  <div className="flex gap-1 mt-1"><span className="text-xs px-1 py-0.5 rounded bg-green-50 text-green-600">{r.chapters.length}章节</span>{r.completeness && <span className="text-xs px-1 py-0.5 rounded bg-blue-50 text-blue-600">{r.completeness.score}%</span>}</div>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-2 border-t text-xs text-gray-400 shrink-0">数据仅保存在浏览器本地</div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1">
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center"><FileText className="w-5 h-5 text-white"/></div>
@@ -201,6 +233,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-green-50 text-green-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({planHistory.length})</button>
           {allDone && <button onClick={exportPDF} className="px-3 py-1.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100"><Printer className="w-3.5 h-3.5"/>PDF</button>}
           {allDone && <button onClick={exportDocx} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100"><Download className="w-3.5 h-3.5"/>Word</button>}
           {allDone && <button onClick={async () => {
@@ -332,6 +365,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };
