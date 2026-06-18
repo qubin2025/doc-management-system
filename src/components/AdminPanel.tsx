@@ -95,12 +95,12 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
           <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-500"/>系统运行状态</h3>
           <div className="grid grid-cols-4 gap-4 text-sm">
             {[
-              { label: '数据存储', value: `SQLite · ${stats.projects}项目/${stats.documents}文档`, status: '正常', color: 'green' },
+              { label: '数据存储', value: `SQLite · ${stats.projects}项目/${stats.documents}文档`, ok: true },
               { label: 'DeepSeek-V3', value: stats.health?.deepseek ? '已配置' : '未配置', ok: stats.health?.deepseek },
               { label: '通义千问(云端)', value: stats.health?.qwen ? '已配置' : '未配置', ok: stats.health?.qwen },
               { label: '智谱GLM-4', value: stats.health?.zhipu ? '已配置' : '未配置', ok: stats.health?.zhipu },
               { label: '通义Embedding', value: stats.health?.dashscope ? '已配置' : '未配置', ok: stats.health?.dashscope },
-              { label: '知识图谱(Neo4j)', value: stats.neo4j ? 'Neo4j 在线' : '离线模式', status: stats.neo4j ? '连接' : '本地', color: stats.neo4j ? 'green' : 'amber' },
+              { label: '知识图谱(Neo4j)', value: stats.health?.neo4j ? 'Neo4j在线' : '离线模式', ok: stats.health?.neo4j },
               { label: 'RAGFlow引擎', value: stats.health?.ragflow ? '在线' : '未部署', ok: stats.health?.ragflow },
               { label: '文档解析(EasyOCR)', value: stats.health?.paddleocr ? '在线' : stats.health?.paddleocr===false?'未运行':'检测中', ok: stats.health?.paddleocr },
               { label: 'LightRAG引擎', value: stats.health?.lightrag ? '在线' : stats.health?.lightrag===false?'未运行':'检测中', ok: stats.health?.lightrag },
