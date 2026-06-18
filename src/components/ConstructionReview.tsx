@@ -6,9 +6,16 @@ import { toast } from './Toast';
 
 interface Props { projectName: string; onBack: () => void; }
 const STANDARDS = ['DB11/T695-2025', 'DB11/T808-2020', 'GB50300', 'JGJ59'];
+interface ReviewRecord { id: string; fileName: string; time: string; results: any[]; report: string; }
+const REVIEW_HISTORY = 'construction-review-history';
+const loadReviewHistory = () => { try { return JSON.parse(localStorage.getItem(REVIEW_HISTORY) || '[]'); } catch { return []; } };
+const saveReviewHistory = (items: ReviewRecord[]) => { localStorage.setItem(REVIEW_HISTORY, JSON.stringify(items.slice(0, 30))); };
 
 const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [files, setFiles] = useState<File[]>([]);
+  const [reviewHistory, setReviewHistory] = useState<ReviewRecord[]>(loadReviewHistory);
+  const [showHistory, setShowHistory] = useState(false);
+  const [outputDir, setOutputDir] = useState(() => localStorage.getItem('constr-output-dir') || '');
   const [fileContent, setFileContent] = useState('');
   const [currentFileName, setCurrentFileName] = useState('');
   const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
@@ -169,7 +176,7 @@ AI服务未能响应(${errMsg.slice(0,60)})，已切换为本地关键词分析�
         toast('审查完成，报告生成失败', 'warning');
       }
     }
-    finally { setReviewing(false); }
+    finally { setReviewing(false); saveReview(); }
   };
 
   // 批量审查所有文件
@@ -253,6 +260,7 @@ ${content}`;
     setReport(batchReport + `\n---\n总计${allResults.length}项，不合格${allResults.filter(r=>r.status==='fail').length}项`);
     setReviewing(false);
     toast(`批量审查完成: ${files.length}个文件`, 'success');
+    saveReview();
   };
 
   const exportReport = (format: 'txt' | 'docx' = 'txt') => {
@@ -274,8 +282,34 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
     const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = '施工方案审查报告.txt'; a.click();
   };
 
+  const saveReview = () => {
+    const r: ReviewRecord = { id: Date.now().toString(), fileName: currentFileName || files[0]?.name || '', time: new Date().toLocaleString('zh-CN'), results: results, report };
+    const updated = [r, ...reviewHistory];
+    setReviewHistory(updated); saveReviewHistory(updated);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 历史审查侧边栏 */}
+      <div className={`${showHistory ? 'w-72' : 'w-0'} bg-white border-r overflow-hidden transition-all duration-200 shrink-0 sticky top-0 h-screen`}>
+        {showHistory && (
+          <div className="h-full flex flex-col">
+            <div className="px-3 py-3 border-b flex items-center justify-between shrink-0"><h3 className="text-xs font-semibold text-gray-700">历史审查</h3><button onClick={() => setShowHistory(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button></div>
+            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('constr-output-dir',e.target.value)}} placeholder="如: D:\报告\施工审查" className="w-full px-2 py-1 text-xs border rounded"/></div>
+            <div className="flex-1 overflow-hidden hover:overflow-y-auto">
+              {reviewHistory.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">暂无记录</p> : reviewHistory.map(r => (
+                <div key={r.id} className="px-3 py-2 border-b border-gray-50 cursor-pointer hover:bg-amber-50" onClick={() => { setResults(r.results); setReport(r.report); }}>
+                  <p className="text-xs font-medium text-gray-700 truncate">{r.fileName}</p><p className="text-xs text-gray-400">{r.time}</p>
+                  <div className="flex gap-1 mt-1"><span className="text-xs px-1 py-0.5 rounded bg-red-50 text-red-500">{r.results.filter((c:any)=>c.status==='fail').length}不合格</span><span className="text-xs px-1 py-0.5 rounded bg-green-50 text-green-500">{r.results.filter((c:any)=>c.status==='pass').length}合格</span></div>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-2 border-t text-xs text-gray-400 shrink-0">数据仅保存在浏览器本地</div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1">
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-white"/></div>
@@ -305,6 +339,7 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
               try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
             }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>
           )}
+          <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-amber-50 text-amber-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({reviewHistory.length})</button>
           {report && <><button onClick={() => exportReport('docx')} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>Word</button><button onClick={() => exportReport('txt')} className="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-1">TXT</button></>}
         </div>
       </div></header>
@@ -395,6 +430,7 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };
