@@ -6,11 +6,18 @@ import { toast } from './Toast';
 
 interface Props { projectName: string; onBack: () => void; }
 const CHECK_ITEMS = ['投标人资格', '评标办法', '合同条款', '技术规范', '工程量清单', '投标保证金', '履约担保'];
+interface BidRecord { id: string; fileName: string; time: string; items: any[]; report: string; }
+const BID_HISTORY = 'bid-review-history';
+const loadBidHistory = () => { try { return JSON.parse(localStorage.getItem(BID_HISTORY) || '[]'); } catch { return []; } };
+const saveBidHistory = (items: BidRecord[]) => { localStorage.setItem(BID_HISTORY, JSON.stringify(items.slice(0, 30))); };
 
 const BidReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [file, setFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [bidHistory, setBidHistory] = useState<BidRecord[]>(loadBidHistory);
+  const [showHistory, setShowHistory] = useState(false);
+  const [outputDir, setOutputDir] = useState(() => localStorage.getItem('bid-output-dir') || '');
   const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
   const [aiModel, setAiModel] = useState('auto');
   const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
@@ -84,7 +91,13 @@ ${fileContent}`;
       }
       toast('审查失败: ' + (msg || '请重试'), 'error');
     }
-    finally { setReviewing(false); }
+    finally { setReviewing(false); saveBidToHistory(); }
+  };
+
+  const saveBidToHistory = () => {
+    const r: BidRecord = { id: Date.now().toString(), fileName: file?.name || '', time: new Date().toLocaleString('zh-CN'), items, report };
+    const updated = [r, ...bidHistory];
+    setBidHistory(updated); saveBidHistory(updated);
   };
 
   const exportReport = (format: 'txt' | 'docx' = 'txt') => {
@@ -101,7 +114,27 @@ ${fileContent}`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 历史审查侧边栏 */}
+      <div className={`${showHistory ? 'w-72' : 'w-0'} bg-white border-r overflow-hidden transition-all duration-200 shrink-0 sticky top-0 h-screen`}>
+        {showHistory && (
+          <div className="h-full flex flex-col">
+            <div className="px-3 py-3 border-b flex items-center justify-between shrink-0"><h3 className="text-xs font-semibold text-gray-700">历史审查</h3><button onClick={() => setShowHistory(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button></div>
+            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('bid-output-dir',e.target.value)}} placeholder="如: D:\报告\招投标审查" className="w-full px-2 py-1 text-xs border rounded"/></div>
+            <div className="flex-1 overflow-hidden hover:overflow-y-auto">
+              {bidHistory.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">暂无记录</p> : bidHistory.map(r => (
+                <div key={r.id} className="px-3 py-2 border-b border-gray-50 cursor-pointer hover:bg-blue-50" onClick={() => { setItems(r.items); setReport(r.report); }}>
+                  <p className="text-xs font-medium text-gray-700 truncate">{r.fileName}</p><p className="text-xs text-gray-400">{r.time}</p>
+                  <div className="flex gap-1 mt-1"><span className="text-xs px-1 py-0.5 rounded bg-red-50 text-red-500">{r.items.filter((c:any)=>c.status==='fail').length}不合格</span><span className="text-xs px-1 py-0.5 rounded bg-green-50 text-green-500">{r.items.filter((c:any)=>c.status==='pass').length}合规</span></div>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-2 border-t text-xs text-gray-400 shrink-0">数据仅保存在浏览器本地</div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1">
       <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center"><FileSearch className="w-5 h-5 text-white"/></div>
@@ -124,6 +157,7 @@ ${fileContent}`;
             try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
           }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>
         )}
+          <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-blue-50 text-blue-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({bidHistory.length})</button>
         {report && <><button onClick={() => exportReport('docx')} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>Word</button><button onClick={() => exportReport('txt')} className="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-1">TXT</button></>}
       </div></header>
 
@@ -183,6 +217,7 @@ ${fileContent}`;
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };
