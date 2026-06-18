@@ -308,7 +308,7 @@ ${fileContent}`;
           <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-500 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-white"/></div>
             <div className="flex items-center gap-2">
-              <div><h1 className="text-lg font-bold text-gray-800">合同审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 关键条款提取 · 风险识别</p></div>
+              <div><h1 className="text-sm font-bold text-gray-800">合同审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 关键条款提取 · 风险识别</p></div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-[10px] font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
               <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-[10px] bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
             </div>
@@ -341,9 +341,9 @@ ${fileContent}`;
             <div className="bg-white rounded-xl border-2 border-dashed border-blue-300 p-12 text-center hover:border-blue-400 transition-colors cursor-pointer" onClick={() => fileRef.current?.click()}>
               <Upload className="w-12 h-12 text-blue-400 mx-auto mb-4"/>
               <h3 className="text-lg font-semibold text-gray-700 mb-2">上传合同文件</h3>
-              <p className="text-sm text-gray-500 mb-4">支持 .txt .pdf .doc .docx 格式</p>
+              <p className="text-[10px] text-gray-500 mb-4">支持 .txt .pdf .doc .docx 格式</p>
               <input ref={fileRef} type="file" className="hidden" accept=".txt,.pdf,.doc,.docx" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}/>
-              <span className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">选择文件</span>
+              <span className="px-4 py-2 bg-blue-500 text-white rounded-lg text-xs">选择文件</span>
             </div>
           )}
 
@@ -378,7 +378,7 @@ ${fileContent}`;
                   {clauses.map((c, i) => (
                     <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${c.risk==='low'?'bg-green-50':c.risk==='medium'?'bg-amber-50':'bg-red-50'}`}>
                       <span className={`w-3 h-3 rounded-full mt-1.5 shrink-0 ${c.risk==='low'?'bg-green-500':c.risk==='medium'?'bg-amber-500':'bg-red-500'}`}/>
-                      <div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-medium text-sm">{c.clause}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${c.risk==='low'?'bg-green-100 text-green-600':c.risk==='medium'?'bg-amber-100 text-amber-600':'bg-red-100 text-red-600'}`}>{c.risk==='low'?'低风险':c.risk==='medium'?'中风险':'高风险'}</span></div>
+                      <div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-medium text-xs">{c.clause}</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${c.risk==='low'?'bg-green-100 text-green-600':c.risk==='medium'?'bg-amber-100 text-amber-600':'bg-red-100 text-red-600'}`}>{c.risk==='low'?'低风险':c.risk==='medium'?'中风险':'高风险'}</span></div>
                         <p className="text-xs text-gray-600">{c.issue}</p><p className="text-xs text-blue-600 mt-0.5">{c.suggestion}</p></div>
                     </div>
                   ))}
@@ -388,10 +388,10 @@ ${fileContent}`;
               {report && (
                 <div className="bg-white rounded-xl border p-6">
                   <h3 className="font-semibold text-gray-800 mb-3">综合审查报告</h3>
-                  <div className="text-sm text-gray-700 leading-relaxed report-text" dangerouslySetInnerHTML={{__html:
-                    report.replace(/^### (.+)$/gm,'<h3 class="text-base font-semibold text-gray-800 mt-4 mb-2">$1</h3>')
+                  <div className="text-xs text-gray-700 leading-relaxed report-text" dangerouslySetInnerHTML={{__html:
+                    report.replace(/^### (.+)$/gm,'<h3 class="text-sm font-semibold text-gray-800 mt-4 mb-2">$1</h3>')
                          .replace(/^## (.+)$/gm,'<h2 class="text-lg font-bold text-blue-600 mt-4 mb-2 border-b pb-1">$1</h2>')
-                         .replace(/^# (.+)$/gm,'<h1 class="text-xl font-bold text-blue-700 mt-4 mb-3">$1</h1>')
+                         .replace(/^# (.+)$/gm,'<h1 class="text-base font-bold text-blue-700 mt-4 mb-3">$1</h1>')
                          .replace(/\*\*(.+?)\*\*/g,'<b class="text-gray-900">$1</b>')
                          .replace(/^- (.+)$/gm,'<li class="ml-4">$1</li>')
                          .replace(/\n/g, '<br>')
@@ -400,9 +400,9 @@ ${fileContent}`;
               )}
 
               <div className="flex items-center justify-center gap-2 pb-8">
-                <button onClick={() => { setFile(null); setFileContent(''); setClauses([]); setReport(''); setViewingHistory(null); }} className="px-4 py-2 text-sm border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50">重新审查</button>
-                <button onClick={exportHTML} className="px-4 py-2 text-sm bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 flex items-center gap-1"><FileDown className="w-3.5 h-3.5"/>HTML报告</button>
-                <button onClick={exportDOCX} className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>DOC报告</button>
+                <button onClick={() => { setFile(null); setFileContent(''); setClauses([]); setReport(''); setViewingHistory(null); }} className="px-4 py-2 text-xs border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50">重新审查</button>
+                <button onClick={exportHTML} className="px-4 py-2 text-xs bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 flex items-center gap-1"><FileDown className="w-3.5 h-3.5"/>HTML报告</button>
+                <button onClick={exportDOCX} className="px-4 py-2 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>DOC报告</button>
               </div>
             </div>
           )}
