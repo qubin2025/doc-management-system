@@ -40,17 +40,18 @@ services:
       - MINIO_ROOT_USER=rag_flow
       - MINIO_ROOT_PASSWORD=infini_rag_flow
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:9010:9000"
+      - "127.0.0.1:9011:9001"
     volumes:
       - minio-data:/data
 
   redis:
-    image: redis:7-alpine
+    image: valkey/valkey:8-alpine
     container_name: ragflow-redis
     restart: unless-stopped
+    command: valkey-server --requirepass infini_rag_flow
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6389:6379"
 
   ragflow:
     image: infiniflow/ragflow:v0.17.0
@@ -66,6 +67,7 @@ services:
       - "127.0.0.1:9381:80"
     environment:
       - TZ=Asia/Shanghai
+      - REDIS_PASSWORD=infini_rag_flow
     volumes:
       - ragflow-data:/ragflow/logs
 
