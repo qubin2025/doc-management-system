@@ -114,22 +114,63 @@ app.get('/api/stats', async (req, res) => {
 });
 
 // 启动时环境检查
-const ENV_CHECKS = [
-  { key: 'DB_PATH', warn: '未设置数据库路径，使用默认路径 backend/data/planning.db' },
-  { key: 'FILES_PATH', warn: '未设置文件存储路径，使用默认路径 backend/files/' },
-  { key: 'DEEPSEEK_API_KEY', warn: '未设置 AI 密钥，大模型功能不可用' },
-  { key: 'NEO4J_URI', warn: '未配置 Neo4j，知识图谱使用离线模式（localStorage）' },
-];
+import { execSync } from 'child_process';
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
   console.log(`✓ DB: ${process.env.DB_PATH || 'backend/data/planning.db (default)'}`);
   console.log(`✓ Files: ${process.env.FILES_PATH || 'backend/files/ (default)'}`);
-  for (const check of ENV_CHECKS) {
-    if (!process.env[check.key]) {
-      console.log(`⚠ ${check.warn}`);
-    }
+
+  // 必填环境检查
+  console.log('─── 环境检查 ───');
+  const checks = [
+    { key: 'DEEPSEEK_API_KEY', name: 'AI引擎(DeepSeek)', required: true },
+    { key: 'NEO4J_URI', name: '知识图谱(Neo4j)', required: false },
+  ];
+  for (const c of checks) {
+    const ok = process.env[c.key] && !process.env[c.key].includes('your-');
+    console.log(ok ? `  ✓ ${c.name}` : `  ⚠ ${c.name}: ${c.required ? '必填! AI功能不可用' : '可选，离线模式'}`);
   }
+
+  // 可选服务检查：条件满足时要求启动
+  console.log('─── 可选服务 ───');
+
+  // Docker → RAGFlow
+  let dockerOk = false;
+  try { execSync('docker info', { timeout: 3000, stdio: 'ignore' }); dockerOk = true; } catch {}
+  if (dockerOk) {
+    try {
+      const rf = await fetch('http://localhost:9380/api/v1/version', { signal: AbortSignal.timeout(2000) });
+      console.log(rf.ok ? '  ✓ RAGFlow(9380): 在线' : '  ⚠ RAGFlow(9380): Docker已就绪但RAGFlow未启动，请执行 docker compose up -d');
+    } catch { console.log('  ⚠ RAGFlow(9380): Docker已就绪但RAGFlow未启动，请执行 docker compose up -d'); }
+
+    try {
+      const n4j = await fetch('http://localhost:7687', { signal: AbortSignal.timeout(2000) });
+      console.log('  ✓ Neo4j(7687): 在线');
+    } catch { console.log('  ⚠ Neo4j(7687): 未启动，请启动Neo4j容器'); }
+  } else {
+    console.log('  - Docker未安装，RAGFlow/Neo4j不可用');
+  }
+
+  // Python → OCR + LightRAG
+  let pythonOk = false;
+  try { execSync('python --version', { timeout: 3000, stdio: 'ignore' }); pythonOk = true; } catch {}
+  if (pythonOk) {
+    try {
+      const po = await fetch('http://localhost:8001/api/parse/health', { signal: AbortSignal.timeout(2000) });
+      const pd = await po.json();
+      console.log(`  ✓ 文档解析(8001): ${pd.ocr_engine || 'easyocr'}在线`);
+    } catch { console.log('  ⚠ 文档解析(8001): Python已安装但未启动，请执行 python services/paddleocr-server/main.py'); }
+
+    try {
+      const lr = await fetch('http://localhost:8000/api/lightrag/health', { signal: AbortSignal.timeout(2000) });
+      console.log('  ✓ LightRAG(8000): 在线');
+    } catch { console.log('  ⚠ LightRAG(8000): Python已安装但未启动，请执行 python services/lightrag-server/main.py'); }
+  } else {
+    console.log('  - Python未安装，文档解析/LightRAG不可用');
+  }
+
+  console.log('─── 启动完成 ───');
 });
 
 export default app;
