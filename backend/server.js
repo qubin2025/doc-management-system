@@ -79,7 +79,7 @@ app.get('/api/stats', async (req, res) => {
       zhipu: !!(process.env.ZHIPU_API_KEY && !process.env.ZHIPU_API_KEY.includes('your-')),
       dashscope: !!(process.env.DASHSCOPE_API_KEY && !process.env.DASHSCOPE_API_KEY.includes('your-')),
       // 基础设施
-      neo4j: !!process.env.NEO4J_URI,
+      neo4j: false,
       ragflow: false,
       paddleocr: false,
       lightrag: false,
@@ -95,14 +95,16 @@ app.get('/api/stats', async (req, res) => {
       } catch { return false; }
     };
 
-    const [rf, po, lr] = await Promise.all([
+    const [rf, po, lr, n4j] = await Promise.all([
       probe('http://localhost:9380/api/v1/version'),
       probe('http://localhost:8001/api/parse/health'),
       probe('http://localhost:8000/api/lightrag/health'),
+      probe(process.env.NEO4J_URI ? process.env.NEO4J_URI.replace('bolt://', 'http://').replace(':7687', ':7474') : ''),
     ]);
     health.ragflow = rf;
     health.paddleocr = po;
     health.lightrag = lr;
+    health.neo4j = n4j;
 
     res.json({
       projects, documents, users, activeUsers,
