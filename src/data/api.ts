@@ -185,7 +185,7 @@ async function callVisionModel(messages: { role: string; content: string }[], sy
 export async function aiChat(
   messages: { role: string; content: string }[],
   context?: string,
-  opts?: { projectName?: string; standard?: string; model?: string; images?: string[] }
+  opts?: { projectName?: string; standard?: string; model?: string; images?: string[]; files?: {name:string;content:string}[] }
 ): Promise<string> {
   const images = opts?.images || [];
   // 优先尝试后端 API
@@ -197,6 +197,7 @@ export async function aiChat(
         projectName: opts?.projectName || '',
         standard: opts?.standard || '',
         model: opts?.model || 'auto',
+        files: opts?.files || [],
       }), headers: headers(),
     });
     if (res.ok) {

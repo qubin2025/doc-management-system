@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { sanitizeText } from '../utils/sanitize.js';
 import { getDb } from '../db.js';
+import { MODEL_SYSTEM_PROMPTS, DEFAULT_SYSTEM_PROMPT, FILE_UNDERSTANDING_PROMPT, IMAGE_UNDERSTANDING_PROMPT } from '../config/aiPrompts.js';
 
 const router = Router();
 
@@ -38,42 +39,36 @@ const MODELS = {
     endpoint: 'https://api.deepseek.com/chat/completions',
     key: process.env.DEEPSEEK_API_KEY,
     model: 'deepseek-chat',
-    system: '你是全过程工程咨询管理平台的AI助手，回答专业、简洁、准确。',
   },
   'deepseek-r1': {
     name: 'DeepSeek-R1',
     endpoint: 'https://api.deepseek.com/chat/completions',
     key: process.env.DEEPSEEK_API_KEY,
     model: 'deepseek-reasoner',
-    system: '你是全过程工程咨询管理平台的AI助手，推理严谨、分析深入。',
   },
   'qwen-turbo': {
     name: '通义千问(云端)',
     endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
     key: process.env.QWEN_API_KEY,
     model: 'qwen-plus',
-    system: '你是全过程工程咨询管理平台的AI助手。',
   },
   'glm-4-flash': {
     name: '智谱GLM-4',
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     key: process.env.ZHIPU_API_KEY,
     model: 'glm-4-flash',
-    system: '你是全过程工程咨询管理平台的AI助手。',
   },
   'ollama-qwen': {
     name: 'Ollama通义(本地)',
     endpoint: 'http://localhost:11434/v1/chat/completions',
     key: 'ollama',
     model: 'qwen2.5:7b',
-    system: '你是全过程工程咨询管理平台的AI助手。',
   },
   'ollama-llama': {
     name: 'Ollama Llama3(本地)',
     endpoint: 'http://localhost:11434/v1/chat/completions',
     key: 'ollama',
     model: 'llama3.1:8b',
-    system: '你是全过程工程咨询管理平台的AI助手。',
   },
 };
 
@@ -96,15 +91,33 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
     return res.status(429).json({ error: '请求过于频繁，请稍后' });
   }
 
-  const { messages, context, projectName, standard, model: reqModel } = req.body;
+  const { messages, context, projectName, standard, model: reqModel, files, folderPath } = req.body;
   const requestedModel = reqModel || 'deepseek-chat';
 
-  // Build context msgs
-  const ctxMsgs = [];
-  const ctx = projectName ? buildProjectContext(projectName, standard) : (context || '');
-  if (ctx) {
-    ctxMsgs.push({ role: 'system', content: `当前项目资料信息：\n${sanitizeText(ctx)}` });
+  // Build system prompt from config
+  const systemPrompt = MODEL_SYSTEM_PROMPTS[requestedModel] || DEFAULT_SYSTEM_PROMPT;
+
+  // Project context
+  const projectCtx = projectName ? `当前项目: ${projectName}\n${buildProjectContext(projectName, standard) || ''}` : '';
+
+  // File upload content
+  let uploadedContent = '';
+  if (files && Array.isArray(files) && files.length > 0) {
+    uploadedContent = files.map((f, i) => `${i + 1}. 文件名: ${f.name || '未命名'}\n内容: ${sanitizeText(f.content || '').slice(0, 8000)}`).join('\n\n');
   }
+
+  // Image detection in messages
+  let hasImage = false;
+  if (messages && Array.isArray(messages)) {
+    hasImage = messages.some(m => m.content?.includes('[图片:') || m.content?.includes('data:image'));
+  }
+
+  // Build final system prompt with context substitution
+  const finalSystemPrompt = systemPrompt
+    .replace('{projectContext}', projectCtx ? `项目信息:\n${projectCtx}` : '')
+    .replace('{uploadedContent}', uploadedContent ? `\n用户上传的文件:\n${uploadedContent}` : (hasImage ? IMAGE_UNDERSTANDING_PROMPT : ''));
+
+  const ctxMsgs = [{ role: 'system', content: finalSystemPrompt }];
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
   // Try requested model, fallback to offline if all fail
@@ -137,7 +150,6 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
 
     try {
       const msgs = [
-        { role: 'system', content: cfg.system },
         ...ctxMsgs,
         ...userMsgs,
       ];

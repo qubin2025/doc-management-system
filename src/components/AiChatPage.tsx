@@ -156,7 +156,9 @@ const AiChatPage: React.FC<{
       if (step < thinkingSteps.length) { setThinkingText(thinkingSteps[step]); step++; }
     }, 800);
 
-    const reply = await api.aiChat(msgs, '', { projectName, standard, model: model === '自动选择' ? 'auto' : model, images: imageB64Ref.current });
+    // 准备文件内容
+    const fileContents = filePreviews.map(p => ({ name: p.file.name, content: (p as any).text || '' })).filter(f => f.content);
+    const reply = await api.aiChat(msgs, '', { projectName, standard, model: model === '自动选择' ? 'auto' : model, images: imageB64Ref.current, files: fileContents });
     clearInterval(timer);
     setThinkingText('');
 
