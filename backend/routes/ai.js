@@ -155,7 +155,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
     return res.status(429).json({ error: '请求过于频繁，请稍后' });
   }
 
-  const { messages, context, projectName, standard, model: reqModel, files, folderPath } = req.body;
+  const { messages, context, projectName, standard, model: reqModel, files, folderPath, images } = req.body;
   const requestedModel = reqModel || 'deepseek-chat';
 
   // Build system prompt from config
@@ -170,12 +170,14 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
     uploadedContent = files.map((f, i) => `${i + 1}. 文件名: ${f.name || '未命名'}\n内容: ${sanitizeText(f.content || '').slice(0, 8000)}`).join('\n\n');
   }
 
-  // Image detection in messages
+  // Image detection in messages + request images
   let hasImage = false;
   let imageText = '';
+  let reqImages = images && Array.isArray(images) ? images : [];
   if (messages && Array.isArray(messages)) {
     hasImage = messages.some(m => m.content?.includes('[图片:') || m.content?.includes('data:image'));
   }
+  if (reqImages.length > 0) hasImage = true;
 
   // 图片预处理: 调用EasyOCR提取文字(文本型模型也能理解图片)
   if (hasImage) {
@@ -208,13 +210,13 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
   // Try requested model, fallback to offline if all fail
-  tryChat(requestedModel, ctxMsgs, userMsgs)
+  tryChat(requestedModel, ctxMsgs, userMsgs, reqImages)
     .then(reply => res.json({ reply, model: requestedModel }))
     .catch(async e1 => {
       // 如果不是auto且primary失败, 尝试auto
       if (requestedModel !== 'auto') {
         try {
-          const reply = await tryChat('auto', ctxMsgs, userMsgs);
+          const reply = await tryChat('auto', ctxMsgs, userMsgs, reqImages);
           return res.json({ reply, model: 'auto', note: `自动降级，原模型不可用: ${e1.message?.slice(0,60)}` });
         } catch (e2) {
           return res.status(500).json({ error: `AI调用失败: ${e1.message?.slice(0,80)}` });
@@ -224,7 +226,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
     });
 });
 
-async function tryChat(modelId, ctxMsgs, userMsgs) {
+async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
   // auto模式: 按优先级 DeepSeek->DeepSeekR1->OllamaQwen->OllamaLlama
   const candidates = modelId === 'auto'
     ? ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash', 'ollama-qwen', 'ollama-llama']
@@ -238,29 +240,50 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
     try {
       let msgs = [...ctxMsgs];
 
-      // GLM-4V 视觉模型: 转换 [图片:data:...] 为 image_url 格式
+      // GLM-4V 视觉模型: 将图片和文本组合为 vision API 格式
       if (cfg.vision) {
         let hasImageData = false;
+        const parts = [];
+        let userText = '';
+
+        // 收集所有用户文本
         for (const msg of userMsgs) {
           if (msg.role === 'user') {
-            const imgMatch = msg.content.match(/\[图片:\s*data:image\/\w+;base64,([^\]]+)\]/);
-            if (imgMatch) {
-              hasImageData = true;
-              const parts = [];
-              const restContent = msg.content.replace(/\[图片:\s*data:image\/\w+;base64,[^\]]+\]/, '').trim();
-              if (restContent) parts.push({ type: 'text', text: restContent });
-              parts.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${imgMatch[1]}` } });
-              msgs.push({ role: 'user', content: parts });
-            } else {
-              msgs.push(msg);
-            }
+            userText += (userText ? '\n' : '') + msg.content;
           } else {
             msgs.push(msg);
           }
         }
-        // 无图片时: GLM-4V也支持纯文本,但提示用户上传图片
-        if (!hasImageData && userMsgs.length > 0) {
-          msgs.push({ role: 'system', content: '用户目前尚未上传图片。请用文本回复，并提醒用户可以通过附件上传图片来获得视觉分析。' });
+
+        // 添加文本部分
+        if (userText) parts.push({ type: 'text', text: userText });
+
+        // 添加请求体中的图片
+        if (reqImages.length > 0) {
+          hasImageData = true;
+          for (const img of reqImages) {
+            if (img && img.startsWith('data:image')) {
+              parts.push({ type: 'image_url', image_url: { url: img } });
+            }
+          }
+        }
+
+        // 提取消息中的内联图片
+        if (userText) {
+          const imgMatches = [...userText.matchAll(/\[图片:\s*data:image\/\w+;base64,([^\]]+)\]/g)];
+          if (imgMatches.length > 0) {
+            hasImageData = true;
+            for (const m of imgMatches) {
+              parts.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${m[1]}` } });
+            }
+          }
+        }
+
+        if (!hasImageData) {
+          msgs.push({ role: 'system', content: '用户尚未上传图片。请用文本回复，并提醒用户可以通过附件上传图片来获得视觉分析。' });
+          msgs.push(...userMsgs); // 保留原文本消息
+        } else {
+          msgs.push({ role: 'user', content: parts });
         }
       } else {
         msgs.push(...userMsgs);

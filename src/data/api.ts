@@ -198,6 +198,7 @@ export async function aiChat(
         standard: opts?.standard || '',
         model: opts?.model || 'auto',
         files: opts?.files || [],
+        images: opts?.images || [],
       }), headers: headers(),
     });
     if (res.ok) {
