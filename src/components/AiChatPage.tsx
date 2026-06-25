@@ -521,6 +521,11 @@ const AiChatPage: React.FC<{
         <aside className="w-52 bg-gray-50/30 border-l border-gray-100 shrink-0 hidden xl:flex flex-col py-4 px-3">
           <p className="text-sm font-medium text-gray-500 mb-3 px-1">业务模板</p>
           <div className="space-y-2">
+            <button onClick={() => { setModel('glm-4v'); setInput('请分析上传照片中的不安全因素，对照JGJ59-2011安全标准逐项检查'); }}
+              className="w-full bg-gradient-to-r from-red-500 to-amber-500 text-white rounded-xl p-3 text-left hover:from-red-600 hover:to-amber-600 transition-colors">
+              <div className="flex items-center gap-2"><AlertTriangle className="w-5 h-5"/><span className="font-semibold text-sm">安全巡检(GLM-4V)</span></div>
+              <p className="text-[10px] opacity-80 mt-0.5">上传工地照片 → AI对标JGJ59安全检查</p>
+            </button>
             {BUSINESS_CARDS.map((card, i) => (
               <button key={i} onClick={() => { setTemplate(card.template); setInput(card.template === '自由对话' ? `请生成${card.title}` : ''); }}
                 className="w-full text-left p-3 rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-md transition-all bg-gray-50 shadow-sm">
