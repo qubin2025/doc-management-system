@@ -101,7 +101,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
     aiBar: light ? 'bg-gradient-to-r from-blue-100 via-slate-200 to-blue-100' : 'bg-white/5 backdrop-blur-xl border-t border-white/10',
     aiLabel: light ? 'text-blue-700 font-semibold' : 'text-blue-300',
     aiIcon: light ? 'text-sky-500' : 'text-blue-400',
-    aiInput: light ? 'bg-white border-transparent text-gray-800 focus:ring-4 focus:ring-blue-600/30 focus:border-blue-400/50' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10',
+    aiInput: light ? 'bg-white border-transparent text-gray-800 outline-none focus:ring-4 focus:ring-blue-400/30' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10 outline-none focus:ring-4 focus:ring-blue-400/20',
     aiBtn: light ? 'bg-sky-500 hover:bg-sky-600' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30',
     aiBtnDisabled: light ? 'bg-gray-300' : 'bg-white/10 text-blue-300/30',
     filterCount: light ? 'text-gray-500' : 'text-blue-300',
@@ -168,7 +168,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="搜索项目名称..."
-              className={`w-full pl-12 pr-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${t.searchBg} ${t.searchPh}`}
+              className={`w-full pl-12 pr-4 py-3 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-400/30 ${t.searchBg} ${t.searchPh}`}
             />
           </div>
           <div className={`flex items-center gap-2 text-sm shrink-0 ${t.filterCount}`}>
@@ -326,7 +326,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               onKeyDown={handleAiKeyDown}
               placeholder="输入您的问题，AI 将为您提供全过程工程咨询建议..."
               rows={2}
-              className={`w-full px-4 pt-3 pb-10 pr-12 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${t.aiInput}`}
+              className={`w-full px-4 pt-3 pb-10 pr-12 rounded-xl text-sm resize-none outline-none focus:ring-4 focus:ring-blue-400/30 transition-colors ${t.aiInput}`}
             />
             {/* 底部工具栏 */}
             <div className="absolute left-3 bottom-2 flex items-center gap-3">
@@ -491,7 +491,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">项目概况</label>
                 <textarea value={editForm.overview} onChange={e => setEditForm(p => ({ ...p, overview: e.target.value }))}
                   rows={3} placeholder="项目简介、地点、类型..."
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none outline-none focus:ring-4 focus:ring-blue-400/30" />
               </div>
 
               {/* 指标字段 */}
@@ -506,7 +506,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
                     <input type="text" value={(editForm as any)[field.key]} onChange={e => setEditForm(p => ({ ...p, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" />
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-400/30" />
                   </div>
                 ))}
               </div>
