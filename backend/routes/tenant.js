@@ -2,8 +2,10 @@
  * 多租户 + 用量统计 + 计费 API — v3.0 商业版
  */
 import { Router } from 'express';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 import { getDb } from '../db.js';
+
+const requireAdmin = requireRole('admin');
 
 const router = Router();
 

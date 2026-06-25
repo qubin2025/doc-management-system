@@ -2,9 +2,15 @@
  * 审计日志 + 系统备份 API — v3.0 商业版
  */
 import { Router } from 'express';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { initAuditTable } from '../middleware/auditLog.js';
 import { getDb } from '../db.js';
 import { execSync } from 'child_process';
+
+const requireAdmin = requireRole('admin');
+
+// 确保审计表已创建
+initAuditTable();
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
