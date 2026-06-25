@@ -93,7 +93,7 @@ export async function fetchProjects(): Promise<ProjectInfo[]> {
   const res = await fetch(`${API_BASE}/projects`, { headers: headers() });
   if (!res.ok) throw new Error('获取项目列表失败');
   const data = await res.json();
-  return data.map((p: any) => ({ name: p.name, createdAt: p.created_at }));
+  return data.map((p: any) => ({ id: p.id, name: p.name, createdAt: p.created_at, details: p.details }));
 }
 
 export async function createProject(name: string): Promise<any> {
@@ -101,6 +101,13 @@ export async function createProject(name: string): Promise<any> {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || '创建项目失败');
   return data;
+}
+
+export async function updateProject(id: number, data: { name?: string; details?: any }): Promise<void> {
+  const res = await fetch(`${API_BASE}/projects/${id}`, {
+    method: 'PUT', body: JSON.stringify(data), headers: headers(),
+  });
+  if (!res.ok) throw new Error('保存项目失败');
 }
 
 export async function deleteProjectApi(projectName: string): Promise<void> {

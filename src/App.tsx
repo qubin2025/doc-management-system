@@ -482,8 +482,16 @@ const App: React.FC = () => {
           });
         }}
         onUpdateProject={(name, details) => {
-          setProjects(prev => prev.map(p => p.name === name ? { ...p, details } : p));
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects.map(p => p.name === name ? { ...p, details } : p)));
+          setProjects(prev => {
+            const updated = prev.map(p => p.name === name ? { ...p, details } : p);
+            localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
+            // 持久化到后端 SQLite
+            const proj = updated.find(p => p.name === name);
+            if (proj && (proj as any).id) {
+              api.updateProject((proj as any).id, { details }).catch(() => {});
+            }
+            return updated;
+          });
         }}
         onAiSubmit={(query) => {
           setAiQuery(query);
