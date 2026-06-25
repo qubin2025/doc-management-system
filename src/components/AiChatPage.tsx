@@ -219,13 +219,16 @@ const AiChatPage: React.FC<{
       let ctx = q;
       if (currentFiles.length > 0) {
         const result = await readFilesAsContext(currentFiles);
+        // 等待addFiles的预加载完成(最多2秒)
+        for (let i = 0; i < 20 && imageB64Ref.current.length === 0; i++) {
+          await new Promise(r => setTimeout(r, 100));
+        }
         // 合并addFiles已读的base64和新读的base64
         const allImages = [...new Set([...imageB64Ref.current, ...result.images])];
         imageB64Ref.current = allImages;
         console.log('[IMG-READ] files:', currentFiles.length, 'totalImages:', allImages.length, 'sizes:', allImages.map(i=>i.length));
         ctx = result.text ? `${result.text}\n\n${q}` : q;
       } else if (imageB64Ref.current.length > 0) {
-        // 文件已被addFiles预先读取
         console.log('[IMG-READ] from preload, images:', imageB64Ref.current.length);
       }
       await doChat(ctx, sid, [...(sessions.find(s => s.id === sid)?.messages || []), userMsg]);
@@ -236,11 +239,11 @@ const AiChatPage: React.FC<{
 
   const addFiles = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
-    newFiles.forEach(async f => {
+    // 先显示预览 + 立即读取base64 (await所有完成)
+    Promise.all(newFiles.map(async f => {
       const isImage = f.type.startsWith('image/');
       const url = isImage ? URL.createObjectURL(f) : '';
       setFilePreviews(prev => [...prev, { file: f, url, isImage }]);
-      // 立即读取图片base64 (不等发送)
       if (isImage) {
         const b64 = await new Promise<string>((resolve) => {
           const r = new FileReader();
@@ -250,6 +253,8 @@ const AiChatPage: React.FC<{
         });
         if (b64) imageB64Ref.current = [...imageB64Ref.current, b64];
       }
+    })).then(() => {
+      console.log('[IMG-PRELOAD] done, total images:', imageB64Ref.current.length);
     });
   };
 
