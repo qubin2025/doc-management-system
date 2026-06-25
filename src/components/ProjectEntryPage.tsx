@@ -239,7 +239,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                       {proj.details.scale && <span className="text-[11px] px-1.5 py-0.5 rounded bg-green-50 text-green-600">{proj.details.scale}</span>}
                       {proj.details.area && <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">{proj.details.area}</span>}
                       {proj.details.investment && <span className="text-[11px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">{proj.details.investment}</span>}
-                      {proj.details.custom?.map((cf: any, i: number) => (
+                      {(proj.details as any).custom?.map((cf: any, i: number) => (
                         cf.key && <span key={i} className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600" title={cf.value}>{cf.key}{cf.value ? `: ${cf.value}` : ''}</span>
                       ))}
                     </div>
