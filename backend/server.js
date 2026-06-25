@@ -13,6 +13,7 @@ import aiRouter from './routes/ai.js';
 import kgRouter from './routes/kg.js';
 import ragflowRouter from './routes/ragflow.js';
 import auditRouter from './routes/audit.js';
+import tenantRouter from './routes/tenant.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,7 +58,8 @@ app.use('/api/backup', backupRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/kg', kgRouter);
 app.use('/api/ragflow', ragflowRouter);
-app.use('/api/audit', auditRouter);  // /api/audit + /api/backup/create + /api/backup/list
+app.use('/api/audit', auditRouter);
+app.use('/api/tenant', tenantRouter); // 多租户+用量+计费
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
