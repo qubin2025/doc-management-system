@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>全过程工程咨询管理系统 — 商用推进计划 v3.0</title>
+<style>:root{--p:#2563eb;--bg:#f8fafc;--c:#fff;--t:#1e293b;--m:#64748b;--b:#e2e8f0;--g:#16a34a;--a:#d97706;--r:#dc2626}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);line-height:1.9;max-width:1100px;margin:0 auto;padding:40px 20px}
+header{background:linear-gradient(135deg,#0f172a,#1e3a8a,#3b82f6);color:#fff;padding:60px 40px;text-align:center;border-radius:12px;margin-bottom:40px}
+h1{font-size:2.2em;margin-bottom:8px}header p{opacity:.85;font-size:1.05em}
+section{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:28px 32px;margin:24px 0;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+h2{color:var(--p);border-bottom:3px solid var(--p);padding-bottom:8px;margin-bottom:16px;font-size:1.4em}
+h3{color:#334155;margin:16px 0 8px;font-size:1.05em}
+table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid var(--b);padding:10px 14px;font-size:.88em}th{background:#eff6ff;color:#1e40af;font-weight:600;text-align:left}
+.arch{background:#1e293b;color:#e2e8f0;padding:18px;border-radius:8px;font-family:Consolas,monospace;font-size:.82em;line-height:1.6;overflow-x:auto}
+.p0{background:#fef2f2;border-left:4px solid var(--r);padding:12px 16px;margin:8px 0}.p1{background:#fef3c7;border-left:4px solid var(--a);padding:12px 16px;margin:8px 0}.p2{background:#f0fdf4;border-left:4px solid var(--g);padding:12px 16px;margin:8px 0}
+.p0 strong{color:var(--r)}.p1 strong{color:var(--a)}.p2 strong{color:var(--g)}
+.timeline{display:flex;gap:0;margin:20px 0}.tl{flex:1;padding:14px;text-align:center;border-radius:8px;margin:0 4px;font-weight:600;color:#fff}.tl:nth-child(1){background:var(--r)}.tl:nth-child(2){background:var(--a)}.tl:nth-child(3){background:var(--p)}.tl:nth-child(4){background:var(--g)}
+footer{text-align:center;color:var(--m);font-size:.85em;margin-top:40px;padding:20px;border-top:1px solid var(--b)}
+</style></head><body>
+
+<header><h1>全过程工程咨询管理系统</h1><p>商用推进计划 v3.0 · 企业级内外网部署 · 多租户SaaS</p></header>
+
+<section><h2>一、当前状态 vs 商用目标</h2>
+<table><tr><th>维度</th><th>当前 v2.5.0</th><th>商用 v3.0 目标</th></tr>
+<tr><td>登录方式</td><td>用户名+密码(bcrypt+UUID)</td><td>WeChat/支付宝/手机号/邮箱/SSO</td></tr>
+<tr><td>权限管理</td><td>4角色RBAC(SQLite)</td><td>细粒度RBAC+组织层级(Casdoor)</td></tr>
+<tr><td>数据库</td><td>SQLite 单机</td><td>PostgreSQL 多租户Schema</td></tr>
+<tr><td>部署方式</td><td>Windows开发/Docker</td><td>K8s集群+内外网双通</td></tr>
+<tr><td>计费</td><td>无</td><td>按项目/用户/功能三级定价</td></tr>
+<tr><td>证书</td><td>无SSL</td><td>Let's Encrypt自动续期</td></tr>
+<tr><td>监控</td><td>健康检查面板</td><td>Prometheus+Grafana+钉钉告警</td></tr></table></section>
+
+<section><h2>二、登录权限系统升级方案</h2>
+<h3>推荐：Casdoor (Apache 2.0, 12k+ Stars, Go语言)</h3>
+<div class="arch">
+当前: 用户 → React登录页 → Express /api/auth/login → bcrypt → UUID Session → SQLite<br>
+  ↓<br>
+升级: 用户 → Casdoor登录页(:8002) → OAuth2.0 → Express → JWT → PostgreSQL<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── WeChat扫码<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 支付宝扫码<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 手机号+SMS<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 企业微信<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── 邮箱/密码<br></div>
+<p style="margin-top:8px">Casdoor已部署于 <code>localhost:8002</code>（待Docker）</p>
+<h3>为什么选Casdoor？</h3>
+<table><tr><th>对比</th><th>Casdoor</th><th>Logto</th><th>SuperTokens</th><th>Keycloak</th></tr>
+<tr><td>WeChat/支付宝</td><td>✅原生</td><td>❌</td><td>❌</td><td>⚠️插件</td></tr>
+<tr><td>手机号登录</td><td>✅</td><td>✅</td><td>✅</td><td>⚠️</td></tr>
+<tr><td>RBAC</td><td>✅组织级</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>部署体积</td><td>~20MB</td><td>~200MB</td><td>~100MB</td><td>~500MB</td></tr>
+<tr><td>License</td><td>Apache 2.0</td><td>MPL 2.0</td><td>Apache 2.0</td><td>Apache 2.0</td></tr></table></section>
+
+<section><h2>三、内外网双部署架构</h2>
+<div class="arch">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;┌─────────────┐<br>
+外网: https://doc.company.com ──→ Cloudflare CDN/WAF ──→ Nginx(:443) ──┐<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+内网: http://192.168.1.x:5173 ──→ Express(:3000) ──┼── Casdoor(:8002)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── RAGFlow(:9380)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── EasyOCR(:8001)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── Neo4j(:7687)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── PostgreSQL(:5432)</div></section>
+
+<section><h2>四、四阶段实施计划</h2>
+<div class="timeline"><div class="tl">Phase 1<br>基础安全<br>2周</div><div class="tl">Phase 2<br>多租户SaaS<br>3周</div><div class="tl">Phase 3<br>商用增强<br>2周</div><div class="tl">Phase 4<br>规模化<br>2周</div></div>
+
+<h3>Phase 1: 基础安全（2周）</h3>
+<div class="p0"><strong>P0-1: Casdoor集成 (3天)</strong> — 部署Casdoor + 改造auth.js支持OAuth + 前端WeChat/支付宝/手机号登录页</div>
+<div class="p0"><strong>P0-2: HTTPS+域名 (0.5天)</strong> — Let's Encrypt证书 + Nginx配置</div>
+<div class="p0"><strong>P0-3: 审计日志 (1天)</strong> — 操作留痕表 + 查询面板</div>
+<div class="p0"><strong>P0-4: 数据备份 (1天)</strong> — 定时自动备份 + 异地FTP/OSS</div>
+<div class="p0"><strong>P0-5: 合规文档 (0.5天)</strong> — 用户协议 + 隐私政策 + ICP备案</div>
+<div class="p0"><strong>P0-6: WAF防火墙 (1天)</strong> — Cloudflare或阿里云WAF</div>
+<div class="p0"><strong>P0-7: 安全渗透测试 (1天)</strong> — OWASP Top 10检测</div>
+
+<h3>Phase 2: 多租户SaaS（3周）</h3>
+<div class="p1"><strong>P1-1: PostgreSQL迁移 (3天)</strong> — SQLite→PostgreSQL + Schema级租户隔离</div>
+<div class="p1"><strong>P1-2: 多租户架构 (2天)</strong> — 工作空间 + 数据隔离 + 跨租户管理</div>
+<div class="p1"><strong>P1-3: 计费系统 (3天)</strong> — 项目数/用户数/功能包三级定价 + 支付宝/微信支付</div>
+<div class="p1"><strong>P1-4: 用量统计 (2天)</strong> — AI调用次数/文档存储量/活跃用户</div>
+<div class="p1"><strong>P1-5: 租户管理面板 (2天)</strong> — 管理员可创建/禁用/配置租户</div>
+
+<h3>Phase 3: 商用增强（2周）</h3>
+<div class="p2"><strong>P2-1: CI/CD Pipeline (2天)</strong> — GitHub Actions自动构建+部署</div>
+<div class="p2"><strong>P2-2: Prometheus监控 (2天)</strong> — 服务健康+API延迟+错误率</div>
+<div class="p2"><strong>P2-3: 性能压测 (2天)</strong> — JMeter 500并发+优化</div>
+<div class="p2"><strong>P2-4: 灰度发布 (1天)</strong> — Nginx分流 10%→100%</div>
+
+<h3>Phase 4: 规模化（2周）</h3>
+<div class="p2"><strong>P3-1: K8s部署 (3天)</strong> — Helm Chart + 自动扩缩</div>
+<div class="p2"><strong>P3-2: 灾备方案 (2天)</strong> — 主从复制 + 异地备份</div>
+<div class="p2"><strong>P3-3: CDN加速 (1天)</strong> — 静态资源CDN + API加速</div>
+</section>
+
+<section><h2>五、成本估算</h2>
+<table><tr><th>项目</th><th>月费(¥)</th><th>年费(¥)</th></tr>
+<tr><td>云服务器(4核8G)</td><td>~500</td><td>6,000</td></tr>
+<tr><td>PostgreSQL(云)</td><td>~200</td><td>2,400</td></tr>
+<tr><td>域名+SSL</td><td>~10</td><td>120</td></tr>
+<tr><td>CDN/WAF</td><td>~100</td><td>1,200</td></tr>
+<tr><td>DeepSeek API</td><td>~300</td><td>3,600</td></tr>
+<tr><td>短信服务</td><td>~100</td><td>1,200</td></tr>
+<tr><td><strong>合计</strong></td><td><strong>~1,200</strong></td><td><strong>~14,500</strong></td></tr></table></section>
+
+<footer>全过程工程咨询管理系统 · 商用推进计划 v3.0 · 2026年6月</footer>
+</body></html>
