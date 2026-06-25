@@ -210,6 +210,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
   // Try requested model, fallback to offline if all fail
+  console.log(`[AI Chat] model=${requestedModel} images=${reqImages.length} hasImage=${hasImage} hasFile=${(files||[]).length}`);
   tryChat(requestedModel, ctxMsgs, userMsgs, reqImages)
     .then(reply => res.json({ reply, model: requestedModel }))
     .catch(async e1 => {
