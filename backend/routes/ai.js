@@ -210,7 +210,6 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
   // Try requested model, fallback to offline if all fail
-  console.log(`[AI Chat] model=${requestedModel} images=${reqImages.length} hasImage=${hasImage} hasFile=${(files||[]).length}`);
   tryChat(requestedModel, ctxMsgs, userMsgs, reqImages)
     .then(reply => res.json({ reply, model: requestedModel }))
     .catch(async e1 => {
@@ -244,25 +243,20 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
     try {
       let msgs = [...ctxMsgs];
 
-      // 视觉模型: 将图片和文本组合为 vision API 格式
-      console.log(`[VISION] model=${mid} vision=${cfg.vision} images=${(reqImages||[]).length}`);
+      // 视觉模型: 直接构建user消息(不带system前缀, GLM-4V已验证)
       if (cfg.vision) {
         const parts = [];
         let userText = '';
         for (const msg of userMsgs) {
           if (msg.role === 'user') userText += (userText ? '\n' : '') + msg.content;
-          else msgs.push(msg);
         }
         if (userText) parts.push({ type: 'text', text: userText });
-
-        // 直接添加所有图片(已验证: data:image/xxx 和 https://xxx 均可)
         const validImages = (reqImages || []).filter(img => img && (img.startsWith('data:image') || img.startsWith('http')));
         for (const img of validImages) parts.push({ type: 'image_url', image_url: { url: img } });
-
         if (validImages.length > 0) {
-          msgs.push({ role: 'user', content: parts });
+          msgs = [{ role: 'user', content: parts }]; // 仅发送user消息(已验证格式)
         } else {
-          msgs.push(...userMsgs); // 无图片时原样传递
+          msgs.push(...userMsgs);
         }
       } else {
         msgs.push(...userMsgs);
@@ -270,11 +264,11 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
       const body = {
         model: cfg.model || 'deepseek-chat',
         messages: msgs,
-        max_tokens: 4096,
+        max_tokens: cfg.vision ? 2048 : 4096,  // GLM-4V限制2048
         temperature: 0.3,
       };
 
-      const resp = await fetch(cfg.endpoint + '?t=' + Date.now(), {
+      const resp = await fetch(cfg.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -290,7 +284,6 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
         throw new Error(`${mid} HTTP ${resp.status}: ${err.slice(0, 80)}`);
       }
       const data = await resp.json();
-      if (cfg.vision) console.log('[VISION-RESP] content:', data.choices?.[0]?.message?.content?.slice(0, 100));
       const reply = data.choices?.[0]?.message?.content || '';
       if (!reply) throw new Error(`${mid} 返回空内容`);
       return reply;
