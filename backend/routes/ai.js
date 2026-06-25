@@ -240,12 +240,13 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
 
       // GLM-4V 视觉模型: 转换 [图片:data:...] 为 image_url 格式
       if (cfg.vision) {
+        let hasImageData = false;
         for (const msg of userMsgs) {
           if (msg.role === 'user') {
-            const parts = [];
-            // 提取图片 base64
             const imgMatch = msg.content.match(/\[图片:\s*data:image\/\w+;base64,([^\]]+)\]/);
             if (imgMatch) {
+              hasImageData = true;
+              const parts = [];
               const restContent = msg.content.replace(/\[图片:\s*data:image\/\w+;base64,[^\]]+\]/, '').trim();
               if (restContent) parts.push({ type: 'text', text: restContent });
               parts.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${imgMatch[1]}` } });
@@ -256,6 +257,10 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
           } else {
             msgs.push(msg);
           }
+        }
+        // 无图片时: GLM-4V也支持纯文本,但提示用户上传图片
+        if (!hasImageData && userMsgs.length > 0) {
+          msgs.push({ role: 'system', content: '用户目前尚未上传图片。请用文本回复，并提醒用户可以通过附件上传图片来获得视觉分析。' });
         }
       } else {
         msgs.push(...userMsgs);
