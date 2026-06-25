@@ -127,7 +127,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         {/* Brand overlay */}
         <div className="relative" style={{ zIndex: 2 }}>
-          <div className="flex items-center justify-center mb-8 select-none" style={{ width: 48, height: 48, background: '#1D4F91', fontSize: '0.95rem', fontWeight: 900, letterSpacing: '0.02em', color: '#FAFAF8' }}>ZHJK</div>
+          <img src="/logo.png" className="w-12 h-12 rounded-xl object-contain mb-8" alt="Logo" style={{ width: 48, height: 48 }} />
           <h1 className="font-bold mb-3" style={{ fontSize: '1.6rem', fontWeight: 700, letterSpacing: '0.05em', lineHeight: 1.3, color: '#141414' }}>全过程工程咨询管理系统</h1>
           <div className="mb-3" style={{ width: 48, height: 2, background: '#141414' }} />
           <p style={{ fontSize: '0.78rem', letterSpacing: '0.05em', lineHeight: 1.6, color: '#6E6E68' }}>
@@ -139,7 +139,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
       {/* Mobile brand header */}
       <div className="md:hidden absolute top-0 left-0 right-0 p-6 flex items-center gap-4" style={{ zIndex: 10 }}>
-        <div className="flex items-center justify-center text-white flex-shrink-0" style={{ width: 40, height: 40, background: '#1D4F91', fontSize: '0.75rem', fontWeight: 900 }}>ZHJK</div>
+        <img src="/logo.png" className="w-10 h-10 rounded-lg object-contain flex-shrink-0" alt="Logo" />
         <div>
           <h1 className="text-base font-bold" style={{ color: '#141414' }}>全过程工程咨询管理系统</h1>
           <p className="text-[10px] tracking-wider" style={{ color: '#6E6E68' }}>数据加工中心 · AI底座 · 资产沉淀</p>

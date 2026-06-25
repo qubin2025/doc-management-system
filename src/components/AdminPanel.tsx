@@ -73,7 +73,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-xs">ZHJK</span></div>
+            <img src="/logo.png" className="w-9 h-9 rounded-lg object-contain" alt="Logo" />
             <h1 className="text-lg font-bold text-gray-800">系统管理</h1>
           </div>
           <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"><Plus className="w-4 h-4" />添加用户</button>

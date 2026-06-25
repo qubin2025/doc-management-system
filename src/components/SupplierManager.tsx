@@ -34,7 +34,7 @@ const SupplierManager: React.FC<Props> = ({ onBack }) => {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-[10px]">ZHJK</span></div>
+            <img src="/logo.png" className="w-9 h-9 rounded-lg object-contain" alt="Logo" />
             <h1 className="text-lg font-bold text-gray-800">供应商库</h1>
             <span className="text-sm text-gray-400">{suppliers.length}家</span>
           </div>

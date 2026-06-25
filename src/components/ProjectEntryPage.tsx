@@ -130,9 +130,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
       <header className={`sticky top-0 z-30 ${t.hdr}`}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 ${t.logoBg} flex items-center justify-center rounded-lg ${t.logoShadow}`}>
-              <span className="text-white font-black text-xs">ZHJK</span>
-            </div>
+            <img src="/logo.png" className="w-10 h-10 rounded-lg object-contain" alt="Logo" />
             <div>
               <h1 className={`text-lg font-bold ${t.h1Text}`}>全过程工程咨询管理服务平台</h1>
               <p className={`text-[11px] ${t.subText}`}>项目管理入口 · 全局模式 — 选择项目进入详情</p>

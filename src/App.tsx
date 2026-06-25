@@ -531,9 +531,7 @@ const App: React.FC = () => {
           </div>
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 flex items-center justify-center rounded-none">
-                <span className="text-white font-black text-xs">ZHJK</span>
-              </div>
+              <img src="/logo.png" className="w-10 h-10 rounded-lg object-contain" alt="Logo" />
               <div>
                 <h1 className="text-xl font-bold text-gray-800">全过程工程咨询管理服务平台</h1>
                 <p className="text-xs text-gray-400">全过程工程咨询管理服务平台</p>
