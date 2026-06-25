@@ -244,50 +244,25 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
     try {
       let msgs = [...ctxMsgs];
 
-      // GLM-4V 视觉模型: 将图片和文本组合为 vision API 格式
+      // 视觉模型: 将图片和文本组合为 vision API 格式
+      console.log(`[VISION] model=${mid} vision=${cfg.vision} images=${(reqImages||[]).length}`);
       if (cfg.vision) {
-        let hasImageData = false;
         const parts = [];
         let userText = '';
-
-        // 收集所有用户文本
         for (const msg of userMsgs) {
-          if (msg.role === 'user') {
-            userText += (userText ? '\n' : '') + msg.content;
-          } else {
-            msgs.push(msg);
-          }
+          if (msg.role === 'user') userText += (userText ? '\n' : '') + msg.content;
+          else msgs.push(msg);
         }
-
-        // 添加文本部分
         if (userText) parts.push({ type: 'text', text: userText });
 
-        // 添加请求体中的图片
-        if (reqImages.length > 0) {
-          hasImageData = true;
-          for (const img of reqImages) {
-            if (img && img.startsWith('data:image')) {
-              parts.push({ type: 'image_url', image_url: { url: img } });
-            }
-          }
-        }
+        // 直接添加所有图片(已验证: data:image/xxx 和 https://xxx 均可)
+        const validImages = (reqImages || []).filter(img => img && (img.startsWith('data:image') || img.startsWith('http')));
+        for (const img of validImages) parts.push({ type: 'image_url', image_url: { url: img } });
 
-        // 提取消息中的内联图片
-        if (userText) {
-          const imgMatches = [...userText.matchAll(/\[图片:\s*data:image\/\w+;base64,([^\]]+)\]/g)];
-          if (imgMatches.length > 0) {
-            hasImageData = true;
-            for (const m of imgMatches) {
-              parts.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${m[1]}` } });
-            }
-          }
-        }
-
-        if (!hasImageData) {
-          msgs.push({ role: 'system', content: '用户尚未上传图片。请用文本回复，并提醒用户可以通过附件上传图片来获得视觉分析。' });
-          msgs.push(...userMsgs); // 保留原文本消息
-        } else {
+        if (validImages.length > 0) {
           msgs.push({ role: 'user', content: parts });
+        } else {
+          msgs.push(...userMsgs); // 无图片时原样传递
         }
       } else {
         msgs.push(...userMsgs);
@@ -315,6 +290,7 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
         throw new Error(`${mid} HTTP ${resp.status}: ${err.slice(0, 80)}`);
       }
       const data = await resp.json();
+      if (cfg.vision) console.log('[VISION-RESP] content:', data.choices?.[0]?.message?.content?.slice(0, 100));
       const reply = data.choices?.[0]?.message?.content || '';
       if (!reply) throw new Error(`${mid} 返回空内容`);
       return reply;
