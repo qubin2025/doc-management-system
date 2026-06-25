@@ -120,14 +120,37 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
 
   // Image detection in messages
   let hasImage = false;
+  let imageText = '';
   if (messages && Array.isArray(messages)) {
     hasImage = messages.some(m => m.content?.includes('[图片:') || m.content?.includes('data:image'));
+  }
+
+  // 图片预处理: 调用EasyOCR提取文字(文本型模型也能理解图片)
+  if (hasImage) {
+    try {
+      const ocrRes = await fetch('http://localhost:8001/api/parse/document', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: (messages.find(m => m.content?.includes('data:image'))?.content || '').replace(/data:image\/\w+;base64,/, ''),
+          filename: 'chat-upload.png',
+          mime_type: 'image/png',
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (ocrRes.ok) {
+        const ocrData = await ocrRes.json();
+        if (ocrData.ok && ocrData.text?.trim()) {
+          imageText = `\n[图片OCR识别结果]:\n${ocrData.text.slice(0, 3000)}\n[请基于以上识别内容回答]`;
+        }
+      }
+    } catch { /* OCR不可用,降级为告知用户 */ }
   }
 
   // Build final system prompt with context substitution
   const finalSystemPrompt = systemPrompt
     .replace('{projectContext}', projectCtx ? `项目信息:\n${projectCtx}` : '')
-    .replace('{uploadedContent}', uploadedContent ? `\n用户上传的文件:\n${uploadedContent}` : (hasImage ? IMAGE_UNDERSTANDING_PROMPT : ''));
+    .replace('{uploadedContent}', uploadedContent ? `\n用户上传的文件:\n${uploadedContent}` : '')
+    + (imageText ? imageText : (hasImage ? '\n用户上传了一张图片，已自动识别其中的文字内容。' : ''));
 
   const ctxMsgs = [{ role: 'system', content: finalSystemPrompt }];
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
