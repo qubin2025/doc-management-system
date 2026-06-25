@@ -3,6 +3,7 @@ import { requireAuth, requirePermission } from '../middleware/auth.js';
 import { sanitizeText } from '../utils/sanitize.js';
 import { getDb } from '../db.js';
 import { MODEL_SYSTEM_PROMPTS, DEFAULT_SYSTEM_PROMPT, FILE_UNDERSTANDING_PROMPT, IMAGE_UNDERSTANDING_PROMPT } from '../config/aiPrompts.js';
+import { SAFETY_CHECKLIST, VISION_SAFETY_PROMPT } from '../config/safetyChecklist.js';
 
 const router = Router();
 
@@ -97,8 +98,52 @@ router.get('/models', requireAuth, (req, res) => {
   res.json({ models: available });
 });
 
+// POST /api/ai/vision-safety — 工地安全巡检（照片→安全标准对标）
+router.post('/vision-safety', requireAuth, requirePermission('can_use_ai'), async (req, res) => {
+  const { imageBase64, projectName, checklistIds } = req.body;
+  if (!imageBase64) return res.status(400).json({ error: '缺少图片数据' });
+
+  const glmVisionRes = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.ZHIPU_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'glm-4v',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: VISION_SAFETY_PROMPT.replace('{checklist}',
+            (checklistIds?.length ? SAFETY_CHECKLIST.filter(c => checklistIds.includes(c.id)) : SAFETY_CHECKLIST)
+              .map(c => `- [${c.id}] ${c.item} (${c.standard}): ${c.check}`).join('\n')
+          )},
+          { type: 'image_url', image_url: { url: imageBase64 } },
+        ],
+      }],
+      temperature: 0.1,
+      max_tokens: 4000,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (!glmVisionRes.ok) {
+    return res.status(502).json({ error: `GLM-4V调用失败: HTTP ${glmVisionRes.status}` });
+  }
+  const data = await glmVisionRes.json();
+  const content = data.choices?.[0]?.message?.content || '';
+
+  // 尝试解析JSON输出
+  try {
+    const json = JSON.parse(content.replace(/```json\n?|\n?```/g, '').trim());
+    return res.json({ ok: true, model: 'glm-4v', report: json });
+  } catch {
+    return res.json({ ok: true, model: 'glm-4v', report: { summary: content.slice(0, 200), raw: content } });
+  }
+});
+
 // POST /api/ai/chat
-router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) => {
+router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, res) => {
   if (!checkRate(req.user?.id)) {
     return res.status(429).json({ error: '请求过于频繁，请稍后' });
   }
