@@ -65,6 +65,13 @@ const MODELS = {
     key: process.env.ZHIPU_API_KEY,
     model: 'glm-4-flash',
   },
+  'glm-4v': {
+    name: '智谱GLM-4V(视觉)',
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    key: process.env.ZHIPU_API_KEY,
+    model: 'glm-4v',
+    vision: true,
+  },
   'glm-4-plus': {
     name: '智谱GLM-4 Plus',
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
@@ -229,10 +236,30 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
     if (mid.startsWith('deepseek') && !cfg.key) continue;
 
     try {
-      const msgs = [
-        ...ctxMsgs,
-        ...userMsgs,
-      ];
+      let msgs = [...ctxMsgs];
+
+      // GLM-4V 视觉模型: 转换 [图片:data:...] 为 image_url 格式
+      if (cfg.vision) {
+        for (const msg of userMsgs) {
+          if (msg.role === 'user') {
+            const parts = [];
+            // 提取图片 base64
+            const imgMatch = msg.content.match(/\[图片:\s*data:image\/\w+;base64,([^\]]+)\]/);
+            if (imgMatch) {
+              const restContent = msg.content.replace(/\[图片:\s*data:image\/\w+;base64,[^\]]+\]/, '').trim();
+              if (restContent) parts.push({ type: 'text', text: restContent });
+              parts.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${imgMatch[1]}` } });
+              msgs.push({ role: 'user', content: parts });
+            } else {
+              msgs.push(msg);
+            }
+          } else {
+            msgs.push(msg);
+          }
+        }
+      } else {
+        msgs.push(...userMsgs);
+      }
       const body = {
         model: cfg.model || 'deepseek-chat',
         messages: msgs,
