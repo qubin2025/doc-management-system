@@ -32,9 +32,11 @@ const ContractReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
   const [aiModel, setAiModel] = useState('auto');
   const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
+    {id:'deepseek-v4-pro',name:'DeepSeek-V4 Pro',status:'online'},
     {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
     {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
     {id:'qwen-turbo',name:'通义千问(云端)',status:'online'},
+    {id:'glm-4-plus',name:'智谱GLM-4 Plus',status:'online'},
     {id:'glm-4-flash',name:'智谱GLM-4',status:'online'},
     {id:'ollama-qwen',name:'Ollama通义(本地)',status:'optional'},
     {id:'ollama-llama',name:'Ollama Llama3(本地)',status:'optional'},

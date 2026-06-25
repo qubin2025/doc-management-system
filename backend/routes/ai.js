@@ -40,6 +40,12 @@ const MODELS = {
     key: process.env.DEEPSEEK_API_KEY,
     model: 'deepseek-chat',
   },
+  'deepseek-v4-pro': {
+    name: 'DeepSeek-V4 Pro',
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    key: process.env.DEEPSEEK_API_KEY,
+    model: 'deepseek-chat',
+  },
   'deepseek-r1': {
     name: 'DeepSeek-R1',
     endpoint: 'https://api.deepseek.com/chat/completions',
@@ -57,6 +63,12 @@ const MODELS = {
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     key: process.env.ZHIPU_API_KEY,
     model: 'glm-4-flash',
+  },
+  'glm-4-plus': {
+    name: '智谱GLM-4 Plus',
+    endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    key: process.env.ZHIPU_API_KEY,
+    model: 'glm-4-plus',
   },
   'ollama-qwen': {
     name: 'Ollama通义(本地)',
@@ -78,7 +90,7 @@ router.get('/models', requireAuth, (req, res) => {
     let status = 'unknown';
     if (id.startsWith('deepseek')) status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
     else if (id === 'qwen-turbo') status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
-    else if (id === 'glm-4-flash') status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
+    else if (id.startsWith('glm-4')) status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
     else if (id.startsWith('ollama')) status = 'optional';
     return { id, name: cfg.name, status };
   });
@@ -140,7 +152,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
 async function tryChat(modelId, ctxMsgs, userMsgs) {
   // auto模式: 按优先级 DeepSeek->DeepSeekR1->OllamaQwen->OllamaLlama
   const candidates = modelId === 'auto'
-    ? ['deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama']
+    ? ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash', 'ollama-qwen', 'ollama-llama']
     : [modelId];
 
   for (const mid of candidates) {
