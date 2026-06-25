@@ -232,6 +232,18 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                     </div>
                   )}
                   <p className={`text-xs mt-1 ml-10 ${t.cardDate}`}>创建于 {proj.createdAt}</p>
+                  {/* 项目详情概要 */}
+                  {proj.details && (proj.details.overview || proj.details.scale || proj.details.investment) && (
+                    <div className="ml-10 mt-2 flex flex-wrap gap-1.5">
+                      {proj.details.overview && <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 truncate max-w-[200px]" title={proj.details.overview}>{proj.details.overview}</span>}
+                      {proj.details.scale && <span className="text-[11px] px-1.5 py-0.5 rounded bg-green-50 text-green-600">{proj.details.scale}</span>}
+                      {proj.details.area && <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600">{proj.details.area}</span>}
+                      {proj.details.investment && <span className="text-[11px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">{proj.details.investment}</span>}
+                      {proj.details.custom?.map((cf: any, i: number) => (
+                        cf.key && <span key={i} className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600" title={cf.value}>{cf.key}{cf.value ? `: ${cf.value}` : ''}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <ArrowRight className={`w-4 h-4 group-hover:translate-x-1 transition-all ${t.cardArrow} mt-2`} />
               </div>
@@ -240,7 +252,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 e.stopPropagation();
                 setEditTarget(proj);
                 const d = proj.details || {};
-                setEditForm({ overview: d.overview || '', area: d.area || '', scale: d.scale || '', investment: d.investment || '', pipeline: d.pipeline || '', aiReport: d.aiReport || '', custom: d.customFields || [] });
+                setEditForm({ overview: d.overview || '', area: d.area || '', scale: d.scale || '', investment: d.investment || '', pipeline: d.pipeline || '', aiReport: d.aiReport || '', custom: d.custom || d.customFields || [] });
                 setProjectDocs((d.projectDocs || []).map((doc: any) => ({ fileName: doc.fileName, data: '', size: 0 })));
                 setShowEditModal(true);
               }}
