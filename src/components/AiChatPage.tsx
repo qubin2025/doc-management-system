@@ -219,9 +219,14 @@ const AiChatPage: React.FC<{
       let ctx = q;
       if (currentFiles.length > 0) {
         const result = await readFilesAsContext(currentFiles);
-        imageB64Ref.current = result.images;
-        console.log('[IMG-READ] files:', currentFiles.length, 'images:', result.images.length, 'sizes:', result.images.map(i=>i.length));
+        // 合并addFiles已读的base64和新读的base64
+        const allImages = [...new Set([...imageB64Ref.current, ...result.images])];
+        imageB64Ref.current = allImages;
+        console.log('[IMG-READ] files:', currentFiles.length, 'totalImages:', allImages.length, 'sizes:', allImages.map(i=>i.length));
         ctx = result.text ? `${result.text}\n\n${q}` : q;
+      } else if (imageB64Ref.current.length > 0) {
+        // 文件已被addFiles预先读取
+        console.log('[IMG-READ] from preload, images:', imageB64Ref.current.length);
       }
       await doChat(ctx, sid, [...(sessions.find(s => s.id === sid)?.messages || []), userMsg]);
     }
@@ -231,16 +236,27 @@ const AiChatPage: React.FC<{
 
   const addFiles = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
-    newFiles.forEach(f => {
+    newFiles.forEach(async f => {
       const isImage = f.type.startsWith('image/');
       const url = isImage ? URL.createObjectURL(f) : '';
       setFilePreviews(prev => [...prev, { file: f, url, isImage }]);
+      // 立即读取图片base64 (不等发送)
+      if (isImage) {
+        const b64 = await new Promise<string>((resolve) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = () => resolve('');
+          r.readAsDataURL(f);
+        });
+        if (b64) imageB64Ref.current = [...imageB64Ref.current, b64];
+      }
     });
   };
 
   const removeFile = (idx: number) => {
     setFiles(prev => prev.filter((_, i) => i !== idx));
     setFilePreviews(prev => { const p = prev[idx]; if (p?.url) URL.revokeObjectURL(p.url); return prev.filter((_, i) => i !== idx); });
+    imageB64Ref.current = imageB64Ref.current.filter((_, i) => i !== idx); // 同步清除
   };
 
   const handleDrop = (e: React.DragEvent) => {
