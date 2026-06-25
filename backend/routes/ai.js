@@ -228,9 +228,12 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
 });
 
 async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
-  // auto模式: 按优先级 DeepSeek->DeepSeekR1->OllamaQwen->OllamaLlama
+  // auto模式: 智能路由 — 有图片优先视觉模型,无图片优先文本模型
+  const hasPics = reqImages.length > 0 || userMsgs.some(m => m.content?.includes('[图片:'));
   const candidates = modelId === 'auto'
-    ? ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash', 'ollama-qwen', 'ollama-llama']
+    ? (hasPics
+        ? ['glm-4v', 'qwen-turbo', 'deepseek-v4-pro', 'deepseek-chat']  // 有图片: 视觉优先
+        : ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash'])  // 无图片: 文本优先
     : [modelId];
 
   for (const mid of candidates) {

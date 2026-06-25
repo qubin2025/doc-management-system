@@ -158,7 +158,9 @@ const AiChatPage: React.FC<{
 
     // 准备文件内容
     const fileContents = filePreviews.map(p => ({ name: p.file.name, content: (p as any).text || '' })).filter(f => f.content);
-    const reply = await api.aiChat(msgs, '', { projectName, standard, model: model === '自动选择' ? 'auto' : model, images: imageB64Ref.current, files: fileContents });
+    // auto自动检测: 有图片→视觉模型,无图片→文本模型
+    const effectiveModel = model === '自动选择' ? 'auto' : model;
+    const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: imageB64Ref.current, files: fileContents });
     clearInterval(timer);
     setThinkingText('');
 
