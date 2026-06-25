@@ -160,6 +160,11 @@ const AiChatPage: React.FC<{
     const fileContents = filePreviews.map(p => ({ name: p.file.name, content: (p as any).text || '' })).filter(f => f.content);
     // auto自动检测: 有图片→视觉模型,无图片→文本模型
     const effectiveModel = model === '自动选择' ? 'auto' : model;
+    const hasImages = imageB64Ref.current.length > 0;
+    if (hasImages && effectiveModel !== 'glm-4v' && effectiveModel !== 'auto') {
+      console.warn(`[AI] 用户上传了${imageB64Ref.current.length}张图片但选择了文本模型${effectiveModel},建议切换到GLM-4V`);
+    }
+    console.log(`[AI-SEND] model=${effectiveModel} images=${imageB64Ref.current.length} files=${fileContents.length}`);
     const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: imageB64Ref.current, files: fileContents });
     clearInterval(timer);
     setThinkingText('');
@@ -215,6 +220,7 @@ const AiChatPage: React.FC<{
       if (currentFiles.length > 0) {
         const result = await readFilesAsContext(currentFiles);
         imageB64Ref.current = result.images;
+        console.log('[IMG-READ] files:', currentFiles.length, 'images:', result.images.length, 'sizes:', result.images.map(i=>i.length));
         ctx = result.text ? `${result.text}\n\n${q}` : q;
       }
       await doChat(ctx, sid, [...(sessions.find(s => s.id === sid)?.messages || []), userMsg]);

@@ -158,6 +158,12 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
   const { messages, context, projectName, standard, model: reqModel, files, folderPath, images } = req.body;
   const requestedModel = reqModel || 'deepseek-chat';
 
+  // 诊断日志: 记录接收到的图片数据
+  const imgCount = (images && Array.isArray(images)) ? images.length : 0;
+  if (imgCount > 0) {
+    console.log(`[IMAGE-IN] model=${requestedModel} count=${imgCount} sizes=[${images.map(i=>i?.length||0).join(',')}]`);
+  }
+
   // Build system prompt from config
   const systemPrompt = MODEL_SYSTEM_PROMPTS[requestedModel] || DEFAULT_SYSTEM_PROMPT;
 
