@@ -252,7 +252,7 @@ const AiChatPage: React.FC<{
           r.readAsDataURL(f);
         });
         imgB64s.push(b64);
-        parts.push(`[图片: ${f.name}]`);
+        parts.push(`[图片: ${b64.slice(0, 100)}...]`); // 截断显示,实际数据通过images字段传输
       } else if (f.size < 1024 * 1024) {
         try { const txt = await f.text(); parts.push(`【文件: ${f.name}】\n${txt.slice(0, 3000)}`); }
         catch { parts.push(`[文件: ${f.name}]`); }
