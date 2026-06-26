@@ -4,7 +4,7 @@ import * as api from '../data/api';
 import { ChatMessage } from '../types';
 import { ragQuery, getIndexStats } from '../data/ragService';
 
-const MODELS = ['自动选择', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash', 'glm-4v', 'ollama-qwen', 'ollama-llama'];
+const MODELS = ['自动选择', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash', 'glm-4.1v', 'ollama-qwen', 'ollama-llama'];
 const REPORT_TEMPLATES: Record<string, string> = {
   '自由对话': '',
   '项目进度报告': '请按以下格式输出：项目进度报告\n• 项目名称\n• 报告周期\n• 总体进度\n• 已完成里程碑\n• 进行中工作\n• 风险与问题\n• 下期计划',
@@ -517,7 +517,7 @@ const AiChatPage: React.FC<{
         <aside className="w-52 bg-gray-50/30 border-l border-gray-100 shrink-0 hidden xl:flex flex-col py-4 px-3">
           <p className="text-sm font-medium text-gray-500 mb-3 px-1">业务模板</p>
           <div className="space-y-2">
-            <button onClick={() => { setModel('glm-4v'); setInput('请分析上传照片中的不安全因素，对照JGJ59-2011安全标准逐项检查'); }}
+            <button onClick={() => { setModel('glm-4.1v'); setInput('请分析上传照片中的不安全因素，对照JGJ59-2011安全标准逐项检查'); }}
               className="w-full bg-gradient-to-r from-red-500 to-amber-500 text-white rounded-xl p-3 text-left hover:from-red-600 hover:to-amber-600 transition-colors">
               <div className="flex items-center gap-2"><AlertTriangle className="w-5 h-5"/><span className="font-semibold text-sm">安全巡检(GLM-4V)</span></div>
               <p className="text-[10px] opacity-80 mt-0.5">上传工地照片 → AI对标JGJ59安全检查</p>

@@ -69,11 +69,11 @@ const MODELS = {
     key: process.env.ZHIPU_API_KEY,
     model: 'glm-4-flash',
   },
-  'glm-4v': {
-    name: '智谱GLM-4V(视觉)',
+  'glm-4.1v': {
+    name: 'GLM-4.1V(视觉推理)',
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     key: process.env.ZHIPU_API_KEY,
-    model: 'glm-4v',
+    model: 'glm-4.1v-thinking-flash',
     vision: true,
   },
   'glm-4-plus': {
@@ -121,7 +121,7 @@ router.post('/vision-safety', requireAuth, requirePermission('can_use_ai'), asyn
       Authorization: `Bearer ${process.env.ZHIPU_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'glm-4v',
+      model: 'glm-4.1v-thinking-flash',
       messages: [{
         role: 'user',
         content: [
@@ -147,9 +147,9 @@ router.post('/vision-safety', requireAuth, requirePermission('can_use_ai'), asyn
   // 尝试解析JSON输出
   try {
     const json = JSON.parse(content.replace(/```json\n?|\n?```/g, '').trim());
-    return res.json({ ok: true, model: 'glm-4v', report: json });
+    return res.json({ ok: true, model: 'glm-4.1v', report: json });
   } catch {
-    return res.json({ ok: true, model: 'glm-4v', report: { summary: content.slice(0, 200), raw: content } });
+    return res.json({ ok: true, model: 'glm-4.1v', report: { summary: content.slice(0, 200), raw: content } });
   }
 });
 
@@ -243,8 +243,8 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
   const hasPics = reqImages.length > 0 || userMsgs.some(m => m.content?.includes('[图片:'));
   const candidates = modelId === 'auto'
     ? (hasPics
-        ? ['glm-4v', 'qwen-turbo', 'deepseek-v4-pro', 'deepseek-chat']  // 有图片: 视觉优先
-        : ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash'])  // 无图片: 文本优先
+        ? ['glm-4.1v', 'qwen-turbo', 'deepseek-v4-pro', 'deepseek-chat']
+        : ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-plus', 'glm-4-flash'])
     : [modelId];
 
   for (const mid of candidates) {

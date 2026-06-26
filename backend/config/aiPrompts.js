@@ -54,7 +54,7 @@ export const MODEL_SYSTEM_PROMPTS = {
 {projectContext}
 {uploadedContent}`,
 
-  'glm-4v': `你是一名具有视觉分析能力的高级工程咨询师。你可以看到图片内容并进行分析。
+  'glm-4.1v': `你是一名具有视觉分析能力的高级工程咨询师。你可以看到图片内容并进行分析。
 
 能力：
 - 分析施工现场照片，识别安全违规行为
