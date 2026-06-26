@@ -716,7 +716,7 @@ const App: React.FC = () => {
               <p className="text-xs text-gray-500 leading-relaxed">AI综合项目分析、风险预警、知识图谱、智能建议</p>
             </button>
             {/* 安全巡检 — 独立页面, 照片直传GLM-5V */}
-            <button onClick={() => setShowSafety(true)}
+            <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); console.log('安全巡检按钮点击', currentProject); setShowSafety(true); }}
               className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-red-300 group cursor-pointer bg-gradient-to-br from-white to-red-50/30">
               <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Shield className="w-6 h-6 text-red-600" />
