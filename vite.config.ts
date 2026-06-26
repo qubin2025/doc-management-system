@@ -14,6 +14,8 @@ export default defineConfig({
       port: 5173,
     },
     proxy: {
+      '/api': 'http://localhost:3000',
+      '/temp-images': 'http://localhost:3000',
       '/drawio-proxy': {
         target: 'https://embed.diagrams.net',
         changeOrigin: true,

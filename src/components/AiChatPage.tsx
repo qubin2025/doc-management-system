@@ -223,7 +223,7 @@ const AiChatPage: React.FC<{
           const form = new FormData();
           imgFiles.forEach(f => form.append('images', f));
           const token = localStorage.getItem('doc-system-token') || '';
-          const uploadRes = await fetch('http://localhost:3000/api/upload/image', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+          const uploadRes = await fetch('/api/upload/image', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
           if (uploadRes.ok) {
             const uploadData = await uploadRes.json();
             uploadedUrls = uploadData.images.map((i:any) => `http://localhost:3000${i.url}`);
