@@ -1,6 +1,6 @@
 import { ProjectInfo, UploadInfo, AuthState, UserInfo, Permissions, FormField } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = '/api';
 let authToken = localStorage.getItem('doc-system-token') || '';
 
 export function setAuthToken(token: string) {
