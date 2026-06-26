@@ -158,11 +158,28 @@ const AiChatPage: React.FC<{
 
     // 准备文件内容
     const fileContents = filePreviews.map(p => ({ name: p.file.name, content: (p as any).text || '' })).filter(f => f.content);
-    // 有图片URL? 强制使用GLM-4V视觉模型(绝不降级)
-    const hasPics = imgUrls.length > 0;
-    const effectiveModel = hasPics ? 'glm-4v' : (model === '自动选择' ? 'auto' : model);
-    console.log(`[AI-SEND] pics=${hasPics} model=${effectiveModel} urls=${imgUrls.length}`);
-    const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: imgUrls, files: fileContents });
+    // 有图片? 直连视觉安全巡检API(绕过聊天管道)
+    let reply = '';
+    if (imgUrls.length > 0) {
+      try {
+        const token = localStorage.getItem('doc-system-token') || '';
+        const visionRes = await fetch('/api/ai/vision-safety', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ imageBase64: imgUrls[0], projectName }),
+        });
+        if (visionRes.ok) {
+          const data = await visionRes.json();
+          if (data.ok && data.report) {
+            reply = `【安全巡检报告 — GLM-4V 视觉分析】\n\n${JSON.stringify(data.report, null, 2)}`;
+          }
+        }
+      } catch (e) { reply = `视觉分析失败: ${e}`; }
+    }
+    if (!reply) {
+      const effectiveModel = model === '自动选择' ? 'auto' : model;
+      reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, files: fileContents });
+    }
     clearInterval(timer);
     setThinkingText('');
 

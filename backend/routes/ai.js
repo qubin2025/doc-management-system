@@ -133,7 +133,7 @@ router.post('/vision-safety', requireAuth, requirePermission('can_use_ai'), asyn
         ],
       }],
       temperature: 0.1,
-      max_tokens: 4000,
+      max_tokens: 2048,
     }),
     signal: AbortSignal.timeout(60000),
   });
