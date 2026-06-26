@@ -216,25 +216,14 @@ const AiChatPage: React.FC<{
       let ctx = q;
       let uploadedUrls: string[] = [];
 
-      // 先上传图片到服务器(FormData → 返回URL → GLM-4V可直接读取)
+      // 图片转base64(同源直传，不跨域)
       const imgFiles = currentFiles.filter(f => f.type.startsWith('image/'));
       if (imgFiles.length > 0) {
-        try {
-          const form = new FormData();
-          imgFiles.forEach(f => form.append('images', f));
-          const token = api.getAuthToken() || localStorage.getItem('doc-system-token') || '';
-          const uploadRes = await fetch('http://localhost:3000/api/upload/image', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            uploadedUrls = uploadData.images.map((i:any) => `http://localhost:3000${i.url}`);
-            console.log('[IMG-UPLOAD] success:', uploadedUrls.length, 'urls');
-          } else {
-            alert(`图片上传失败: HTTP ${uploadRes.status}。请检查后端是否运行。`);
-            return; // 上传失败，不发送消息
-          }
-        } catch (e) {
-          alert(`图片上传失败: ${e}。请检查后端是否运行(http://localhost:3000)。`);
-          return;
+        for (const f of imgFiles) {
+          const b64 = await new Promise<string>((resolve) => {
+            const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(f);
+          });
+          uploadedUrls.push(b64);
         }
       }
 
@@ -246,7 +235,7 @@ const AiChatPage: React.FC<{
       }
       if (textParts.length) ctx = textParts.join('\n\n') + '\n\n' + q;
 
-      imageB64Ref.current = []; // 清空旧预读
+      imageB64Ref.current = []; // 清空
       await doChat(ctx, sid, [...(sessions.find(s => s.id === sid)?.messages || []), userMsg], uploadedUrls);
     }
     catch (e: any) { setSessions(prev => prev.map(s => s.id === sid ? { ...s, messages: [...s.messages, { role: 'assistant', content: '请求失败: ' + (e.message || '') }] } : s)); }
