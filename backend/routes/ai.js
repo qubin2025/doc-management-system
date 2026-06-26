@@ -70,10 +70,10 @@ const MODELS = {
     model: 'glm-4-flash',
   },
   'glm-4.1v': {
-    name: 'GLM-4.1V(视觉推理)',
+    name: 'GLM-5V Turbo(视觉推理)',
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     key: process.env.ZHIPU_API_KEY,
-    model: 'glm-4.1v-thinking-flash',
+    model: 'glm-5v-turbo',
     vision: true,
   },
   'glm-4-plus': {
@@ -121,7 +121,7 @@ router.post('/vision-safety', requireAuth, requirePermission('can_use_ai'), asyn
       Authorization: `Bearer ${process.env.ZHIPU_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'glm-4.1v-thinking-flash',
+      model: 'glm-5v-turbo',
       messages: [{
         role: 'user',
         content: [
