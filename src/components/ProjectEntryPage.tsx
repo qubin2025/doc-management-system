@@ -287,82 +287,14 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
         )}
       </div>
 
-      {/* AI 对话框 — 底端深蓝渐变毛玻璃 */}
-      <div className={`backdrop-blur-xl py-4 border-t ${t.aiBar}`}>
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-4 h-4 ${t.aiIcon}`} />
-              <span className={`text-xs font-medium ${t.aiLabel}`}>全过程工程咨询 AI 助手</span>
-              <span className="text-[10px] text-gray-400">| DeepSeek v4.0 Pro</span>
-            </div>
-            {/* 模型选择 */}
-            <div className="relative">
-              <button onClick={() => setShowModelMenu(!showModelMenu)}
-                className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${light ? 'border-gray-300 text-gray-500' : 'border-white/20 text-blue-300'}`}>
-                {aiModel} <ChevronDown className="w-3 h-3" />
-              </button>
-              {showModelMenu && (
-                <div className={`absolute right-0 top-full mt-1 rounded-lg shadow-xl border z-50 p-1 min-w-[160px] ${light ? 'bg-white border-gray-200' : 'bg-gray-800 border-white/10'}`}>
-                  {['deepseek-v4-pro', 'deepseek-v3', 'gpt-4o', 'qwen-max'].map(m => (
-                    <button key={m} onClick={() => { setAiModel(m); localStorage.setItem('ai-model', m); setShowModelMenu(false); }}
-                      className={`block w-full text-left px-3 py-1.5 text-xs rounded ${aiModel === m ? (light ? 'bg-blue-50 text-blue-600' : 'bg-blue-500/20 text-blue-300') : (light ? 'text-gray-600 hover:bg-gray-50' : 'text-gray-300 hover:bg-white/5')}`}>
-                      {m}
-                    </button>
-                  ))}
-                  <div className={`border-t my-1 ${light ? 'border-gray-100' : 'border-white/10'}`} />
-                  <button onClick={() => { setShowModelMenu(false); toast('模型通过 /login 命令配置', 'info'); }}
-                    className={`block w-full text-left px-3 py-1.5 text-xs rounded ${light ? 'text-gray-400' : 'text-gray-500'}`}>
-                    /login 配置...
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="relative">
-            <textarea
-              value={aiQuery}
-              onChange={e => setAiQuery(e.target.value)}
-              onKeyDown={handleAiKeyDown}
-              placeholder="输入您的问题，AI 将为您提供全过程工程咨询建议..."
-              rows={2}
-              className={`w-full px-4 pt-3 pb-10 pr-12 rounded-xl text-sm resize-none outline-none focus:ring-4 focus:ring-blue-400/30 transition-colors ${t.aiInput}`}
-            />
-            {/* 底部工具栏 */}
-            <div className="absolute left-3 bottom-2 flex items-center gap-3">
-              {/* 上传文件/图片 */}
-              <label className={`cursor-pointer p-1 rounded hover:bg-white/10 transition-colors ${light ? 'text-gray-400 hover:text-blue-500' : 'text-blue-300/60 hover:text-blue-300'}`} title="上传文件">
-                <Paperclip className="w-3.5 h-3.5" />
-                <input type="file" className="hidden" multiple onChange={(e) => {
-                  if (e.target.files) setAiFiles(prev => [...prev, ...Array.from(e.target.files!)]);
-                }} />
-              </label>
-              <label className={`cursor-pointer p-1 rounded hover:bg-white/10 transition-colors ${light ? 'text-gray-400 hover:text-blue-500' : 'text-blue-300/60 hover:text-blue-300'}`} title="上传图片">
-                <Image className="w-3.5 h-3.5" />
-                <input type="file" className="hidden" multiple accept="image/*" onChange={(e) => {
-                  if (e.target.files) setAiFiles(prev => [...prev, ...Array.from(e.target.files!)]);
-                }} />
-              </label>
-              {/* 上下文长度 */}
-              <span className={`flex items-center gap-1 text-[10px] ${light ? 'text-gray-400' : 'text-blue-300/50'}`} title={`上下文长度：${aiQuery.length} 字符`}>
-                <BarChart3 className="w-3 h-3" /> {aiQuery.length > 1000 ? `${(aiQuery.length/1000).toFixed(1)}k` : aiQuery.length}
-              </span>
-              {/* 已选文件数 */}
-              {aiFiles.length > 0 && (
-                <span className={`flex items-center gap-0.5 text-[10px] ${light ? 'text-blue-500' : 'text-blue-400'}`}>
-                  <Paperclip className="w-3 h-3" /> {aiFiles.length}个文件
-                </span>
-              )}
-            </div>
-            <button
-              onClick={handleSend}
-              disabled={!aiQuery.trim()}
-              className={`absolute right-3 top-3 p-1.5 text-white rounded-lg disabled:cursor-not-allowed transition-colors ${t.aiBtn} disabled:${t.aiBtnDisabled}`}
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+      {/* AI助手按钮 — 底部固定悬浮 */}
+      <div className="sticky bottom-4 flex justify-center z-40 pointer-events-none">
+        <button
+          onClick={() => onAiSubmit('')}
+          className="pointer-events-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-2 font-medium text-sm"
+        >
+          <Sparkles className="w-5 h-5" /> AI 助手
+        </button>
       </div>
 
       {/* ========== 项目编辑弹窗 ========== */}
