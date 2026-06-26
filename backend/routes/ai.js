@@ -219,10 +219,13 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
     .then(reply => res.json({ reply, model: requestedModel }))
     .catch(async e1 => {
       // 如果不是auto且primary失败, 尝试auto
+      if (imgCount > 0) {
+        return res.json({ reply: `[图片识别失败] ${e1.message?.slice(0,100)}。建议减少图片数量或降低分辨率。`, model: requestedModel });
+      }
       if (requestedModel !== 'auto') {
         try {
           const reply = await tryChat('auto', ctxMsgs, userMsgs, reqImages);
-          return res.json({ reply, model: 'auto', note: `自动降级，原模型不可用: ${e1.message?.slice(0,60)}` });
+          return res.json({ reply, model: 'auto', note: `自动降级: ${e1.message?.slice(0,60)}` });
         } catch (e2) {
           return res.status(500).json({ error: `AI调用失败: ${e1.message?.slice(0,80)}` });
         }
