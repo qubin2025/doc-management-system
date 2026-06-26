@@ -13,6 +13,7 @@ import aiRouter from './routes/ai.js';
 import kgRouter from './routes/kg.js';
 import ragflowRouter from './routes/ragflow.js';
 import casdoorRouter from './routes/casdoor.js';
+import uploadRouter from './routes/upload.js';
 import auditRouter from './routes/audit.js';
 import tenantRouter from './routes/tenant.js';
 
@@ -61,7 +62,9 @@ app.use('/api/kg', kgRouter);
 app.use('/api/ragflow', ragflowRouter);
 app.use('/api/audit', auditRouter);
 app.use('/api/tenant', tenantRouter);
-app.use('/api/casdoor', casdoorRouter); // Casdoor OAuth认证
+app.use('/api/casdoor', casdoorRouter);
+app.use('/api/upload', uploadRouter);
+app.use('/temp-images', express.static('temp-images')); // 临时图片访问
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {

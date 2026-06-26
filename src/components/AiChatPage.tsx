@@ -114,7 +114,7 @@ const AiChatPage: React.FC<{
     if (activeId === id) setActiveId('');
   };
 
-  const doChat = async (_q: string, sid: string, allMsgs: ChatMessage[]) => {
+  const doChat = async (_q: string, sid: string, allMsgs: ChatMessage[], imgUrls: string[] = []) => {
     const systemHint = template !== '自由对话' ? REPORT_TEMPLATES[template] : '';
     const msgs: { role: string; content: string }[] = [...allMsgs];
     if (systemHint) msgs.push({ role: 'system', content: systemHint });
@@ -158,15 +158,11 @@ const AiChatPage: React.FC<{
 
     // 准备文件内容
     const fileContents = filePreviews.map(p => ({ name: p.file.name, content: (p as any).text || '' })).filter(f => f.content);
-    // 有图片? 强制使用视觉模型(绝不降级到文本)
-    const hasPics = imageB64Ref.current.length > 0;
+    // 有图片URL? 强制使用GLM-4V视觉模型(绝不降级)
+    const hasPics = imgUrls.length > 0;
     const effectiveModel = hasPics ? 'glm-4v' : (model === '自动选择' ? 'auto' : model);
-    const totalImageSize = imageB64Ref.current.reduce((s,i)=>s+i.length, 0);
-    console.log(`[AI-SEND] pics={hasPics} model=${effectiveModel} images=${imageB64Ref.current.length} size=${(totalImageSize/1024/1024).toFixed(1)}MB`);
-    const allImages = [...imageB64Ref.current]; // 副本防止异步清理
-    const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: allImages, files: fileContents });
-    // 发送后清理 (避免下次消息重复发送)
-    imageB64Ref.current = [];
+    console.log(`[AI-SEND] pics=${hasPics} model=${effectiveModel} urls=${imgUrls.length}`);
+    const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: imgUrls, files: fileContents });
     clearInterval(timer);
     setThinkingText('');
 
@@ -218,21 +214,34 @@ const AiChatPage: React.FC<{
     setLoading(true);
     try {
       let ctx = q;
-      // addFiles已预读图片, 只读文本文件内容
-      if (currentFiles.length > 0) {
-        const textFiles = currentFiles.filter(f => !f.type.startsWith('image/'));
-        const textParts: string[] = [];
-        for (const f of textFiles.slice(0, 5)) {
-          try { textParts.push(`[文件: ${f.name}]\n${await f.text().then(t=>t.slice(0,2000))}`); } catch {}
-        }
-        if (textParts.length) ctx = textParts.join('\n\n') + '\n\n' + q;
-        // 等待图片预加载完成(最多3秒)
-        for (let i = 0; i < 30 && imageB64Ref.current.length === 0 && currentFiles.some(f=>f.type.startsWith('image/')); i++) {
-          await new Promise(r => setTimeout(r, 100));
-        }
+      let uploadedUrls: string[] = [];
+
+      // 先上传图片到服务器(FormData → 返回URL → GLM-4V可直接读取)
+      const imgFiles = currentFiles.filter(f => f.type.startsWith('image/'));
+      if (imgFiles.length > 0) {
+        try {
+          const form = new FormData();
+          imgFiles.forEach(f => form.append('images', f));
+          const token = localStorage.getItem('doc-system-token') || '';
+          const uploadRes = await fetch('/api/upload/image', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            uploadedUrls = uploadData.images.map((i:any) => `http://localhost:3000${i.url}`);
+            console.log('[IMG-UPLOAD] success:', uploadedUrls.length, 'urls');
+          }
+        } catch (e) { console.error('[IMG-UPLOAD] failed:', e); }
       }
-      console.log('[IMG-READ] readyImages:', imageB64Ref.current.length);
-      await doChat(ctx, sid, [...(sessions.find(s => s.id === sid)?.messages || []), userMsg]);
+
+      // 文本文件内容
+      const textFiles = currentFiles.filter(f => !f.type.startsWith('image/'));
+      const textParts: string[] = [];
+      for (const f of textFiles.slice(0, 5)) {
+        try { textParts.push(`[文件: ${f.name}]\n${await f.text().then(t=>t.slice(0,2000))}`); } catch {}
+      }
+      if (textParts.length) ctx = textParts.join('\n\n') + '\n\n' + q;
+
+      imageB64Ref.current = []; // 清空旧预读
+      await doChat(ctx, sid, [...(sessions.find(s => s.id === sid)?.messages || []), userMsg], uploadedUrls);
     }
     catch (e: any) { setSessions(prev => prev.map(s => s.id === sid ? { ...s, messages: [...s.messages, { role: 'assistant', content: '请求失败: ' + (e.message || '') }] } : s)); }
     finally { setLoading(false); }
@@ -260,24 +269,11 @@ const AiChatPage: React.FC<{
 
   const addFiles = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
-    // 先显示预览 + 立即读取base64 (await所有完成)
-    Promise.all(newFiles.map(async f => {
+    newFiles.forEach(f => {
       const isImage = f.type.startsWith('image/');
       const url = isImage ? URL.createObjectURL(f) : '';
       setFilePreviews(prev => [...prev, { file: f, url, isImage }]);
-      if (isImage) {
-        // 压缩大图: 限制最大边1024px (保留足够安全分析细节)
-        const compressed = await compressImage(f, 1024);
-        const b64 = await new Promise<string>((resolve) => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result as string);
-          r.onerror = () => resolve('');
-          r.readAsDataURL(new Blob([compressed], { type: 'image/jpeg' }));
-        });
-        if (b64) imageB64Ref.current = [...imageB64Ref.current, b64];
-      }
-    })).then(() => {
-      console.log('[IMG-PRELOAD] done, total images:', imageB64Ref.current.length);
+      if (isImage) imageB64Ref.current = [...imageB64Ref.current, 'pending']; // 仅计数
     });
   };
 
