@@ -506,6 +506,12 @@ const AiChatPage: React.FC<{
                         </div>
                       )}
                     </div>
+                    {/* 图片计数指示器 */}
+                    {imageB64Ref.current.length > 0 && (
+                      <span className="text-[10px] text-blue-600 font-medium px-1.5 py-0.5 bg-blue-50 rounded-full whitespace-nowrap">
+                        📷 {imageB64Ref.current.length}张
+                      </span>
+                    )}
                     <button onClick={handleSend} disabled={loading || (!input.trim() && filePreviews.length===0)}
                       className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors shadow-sm">
                       <Send className="w-4 h-4" />
