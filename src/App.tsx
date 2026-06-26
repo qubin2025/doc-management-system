@@ -1029,13 +1029,13 @@ const App: React.FC = () => {
           onClose={() => setShowBackupModal(false)}
         />
       )}
+      {/* 安全巡检 — 全屏覆盖 */}
+      {showSafety && currentProject && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <SafetyInspection projectName={currentProject} onBack={() => setShowSafety(false)} />
+        </div>
+      )}
     </div>
-    {/* 安全巡检 — 全屏覆盖 */}
-    {showSafety && currentProject && (
-      <div className="fixed inset-0 z-50 bg-white">
-        <SafetyInspection projectName={currentProject} onBack={() => setShowSafety(false)} />
-      </div>
-    )}
   );
 };
 
