@@ -269,27 +269,6 @@ const AiChatPage: React.FC<{
   };
 
   // 读取文件内容（图片base64存入ref，文本读内容）
-  const readFilesAsContext = async (files: File[]): Promise<{ text: string; images: string[] }> => {
-    const parts: string[] = [];
-    const imgB64s: string[] = [];
-    for (const f of files.slice(0, 5)) {
-      if (f.type.startsWith('image/')) {
-        const b64 = await new Promise<string>((resolve) => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result as string);
-          r.readAsDataURL(f);
-        });
-        imgB64s.push(b64);
-        parts.push(`[图片: ${b64.slice(0, 100)}...]`); // 截断显示,实际数据通过images字段传输
-      } else if (f.size < 1024 * 1024) {
-        try { const txt = await f.text(); parts.push(`【文件: ${f.name}】\n${txt.slice(0, 3000)}`); }
-        catch { parts.push(`[文件: ${f.name}]`); }
-      } else {
-        parts.push(`[文件: ${f.name} (${(f.size/1024/1024).toFixed(1)}MB)]`);
-      }
-    }
-    return { text: parts.join('\n\n'), images: imgB64s };
-  };
 
   const handleShare = () => {
     const text = messages.map(m => `${m.role === 'user' ? '我' : 'AI'}：${m.content}`).join('\n\n');
