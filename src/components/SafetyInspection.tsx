@@ -24,7 +24,7 @@ const SafetyInspection: React.FC<Props> = ({ projectName, onBack }) => {
       const form = new FormData();
       form.append('photo', photo);
       const token = localStorage.getItem('doc-system-token') || '';
-      const res = await fetch('/api/safety/check', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+      const res = await fetch(`/api/safety/check?token=${encodeURIComponent(token)}`, { method: 'POST', body: form });
       const data = await res.json();
       if (data.ok && data.report) {
         setReport(data.report);

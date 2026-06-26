@@ -30,8 +30,14 @@ const SAFETY_PROMPT = `你是施工现场安全检查专家。请仔细分析这
   ]
 }`;
 
-// POST /api/safety/check
-router.post('/check', requireAuth, upload.single('photo'), async (req, res) => {
+// POST /api/safety/check (支持Bearer token 或 ?token=xxx)
+router.post('/check', (req, res, next) => {
+  // 兼容query参数token
+  if (!req.headers.authorization && req.query.token) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  requireAuth(req, res, next);
+}, upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '未上传照片' });
 
   try {
