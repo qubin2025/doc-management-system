@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, FolderOpen, ArrowRight, Send, User, LogOut, Sparkles, Plus, Settings, Paperclip, Image, BarChart3, ChevronDown, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
+import { Search, FolderOpen, ArrowRight, User, LogOut, Sparkles, Plus, Settings, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
 import { ProjectInfo } from '../types';
 import * as api from '../data/api';
 import { toast } from './Toast';
@@ -24,11 +24,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 }) => {
   const light = true; // 固定浅色模式
   const [search, setSearch] = useState('');
-  const [aiQuery, setAiQuery] = useState('');
   const [showMore, setShowMore] = useState(false);
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem('ai-model') || 'deepseek-v4-pro');
-  const [aiFiles, setAiFiles] = useState<File[]>([]);
-  const [showModelMenu, setShowModelMenu] = useState(false);
   const [editingProj, setEditingProj] = useState('');
   const [editProjName, setEditProjName] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -108,20 +104,6 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
     filterIcon: light ? 'text-blue-500' : 'text-blue-400',
     createBtn: light ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30',
     toggleBtn: light ? 'text-gray-500 hover:text-gray-700 hover:bg-gray-100' : 'text-blue-300/70 hover:text-white hover:bg-white/10',
-  };
-
-  const handleSend = () => {
-    if (!aiQuery.trim()) return;
-    onAiSubmit(aiQuery.trim());
-    setAiQuery('');
-    setAiFiles([]);
-  };
-
-  const handleAiKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
   };
 
   return (
