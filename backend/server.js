@@ -25,9 +25,15 @@ const isProduction = process.env.NODE_ENV === 'production';
 const corsOrigin = process.env.CORS_ORIGIN;
 app.use(cors(isProduction ? (corsOrigin ? {
   origin: corsOrigin,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-} : { origin: false }) : {}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+} : { origin: false }) : {
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(morgan(isProduction ? 'combined' : 'short'));
 app.use(express.json({ limit: '100mb' }));
 
