@@ -164,8 +164,11 @@ const AiChatPage: React.FC<{
     if (hasImages && effectiveModel !== 'glm-4v' && effectiveModel !== 'auto') {
       console.warn(`[AI] 用户上传了${imageB64Ref.current.length}张图片但选择了文本模型${effectiveModel},建议切换到GLM-4V`);
     }
-    console.log(`[AI-SEND] model=${effectiveModel} images=${imageB64Ref.current.length} files=${fileContents.length}`);
-    const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: imageB64Ref.current, files: fileContents });
+    const totalImageSize = imageB64Ref.current.reduce((s,i)=>s+i.length, 0);
+    console.log(`[AI-SEND] model=${effectiveModel} images=${imageB64Ref.current.length} totalSize=${(totalImageSize/1024/1024).toFixed(1)}MB files=${fileContents.length}`);
+    // 直接使用 imageB64Ref.current (5张已确认), 不再依赖 fileContents
+    const allImages = imageB64Ref.current.length > 0 ? [...imageB64Ref.current] : [];
+    const reply = await api.aiChat(msgs, '', { projectName, standard, model: effectiveModel, images: allImages, files: fileContents });
     clearInterval(timer);
     setThinkingText('');
 

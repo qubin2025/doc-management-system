@@ -1,0 +1,5 @@
+{
+  "name": "Nexus3D",
+  "description": "A high-performance 3D interpersonal relationship visualization and management tool based on the Six Degrees of Separation theory, featuring admin controls and user-level permissions.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>全过程工程咨询管理服务平台 — 开发总结 v2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#f8fafc;color:#1e293b;line-height:1.8}
+.container{max-width:1100px;margin:0 auto;padding:40px 20px}
+h1{text-align:center;font-size:30px;color:#1e40af;margin-bottom:6px}
+.subtitle{text-align:center;color:#64748b;margin-bottom:8px}
+.date{text-align:center;color:#94a3b8;font-size:13px;margin-bottom:40px}
+h2{font-size:22px;color:#1e40af;border-left:4px solid #3b82f6;padding-left:12px;margin:48px 0 16px}
+h3{font-size:17px;color:#1e293b;margin:24px 0 10px}
+.card{background:#fff;border-radius:8px;padding:24px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+th{background:#f1f5f9;padding:10px 12px;text-align:left;font-weight:600;border-bottom:2px solid #e2e8f0}
+td{padding:8px 12px;border-bottom:1px solid #e2e8f0}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.tg{background:#dcfce7;color:#166534}.tb{background:#dbeafe;color:#1e40af}.ty{background:#fef9c3;color:#854d0e}.tr{background:#fee2e2;color:#991b1b}
+.gold{border-left:4px solid #f59e0b;background:#fffbeb;padding:20px;margin:20px 0;border-radius:0 8px 8px 0}
+code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+@media print{body{background:#fff}.card{box-shadow:none;border:1px solid #e2e8f0}}
+</style></head>
+<body><div class="container">
+
+<h1>全过程工程咨询管理服务平台</h1>
+<p class="subtitle">开发总结文档 v2.0</p>
+<p class="date">2026-05-11 · 版本 v1.5</p>
+
+<!-- ===== 最高纲领 ===== -->
+<div class="gold">
+<h2 style="margin:0 0 12px 0;border:none;padding:0;font-size:18px">最高纲领</h2>
+<p><strong>AI 是本系统的灵魂，不是助手。</strong></p>
+<p>以各项目数据、文件为数据底座，AI 分析能力贯穿项目全生命周期。超越 AI 泛能力，沉淀项目管理领域知识。每个模块精雕细琢，让使用者觉得好用、想用、离不开。</p>
+<p style="margin-top:8px"><strong>技术目标</strong>：终端框架 + DeepSeek / GLM-4V / Qwen-VL 多模型智能路由，多维度向量化数据基础，跨项目对比分析（安全/质量/进度/成本）。</p>
+</div>
+
+<!-- ===== 模块完成度 ===== -->
+<h2>一、模块完成度总览</h2>
+<table>
+<tr><th>模块</th><th>状态</th><th>完成度</th><th>核心能力</th></tr>
+<tr><td>用户认证</td><td><span class="tag tg">已完成</span></td><td>100%</td><td>LoginPage + 离线演示登录 + localStorage</td></tr>
+<tr><td>项目入口页</td><td><span class="tag tg">已完成</span></td><td>95%</td><td>项目卡片/搜索/创建/深浅主题/AI对话栏</td></tr>
+<tr><td>资料管理</td><td><span class="tag tg">已完成</span></td><td>100%</td><td>建筑/市政双标准，上传/下载/打包/CSV</td></tr>
+<tr><td>文件权限</td><td><span class="tag tg">已完成</span></td><td>100%</td><td>管理员/上传人/其他 三级权限</td></tr>
+<tr><td>指南工作模块</td><td><span class="tag tg">已完成</span></td><td>95%</td><td>4章33子模块，双选/编辑/附件/全选/模版/撤销</td></tr>
+<tr><td>附表清单</td><td><span class="tag tg">已完成</span></td><td>95%</td><td>46附表，样本/上传/编辑(AI填写)</td></tr>
+<tr><td>时序逻辑图</td><td><span class="tag tg">已完成</span></td><td>90%</td><td>draw.io Vite代理+postMessage，关键线路计算</td></tr>
+<tr><td>AI 对话页</td><td><span class="tag tb">核心完成</span></td><td>85%</td><td>豆包风格，DeepSeek/GLM-4V/Qwen-VL自动路由</td></tr>
+<tr><td>首页总览</td><td><span class="tag tg">已完成</span></td><td>100%</td><td>指南模块+功能模块双区块</td></tr>
+<tr><td>知识库/供应商/计划/造价</td><td><span class="tag ty">规划中</span></td><td>0%</td><td>后续开发</td></tr>
+</table>
+
+<!-- ===== AI 架构 ===== -->
+<h2>二、AI 多模型智能路由架构</h2>
+<div class="card">
+<h3>2.1 模型矩阵</h3>
+<table>
+<tr><th>场景</th><th>模型</th><th>API</th><th>状态</th></tr>
+<tr><td>纯文字对话</td><td>DeepSeek V4 Pro</td><td>api.deepseek.com</td><td><span class="tag tg">已配置</span></td></tr>
+<tr><td>图片分析</td><td>智谱 GLM-4V</td><td>open.bigmodel.cn</td><td><span class="tag tg">已配置</span></td></tr>
+<tr><td>图片分析(备)</td><td>千问 Qwen-VL-Max</td><td>dashscope.aliyuncs.com</td><td><span class="tag tg">已配置</span></td></tr>
+<tr><td>推理深度分析</td><td>DeepSeek Reasoner</td><td>api.deepseek.com</td><td><span class="tag tb">可选</span></td></tr>
+</table>
+
+<h3>2.2 自动路由逻辑</h3>
+<code>上传图片 → 智谱GLM-4V → 千问Qwen-VL → 兜底提示</code><br>
+<code>纯文字 → DeepSeek V4 Pro</code><br>
+<code>手动选择 → 指定模型直接调用</code>
+</div>
+
+<!-- ===== 时序逻辑图方案 ===== -->
+<h2>三、时序逻辑图最终方案</h2>
+<div class="card">
+<p><strong>方案</strong>：Vite 开发代理 + postMessage 数据加载</p>
+<table>
+<tr><th>环境</th><th>配置</th><th>说明</th></tr>
+<tr><td>开发</td><td><code>/drawio-proxy/ → embed.diagrams.net</code></td><td>vite.config.ts proxy</td></tr>
+<tr><td>生产</td><td>Nginx 反代 或 离线部署</td><td>部署前确认</td></tr>
+<tr><td>数据流</td><td>buildDrawioData → postMessage → draw.io</td><td>勾选/完成后自动推送</td></tr>
+</table>
+</div>
+
+<!-- ===== 项目结构 ===== -->
+<h2>四、当前项目结构</h2>
+<div class="card">
+<pre><code>src/
+├── App.tsx                     # 根组件(路由/状态)
+├── main.tsx                    # 入口
+├── index.css                   # Tailwind + 基础样式
+├── types/index.ts              # 全部类型定义
+├── data/
+│   ├── api.ts                  # 后端API + AI多模型路由
+│   ├── appendixA.ts            # 建筑规程数据
+│   ├── appendixA_municipal.ts  # 市政规程数据
+│   └── guideModules.ts         # 4章指南模块定义
+└── components/
+    ├── LoginPage.tsx           # 登录页(含离线演示)
+    ├── ProjectEntryPage.tsx    # 项目入口页(AI栏/主题切换)
+    ├── DocumentTable.tsx       # 资料管理主表
+    ├── FilterBar.tsx           # 筛选栏
+    ├── UploadModal.tsx         # 上传弹窗
+    ├── DownloadModal.tsx       # 下载弹窗
+    ├── FileListModal.tsx       # 文件管理弹窗
+    ├── GuideChapter.tsx        # 指南章节详情(双选/编辑/附件)
+    ├── LogicDiagram.tsx        # 时序逻辑图(draw.io)
+    ├── AiChatPage.tsx          # AI对话页(豆包风格)
+    ├── AiChat.tsx              # AI浮层(原版)
+    └── BackupModal.tsx         # 备份弹窗</code></pre>
+</div>
+
+<!-- ===== 经验教训 ===== -->
+<h2>五、开发经验教训</h2>
+
+<div class="card">
+<h3>5.1 技术选型</h3>
+<table>
+<tr><th>决策</th><th>结果</th><th>教训</th></tr>
+<tr><td>Draw2D 集成</td><td><span class="tag tr">失败</span></td><td>第三方Canvas库与React兼容性差，运行时错误无法修复</td></tr>
+<tr><td>自定义 SVG 路由</td><td><span class="tag ty">部分成功</span></td><td>基础路由可用，但箭头/锚点/编辑交互投入产出比低</td></tr>
+<tr><td>draw.io 嵌入</td><td><span class="tag tg">成功</span></td><td>成熟方案，Vite代理解决网络问题，postMessage传递数据</td></tr>
+<tr><td>本地化部署</td><td><span class="tag tr">失败</span></td><td>23MB静态文件下载成功但JS动态加载机制无法工作</td></tr>
+<tr><td>多模型AI路由</td><td><span class="tag tg">成功</span></td><td>DeepSeek+GLM-4V+Qwen-VL自动切换，视觉模型需base64传图</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>5.2 开发规则</h3>
+<ol>
+  <li><strong>新模块模板</strong>：参照 GuideChapter.tsx 结构</li>
+  <li><strong>Modal 规范</strong>：fixed overlay + 白卡片 + 头/体/底三区</li>
+  <li><strong>图标统一</strong>：只使用 lucide-react</li>
+  <li><strong>数据持久化</strong>：localStorage + API 双写</li>
+  <li><strong>禁止</strong>：React Router、Redux、CSS Modules、非MIT库、Class组件</li>
+  <li><strong>文件编辑后先编译验证</strong>：避免遗留语法错误</li>
+  <li><strong>大文件用 sed/awk 批量处理</strong>：行号变更后需重新确认</li>
+</ol>
+</div>
+
+<!-- ===== 后续计划 ===== -->
+<h2>六、后续开发计划</h2>
+
+<table>
+<tr><th>优先级</th><th>模块</th><th>内容</th><th>预估</th></tr>
+<tr><td>P0</td><td>AI 数据收集</td><td>工作项文档解析入库、项目维度数据聚合、向量化基础框架</td><td>5天</td></tr>
+<tr><td>P0</td><td>生产部署方案</td><td>Nginx反代配置、API Key 后端化、draw.io离线方案</td><td>3天</td></tr>
+<tr><td>P1</td><td>知识库模块</td><td>项目文档全文检索、规范标准库、经验教训沉淀</td><td>5天</td></tr>
+<tr><td>P1</td><td>AI 深度分析</td><td>项目问答、安全/质量/进度/成本四维度对比、文档AI摘要</td><td>5天</td></tr>
+<tr><td>P1</td><td>跨项目洞察</td><td>大数据驱动的"顿悟时刻"、最佳实践推荐、风险预警</td><td>5天</td></tr>
+<tr><td>P2</td><td>供应商库</td><td>供应商CRUD、资质审核、评价体系</td><td>3天</td></tr>
+<tr><td>P2</td><td>计划管理</td><td>甘特图、双代号网络图</td><td>5天</td></tr>
+<tr><td>P2</td><td>造价数据库</td><td>工程量清单模板、定额指标查询</td><td>5天</td></tr>
+</table>
+
+<p style="text-align:center;color:#94a3b8;margin:40px 0">2026-05-11 · 全过程工程咨询管理服务平台</p>
+</div></body></html>
