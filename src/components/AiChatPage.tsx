@@ -248,24 +248,6 @@ const AiChatPage: React.FC<{
   };
 
   // 图片压缩: 限制最大边尺寸, 减小base64体积 (保留安全分析所需细节)
-  const compressImage = (file: File, maxDim: number): Promise<Blob> => {
-    return new Promise((resolve) => {
-      const img = new window.Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width <= maxDim && height <= maxDim) return resolve(file); // 无需压缩
-        const ratio = maxDim / Math.max(width, height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.85);
-      };
-      img.onerror = () => resolve(file);
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   const addFiles = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
