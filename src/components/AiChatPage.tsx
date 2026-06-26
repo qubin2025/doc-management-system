@@ -240,6 +240,26 @@ const AiChatPage: React.FC<{
     finally { setLoading(false); }
   };
 
+  // 图片压缩: 限制最大边尺寸, 减小base64体积 (保留安全分析所需细节)
+  const compressImage = (file: File, maxDim: number): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width <= maxDim && height <= maxDim) return resolve(file); // 无需压缩
+        const ratio = maxDim / Math.max(width, height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => resolve(file);
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const addFiles = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
     // 先显示预览 + 立即读取base64 (await所有完成)
@@ -248,11 +268,13 @@ const AiChatPage: React.FC<{
       const url = isImage ? URL.createObjectURL(f) : '';
       setFilePreviews(prev => [...prev, { file: f, url, isImage }]);
       if (isImage) {
+        // 压缩大图: 限制最大边1024px (保留足够安全分析细节)
+        const compressed = await compressImage(f, 1024);
         const b64 = await new Promise<string>((resolve) => {
           const r = new FileReader();
           r.onload = () => resolve(r.result as string);
           r.onerror = () => resolve('');
-          r.readAsDataURL(f);
+          r.readAsDataURL(new Blob([compressed], { type: 'image/jpeg' }));
         });
         if (b64) imageB64Ref.current = [...imageB64Ref.current, b64];
       }
