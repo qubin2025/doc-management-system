@@ -4,6 +4,10 @@ import { sanitizeText } from '../utils/sanitize.js';
 import { getDb } from '../db.js';
 import { MODEL_SYSTEM_PROMPTS, DEFAULT_SYSTEM_PROMPT, FILE_UNDERSTANDING_PROMPT, IMAGE_UNDERSTANDING_PROMPT } from '../config/aiPrompts.js';
 import { SAFETY_CHECKLIST, VISION_SAFETY_PROMPT } from '../config/safetyChecklist.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router = Router();
 
@@ -260,7 +264,21 @@ async function tryChat(modelId, ctxMsgs, userMsgs, reqImages = []) {
         }
         if (userText) parts.push({ type: 'text', text: userText });
         const validImages = (reqImages || []).filter(img => img && (img.startsWith('data:image') || img.startsWith('http')));
-        for (const img of validImages) parts.push({ type: 'image_url', image_url: { url: img } });
+        for (const img of validImages) {
+          // localhost URL → 转为base64 (GLM-4V云端无法访问内网)
+          let finalUrl = img;
+          if (img.includes('localhost') || img.includes('127.0.0.1')) {
+            const localPath = img.replace(/^https?:\/\/[^\/]+\/?/, '');
+            const fullPath = path.join(__dirname, '..', localPath);
+            if (fs.existsSync(fullPath)) {
+              const data = fs.readFileSync(fullPath);
+              const ext = path.extname(fullPath).toLowerCase();
+              const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+              finalUrl = `data:${mime};base64,${data.toString('base64')}`;
+            }
+          }
+          parts.push({ type: 'image_url', image_url: { url: finalUrl } });
+        }
         if (validImages.length > 0) {
           msgs = [{ role: 'user', content: parts }]; // 仅发送user消息(已验证格式)
         } else {
