@@ -247,8 +247,6 @@ const AiChatPage: React.FC<{
     finally { setLoading(false); }
   };
 
-  // 图片压缩: 限制最大边尺寸, 减小base64体积 (保留安全分析所需细节)
-
   const addFiles = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
     newFiles.forEach(f => {
