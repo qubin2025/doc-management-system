@@ -29,7 +29,7 @@ app.use(cors(isProduction ? (corsOrigin ? {
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
 } : { origin: false }) : {
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
