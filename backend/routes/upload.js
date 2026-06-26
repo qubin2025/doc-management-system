@@ -24,7 +24,15 @@ const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } }); // �
 const router = Router();
 
 // POST /api/upload/image — 上传图片供AI分析
-router.post('/image', requireAuth, upload.array('images', 10), (req, res) => {
+router.post('/image', requireAuth, (req, res, next) => {
+  upload.array('images', 10)(req, res, (err) => {
+    if (err) {
+      console.error('[UPLOAD-ERR]', err.message, err.code);
+      return res.status(500).json({ error: err.message || '上传失败', code: err.code });
+    }
+    next();
+  });
+}, (req, res) => {
   const files = req.files;
   if (!files || files.length === 0) return res.status(400).json({ error: '未选择文件' });
 
