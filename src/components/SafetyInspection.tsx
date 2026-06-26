@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Upload, Shield, AlertTriangle, CheckCircle, Loader, X } from 'lucide-react';
+import { ArrowLeft, Upload, Shield, AlertTriangle, CheckCircle, Loader, X, Edit3 } from 'lucide-react';
 import { toast } from './Toast';
 
 interface Props { projectName: string; onBack: () => void; }
@@ -9,6 +9,7 @@ const SafetyInspection: React.FC<Props> = ({ projectName, onBack }) => {
   const [preview, setPreview] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [report, setReport] = useState<any>(null);
+  const [showPrompt, setShowPrompt] = useState(false);
 
   const handleFile = (f: File) => {
     setPhoto(f);
@@ -49,8 +50,9 @@ const SafetyInspection: React.FC<Props> = ({ projectName, onBack }) => {
           <div className="flex items-center gap-3">
             <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
             <Shield className="w-6 h-6 text-red-500"/>
-            <div><h1 className="text-lg font-bold text-gray-800">安全巡检</h1><p className="text-xs text-gray-500">项目: {projectName} | 对标JGJ59-2011</p></div>
+            <div><h1 className="text-lg font-bold text-gray-800">安全巡检</h1><p className="text-xs text-gray-500">项目: {projectName} | 对标JGJ59-2011 | GLM-5V Turbo</p></div>
           </div>
+          <button onClick={() => setShowPrompt(true)} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><Edit3 className="w-3 h-3"/>编辑提示词</button>
         </div>
       </header>
 
@@ -128,6 +130,25 @@ const SafetyInspection: React.FC<Props> = ({ projectName, onBack }) => {
           </div>
         )}
       </div>
+      {/* 提示词编辑弹窗 */}
+      {showPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]" onClick={() => setShowPrompt(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h3 className="font-semibold text-gray-800">编辑安全检查提示词</h3>
+              <button onClick={() => setShowPrompt(false)} className="text-gray-400 hover:text-red-500"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1">
+              <p className="text-xs text-gray-400 mb-3">提示词文件: <code className="bg-gray-100 px-1 rounded">backend\config\safetyChecklist.js</code> → 修改后重启后端生效</p>
+              <p className="text-xs text-gray-400 mb-3">检查清单: <code className="bg-gray-100 px-1 rounded">backend\config\safetyChecklist.js</code> → SAFETY_CHECKLIST 数组</p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 mb-3">
+                修改后需重启后端: <code className="bg-amber-100 px-1 rounded">taskkill //F //IM node.exe && cd backend && node server.js</code>
+              </div>
+              <p className="text-xs text-gray-500">用任意文本编辑器打开上述文件，修改 VISION_SAFETY_PROMPT 或 SAFETY_CHECKLIST 即可。保存后命令行执行上述重启命令。</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

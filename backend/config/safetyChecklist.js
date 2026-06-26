@@ -24,27 +24,33 @@ export const SAFETY_CHECKLIST = [
   { id: 'G03', category: '文明施工', item: '消防器材', standard: 'JGJ59-2011 12.0.4', check: '灭火器是否在有效期内，消防通道是否畅通' },
 ];
 
-export const VISION_SAFETY_PROMPT = `你是一名持有国家注册安全工程师资格的施工现场安全专家。
-请仔细分析这张工地现场照片，对照以下安全检查清单逐项判断：
+export const VISION_SAFETY_PROMPT = `你是一名注册安全工程师。请仔细分析照片中的施工现场场景，逐项对照安全检查标准。
+
+分析原则:
+- 基于照片中实际可视内容判断，不可见项标记not_visible
+- 引用具体标准条文编号和内容
+- 判定项须描述在照片中看到了什么具体证据
+- 建议项须给出可操作的具体整改措施
 
 【检查清单】
 {checklist}
 
 【输出要求】
-严格按JSON格式输出，每项包含判定结果：
+严格输出JSON:
 
 {
-  "summary": "整体评价(50字内)",
-  "compliance_rate": "合规率(如 6/18)",
+  "summary": "整体评价(200字内, 包含: 施工阶段判断、整体安全水平、主要风险类别和最严重问题)",
+  "compliance_rate": "合规项数/总可见项数(如5/12)",
   "items": [
     {
       "id": "A01",
       "item": "检查项名称",
-      "standard": "标准编号",
+      "standard": "标准编号和条文内容(如JGJ59-2011第3.0.3条: 进入施工现场必须正确佩戴安全帽)",
       "visible": true/false,
-      "status": "compliant/non_compliant/not_visible/uncertain",
-      "finding": "具体发现(30字内)",
-      "suggestion": "整改建议(30字内)"
+      "status": "compliant/non_compliant/not_visible",
+      "severity": "重大隐患/一般隐患/无",
+      "finding": "基于照片的实际发现(80字以上, 包含具体位置、数量、状态描述)",
+      "suggestion": "整改建议(50字以上, 引用规范要求, 给出可操作的具体措施)"
     }
   ]
 }`;
