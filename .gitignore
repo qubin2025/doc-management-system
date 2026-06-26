@@ -7,3 +7,7 @@ dist/
 .DS_Store
 backend/data/
 backend/node_modules/
+chi_sim.traineddata
+eng.traineddata
+nexus3d/
+public/drawio/
