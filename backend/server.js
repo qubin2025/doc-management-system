@@ -13,6 +13,7 @@ import aiRouter from './routes/ai.js';
 import kgRouter from './routes/kg.js';
 import ragflowRouter from './routes/ragflow.js';
 import casdoorRouter from './routes/casdoor.js';
+import safetyRouter from './routes/safety.js';
 import uploadRouter from './routes/upload.js';
 import auditRouter from './routes/audit.js';
 import tenantRouter from './routes/tenant.js';
@@ -68,6 +69,7 @@ app.use('/api/kg', kgRouter);
 app.use('/api/ragflow', ragflowRouter);
 app.use('/api/audit', auditRouter);
 app.use('/api/tenant', tenantRouter);
+app.use('/api/safety', safetyRouter); // 安全巡检独立端点
 app.use('/api/casdoor', casdoorRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/temp-images', express.static('temp-images')); // 临时图片访问

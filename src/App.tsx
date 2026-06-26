@@ -24,6 +24,7 @@ import ConstructionReview from './components/ConstructionReview';
 import ContractReview from './components/ContractReview';
 import BidReview from './components/BidReview';
 import PlanGenerator from './components/PlanGenerator';
+import SafetyInspection from './components/SafetyInspection';
 import { guideChapters } from './data/guideModules';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
@@ -447,6 +448,8 @@ const App: React.FC = () => {
   // ===== 方案生成 =====
   if (view === 'plan-generator' && currentProject) {
     return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
+  if (view === 'safety-inspection')
+    return <SafetyInspection projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 登录页 =====
@@ -712,6 +715,17 @@ const App: React.FC = () => {
                 <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">AI综合项目分析、风险预警、知识图谱、智能建议</p>
+            </button>
+            {/* 安全巡检 — 独立页面, 照片直传GLM-5V */}
+            <button onClick={() => setView('safety-inspection')}
+              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-red-300 group cursor-pointer bg-gradient-to-br from-white to-red-50/30">
+              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Shield className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">安全巡检</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-red-100 text-red-700 font-medium">GLM-5V</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">上传工地照片 → AI对标JGJ59安全检查</p>
             </button>
             {/* 施工组织设计审查 */}
             <button onClick={() => setView('construction-review')}
