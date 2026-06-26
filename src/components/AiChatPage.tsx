@@ -228,8 +228,14 @@ const AiChatPage: React.FC<{
             const uploadData = await uploadRes.json();
             uploadedUrls = uploadData.images.map((i:any) => `http://localhost:3000${i.url}`);
             console.log('[IMG-UPLOAD] success:', uploadedUrls.length, 'urls');
+          } else {
+            alert(`图片上传失败: HTTP ${uploadRes.status}。请检查后端是否运行。`);
+            return; // 上传失败，不发送消息
           }
-        } catch (e) { console.error('[IMG-UPLOAD] failed:', e); }
+        } catch (e) {
+          alert(`图片上传失败: ${e}。请检查后端是否运行(http://localhost:3000)。`);
+          return;
+        }
       }
 
       // 文本文件内容
