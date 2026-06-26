@@ -26,9 +26,13 @@ const SafetyInspection: React.FC<Props> = ({ projectName, onBack }) => {
       const token = localStorage.getItem('doc-system-token') || '';
       const res = await fetch(`http://localhost:3000/api/safety/check?token=${encodeURIComponent(token)}`, { method: 'POST', body: form });
       const data = await res.json();
+      if (res.status === 401) {
+        toast('登录已过期, 请退出重新登录', 'error');
+        return;
+      }
       if (data.ok && data.report) {
         setReport(data.report);
-        toast('安全分析完成', 'success');
+        toast('分析完成 (GLM-5V)', 'success');
       } else {
         toast('分析失败: ' + (data.error || '未知错误'), 'error');
       }
