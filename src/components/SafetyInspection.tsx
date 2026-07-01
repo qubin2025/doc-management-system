@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Upload, Shield, AlertTriangle, CheckCircle, Loader, X, Edit3 } from 'lucide-react';
 import { toast } from './Toast';
+import * as api from '../data/api';
 
 interface Props { projectName: string; onBack: () => void; }
 
@@ -24,7 +25,7 @@ const SafetyInspection: React.FC<Props> = ({ projectName, onBack }) => {
     try {
       const form = new FormData();
       form.append('photo', photo);
-      const token = localStorage.getItem('doc-system-token') || '';
+      const token = api.getAuthToken() || localStorage.getItem('doc-system-token') || '';
       const res = await fetch(`http://localhost:3000/api/safety/check?token=${encodeURIComponent(token)}`, { method: 'POST', body: form });
       const data = await res.json();
       if (res.status === 401) {
