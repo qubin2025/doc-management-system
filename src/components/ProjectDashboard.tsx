@@ -205,9 +205,9 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                   if (hasChildren) toggleMenu(item.id);
                   else onNavigate(item.id);
                 }}
-                className="w-full flex items-center gap-2.5 px-4 rounded-none text-left transition-colors"
+                className="w-full flex items-center gap-2.5 px-4 rounded-none text-left transition-colors text-sm"
                 style={{
-                  height: 38, fontSize: 13, fontWeight: isActive ? 600 : 400,
+                  height: 40, fontWeight: isActive ? 600 : 400,
                   color: isActive ? C.primary : C.text,
                   background: isActive ? C.sidebarActive : 'transparent',
                   borderLeft: isActive ? `3px solid ${C.primary}` : '3px solid transparent',
@@ -220,11 +220,11 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                 <div className="ml-4 mr-0 mt-0.5 space-y-0.5">
                   {item.children!.map(child => (
                     <button key={child.id + child.label} onClick={() => onNavigate(child.id)}
-                      className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 rounded-none text-xs transition-colors hover:bg-white/50"
+                      className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 rounded-none text-[13px] transition-colors hover:bg-white/50"
                       style={{ color: C.text }}>
                       {child.icon && <child.icon className="w-3.5 h-3.5" style={{ color: C.muted }}/>}
                       <span className="flex-1 truncate">{child.label}</span>
-                      {child.desc && <span className="text-[10px]" style={{ color: C.muted }}>{child.desc}</span>}
+                      {child.desc && <span className="text-[10px]" className="text-[11px]" style={{ color: C.muted }}>{child.desc}</span>}
                     </button>
                   ))}
                 </div>
