@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, FolderOpen, BarChart3, Users, FileText, Clock, ArrowRight, LogOut, User, Shield, Sparkles, ChevronRight, ChevronDown, Building2, DollarSign, ClipboardCheck, Truck, BookOpen, GitBranch, MessageSquare, Wrench, FileCheck, FileSearch, PenTool } from 'lucide-react';
+import { Search, Plus, FolderOpen, BarChart3, Users, FileText, Clock, ArrowRight, LogOut, User, Shield, Sparkles, ChevronRight, ChevronDown, Building2, DollarSign, ClipboardCheck, Truck, BookOpen, GitBranch, MessageSquare, Wrench, FileCheck, FileSearch, PenTool, Settings } from 'lucide-react';
 import * as api from '../data/api';
 import { ProjectInfo } from '../types';
 
@@ -239,7 +239,7 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                       style={{ color: C.text }}>
                       {child.icon && <child.icon className="w-3.5 h-3.5" style={{ color: C.muted }}/>}
                       <span className="flex-1 truncate">{child.label}</span>
-                      {child.desc && <span className="text-[10px]" className="text-[11px]" style={{ color: C.muted }}>{child.desc}</span>}
+                      {child.desc && <span className="text-[11px]" style={{ color: C.muted }}>{child.desc}</span>}
                     </button>
                   ))}
                 </div>
@@ -252,16 +252,10 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
         {/* 底部折叠按钮 */}
         <div className="border-t px-3 py-2.5" style={{ borderColor: C.border }}>
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center gap-1 text-[10px] py-1.5 rounded-lg transition-colors hover:bg-white/50"
+            className="w-full flex items-center justify-center gap-1 text-[11px] py-1.5 rounded-lg transition-colors hover:bg-white/50"
             style={{ color: C.muted }}>
             {sidebarCollapsed ? <ChevronRight className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
             {!sidebarCollapsed && '折叠'}
-          </button>
-          <button onClick={() => { try { api.logout(); } catch {} onLogout(); }}
-            className="w-full flex items-center justify-center gap-1 text-[10px] py-1.5 mt-1 rounded-lg transition-colors hover:bg-white/50"
-            style={{ color: C.muted }}>
-            <LogOut className="w-3.5 h-3.5"/>
-            {!sidebarCollapsed && '退出'}
           </button>
         </div>
       </aside>
@@ -276,15 +270,20 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                 {SIDEBAR_ITEMS.find(i => i.id === activeNav && i.type !== 'divider')?.label || '仪表盘'}
               </h1>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-xs" style={{ color: C.textVar }}>
-                <User className="w-3.5 h-3.5 inline mr-1" />
-                {currentUser?.username || 'admin'}
-                <span className="mx-1.5" style={{ color: C.muted }}>|</span>
-                <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: C.bg, color: C.textVar }}>
-                  {currentUser?.role === 'admin' ? '管理员' : '用户'}
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => onNavigate('admin')} className="p-1.5 rounded-lg transition-colors hover:bg-gray-100" style={{ color: C.muted }} title="管理后台">
+                <Settings className="w-4 h-4" />
+              </button>
+              <span className="flex items-center gap-1 text-xs" style={{ color: C.textVar }}>
+                <User className="w-3.5 h-3.5" /> {currentUser?.username || 'admin'}
+              </span>
+              <span className="px-2 py-0.5 text-[10px] rounded-full font-medium" style={{ background: C.primaryBg, color: C.primary }}>
+                {currentUser?.role === 'admin' ? '管理员' : '用户'}
+              </span>
+              <button onClick={() => { try { api.logout(); } catch {} onLogout(); }}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-colors" style={{ color: C.textVar, border: `1px solid ${C.border}` }}>
+                <LogOut className="w-3.5 h-3.5"/> 退出
+              </button>
             </div>
           </div>
         </header>
