@@ -471,6 +471,7 @@ const App: React.FC = () => {
         userDisplay={auth?.user?.displayName || ''}
         isAdmin={isAdmin}
         userRole={auth?.user?.role || ''}
+        onBackToDashboard={() => setView('dashboard')}
         onSelectProject={(name) => {
           setCurrentProject(name);
           setView('homepage');

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, FolderOpen, ArrowRight, User, LogOut, Sparkles, Plus, Settings, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
+import { Search, FolderOpen, ArrowRight, ArrowLeft, User, LogOut, Sparkles, Plus, Settings, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
 import { ProjectInfo } from '../types';
 import * as api from '../data/api';
 import { toast } from './Toast';
@@ -12,6 +12,7 @@ interface ProjectEntryPageProps {
   userRole: string;
   onSelectProject: (name: string) => void;
   onLogout: () => void;
+  onBackToDashboard?: () => void;
   onAiSubmit: (query: string) => void;
   onCreateProject: () => void;
   onRenameProject: (oldName: string, newName: string) => void;
@@ -20,7 +21,7 @@ interface ProjectEntryPageProps {
 
 const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   projects, currentUser, userDisplay, isAdmin, userRole,
-  onSelectProject, onLogout, onAiSubmit, onCreateProject, onRenameProject, onUpdateProject
+  onSelectProject, onLogout, onBackToDashboard, onAiSubmit, onCreateProject, onRenameProject, onUpdateProject
 }) => {
   const light = true; // 固定浅色模式
   const [search, setSearch] = useState('');
@@ -132,6 +133,11 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             <span className={`px-2 py-0.5 text-xs rounded-full font-medium backdrop-blur-sm ${isAdmin ? t.roleAdmin : t.roleUser}`}>
               {isAdmin ? '管理员' : userRole === 'project_manager' ? '项目经理' : userRole === 'construction_unit' ? '建设单位' : '用户'}
             </span>
+            {onBackToDashboard && (
+              <button onClick={onBackToDashboard} className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-100">
+                <ArrowLeft className="w-3.5 h-3.5"/> 仪表盘
+              </button>
+            )}
             <button onClick={onLogout} className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${t.logout}`}>
               <LogOut className="w-4 h-4" /> 退出
             </button>

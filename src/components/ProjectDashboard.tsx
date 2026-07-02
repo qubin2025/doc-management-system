@@ -13,7 +13,7 @@ interface Props {
 const C = {
   primary: '#8f482f', primaryBg: '#ffdbd0',
   surface: '#ffffff', bg: '#f6f8fa',
-  text: '#111827', textVar: '#4b5563', muted: '#8b98a7',
+  text: '#111827', textVar: '#374151', muted: '#6b7280',
   border: '#dde3ea', sidebar: '#f1f4f7',
   sidebarHover: '#ffffffc7', sidebarActive: '#fffffff0', sidebarActiveBorder: '#8f482f29',
   danger: '#b42318', dangerBg: '#fee4e2',
@@ -189,9 +189,9 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
         </div>
 
         {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-2">
+        <nav className="flex-1 overflow-y-auto">
           {SIDEBAR_ITEMS.map((item, i) => {
-            if (item.type === 'divider') return <div key={i} className="mx-3 my-2 border-t" style={{ borderColor: C.border }} />;
+            if (item.type === 'divider') return <div key={i} className="mx-3 my-1.5 border-t" style={{ borderColor: C.border }} />;
 
             const Icon = item.icon;
             const isActive = activeNav === item.id;
@@ -205,23 +205,23 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                   if (hasChildren) toggleMenu(item.id);
                   else onNavigate(item.id);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 mx-2 rounded-lg text-left transition-colors"
+                className="w-full flex items-center gap-2.5 px-4 rounded-none text-left transition-colors"
                 style={{
-                  height: 36, fontSize: 13,
-                  color: isActive ? C.primary : C.textVar,
+                  height: 38, fontSize: 13, fontWeight: isActive ? 600 : 400,
+                  color: isActive ? C.primary : C.text,
                   background: isActive ? C.sidebarActive : 'transparent',
                   borderLeft: isActive ? `3px solid ${C.primary}` : '3px solid transparent',
                 }}>
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? C.primary : C.muted }} />
                 {!sidebarCollapsed && <span className="flex-1 truncate">{item.label}</span>}
                 {!sidebarCollapsed && hasChildren && (isExpanded ? <ChevronDown className="w-3.5 h-3.5"/> : <ChevronRight className="w-3.5 h-3.5"/>)}
               </button>
               {hasChildren && isExpanded && !sidebarCollapsed && (
-                <div className="ml-6 mr-2 mt-1 space-y-0.5">
+                <div className="ml-4 mr-0 mt-0.5 space-y-0.5">
                   {item.children!.map(child => (
                     <button key={child.id + child.label} onClick={() => onNavigate(child.id)}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-white/50"
-                      style={{ color: C.textVar }}>
+                      className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 rounded-none text-xs transition-colors hover:bg-white/50"
+                      style={{ color: C.text }}>
                       {child.icon && <child.icon className="w-3.5 h-3.5" style={{ color: C.muted }}/>}
                       <span className="flex-1 truncate">{child.label}</span>
                       {child.desc && <span className="text-[10px]" style={{ color: C.muted }}>{child.desc}</span>}
