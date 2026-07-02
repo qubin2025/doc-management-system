@@ -581,15 +581,16 @@ const App: React.FC = () => {
               { id: 'ch4', icon: <CheckCircle2 className="w-6 h-6 text-indigo-600" />, number: 4, title: '竣工验收及移交', desc: '竣工预验收、正式验收、备案归档、工程移交、竣工结算、保修管理' },
               { id: 'land-reserve', icon: <Landmark className="w-6 h-6 text-teal-600" />, isLand: true, title: '土储中心归档资料', desc: '土储中心归档移交资料规程，86项分类归档管理，上传自动填充' },
             ].map((m) => (
-              m.isLand ? (
-                <button key={m.id} onClick={() => setView('land-reserve')}
+              <React.Fragment key={m.id}>
+              {m.isLand ? (
+                <button onClick={() => setView('land-reserve')}
                   className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-teal-300 group cursor-pointer bg-gradient-to-br from-white to-teal-50/30">
                   <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
                   <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">{m.title}</h3></div>
                   <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
                 </button>
               ) : (
-              <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
+              <button onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
               <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
                 className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-200 group cursor-pointer">
                 <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
@@ -599,6 +600,8 @@ const App: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
               </button>
+              )}
+              </React.Fragment>
             ))}
           </div>
 
