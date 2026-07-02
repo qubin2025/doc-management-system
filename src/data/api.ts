@@ -96,8 +96,8 @@ export async function fetchProjects(): Promise<ProjectInfo[]> {
   return data.map((p: any) => ({ id: p.id, name: p.name, createdAt: p.created_at, details: p.details }));
 }
 
-export async function createProject(name: string): Promise<any> {
-  const res = await fetch(`${API_BASE}/projects`, { method: 'POST', body: JSON.stringify({ name }), headers: headers() });
+export async function createProject(name: string, workspace?: string, cards?: string[]): Promise<any> {
+  const res = await fetch(`${API_BASE}/projects`, { method: 'POST', body: JSON.stringify({ name, workspace, cards }), headers: headers() });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || '创建项目失败');
   return data;

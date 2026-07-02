@@ -24,15 +24,15 @@ const C = {
 
 const SIDEBAR_ITEMS = [
   { id: 'dashboard', label: '仪表盘', icon: BarChart3 },
-  { id: 'project-entry', label: '项目创建', icon: FolderOpen, desc: '新建和管理项目' },
+  { id: 'project-entry', label: '项目创建', icon: FolderOpen, desc: '新建工作空间和项目' },
+  { type: 'divider' },
   { id: 'plan-manager', label: '计划管理', icon: Clock },
   { id: 'safety-inspection', label: '安全管理', icon: Shield },
   { id: 'cost', label: '成本管理', icon: DollarSign },
-  { type: 'divider' },
   { id: 'analysis', label: '质量管理', icon: ClipboardCheck },
   { id: 'supplier', label: '供应商管理', icon: Truck },
   { type: 'divider' },
-  { id: 'homepage', label: '工程资料管理', icon: Building2, desc: 'DB11/T695-2025 & DB11/T808-2020' },
+  { id: 'homepage', label: '工程资料管理', icon: Building2, desc: 'DB11/T695 & T808' },
   { id: 'knowledge-graph', label: '知识图谱', icon: GitBranch },
   { id: 'knowledge-base', label: '知识库', icon: BookOpen },
   { type: 'divider' },
@@ -56,6 +56,8 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newWorkspace, setNewWorkspace] = useState('全过程工程咨询服务');
+  const [selectedCards, setSelectedCards] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -77,10 +79,10 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return;
     try {
-      const created = await api.createProject(newProjectName.trim());
+      const created = await api.createProject(newProjectName.trim(), newWorkspace, selectedCards);
       const list = await api.fetchProjects();
       setProjects(Array.isArray(list) ? list : []);
-      setNewProjectName('');
+      setNewProjectName(''); setSelectedCards([]);
       setShowCreateDialog(false);
       // 导航到新项目
       // 创建后直接进入工程资料管理页
@@ -131,57 +133,57 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
         ))}
       </div>
 
-      {/* ===== 项目列表 ===== */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: C.surface, borderColor: C.border }}>
-        <div className="flex items-center justify-between px-5 py-3.5 border-b" style={{ borderColor: C.border }}>
-          <div>
-            <h2 className="font-semibold text-sm" style={{ color: C.text }}>全部项目</h2>
-            <p className="text-[11px] mt-0.5" style={{ color: C.textVar }}>{filtered.length} 个项目</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: C.muted }} />
-              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                placeholder="搜索项目..." className="pl-8 pr-3 py-1.5 rounded-lg text-xs border outline-none transition-colors"
-                style={{ borderColor: C.border, color: C.text, background: C.surface, width: 180 }}
-                onFocus={e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = `0 0 0 2px ${C.primary}15`; }}
-                onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none'; }}/>
+      {/* ===== 项目列表(按工作空间分组) ===== */}
+      {(() => {
+        // 分组逻辑
+        const workspaces = [...new Set(filtered.map((p: any) => p.workspace || '默认'))];
+        const grouped: Record<string, any[]> = {};
+        workspaces.forEach(ws => {
+          grouped[ws] = filtered.filter((p: any) => (p.workspace || '默认') === ws);
+        });
+
+        return workspaces.map(ws => (
+          <div key={ws} className="rounded-xl border overflow-hidden mb-4" style={{ background: C.surface, borderColor: C.border }}>
+            <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: C.border, background: C.bg }}>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4" style={{ color: C.primary }} />
+                <h2 className="font-semibold text-sm" style={{ color: C.text }}>{ws}</h2>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: C.primaryBg, color: C.primary }}>{grouped[ws].length}</span>
+              </div>
             </div>
-            <button onClick={() => setShowCreateDialog(true)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-medium"
-              style={{ background: C.primary }}><Plus className="w-3.5 h-3.5"/> 新建</button>
-          </div>
-        </div>
-        {loading ? <div className="px-5 py-10 text-center text-xs" style={{ color: C.muted }}>加载中...</div>
-        : filtered.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <FolderOpen className="w-8 h-8 mx-auto mb-2" style={{ color: C.muted, opacity: 0.4 }} />
-            <p className="text-sm" style={{ color: C.textVar }}>{searchQuery ? '未找到匹配' : '暂无项目'}</p>
-          </div>
-        ) : (
-          <div className="divide-y" style={{ borderColor: C.border }}>
-            {filtered.map((proj: any) => (
-              <div key={proj.name || proj.id} onClick={() => onNavigate('project-entry', proj.name)}
-                className="flex items-center justify-between px-5 py-3 cursor-pointer transition-colors hover:bg-gray-50">
+            {grouped[ws].map((proj: any) => (
+              <div key={proj.name || proj.id} onClick={() => onNavigate('homepage', proj.name)}
+                className="flex items-center justify-between px-5 py-3 cursor-pointer transition-colors hover:bg-gray-50 border-b last:border-0" style={{ borderColor: C.border }}>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: C.bg }}>
                     <FolderOpen className="w-4 h-4" style={{ color: C.primary }} />
                   </div>
                   <div>
                     <p className="font-medium text-sm" style={{ color: C.text }}>{proj.name}</p>
-                    <p className="text-[10px]" style={{ color: C.textVar }}>
-                      {proj.createdAt || proj.created_at || '—'}
-                      {proj.details?.scale ? ` · ${proj.details.scale}` : ''}
-                      {proj.details?.investment ? ` · ${proj.details.investment}` : ''}
-                    </p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {(proj.cards || []).slice(0, 4).map((c: string) => (
+                        <span key={c} className="text-[9px] px-1 py-0.5 rounded bg-gray-100 text-gray-500">{c}</span>
+                      ))}
+                      {proj.createdAt && <span className="text-[10px] text-gray-400 ml-1">{proj.createdAt}</span>}
+                    </div>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4" style={{ color: C.muted }} />
               </div>
             ))}
           </div>
-        )}
-      </div>
+        ));
+      })()}
+
+      {!loading && filtered.length === 0 && (
+        <div className="rounded-xl border p-10 text-center" style={{ background: C.surface, borderColor: C.border }}>
+          <FolderOpen className="w-8 h-8 mx-auto mb-2" style={{ color: C.muted, opacity: 0.4 }} />
+          <p className="text-sm text-gray-500">暂无项目</p>
+          <p className="text-xs text-gray-400 mt-1">点击右上角「新建」创建第一个项目</p>
+        </div>
+      )}
+
+      {loading && <div className="text-center text-xs py-8" style={{ color: C.muted }}>加载中...</div>}
     </div>
   );
 
@@ -293,27 +295,72 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
       {/* ===== 新建项目弹窗 ===== */}
       {showCreateDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]" onClick={() => setShowCreateDialog(false)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" onClick={e => e.stopPropagation()}
             style={{ background: C.surface, borderColor: C.border }}>
             <div className="px-6 py-5 border-b" style={{ borderColor: C.border }}>
-              <h3 className="font-semibold" style={{ color: C.text }}>新建项目</h3>
-              <p className="text-xs mt-1" style={{ color: C.textVar }}>输入项目名称，创建后可直接进入资料管理</p>
+              <h3 className="font-semibold text-gray-800">新建项目</h3>
+              <p className="text-xs text-gray-500 mt-1">选择工作空间，填写项目名称，勾选需要的功能卡片</p>
             </div>
-            <div className="px-6 py-5 space-y-4">
-              <input autoFocus value={newProjectName}
-                onChange={e => setNewProjectName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
-                placeholder="输入项目名称，如：小红门调水干线工程"
-                className="w-full px-4 py-2.5 rounded-lg border text-sm outline-none transition-colors"
-                style={{ borderColor: C.border, color: C.text }}
-                onFocus={e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = `0 0 0 2px ${C.primary}15`; }}
-                onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none'; }}/>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setShowCreateDialog(false)}
-                  className="px-4 py-2 rounded-lg text-sm border" style={{ borderColor: C.border, color: C.textVar }}>取消</button>
+            <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* 工作空间下拉 */}
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">工作空间（项目集）</label>
+                <select value={newWorkspace} onChange={e => setNewWorkspace(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none" style={{ borderColor: C.border }}>
+                  {['全过程工程咨询服务', '施工管理项目', '项目管理项目', '规划设计项目', '造价咨询项目', '招标代理项目'].map(ws => (
+                    <option key={ws} value={ws}>{ws}</option>
+                  ))}
+                </select>
+              </div>
+              {/* 项目名称 */}
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">项目名称</label>
+                <input autoFocus value={newProjectName}
+                  onChange={e => setNewProjectName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
+                  placeholder="如：小红门调水干线工程"
+                  className="w-full px-4 py-2.5 rounded-lg border text-sm outline-none"
+                  style={{ borderColor: C.border, color: C.text }}
+                  onFocus={e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = `0 0 0 2px ${C.primary}15`; }}
+                  onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none'; }}/>
+              </div>
+              {/* 功能卡片勾选 */}
+              <div>
+                <label className="text-xs text-gray-500 mb-2 block">功能卡片（可多选）</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'doc-mgmt', label: '工程资料管理', desc: 'DB11/T695 & T808' },
+                    { id: 'safety', label: '安全巡检', desc: 'GLM-5V对标JGJ59' },
+                    { id: 'review', label: '施工组织设计审查', desc: 'AI逐章审查' },
+                    { id: 'contract', label: '合同审查', desc: '8类风险条款' },
+                    { id: 'bid', label: '招投标审查', desc: '7要素合规检查' },
+                    { id: 'plan-gen', label: 'AI方案生成', desc: '7种模板' },
+                    { id: 'kg', label: '知识图谱', desc: '15种节点3D可视化' },
+                    { id: 'kb', label: '知识库', desc: '全文+语义+混合检索' },
+                  ].map(card => (
+                    <label key={card.id} className={`flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      selectedCards.includes(card.id) ? 'border-[#8f482f] bg-[#ffdbd0]/30' : 'border-gray-200 hover:bg-gray-50'
+                    }`}>
+                      <input type="checkbox" checked={selectedCards.includes(card.id)}
+                        onChange={e => {
+                          if (e.target.checked) setSelectedCards(prev => [...prev, card.id]);
+                          else setSelectedCards(prev => prev.filter(c => c !== card.id));
+                        }}
+                        className="mt-0.5 accent-[#8f482f]" />
+                      <div>
+                        <p className="text-xs font-medium text-gray-700">{card.label}</p>
+                        <p className="text-[10px] text-gray-400">{card.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => { setShowCreateDialog(false); setSelectedCards([]); }}
+                  className="px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-500">取消</button>
                 <button onClick={handleCreateProject} disabled={!newProjectName.trim()}
-                  className="px-5 py-2 rounded-lg text-sm text-white font-medium disabled:opacity-50" style={{ background: C.primary }}>
-                  创建并进入
+                  className="px-6 py-2 rounded-lg text-sm text-white font-medium disabled:opacity-50" style={{ background: C.primary }}>
+                  创建项目
                 </button>
               </div>
             </div>
