@@ -188,20 +188,43 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background: C.bg }}>
+    <div className="min-h-screen flex flex-col" style={{ background: C.bg }}>
+      {/* Header — 横贯整个顶部 */}
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-gray-300 shadow-sm shrink-0">
+        <div className="max-w-full mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" className="w-10 h-10 rounded-lg object-contain" alt="Logo" />
+            <div>
+              <h1 className="text-lg font-bold text-gray-800">全过程工程咨询管理服务平台</h1>
+              <p className="text-[11px] text-gray-400">项目管理仪表盘 · {stats.projects}个项目</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => onNavigate('admin')} className="p-2 rounded-lg transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-100" title="管理后台">
+              <Settings className="w-4 h-4" />
+            </button>
+            <span className="flex items-center gap-1 text-sm text-gray-600">
+              <User className="w-4 h-4" /> {currentUser?.username || 'admin'}
+            </span>
+            <span className={`px-2 py-0.5 text-xs rounded-full font-medium backdrop-blur-sm ${currentUser?.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+              {currentUser?.role === 'admin' ? '管理员' : '用户'}
+            </span>
+            <button onClick={() => { try { api.logout(); } catch {} onLogout(); }}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50">
+              <LogOut className="w-4 h-4" /> 退出
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 下方区域: 侧边栏 + 内容 */}
+      <div className="flex flex-1">
       {/* ===== 左侧边栏 ===== */}
       <aside className="flex flex-col border-r transition-all duration-200 shrink-0" style={{
         width: sidebarCollapsed ? 64 : 224,
         background: C.sidebar,
         borderColor: C.border,
       }}>
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 h-14 border-b shrink-0" style={{ borderColor: C.border }}>
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: C.primary }}>
-            <span className="text-white font-black text-[10px]">PM</span>
-          </div>
-          {!sidebarCollapsed && <span className="font-bold text-sm" style={{ color: C.text }}>项目管理</span>}
-        </div>
 
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto">
@@ -262,34 +285,6 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
 
       {/* ===== 右侧内容区 ===== */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header — 复刻 ProjectEntryPage */}
-        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-gray-300 shadow-sm shrink-0">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" className="w-10 h-10 rounded-lg object-contain" alt="Logo" />
-              <div>
-                <h1 className="text-lg font-bold text-gray-800">全过程工程咨询管理服务平台</h1>
-                <p className="text-[11px] text-gray-400">项目管理仪表盘 · {stats.projects}个项目</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => onNavigate('admin')} className="p-2 rounded-lg transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-100" title="管理后台">
-                <Settings className="w-4 h-4" />
-              </button>
-              <span className="flex items-center gap-1 text-sm text-gray-600">
-                <User className="w-4 h-4" /> {currentUser?.username || 'admin'}
-              </span>
-              <span className={`px-2 py-0.5 text-xs rounded-full font-medium backdrop-blur-sm ${currentUser?.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                {currentUser?.role === 'admin' ? '管理员' : '用户'}
-              </span>
-              <button onClick={() => { try { api.logout(); } catch {} onLogout(); }}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors text-gray-600 hover:text-red-600 hover:bg-red-50">
-                <LogOut className="w-4 h-4" /> 退出
-              </button>
-            </div>
-          </div>
-        </header>
-
         {/* Content */}
         <div className="flex-1 p-5 overflow-y-auto">
           {renderContent()}
