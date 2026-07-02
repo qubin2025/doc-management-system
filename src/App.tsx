@@ -379,10 +379,6 @@ const App: React.FC = () => {
     return <AiChatPage onBack={() => { setView('project-entry'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} />;
   }
 
-  if (view === 'dashboard' && currentProject) {
-    return <Dashboard projectName={currentProject} onBack={() => setView('homepage')} />;
-  }
-
   if (view === 'plan-manager') {
     return <PlanManager onBack={() => setView('homepage')} />;
   }
