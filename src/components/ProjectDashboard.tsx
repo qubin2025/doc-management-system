@@ -24,7 +24,7 @@ const C = {
 
 const SIDEBAR_ITEMS = [
   { id: 'dashboard', label: '仪表盘', icon: BarChart3 },
-  { id: 'project-list', label: '项目列表', icon: FolderOpen },
+  { id: 'project-entry', label: '项目创建', icon: FolderOpen, desc: '新建和管理项目' },
   { id: 'plan-manager', label: '计划管理', icon: Clock },
   { id: 'safety-inspection', label: '安全管理', icon: Shield },
   { id: 'cost', label: '成本管理', icon: DollarSign },
@@ -32,9 +32,9 @@ const SIDEBAR_ITEMS = [
   { id: 'analysis', label: '质量管理', icon: ClipboardCheck },
   { id: 'supplier', label: '供应商管理', icon: Truck },
   { type: 'divider' },
-  { id: 'eng-docs', label: '工程资料管理', icon: Building2, children: [
-    { id: 'project-entry', label: '土建资料', desc: 'DB11/T695-2025', icon: Building2 },
-    { id: 'project-entry', label: '市政资料', desc: 'DB11/T808-2020', icon: Building2 },
+  { id: 'homepage', label: '工程资料管理', icon: Building2, desc: '进入文件管理页', children: [
+    { id: 'homepage', label: '建筑资料', desc: 'DB11/T695-2025', icon: Building2 },
+    { id: 'homepage', label: '市政资料', desc: 'DB11/T808-2020', icon: Building2 },
   ]},
   { id: 'knowledge-graph', label: '知识图谱', icon: GitBranch },
   { id: 'knowledge-base', label: '知识库', icon: BookOpen },
@@ -86,7 +86,8 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
       setNewProjectName('');
       setShowCreateDialog(false);
       // 导航到新项目
-      onNavigate('project-entry', newProjectName.trim());
+      // 创建后直接进入工程资料管理页
+      onNavigate('homepage', newProjectName.trim());
     } catch { setShowCreateDialog(false); }
   };
 
