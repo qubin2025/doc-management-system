@@ -241,7 +241,14 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                 <button onClick={() => {
                   setActiveNav(item.id);
                   if (hasChildren) toggleMenu(item.id);
-                  else onNavigate(item.id);
+                  else {
+                    // 工程资料管理: 自动选择第一个项目
+                    if (item.id === 'homepage' && projects.length > 0) {
+                      onNavigate(item.id, projects[0].name);
+                    } else {
+                      onNavigate(item.id);
+                    }
+                  }
                 }}
                 className="w-full flex items-center gap-2.5 px-4 rounded-none text-left transition-colors text-sm"
                 style={{
