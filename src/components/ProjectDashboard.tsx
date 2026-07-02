@@ -32,10 +32,7 @@ const SIDEBAR_ITEMS = [
   { id: 'analysis', label: '质量管理', icon: ClipboardCheck },
   { id: 'supplier', label: '供应商管理', icon: Truck },
   { type: 'divider' },
-  { id: 'homepage', label: '工程资料管理', icon: Building2, desc: '进入文件管理页', children: [
-    { id: 'homepage', label: '建筑资料', desc: 'DB11/T695-2025', icon: Building2 },
-    { id: 'homepage', label: '市政资料', desc: 'DB11/T808-2020', icon: Building2 },
-  ]},
+  { id: 'homepage', label: '工程资料管理', icon: Building2, desc: 'DB11/T695-2025 & DB11/T808-2020' },
   { id: 'knowledge-graph', label: '知识图谱', icon: GitBranch },
   { id: 'knowledge-base', label: '知识库', icon: BookOpen },
   { type: 'divider' },
