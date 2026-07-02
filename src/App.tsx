@@ -25,6 +25,7 @@ import ContractReview from './components/ContractReview';
 import BidReview from './components/BidReview';
 import PlanGenerator from './components/PlanGenerator';
 import SafetyInspection from './components/SafetyInspection';
+import ProjectDashboard from './components/ProjectDashboard';
 import { guideChapters } from './data/guideModules';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
@@ -92,7 +93,7 @@ const App: React.FC = () => {
   const canUseAi = isAdmin || permissions.can_use_ai;
 
   // ===== View 路由 =====
-  const [view, setView] = useState<string>(auth ? 'project-entry' : 'login');
+  const [view, setView] = useState<string>(auth ? 'dashboard' : 'login');
 
   // ===== 项目列表 =====
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
@@ -456,6 +457,15 @@ const App: React.FC = () => {
   }
 
   // ===== 项目入口页 =====
+  if (view === 'dashboard') {
+    return (
+      <ProjectDashboard
+        onNavigate={(v, proj) => { if (proj) setCurrentProject(proj); setView(v); }}
+        onLogout={handleLogout}
+        currentUser={auth?.user}
+      />
+    );
+  }
   if (view === 'project-entry') {
     return (
       <>
