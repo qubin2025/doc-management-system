@@ -290,6 +290,7 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
           {renderContent()}
         </div>
       </div>
+      </div>
 
       {/* ===== 新建项目弹窗 ===== */}
       {showCreateDialog && (
