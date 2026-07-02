@@ -591,7 +591,6 @@ const App: React.FC = () => {
                 </button>
               ) : (
               <button onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
-              <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
                 className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-200 group cursor-pointer">
                 <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
                 <div className="flex items-center gap-2 mb-1">
