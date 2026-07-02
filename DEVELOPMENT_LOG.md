@@ -1,50 +1,90 @@
-# 开发日志
+# 全过程工程咨询管理系统 — 开发知识库 v2.5.0
+> 最后更新: 2026-07-02 | 分支: release/v2.5.0-enterprise | 115 commits
 
-## 2026-05-29: GuideChapter.tsx SVG遗留代码事件
+## 一、项目定位
 
-### 事件描述
+企业内网部署的工程全过程咨询管理平台。面向工程咨询公司内部员工（10-50并发），提供AI辅助审查、方案生成、安全巡检、知识图谱等功能。
 
-GuideChapter.tsx（1085行）始于2026年5月初，最初使用自定义SVG绘制逻辑图（时序逻辑图/双代号网络图），包含：
+**核心原则:**
+- 真实可用 > 表面通过（健康检查必须真实端口探测）
+- 离线降级 ≠ 默认离线（环境满足时必须警告未启动）
+- 少即是多（统一入口优于分散入口，默认配置覆盖80%场景）
+- 全局一致（字体/按钮/历史栏全部统一）
+- 数据主权（审查结果仅存localStorage，服务器仅保留API日志）
+- 文档先行（CLAUDE.md 是最权威开发指南）
 
-- **AnchorType** 锚点类型定义（8个方向锚点）
-- **getAnchorPos/pickAnchors** 锚点位置计算
-- **renderArrowHead** SVG箭头绘制
-- **orthogonalPathFromAnchors** 正交连线路径生成
-- **拖拽交互** (handleMouseDown/Move/Up) 用于节点移动
-- **锚点连线** (handleAnchorMouseDown/Up) 用于创建依赖边
+---
 
-总计约200行自定义SVG绘图代码。
+## 二、技术架构
 
-5月中旬，逻辑图改为 **draw.io 嵌入式方案**（LogicDiagram.tsx 组件，postMessage 数据加载）。原有SVG代码未清理，遗留约350行死代码，通过 `@ts-nocheck` 跳过TypeScript检查。
+```
+前端: React 18 + TypeScript 5 + Vite 5 + TailwindCSS 3
+后端: Express.js + better-sqlite3 + multer
+认证: bcrypt + UUID Session (24h过期) + 4角色RBAC
+AI: DeepSeek / Zhipu GLM-5V / Qwen / 本地Ollama
+部署: Docker Compose / PM2+Nginx / Windows脚本
+```
 
-### 重要教训
+### 端口
+| 端口 | 服务 | 说明 |
+|------|------|------|
+| 3000 | Express 后端 | 主API |
+| 5173 | Vite 前端 | 开发模式 |
+| 8001 | EasyOCR | 文档解析 |
+| 8000 | LightRAG | 知识引擎 |
+| 9380 | RAGFlow | Docker |
+| 7687 | Neo4j | Docker |
 
-**1. 架构变更后应立即清理旧代码**
-- SVG→draw.io迁移后，200+行SVG代码成为技术债务
-- 拖延清理导致文件膨胀到1212行，后续重构成本倍增
+---
 
-**2. @ts-nocheck 是技术债务信号**
-- 添加此指令时，应同时创建TODO任务（本例未创建）
-- 应在引入后立即制定清理时间表
+## 三、关键决策记录
 
-**3. 自研渲染 vs 成熟方案**
-- 自定义SVG绘制（200行代码）实现了有限的拖拽/连线功能
-- draw.io嵌入（20行配置）提供了完整的图表编辑能力
-- **结论**: 图形绘制优先选择成熟开源方案，避免自研
+### API_BASE 配置
+**最终方案：源码硬编码 `const API_BASE = '/api'`**（`src/data/api.ts` 第3行）
+同时 `vite.config.ts` 配置 `proxy: { '/api': 'http://localhost:3000' }`
 
-**4. 模块拆分应提前规划**
-- 工作模块(modules)、附表清单(forms)、逻辑图(logic)已是三个Tab
-- 但代码混在一个文件中，应各自独立为子组件
-- 组件超过300行时强制拆分
+### 图片识别管道（7次尝试）
+| # | 方案 | 结果 |
+|---|------|:---:|
+| 1 | JSON base64传输 | ❌ 大图序列化不稳定 |
+| 2 | FormData上传 | ❌ 跨域CORS 401 |
+| 3 | Vite代理 | ❌ 代理未配置 |
+| 7 | 硬编码API_BASE+FormData | ❌ 浏览器仍失败 |
 
-**5. 备份文件管理**
-- .bak/.bak2/.bak3/.clean/.fix 等5个备份占用混乱
-- 应使用 Git 分支管理WIP代码，而非文件副本
+**最终方案：** 安全巡检独立页面 + FormData + 绝对后端URL + token通过query参数传递。
 
-### 修复计划
+### GLM模型升级路径
+`glm-4v` → `glm-4.1v-thinking-flash` → **`glm-5v-turbo`** (等同Zhipu体验中心)
 
-预计2026年6月专项重构GuideChapter.tsx：
-1. 删除SVG遗留代码（~350行）
-2. 拆分为3-4个子组件
-3. 移除 @ts-nocheck
-4. 估计工时: 4-6小时
+### VITE_API_URL 曾导致大量缓存问题
+`.env` 的 `VITE_API_URL` 多次修改不生效，因浏览器缓存旧 JS chunk。最终硬编码到源码解决。
+
+---
+
+## 四、核心文件索引
+
+| 文件 | 用途 |
+|------|------|
+| `src/data/api.ts` | API_BASE='/api' (硬编码) |
+| `backend/routes/ai.js` | 9模型路由 + GLM-5V视觉 |
+| `backend/routes/safety.js` | 安全巡检独立端点 |
+| `backend/config/aiPrompts.js` | 所有AI提示词配置 |
+| `backend/config/safetyChecklist.js` | 18项JGJ59检查清单 |
+| `src/components/SafetyInspection.tsx` | 安全巡检独立页 |
+| `CLAUDE.md` | 项目最高原则 |
+
+---
+
+## 五、已知问题
+
+| 问题 | 解决方案 |
+|------|----------|
+| 安全巡检 401 | 退出重新登录(每次重启后端需重登) |
+| AI聊天图片识别失败 | 使用安全巡检独立页代替 |
+| Docker服务未启动 | 手动启动 Docker Desktop |
+
+---
+
+## 六、后续计划
+
+详见 `docs/v1.7.0/部署前开发计划_v3.0.html`
