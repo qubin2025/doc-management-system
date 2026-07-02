@@ -57,6 +57,8 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
   const [expandedMenus, setExpandedMenus] = useState<Record<string,boolean>>({ 'eng-docs': true, 'tools': true });
   const [activeNav, setActiveNav] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -74,6 +76,19 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
 
   const filtered = searchQuery ? projects.filter(p => p.name.includes(searchQuery)) : projects;
   const toggleMenu = (id: string) => setExpandedMenus(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) return;
+    try {
+      const created = await api.createProject(newProjectName.trim());
+      const list = await api.fetchProjects();
+      setProjects(Array.isArray(list) ? list : []);
+      setNewProjectName('');
+      setShowCreateDialog(false);
+      // 导航到新项目
+      onNavigate('project-entry', newProjectName.trim());
+    } catch { setShowCreateDialog(false); }
+  };
 
   const renderContent = () => (
     <div>
@@ -134,7 +149,7 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                 onFocus={e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = `0 0 0 2px ${C.primary}15`; }}
                 onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none'; }}/>
             </div>
-            <button onClick={() => onNavigate('project-entry')}
+            <button onClick={() => setShowCreateDialog(true)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-white text-xs font-medium"
               style={{ background: C.primary }}><Plus className="w-3.5 h-3.5"/> 新建</button>
           </div>
@@ -279,6 +294,37 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
           {renderContent()}
         </div>
       </div>
+
+      {/* ===== 新建项目弹窗 ===== */}
+      {showCreateDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]" onClick={() => setShowCreateDialog(false)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}
+            style={{ background: C.surface, borderColor: C.border }}>
+            <div className="px-6 py-5 border-b" style={{ borderColor: C.border }}>
+              <h3 className="font-semibold" style={{ color: C.text }}>新建项目</h3>
+              <p className="text-xs mt-1" style={{ color: C.textVar }}>输入项目名称，创建后可直接进入资料管理</p>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <input autoFocus value={newProjectName}
+                onChange={e => setNewProjectName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
+                placeholder="输入项目名称，如：小红门调水干线工程"
+                className="w-full px-4 py-2.5 rounded-lg border text-sm outline-none transition-colors"
+                style={{ borderColor: C.border, color: C.text }}
+                onFocus={e => { e.target.style.borderColor = C.primary; e.target.style.boxShadow = `0 0 0 2px ${C.primary}15`; }}
+                onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none'; }}/>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowCreateDialog(false)}
+                  className="px-4 py-2 rounded-lg text-sm border" style={{ borderColor: C.border, color: C.textVar }}>取消</button>
+                <button onClick={handleCreateProject} disabled={!newProjectName.trim()}
+                  className="px-5 py-2 rounded-lg text-sm text-white font-medium disabled:opacity-50" style={{ background: C.primary }}>
+                  创建并进入
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
