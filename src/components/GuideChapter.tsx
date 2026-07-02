@@ -274,7 +274,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
                 {iconMap[initialChapter.icon]}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">第{initialChapter.number}章 {initialChapter.title}</h1>
+                <h1 className="text-xl font-bold text-gray-800">{initialChapter.title}</h1>
                 <p className="text-sm text-gray-500">{initialChapter.subtitle}</p>
               </div>
             </div>

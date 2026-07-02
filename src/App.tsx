@@ -573,18 +573,28 @@ const App: React.FC = () => {
           {/* ===== 第一区块：工作指南工作模块 ===== */}
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">指南工作模块</h2>
           <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位严格按照指南手册内容执行，大模型智能分析驱动全过程管理</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-12">
             {[
               { id: 'ch1', icon: <ClipboardCheck className="w-6 h-6 text-blue-600" />, number: 1, title: '前期工作', desc: '项目立项、可行性研究、用地规划许可、建设许可、施工许可等前期管理' },
               { id: 'ch2', icon: <FileSearch className="w-6 h-6 text-amber-600" />, number: 2, title: '招标采购', desc: '招标文件编制、招标公告、评标定标、中标通知、合同签订与备案' },
               { id: 'ch3', icon: <HardHat className="w-6 h-6 text-emerald-600" />, number: 3, title: '工程施工', desc: '施工准备、质量管理、进度控制、安全监督、变更管理、监理协调' },
               { id: 'ch4', icon: <CheckCircle2 className="w-6 h-6 text-indigo-600" />, number: 4, title: '竣工验收及移交', desc: '竣工预验收、正式验收、备案归档、工程移交、竣工结算、保修管理' },
+              { id: 'land-reserve', icon: <Landmark className="w-6 h-6 text-teal-600" />, isLand: true, title: '土储中心归档资料', desc: '土储中心归档移交资料规程，86项分类归档管理，上传自动填充' },
             ].map((m) => (
+              m.isLand ? (
+                <button key={m.id} onClick={() => setView('land-reserve')}
+                  className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-teal-300 group cursor-pointer bg-gradient-to-br from-white to-teal-50/30">
+                  <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
+                  <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">{m.title}</h3></div>
+                  <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
+                </button>
+              ) : (
+              <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
               <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
                 className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-200 group cursor-pointer">
                 <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-base font-bold text-gray-800 group-hover:text-gray-900">第{m.number}章 {m.title}</h3>
+                  <h3 className="text-base font-bold text-gray-800 group-hover:text-gray-900">{m.title}</h3>
                   <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-700 font-medium">已上线</span>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
@@ -614,17 +624,6 @@ const App: React.FC = () => {
                 <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线 v1.0</span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">建筑/市政工程资料分类保存管理，DB11/T 695-2025 & DB11/T 808-2020 附录A</p>
-            </button>
-            {/* 土储中心归档 - 已上线 */}
-            <button onClick={() => setView('land-reserve')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-teal-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6 text-teal-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">土储中心归档资料</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">土储中心归档移交资料规程，86项分类归档管理，上传自动填充</p>
             </button>
             {/* 项目仪表盘 - 已上线 */}
             <button onClick={() => setView('dashboard')}
