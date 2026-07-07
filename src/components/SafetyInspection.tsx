@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Upload, Shield, AlertTriangle, CheckCircle, Loader, X, Edit3 } from 'lucide-react';
+import { ArrowLeft, Upload, Shield, CheckCircle, Loader, X, Edit3 } from 'lucide-react';
 import { toast } from './Toast';
 import * as api from '../data/api';
 

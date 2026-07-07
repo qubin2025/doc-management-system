@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, FolderOpen, ArrowRight, ArrowLeft, User, LogOut, Sparkles, Plus, Settings, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
+import { Search, FolderOpen, ArrowRight, ArrowLeft, User, LogOut, Sparkles, Plus, Settings, Edit3, Download, X, Loader, Upload, Trash2, Paperclip } from 'lucide-react';
 import { ProjectInfo } from '../types';
 import * as api from '../data/api';
 import { toast } from './Toast';
@@ -238,7 +238,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 e.stopPropagation();
                 setEditTarget(proj);
                 const d = proj.details || {};
-                setEditForm({ overview: d.overview || '', area: d.area || '', scale: d.scale || '', investment: d.investment || '', pipeline: d.pipeline || '', aiReport: d.aiReport || '', custom: d.custom || d.customFields || [] });
+                setEditForm({ overview: d.overview || '', area: d.area || '', scale: d.scale || '', investment: d.investment || '', pipeline: d.pipeline || '', aiReport: d.aiReport || '', custom: (d as any).custom || d.customFields || [] });
                 setProjectDocs((d.projectDocs || []).map((doc: any) => ({ fileName: doc.fileName, data: '', size: 0 })));
                 setShowEditModal(true);
               }}

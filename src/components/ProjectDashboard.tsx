@@ -32,7 +32,7 @@ const SIDEBAR_ITEMS = [
   { id: 'analysis', label: '质量管理', icon: ClipboardCheck },
   { id: 'supplier', label: '供应商管理', icon: Truck },
   { type: 'divider' },
-  { id: 'homepage', label: '工程资料管理', icon: Building2, desc: 'DB11/T695 & T808' },
+  { id: 'homepage', label: '工程资料管理', icon: Building2 },
   { id: 'knowledge-graph', label: '知识图谱', icon: GitBranch },
   { id: 'knowledge-base', label: '知识库', icon: BookOpen },
   { type: 'divider' },
@@ -231,22 +231,22 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
           {SIDEBAR_ITEMS.map((item, i) => {
             if (item.type === 'divider') return <div key={i} className="mx-3 my-1.5 border-t" style={{ borderColor: C.border }} />;
 
-            const Icon = item.icon;
-            const isActive = activeNav === item.id;
-            const hasChildren = !!item.children;
-            const isExpanded = expandedMenus[item.id];
+            const navItem = item as any;
+            const Icon: any = navItem.icon;
+            const isActive = activeNav === navItem.id;
+            const hasChildren = !!navItem.children;
+            const isExpanded = expandedMenus[navItem.id];
 
             return (
               <div key={item.id}>
                 <button onClick={() => {
-                  setActiveNav(item.id);
-                  if (hasChildren) toggleMenu(item.id);
+                  setActiveNav(navItem.id);
+                  if (hasChildren) toggleMenu(navItem.id);
                   else {
-                    // 工程资料管理: 自动选择第一个项目
-                    if (item.id === 'homepage' && projects.length > 0) {
-                      onNavigate(item.id, projects[0].name);
+                    if (navItem.id === 'homepage' && projects.length > 0) {
+                      onNavigate(navItem.id, projects[0].name);
                     } else {
-                      onNavigate(item.id);
+                      onNavigate(navItem.id);
                     }
                   }
                 }}
@@ -258,7 +258,7 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                   borderLeft: isActive ? `3px solid ${C.primary}` : '3px solid transparent',
                 }}>
                 <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? C.primary : C.muted }} />
-                {!sidebarCollapsed && <span className="flex-1 truncate">{item.label}</span>}
+                {!sidebarCollapsed && <span className="flex-1 truncate">{navItem.label}</span>}
                 {!sidebarCollapsed && hasChildren && (isExpanded ? <ChevronDown className="w-3.5 h-3.5"/> : <ChevronRight className="w-3.5 h-3.5"/>)}
               </button>
               {hasChildren && isExpanded && !sidebarCollapsed && (
@@ -267,9 +267,9 @@ const ProjectDashboard: React.FC<Props> = ({ onNavigate, onLogout, currentUser }
                     <button key={child.id + child.label} onClick={() => onNavigate(child.id)}
                       className="w-full flex items-center gap-2 pl-10 pr-3 py-1.5 rounded-none text-[13px] transition-colors hover:bg-white/50"
                       style={{ color: C.text }}>
-                      {child.icon && <child.icon className="w-3.5 h-3.5" style={{ color: C.muted }}/>}
+                      {/* icon */}
                       <span className="flex-1 truncate">{child.label}</span>
-                      {child.desc && <span className="text-[11px]" style={{ color: C.muted }}>{child.desc}</span>}
+                      {(child as any).desc && <span className="text-[11px]" style={{ color: C.muted }}>{(child as any).desc}</span>}
                     </button>
                   ))}
                 </div>
