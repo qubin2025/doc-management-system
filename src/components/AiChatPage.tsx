@@ -442,7 +442,7 @@ const AiChatPage: React.FC<{
                 </div>
               )}
               {/* 输入框 — 默认3行 */}
-              <div className="bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 focus-within:shadow-lg shadow-sm transition-all">
+              <div className="bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 focus-within:shadow-lg shadow-sm transition-all">
                 <textarea
                   value={input} onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}

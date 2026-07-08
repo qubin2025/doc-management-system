@@ -500,7 +500,7 @@ const App: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">创建新项目</h3>
             <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()} placeholder="输入项目名称"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:border-blue-500" />
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowProjectDialog(false)}
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
@@ -844,7 +844,7 @@ const App: React.FC = () => {
               <div className="flex items-center gap-2">
                 <FolderOpen className={`w-4 h-4 ${colorClass === 'blue' ? 'text-blue-500' : 'text-teal-500'}`} />
                 <select value={currentProject} onChange={(e) => setCurrentProject(e.target.value)}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium focus:ring-2 min-w-[150px] ${
+                  className={`px-3 py-2 border rounded-lg text-sm font-medium  min-w-[150px] ${
                     colorClass === 'blue'
                       ? 'border-blue-300 bg-blue-50 text-blue-900 focus:ring-blue-500 focus:border-blue-500'
                       : 'border-teal-300 bg-teal-50 text-teal-900 focus:ring-teal-500 focus:border-teal-500'
@@ -956,7 +956,7 @@ const App: React.FC = () => {
               <div className="flex gap-2 mb-4">
                 <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()} placeholder="输入新项目名称"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500" />
                 <button onClick={handleCreateProject} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">创建</button>
               </div>
               {projects.length === 0 ? (

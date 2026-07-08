@@ -349,7 +349,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                 <div key={i} className={`bg-white rounded-xl border p-4 ${ch.loading?'animate-pulse':''} ${ch.auto&&ch.content?'border-l-4 border-l-green-500':''}`}>
                   <div className="flex items-center justify-between mb-2"><h3 className="font-semibold text-sm flex items-center gap-1.5">{ch.name}{ch.auto&&ch.content&&<span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">自动</span>}</h3>{ch.loading&&<Loader className="w-4 h-4 text-green-500 animate-spin"/>}</div>
                   {ch.loading?<div className="space-y-2"><div className="h-3 bg-gray-200 rounded w-full"/><div className="h-3 bg-gray-200 rounded w-3/4"/></div>
-                  :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border rounded-lg p-3 resize-y focus:ring-2 focus:ring-green-500 outline-none font-mono"/>}
+                  :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border rounded-lg p-3 resize-y outline-none font-mono"/>}
                 </div>
               ))}
             </div>
