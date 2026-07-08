@@ -5,7 +5,7 @@ import { ChatMessage } from '../types';
 import { ragQuery, getIndexStats } from '../data/ragService';
 
 const MODELS = ['自动选择', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama'];
-const REPORT_TEMPLATES: Record<string, string> = {
+const DEFAULT_TEMPLATES: Record<string, string> = {
   '自由对话': '',
   '项目进度报告': '请按以下格式输出：项目进度报告\n• 项目名称\n• 报告周期\n• 总体进度\n• 已完成里程碑\n• 进行中工作\n• 风险与问题\n• 下期计划',
   '项目管理报告': '请按以下格式输出：项目管理报告\n• 项目概况\n• 安全管理\n• 质量管理\n• 进度管理\n• 成本管理\n• 问题与建议',
@@ -21,13 +21,14 @@ const BUSINESS_CARDS = [
 ];
 const COMING_SOON = ['成本分析报告', '质量评估报告', '合同审核报告', '竣工验收报告'];
 
-// 格式化回答：保留结构但去除MD标记
-function formatContent(text: string): string {
+// 格式化回答：自由对话保留原始MD格式，模板模式去除标记
+function formatContent(text: string, isFree: boolean): string {
+  if (isFree) return text; // 自由对话：原样输出
   return text
-    .replace(/^#{2,4}\s+/gm, '▎')    // ## → 小节标记
-    .replace(/^#\s+/gm, '')           // # → 去除
-    .replace(/\*\*(.+?)\*\*/g, '【$1】') // **粗体** → 【粗体】
-    .replace(/^[-*]\s(.+)/gm, '• $1')   // 列表
+    .replace(/^#{2,4}\s+/gm, '▎')
+    .replace(/^#\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '【$1】')
+    .replace(/^[-*]\s(.+)/gm, '• $1')
     .replace(/^(\d+)[.)]\s(.+)/gm, '$1. $2')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/^---+\s*$/gm, '')
@@ -37,7 +38,8 @@ function formatContent(text: string): string {
 const AiChatPage: React.FC<{
   onBack: () => void;
   projectName?: string; standard?: string; initialQuery?: string;
-}> = ({ onBack, projectName, standard, initialQuery }) => {
+  isAdmin?: boolean;
+}> = ({ onBack, projectName, standard, initialQuery, isAdmin }) => {
   const [sessions, setSessions] = useState<{ id: string; title: string; messages: ChatMessage[] }[]>(() => {
     const s = localStorage.getItem('ai-sessions');
     return s ? JSON.parse(s) : [];
@@ -47,6 +49,9 @@ const AiChatPage: React.FC<{
   const [loading, setLoading] = useState(false);
   const [model, setModel] = useState(() => localStorage.getItem('ai-model') || 'deepseek-v4-pro');
   const [template, setTemplate] = useState('自由对话');
+  const [templates, setTemplates] = useState<Record<string,string>>(() => {
+    try { const s = localStorage.getItem('ai-templates'); return s ? JSON.parse(s) : DEFAULT_TEMPLATES; } catch { return DEFAULT_TEMPLATES; }
+  });
   const [files, setFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ file: File; url: string; isImage: boolean }[]>([]);
   const [msgAttachments, setMsgAttachments] = useState<Map<number, { file: File; url: string; isImage: boolean }[]>>(new Map());
@@ -54,6 +59,8 @@ const AiChatPage: React.FC<{
   const imageB64Ref = useRef<string[]>([]); // 存储图片base64数据
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
+  const [editTemplateContent, setEditTemplateContent] = useState('');
   const [shared, setShared] = useState(false);
   const [ragMode, setRagMode] = useState(true); // RAG检索增强 默认开启
   const ragSourcesRef = useRef<{ fileName: string; text: string }[]>([]);
@@ -115,7 +122,7 @@ const AiChatPage: React.FC<{
   };
 
   const doChat = async (_q: string, sid: string, allMsgs: ChatMessage[]) => {
-    const systemHint = template !== '自由对话' ? REPORT_TEMPLATES[template] : '';
+    const systemHint = template !== '自由对话' ? (templates[template] || '') : '';
     const msgs: { role: string; content: string }[] = [...allMsgs];
     if (systemHint) msgs.push({ role: 'system', content: systemHint });
 
@@ -160,7 +167,7 @@ const AiChatPage: React.FC<{
     clearInterval(timer);
     setThinkingText('');
 
-    const formatted = formatContent(reply);
+    const formatted = formatContent(reply, template === '自由对话');
     setSessions(prev => prev.map(s => s.id === sid ? { ...s, messages: [...s.messages, { role: 'assistant', content: formatted }] } : s));
   };
 
@@ -267,6 +274,7 @@ const AiChatPage: React.FC<{
   };
 
   return (
+    <>
     <div className="h-screen flex flex-col bg-white">
       {/* ===== 顶部固定栏 ===== */}
       <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-30">
@@ -330,11 +338,19 @@ const AiChatPage: React.FC<{
             <div className="relative">
               <button onClick={() => setShowTemplateMenu(!showTemplateMenu)} className="flex items-center gap-1 px-2 py-1 text-sm text-gray-500 hover:bg-gray-50 rounded-lg">模板: {template} <ChevronDown className="w-3 h-3" /></button>
               {showTemplateMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-30 p-1 min-w-[140px]">
-                  {Object.keys(REPORT_TEMPLATES).map(t => (
-                    <button key={t} onClick={() => { setTemplate(t); setShowTemplateMenu(false); }}
-                      className={`block w-full text-left px-3 py-1.5 text-sm rounded ${template === t ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>{t}</button>
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-30 p-1 min-w-[160px]">
+                  {Object.keys(templates).map(t => (
+                    <div key={t} className={`flex items-center group ${template === t ? 'bg-blue-50' : ''}`}>
+                      <button onClick={() => { setTemplate(t); setShowTemplateMenu(false); }}
+                        className={`flex-1 text-left px-3 py-1.5 text-sm rounded ${template === t ? 'text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>{t}</button>
+                      {isAdmin && (
+                        <button onClick={() => { setEditingTemplate(t); setEditTemplateContent(templates[t] || ''); setShowTemplateMenu(false); }}
+                          className="px-2 py-1.5 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100" title="编辑模板"><Edit3 className="w-3 h-3"/></button>
+                      )}
+                    </div>
                   ))}
+                  {isAdmin && <div className="border-t mt-1 pt-1"><button onClick={() => { const name = prompt('模板名称:'); if(name) { setTemplates(p => ({...p, [name]: ''})); localStorage.setItem('ai-templates', JSON.stringify({...templates, [name]: ''})); setTemplate(name); }}}
+                    className="block w-full text-left px-3 py-1.5 text-sm text-gray-400 hover:text-blue-500 rounded">+ 新增模板</button></div>}
                 </div>
               )}
             </div>
@@ -509,6 +525,32 @@ const AiChatPage: React.FC<{
         </aside>
       </div>
     </div>
+
+      {/* 模板编辑弹窗(管理员) */}
+      {editingTemplate && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={e => e.target===e.currentTarget && setEditingTemplate(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">编辑模板: {editingTemplate}</h3>
+            <p className="text-xs text-gray-500 mb-3">修改模板提示词，AI将按此框架生成内容。留空则不限制输出格式。</p>
+            <textarea value={editTemplateContent} onChange={e => setEditTemplateContent(e.target.value)}
+              className="w-full h-48 border rounded-lg p-3 text-sm font-mono resize-none outline-none" />
+            <div className="flex items-center gap-2 mt-4">
+              <button onClick={() => {
+                const updated = { ...templates, [editingTemplate]: editTemplateContent };
+                setTemplates(updated); localStorage.setItem('ai-templates', JSON.stringify(updated));
+                setEditingTemplate(null); setTemplate(editingTemplate);
+              }} className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">保存</button>
+              {editingTemplate !== '自由对话' && <button onClick={() => {
+                const updated = { ...templates }; delete updated[editingTemplate];
+                setTemplates(updated); localStorage.setItem('ai-templates', JSON.stringify(updated));
+                setTemplate('自由对话'); setEditingTemplate(null);
+              }} className="px-4 py-2 bg-red-50 text-red-500 rounded-lg text-sm">删除模板</button>}
+              <button onClick={() => setEditingTemplate(null)} className="px-4 py-2 text-gray-500 text-sm">取消</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

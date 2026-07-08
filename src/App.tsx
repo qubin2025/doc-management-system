@@ -376,7 +376,7 @@ const App: React.FC = () => {
 
   // ===== AI 对话页 =====
   if (view === 'ai-chat' || showAiChat) {
-    return <AiChatPage onBack={() => { setView('project-entry'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} />;
+    return <AiChatPage onBack={() => { setView('project-entry'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} isAdmin={isAdmin} />;
   }
 
   if (view === 'dashboard' && currentProject) {
