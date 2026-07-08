@@ -85,15 +85,22 @@ const MODELS = {
   },
 };
 
-// GET /api/ai/models — 列出可用模型
-router.get('/models', requireAuth, (req, res) => {
+// GET /api/ai/models — 列出可用模型（含真实探测）
+router.get('/models', requireAuth, async (req, res) => {
+  // 探测本地Ollama
+  let ollamaOnline = false;
+  try {
+    const r = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
+    ollamaOnline = r.ok;
+  } catch {}
+
   const available = Object.entries(MODELS).map(([id, cfg]) => {
     let status = 'unknown';
     const hasKey = (k) => k && !k.includes('your-') && k.length > 20;
     if (id.startsWith('deepseek')) status = hasKey(cfg.key) ? 'online' : 'offline';
-    else if (id === 'qwen-turbo') status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
-    else if (id === 'glm-4-flash') status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
-    else if (id.startsWith('ollama')) status = 'optional';
+    else if (id === 'qwen-turbo') status = hasKey(cfg.key) ? 'online' : 'offline';
+    else if (id === 'glm-4-flash') status = hasKey(cfg.key) ? 'online' : 'offline';
+    else if (id.startsWith('ollama')) status = ollamaOnline ? 'online' : 'offline';
     return { id, name: cfg.name, status };
   });
   res.json({ models: available });
