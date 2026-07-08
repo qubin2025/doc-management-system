@@ -232,7 +232,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
               onChange={(e) => setUploader(e.target.value)}
               placeholder="请输入上传人姓名"
               disabled={uploading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 disabled:bg-gray-100"
             />
           </div>
 
@@ -247,7 +247,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
               onChange={(e) => setVersion(e.target.value)}
               placeholder="如 V1.0"
               disabled={uploading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 disabled:bg-gray-100"
             />
           </div>
         </div>

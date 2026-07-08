@@ -78,7 +78,7 @@ const BackupModal: React.FC<BackupModalProps> = ({ onClose }) => {
 
           {mode === 'project' && (
             <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500">
               <option value="">-- 选择项目 --</option>
               {projects.map(p => (
                 <option key={p.id} value={String(p.id)}>{p.name}</option>

@@ -846,8 +846,8 @@ const App: React.FC = () => {
                 <select value={currentProject} onChange={(e) => setCurrentProject(e.target.value)}
                   className={`px-3 py-2 border rounded-lg text-sm font-medium  min-w-[150px] ${
                     colorClass === 'blue'
-                      ? 'border-blue-300 bg-blue-50 text-blue-900 focus:ring-blue-500 focus:border-blue-500'
-                      : 'border-teal-300 bg-teal-50 text-teal-900 focus:ring-teal-500 focus:border-teal-500'
+                      ? 'border-blue-300 bg-blue-50 text-blue-900 focus:border-blue-500'
+                      : 'border-teal-300 bg-teal-50 text-teal-900 focus:border-teal-500'
                   }`}>
                   {projects.length === 0 && <option value="">-- 无项目 --</option>}
                   {projects.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}

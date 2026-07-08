@@ -578,7 +578,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
               <textarea
                 value={formEditContent}
                 onChange={e => setFormEditContent(e.target.value)}
-                className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:border-blue-500 resize-none"
                 placeholder="在此编辑表单内容..." />
             </div>
             <div className="flex justify-between p-4 border-t bg-gray-50 shrink-0">
@@ -623,12 +623,12 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">工作项名称 *</label>
                 <input type="text" value={newItemForm.name} onChange={e => setNewItemForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="输入工作项名称" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  placeholder="输入工作项名称" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">时长</label>
                 <input type="text" value={newItemForm.duration} onChange={e => setNewItemForm(p => ({ ...p, duration: e.target.value }))}
-                  placeholder="如 3天 / 1周 / 2个月" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  placeholder="如 3天 / 1周 / 2个月" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500" />
               </div>
               {/* 上传人 & 上传日期（自动获取） */}
               <div className="grid grid-cols-2 gap-3">

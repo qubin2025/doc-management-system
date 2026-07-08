@@ -101,7 +101,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
     aiBar: light ? 'bg-gradient-to-r from-blue-100 via-slate-200 to-blue-100' : 'bg-white/5 backdrop-blur-xl border-t border-white/10',
     aiLabel: light ? 'text-blue-700 font-semibold' : 'text-blue-300',
     aiIcon: light ? 'text-sky-500' : 'text-blue-400',
-    aiInput: light ? 'bg-white border-transparent text-gray-800 focus:ring-4 focus:ring-blue-600/30 focus:border-blue-400/50' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10',
+    aiInput: light ? 'bg-white border-transparent text-gray-800 focus:border-blue-400/50' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10',
     aiBtn: light ? 'bg-sky-500 hover:bg-sky-600' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30',
     aiBtnDisabled: light ? 'bg-gray-300' : 'bg-white/10 text-blue-300/30',
     filterCount: light ? 'text-gray-500' : 'text-blue-300',
