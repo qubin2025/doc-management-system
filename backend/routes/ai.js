@@ -40,6 +40,14 @@ const MODELS = {
     model: 'deepseek-chat',
     system: '你是全过程工程咨询管理平台的AI助手，回答专业、简洁、准确。',
   },
+  'deepseek-v4-pro': {
+    name: 'DeepSeek-V4 Pro',
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    key: process.env.DEEPSEEK_API_KEY,
+    model: 'deepseek-chat',
+    system: '你是全过程工程咨询管理平台的AI专家助手。你具备高级图文理解能力，可以精准分析工程图纸、施工照片、合同扫描件等图片内容。回答专业、深入、准确。',
+    vision: true,
+  },
   'deepseek-r1': {
     name: 'DeepSeek-R1',
     endpoint: 'https://api.deepseek.com/chat/completions',
@@ -81,7 +89,8 @@ const MODELS = {
 router.get('/models', requireAuth, (req, res) => {
   const available = Object.entries(MODELS).map(([id, cfg]) => {
     let status = 'unknown';
-    if (id.startsWith('deepseek')) status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
+    const hasKey = (k) => k && !k.includes('your-') && k.length > 20;
+    if (id.startsWith('deepseek')) status = hasKey(cfg.key) ? 'online' : 'offline';
     else if (id === 'qwen-turbo') status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
     else if (id === 'glm-4-flash') status = cfg.key && !cfg.key.includes('your-') ? 'online' : 'offline';
     else if (id.startsWith('ollama')) status = 'optional';
@@ -97,7 +106,13 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
   }
 
   const { messages, context, projectName, standard, model: reqModel } = req.body;
-  const requestedModel = reqModel || 'deepseek-chat';
+  // 自动检测图片 → 切换为视觉模型
+  const hasImage = messages?.some(m => m.content?.includes('[图片:') || m.content?.includes('data:image/') || m.content?.includes('图像识别'));
+  let requestedModel = reqModel || 'deepseek-chat';
+  if (hasImage && (requestedModel === 'auto' || requestedModel === 'deepseek-chat')) {
+    requestedModel = 'deepseek-v4-pro';
+    logger.info('检测到图片内容，自动切换为视觉模型 deepseek-v4-pro');
+  }
 
   // Build context msgs
   const ctxMsgs = [];
@@ -127,7 +142,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
 async function tryChat(modelId, ctxMsgs, userMsgs) {
   // auto模式: 按优先级 DeepSeek->DeepSeekR1->OllamaQwen->OllamaLlama
   const candidates = modelId === 'auto'
-    ? ['deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama']
+    ? ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama']
     : [modelId];
 
   for (const mid of candidates) {

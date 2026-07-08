@@ -4,7 +4,7 @@ import * as api from '../data/api';
 import { ChatMessage } from '../types';
 import { ragQuery, getIndexStats } from '../data/ragService';
 
-const MODELS = ['自动选择', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama'];
+const MODELS = ['自动选择', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama'];
 const REPORT_TEMPLATES: Record<string, string> = {
   '自由对话': '',
   '项目进度报告': '请按以下格式输出：项目进度报告\n• 项目名称\n• 报告周期\n• 总体进度\n• 已完成里程碑\n• 进行中工作\n• 风险与问题\n• 下期计划',

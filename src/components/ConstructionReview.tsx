@@ -21,6 +21,7 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [aiStatus, setAiStatus] = useState<'checking'|'online'|'offline'>('online');
   const [aiModel, setAiModel] = useState('auto');
   const [availableModels, setAvailableModels] = useState<{id:string;name:string;status:string}[]>([
+    {id:'deepseek-v4-pro',name:'DeepSeek-V4 Pro',status:'online'},
     {id:'deepseek-chat',name:'DeepSeek-V3',status:'online'},
     {id:'deepseek-r1',name:'DeepSeek-R1',status:'online'},
     {id:'qwen-turbo',name:'通义千问(云端)',status:'online'},
