@@ -452,7 +452,7 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
             <input type="text" placeholder="搜索节点…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              className={`w-full border rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all backdrop-blur-2xl shadow-xl ${t.inputBg}`} />
+              className={`w-full border rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none 500/40 transition-all backdrop-blur-2xl shadow-xl ${t.inputBg}`} />
             {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"><X size={14} /></button>}
           </div>
           {searchQuery && filteredNodes.length > 0 && (
@@ -498,12 +498,12 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
           <div className={`backdrop-blur-2xl border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 ${t.dialogBg}`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5"><h3 className={`text-sm font-bold ${t.textMain}`}>{nodeMode === 'create' ? '新建节点' : '编辑节点'}</h3><button onClick={() => setShowNodeDialog(false)}><X className="w-5 h-5 text-gray-500 hover:text-white" /></button></div>
             <div className="space-y-3">
-              <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>名称 *</label><input value={nodeEdit.label} onChange={e => setNodeEdit(p => ({ ...p, label: e.target.value }))} className={`w-full border rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500/40 outline-none ${t.dialogInput}`} placeholder="输入节点名称" autoFocus /></div>
+              <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>名称 *</label><input value={nodeEdit.label} onChange={e => setNodeEdit(p => ({ ...p, label: e.target.value }))} className={`w-full border rounded-lg px-3 py-2 text-xs 500/40 outline-none ${t.dialogInput}`} placeholder="输入节点名称" autoFocus /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>类型</label><select value={nodeEdit.type} onChange={e => setNodeEdit(p => ({ ...p, type: e.target.value }))} className={`w-full border rounded-lg px-3 py-2 text-xs outline-none ${t.dialogInput}`}>{types.map(t => <option key={t} value={t}>{TYPE_NAMES[t] || t}</option>)}</select></div>
                 <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>颜色</label><input type="color" value={nodeEdit.color} onChange={e => setNodeEdit(p => ({ ...p, color: e.target.value }))} className={`w-full h-9 border rounded-lg p-1 ${t.dialogInput}`} /></div>
               </div>
-              <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>描述</label><textarea value={nodeEdit.desc} onChange={e => setNodeEdit(p => ({ ...p, desc: e.target.value }))} rows={3} className={`w-full border rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500/40 outline-none resize-none ${t.dialogInput}`} placeholder="可选描述" /></div>
+              <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>描述</label><textarea value={nodeEdit.desc} onChange={e => setNodeEdit(p => ({ ...p, desc: e.target.value }))} rows={3} className={`w-full border rounded-lg px-3 py-2 text-xs 500/40 outline-none resize-none ${t.dialogInput}`} placeholder="可选描述" /></div>
             </div>
             <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/10">
               <button onClick={() => setShowNodeDialog(false)} className={`px-4 py-2 text-xs border rounded-lg ${t.dialogCancel}`}>取消</button>
@@ -522,7 +522,7 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
               {[['from', '父节点（来源）', edgeFromSearch, setEdgeFromSearch, filteredFrom], ['to', '子节点（目标）', edgeToSearch, setEdgeToSearch, filteredTo]].map(([key, label, search, setSearch, list]) => (
                 <div key={key as string}>
                   <label className="block text-xs text-gray-400 mb-1">{label as string}</label>
-                  <input value={search as string} onChange={e => (setSearch as any)(e.target.value)} placeholder="输入名称搜索…" className="w-full bg-gray-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 focus:ring-2 focus:ring-indigo-500/40 outline-none mb-1" />
+                  <input value={search as string} onChange={e => (setSearch as any)(e.target.value)} placeholder="输入名称搜索…" className="w-full bg-gray-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 500/40 outline-none mb-1" />
                   <div className="max-h-28 overflow-y-auto bg-gray-800/20 rounded-xl divide-y divide-white/5">
                     {(list as any[]).map((n: any) => (
                       <button key={n.id} onClick={() => { setEdgeEdit(p => ({ ...p, [key as string]: n.id })); (setSearch as any)(n.label); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-indigo-600/20 transition-colors ${(edgeEdit as any)[key as string] === n.id ? 'bg-indigo-600/10 text-indigo-300 font-medium' : 'text-gray-400'}`}>{n.label}<span className="text-gray-600 ml-2">({TYPE_NAMES[n.type] || n.type})</span></button>

@@ -170,7 +170,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="搜索项目名称..."
-              className={`w-full pl-12 pr-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${t.searchBg} ${t.searchPh}`}
+              className={`w-full pl-12 pr-4 py-3 rounded-xl text-sm 500 focus:border-blue-500 ${t.searchBg} ${t.searchPh}`}
             />
           </div>
           <div className={`flex items-center gap-2 text-sm shrink-0 ${t.filterCount}`}>
@@ -316,7 +316,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               onKeyDown={handleAiKeyDown}
               placeholder="输入您的问题，AI 将为您提供全过程工程咨询建议..."
               rows={2}
-              className={`w-full px-4 pt-3 pb-10 pr-12 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${t.aiInput}`}
+              className={`w-full px-4 pt-3 pb-10 pr-12 rounded-xl text-sm resize-none 500 focus:border-blue-500 transition-colors ${t.aiInput}`}
             />
             {/* 底部工具栏 */}
             <div className="absolute left-3 bottom-2 flex items-center gap-3">
@@ -481,7 +481,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">项目概况</label>
                 <textarea value={editForm.overview} onChange={e => setEditForm(p => ({ ...p, overview: e.target.value }))}
                   rows={3} placeholder="项目简介、地点、类型..."
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none 500" />
               </div>
 
               {/* 指标字段 */}
@@ -496,7 +496,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
                     <input type="text" value={(editForm as any)[field.key]} onChange={e => setEditForm(p => ({ ...p, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" />
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm 500" />
                   </div>
                 ))}
               </div>
