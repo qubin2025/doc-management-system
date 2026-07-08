@@ -449,7 +449,7 @@ const AiChatPage: React.FC<{
                   disabled={loading}
                   rows={input ? Math.min(input.split('\n').length + 1, 6) : 3}
                   placeholder="输入问题，Enter 发送，Shift+Enter 换行..."
-                  className="w-full bg-transparent text-[15px] outline-none placeholder:text-gray-400 px-4 pt-3 pb-1 resize-none" />
+                  className="w-full bg-transparent text-[15px] outline-none focus:outline-none placeholder:text-gray-400 px-4 pt-3 pb-1 resize-none" />
                 {/* 底部工具栏 — 独立一行 */}
                 <div className="flex items-center justify-between px-3 pb-2">
                   <div className="flex items-center gap-1">
