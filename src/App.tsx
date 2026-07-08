@@ -15,6 +15,7 @@ import SupplierManager from './components/SupplierManager';
 import CostManager from './components/CostManager';
 import AnalysisCenter from './components/AnalysisCenter';
 import AdminPanel from './components/AdminPanel';
+import ModelAdmin from './components/ModelAdmin';
 import LandReserveArchive from './components/LandReserveArchive';
 import KnowledgeBase from './components/KnowledgeBase';
 import KnowledgeGraphView from './components/KnowledgeGraph';
@@ -200,6 +201,7 @@ const App: React.FC = () => {
 
   // ===== 操作 =====
   const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [showModelAdmin, setShowModelAdmin] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
   const handleSwitchStandard = (std: StandardType) => {
@@ -515,6 +517,7 @@ const App: React.FC = () => {
   // ===== 首页 =====
   if (view === 'homepage') {
     return (
+      <>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           {/* 项目状态提醒条 — 全宽醒目 */}
@@ -539,6 +542,11 @@ const App: React.FC = () => {
               <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${isAdmin ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
                 {isAdmin ? '管理员' : auth?.user?.role === 'project_manager' ? '项目经理' : auth?.user?.role === 'construction_unit' ? '建设单位' : '用户'}
               </span>
+              {isAdmin && (
+                <button onClick={() => setShowModelAdmin(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="模型配置">
+                  <Sparkles className="w-4 h-4" /> 模型
+                </button>
+              )}
               {isAdmin && (
                 <button onClick={() => setView('admin')} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="系统管理">
                   <Shield className="w-4 h-4" /> 管理
@@ -755,6 +763,8 @@ const App: React.FC = () => {
         </div>
         <footer className="text-center text-xs text-gray-400 py-8">全过程工程咨询管理服务平台 · 内网系统</footer>
       </div>
+      {showModelAdmin && <ModelAdmin onClose={() => setShowModelAdmin(false)} />}
+      </>
     );
   }
 
