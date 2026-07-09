@@ -111,7 +111,8 @@ export interface GuideWorkItem {
   completedAt?: string;
   plannedDate?: string;
   attachments?: { fileName: string; version: string; uploadTime: string; data?: string }[];
-  subTasks?: GuideSubTask[];  // AI拆解的子任务列表
+  subTasks?: GuideSubTask[];
+  flowImage?: string;  // 流程图base64(data URI)
 }
 
 // 子模块

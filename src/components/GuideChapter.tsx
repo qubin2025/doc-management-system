@@ -174,7 +174,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       name: wi.name, duration: wi.duration || '', attachmentFormat: wi.attachmentFormat || '',
       predecessors: preds, successors: succs,
       subTasks: wi.subTasks || [],
-      flowImage: ''
+      flowImage: wi.flowImage || ''
     });
     // 加载已有附件（显示信息，不含 base64 数据）
     setPendingAttachments((wi.attachments || []).map(a => ({ fileName: a.fileName, data: '', size: 0 })));
@@ -244,6 +244,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
           attachmentFormat: newItemForm.attachmentFormat || undefined,
           attachments: mergedAttachments,
           subTasks: newItemForm.subTasks,
+          flowImage: newItemForm.flowImage || undefined,
         } : wi)
       } : s));
       // 重建链接
@@ -256,6 +257,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
         isCustom: true,
         attachments: mergedAttachments,
         subTasks: newItemForm.subTasks,
+        flowImage: newItemForm.flowImage || undefined,
       };
       setSubModules(prev => prev.map(s => s.id === addItemTargetSmId ? { ...s, workItems: [...s.workItems, newItem] } : s));
       if (newLinks.length > 0) setLinks(prev => [...prev, ...newLinks]);
