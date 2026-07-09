@@ -280,9 +280,9 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
 
 要求：
 1. 理解流程图的箭头方向、分支、并行/串行关系
-2. 每项子任务包含：名称、预计用时、所需资源
+2. 每项子任务仅包含：子任务名称(name)、预计天数(plannedDuration，数字)、实际天数(actualDuration，默认为0)
 3. 严格按JSON数组输出，不要其他文字
-4. 格式：[{"name":"子任务名","duration":"2天","resource":"项目经理+设计部"}]
+4. 格式：[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]
 
 工作项：${decomposeTarget.wiName}
 ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
@@ -290,9 +290,9 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
         model = 'glm-4v';
       } else {
         // 文档/文字：用DeepSeek文本模型
-        prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项包含名称、用时、资源分配。
+        prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项仅包含名称(name)、预计天数(plannedDuration)、实际天数(actualDuration=0)。
 严格按JSON数组输出，不要其他文字：
-[{"name":"子任务名","duration":"2天","resource":"项目经理+设计部"}]
+[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]
 
 工作项：${decomposeTarget.wiName}`;
         if (decomposeDesc.trim()) prompt += `\n流程描述：${decomposeDesc}`;
@@ -304,8 +304,8 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
       const tasks: GuideSubTask[] = JSON.parse(json).map((t: any, i: number) => ({
         id: `${decomposeTarget.wiId}.s${i + 1}`,
         name: t.name || '',
-        duration: t.duration || '',
-        resource: t.resource || '',
+        plannedDuration: typeof t.plannedDuration === 'number' ? t.plannedDuration : (parseInt(t.plannedDuration) || parseInt(t.duration) || 0),
+        actualDuration: typeof t.actualDuration === 'number' ? t.actualDuration : (parseInt(t.actualDuration) || 0),
         checked: false,
         isCustom: true,
       }));
@@ -785,33 +785,50 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                 )}
               </div>
 
-              {/* 子任务编辑区 */}
+              {/* 子任务编辑区(表格形式) */}
               {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">子任务 (AI拆解)</label>
-                  <div className="space-y-1.5 max-h-56 overflow-y-auto border border-gray-400 rounded-lg p-2">
-                    {newItemForm.subTasks.map((st, i) => (
-                      <div key={st.id} className="flex items-center gap-1.5 rounded p-1.5">
-                        <span className="text-sm font-medium text-black w-5 shrink-0">{i+1}.</span>
-                        <input value={st.name}
-                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
-                          className="flex-1 px-1.5 py-0.5 text-xs text-black border rounded min-w-0" />
-                        <span className="text-xs text-black shrink-0">预计时长</span>
-                        <span className="text-base font-bold text-black">{st.plannedDuration || 0}</span>
-                        <span className="text-xs text-black shrink-0">天</span>
-                        <input type="number" value={st.plannedDuration || ''} placeholder="0"
-                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
-                          className="w-14 px-1.5 py-0.5 text-xs text-black border rounded" />
-                        <span className="text-xs text-black shrink-0">实际用时</span>
-                        <span className="text-base font-bold text-black">{st.actualDuration || 0}</span>
-                        <span className="text-xs text-black shrink-0">天</span>
-                        <span className="text-xs text-black shrink-0">{st.resource || ''}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-4 mt-1">
-                    <span className="text-sm font-bold text-black">预计总计 <span className="text-base">{newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)}</span> 天</span>
-                    <span className="text-sm font-bold text-black">实际总计 <span className="text-base">{newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)}</span> 天</span>
+                  <div className="max-h-56 overflow-y-auto border border-gray-400 rounded-lg">
+                    <table className="w-full text-xs text-black">
+                      <thead>
+                        <tr className="bg-gray-100 text-left">
+                          <th className="px-2 py-1.5 w-8">#</th>
+                          <th className="px-2 py-1.5">子任务名称</th>
+                          <th className="px-2 py-1.5 w-16 text-center">预计(天)</th>
+                          <th className="px-2 py-1.5 w-16 text-center">实际(天)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {newItemForm.subTasks.map((st, i) => (
+                          <tr key={st.id} className="border-t border-gray-200">
+                            <td className="px-2 py-1 text-center text-black font-medium">{i+1}</td>
+                            <td className="px-2 py-1">
+                              <input value={st.name}
+                                onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
+                                className="w-full px-1.5 py-0.5 text-xs text-black border rounded" />
+                            </td>
+                            <td className="px-2 py-1 text-center">
+                              <input type="number" value={st.plannedDuration || ''} placeholder="0"
+                                onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
+                                className="w-full px-1 py-0.5 text-xs text-black text-center border rounded" />
+                            </td>
+                            <td className="px-2 py-1 text-center">
+                              <input type="number" value={st.actualDuration || ''} placeholder="0"
+                                onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, actualDuration: Number(e.target.value) || 0 } : t) }))}
+                                className="w-full px-1 py-0.5 text-xs text-black text-center border rounded" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-gray-400 bg-gray-50 font-bold">
+                          <td colSpan={2} className="px-2 py-1.5 text-right text-xs">合计</td>
+                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)} 天</td>
+                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)} 天</td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </div>
               )}
