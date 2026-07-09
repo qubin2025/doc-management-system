@@ -86,7 +86,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [addItemTargetSmId, setAddItemTargetSmId] = useState('');
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[] });
+  const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[], subTasks: [] as GuideSubTask[] });
 
   // 附件上传状态
   const [pendingAttachments, setPendingAttachments] = useState<{ fileName: string; data: string; size: number }[]>([]);
@@ -159,7 +159,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const openAddItem = (smId: string) => {
     setEditItemId(null);
     setAddItemTargetSmId(smId);
-    setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [] });
+    setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [], subTasks: [] });
     setPendingAttachments([]);
     setShowAddItemModal(true);
   };
@@ -171,7 +171,8 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     const succs = links.filter(l => l.from === wi.id).map(l => l.to);
     setNewItemForm({
       name: wi.name, duration: wi.duration || '', attachmentFormat: wi.attachmentFormat || '',
-      predecessors: preds, successors: succs
+      predecessors: preds, successors: succs,
+      subTasks: wi.subTasks || []
     });
     // 加载已有附件（显示信息，不含 base64 数据）
     setPendingAttachments((wi.attachments || []).map(a => ({ fileName: a.fileName, data: '', size: 0 })));
@@ -240,6 +241,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
           duration: newItemForm.duration || undefined,
           attachmentFormat: newItemForm.attachmentFormat || undefined,
           attachments: mergedAttachments,
+          subTasks: newItemForm.subTasks,
         } : wi)
       } : s));
       // 重建链接
@@ -251,6 +253,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
         attachmentFormat: newItemForm.attachmentFormat || undefined,
         isCustom: true,
         attachments: mergedAttachments,
+        subTasks: newItemForm.subTasks,
       };
       setSubModules(prev => prev.map(s => s.id === addItemTargetSmId ? { ...s, workItems: [...s.workItems, newItem] } : s));
       if (newLinks.length > 0) setLinks(prev => [...prev, ...newLinks]);
@@ -847,7 +850,36 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                 </div>
               </div>
 
-            
+              {/* 子任务编辑区 */}
+              {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">子任务 (AI拆解)
+                    <span className="text-xs text-gray-400 font-normal ml-2">
+                      计划总计 {newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)}天 / 实际总计 {newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)}天
+                    </span>
+                  </label>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                    {newItemForm.subTasks.map((st, i) => (
+                      <div key={st.id} className="flex items-center gap-1.5 bg-gray-50 rounded p-1.5">
+                        <span className="text-[10px] text-gray-400 w-5 shrink-0">{i+1}.</span>
+                        <input value={st.name}
+                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
+                          className="flex-1 px-1.5 py-0.5 text-xs border rounded min-w-0" />
+                        <span className="text-[10px] text-gray-400 shrink-0">计划</span>
+                        <input type="number" value={st.plannedDuration || ''} placeholder="天"
+                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
+                          className="w-12 px-1.5 py-0.5 text-xs border rounded" />
+                        <span className="text-[10px] text-gray-400 shrink-0">实际</span>
+                        <input type="number" value={st.actualDuration || ''} placeholder="天"
+                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, actualDuration: Number(e.target.value) || 0 } : t) }))}
+                          className="w-12 px-1.5 py-0.5 text-xs border rounded" />
+                        <span className="text-[10px] text-gray-400 shrink-0">{st.resource || ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
             <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
               <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
@@ -895,6 +927,14 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                   </span>
                 )}
               </div>
+              {/* 图片预览 */}
+              {decomposeFile && decomposeFile.type.startsWith('image/') && (
+                <div className="mt-2">
+                  <img src={URL.createObjectURL(decomposeFile)} alt="流程图预览"
+                    className="max-w-full max-h-64 rounded-lg border border-gray-200 object-contain" />
+                </div>
+              )}
+
               <div className="text-xs text-gray-400">AI将根据描述+上传文件自动拆解为子任务，包含用时和资源分配建议。</div>
             </div>
             <div className="px-5 py-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0 rounded-b-2xl">

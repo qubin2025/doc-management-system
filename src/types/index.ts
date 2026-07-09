@@ -92,8 +92,10 @@ export interface ChatMessage {
 export interface GuideSubTask {
   id: string;
   name: string;
-  duration?: string;    // 预计用时
-  resource?: string;    // 所需资源/负责人
+  duration?: string;          // AI预计用时（如"2天"）
+  resource?: string;          // 所需资源/负责人
+  plannedDuration?: number;   // 计划用时（天）
+  actualDuration?: number;    // 实际用时（天）
   checked: boolean;
   isCustom?: boolean;
 }
