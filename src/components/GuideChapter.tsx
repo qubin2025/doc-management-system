@@ -8,6 +8,7 @@ import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideL
 import * as api from '../data/api';
 import LogicDiagram from './LogicDiagram';
 import { toast } from './Toast';
+import { parseDocument } from '../data/documentParser';
 
 interface GuideChapterProps { chapter: GuideChapterType; onBack: () => void; }
 
@@ -93,6 +94,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [decomposeTarget, setDecomposeTarget] = useState<{ smId: string; wiId: string; wiName: string } | null>(null);
   const [decomposeDesc, setDecomposeDesc] = useState('');
   const [decomposeFile, setDecomposeFile] = useState<File | null>(null);
+  const [decomposeFileText, setDecomposeFileText] = useState('');
   const [decomposing, setDecomposing] = useState(false);
 
   // 表单编辑弹窗
@@ -164,9 +166,12 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const openEditItem = (smId: string, wi: GuideWorkItem) => {
     setEditItemId(wi.id);
     setAddItemTargetSmId(smId);
+    // 从现有的links中提取前置于后置
+    const preds = links.filter(l => l.to === wi.id).map(l => l.from);
+    const succs = links.filter(l => l.from === wi.id).map(l => l.to);
     setNewItemForm({
       name: wi.name, duration: wi.duration || '', attachmentFormat: wi.attachmentFormat || '',
-      predecessors: [], successors: []
+      predecessors: preds, successors: succs
     });
     // 加载已有附件（显示信息，不含 base64 数据）
     setPendingAttachments((wi.attachments || []).map(a => ({ fileName: a.fileName, data: '', size: 0 })));
@@ -215,8 +220,20 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       }));
     const mergedAttachments = [...existingAttachments, ...newAttachments];
 
+    pushUndoHistory();
+    const newLinks: GuideLink[] = [];
+    const wiId = editItemId || `${addItemTargetSmId}.${Date.now()}`;
+    // 前置于后置链接(适用于新增和编辑两种模式)
+    newItemForm.predecessors.forEach(predWiId => {
+      const wi = subModules.flatMap(s => s.workItems).find(w => w.id === predWiId);
+      if (wi) newLinks.push({ from: predWiId, to: wiId, label: `${predWiId}→${wiId}`, isCustom: true });
+    });
+    newItemForm.successors.forEach(succWiId => {
+      const wi = subModules.flatMap(s => s.workItems).find(w => w.id === succWiId);
+      if (wi) newLinks.push({ from: wiId, to: succWiId, label: `${wiId}→${succWiId}`, isCustom: true });
+    });
+
     if (editItemId) {
-      pushUndoHistory();
       setSubModules(prev => prev.map(s => s.id === addItemTargetSmId ? {
         ...s, workItems: s.workItems.map(wi => wi.id === editItemId ? {
           ...wi, name: newItemForm.name.trim(),
@@ -225,27 +242,16 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
           attachments: mergedAttachments,
         } : wi)
       } : s));
+      // 重建链接
+      setLinks(prev => [...prev.filter(l => l.from !== editItemId && l.to !== editItemId), ...newLinks]);
     } else {
-      const newId = `${addItemTargetSmId}.${Date.now()}`;
       const newItem: GuideWorkItem = {
-        id: newId, name: newItemForm.name.trim(), checked: false,
+        id: wiId, name: newItemForm.name.trim(), checked: false,
         duration: newItemForm.duration || undefined,
         attachmentFormat: newItemForm.attachmentFormat || undefined,
         isCustom: true,
         attachments: mergedAttachments,
       };
-      const newLinks: GuideLink[] = [];
-      // 前置/后置现在是工作项ID (同层级)
-      newItemForm.predecessors.forEach(predWiId => {
-        const fromSm = subModules.find(s => s.workItems.some(wi => wi.id === predWiId));
-        const fromWi = fromSm?.workItems.find(wi => wi.id === predWiId);
-        if (fromWi) newLinks.push({ from: predWiId, to: newId, label: `${fromWi.id}→${newId}`, isCustom: true });
-      });
-      newItemForm.successors.forEach(succWiId => {
-        const toSm = subModules.find(s => s.workItems.some(wi => wi.id === succWiId));
-        const toWi = toSm?.workItems.find(wi => wi.id === succWiId);
-        if (toWi) newLinks.push({ from: newId, to: succWiId, label: `${newId}→${toWi.id}`, isCustom: true });
-      });
       setSubModules(prev => prev.map(s => s.id === addItemTargetSmId ? { ...s, workItems: [...s.workItems, newItem] } : s));
       if (newLinks.length > 0) setLinks(prev => [...prev, ...newLinks]);
     }
@@ -254,7 +260,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
 
   // AI拆解工作流程 → 子任务
   const handleAIDecompose = async () => {
-    if (!decomposeTarget || (!decomposeDesc.trim() && !decomposeFile)) return;
+    if (!decomposeTarget || (!decomposeDesc.trim() && !decomposeFileText && !decomposeFile)) return;
     setDecomposing(true);
     try {
       let prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项包含名称、用时、资源分配。
@@ -263,8 +269,10 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
 
 工作项：${decomposeTarget.wiName}`;
       if (decomposeDesc.trim()) prompt += `\n流程描述：${decomposeDesc}`;
+      if (decomposeFileText.trim()) prompt += `\n上传文档内容：${decomposeFileText.slice(0, 8000)}`;
 
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model: 'auto' });
+      const images = decomposeFile?.type?.startsWith('image/') ? [decomposeFile] : [];
+      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model: 'auto', images: images?.length ? [] : undefined });
       const json = reply.replace(/```json\n?|\n?```/g, '').trim();
       const tasks: GuideSubTask[] = JSON.parse(json).map((t: any, i: number) => ({
         id: `${decomposeTarget.wiId}.s${i + 1}`,
@@ -281,7 +289,16 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       } : s));
       toast('AI已拆解工作流程', 'success');
     } catch (e: any) { toast('AI拆解失败: ' + (e.message || '请重试'), 'error'); }
-    finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); }
+    finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); setDecomposeFileText(''); }
+  };
+
+  // 上传AI拆解文件
+  const handleDecomposeFile = async (f: File) => {
+    setDecomposeFile(f);
+    try {
+      const text = await parseDocument(f);
+      setDecomposeFileText(text.slice(0, 8000));
+    } catch (e: any) { toast('文件解析失败: ' + e.message, 'error'); }
   };
   const handleDeleteWorkItem = (smId: string, itemId: string) => {
     pushUndoHistory();
@@ -756,8 +773,6 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
                   <p className="text-[10px] text-gray-400">支持 PDF/Word/Excel/图片/CAD 等格式，单文件≤10MB</p>
                 )}
               </div>
-              {!editItemId && (
-                <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">前置工作项（可多选，选同层级工作项）</label>
                 <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
@@ -792,8 +807,8 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
                   ))}
                 </div>
               </div>
-                </>
-              )}
+
+            
             </div>
             <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
               <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
@@ -829,11 +844,23 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
 5. 验收确认"
                   rows={6} className="w-full border rounded-lg p-3 text-sm resize-none outline-none" />
               </div>
-              <div className="text-xs text-gray-400">AI将根据描述自动拆解为子任务，包含用时和资源分配建议。</div>
+              <div className="flex items-center gap-2">
+                <label className="px-3 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 hover:border-purple-400 hover:text-purple-500 cursor-pointer flex items-center gap-1">
+                  <Upload className="w-3.5 h-3.5"/> 上传文档/流程图
+                  <input type="file" className="hidden" accept=".txt,.docx,.doc,.pdf,.png,.jpg,.jpeg" onChange={e => e.target.files?.[0] && handleDecomposeFile(e.target.files[0])} />
+                </label>
+                {decomposeFile && (
+                  <span className="text-xs text-purple-600 flex items-center gap-1">
+                    <FileText className="w-3 h-3"/>{decomposeFile.name}
+                    <button onClick={() => { setDecomposeFile(null); setDecomposeFileText(''); }} className="text-red-400 hover:text-red-600"><X className="w-3 h-3"/></button>
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-400">AI将根据描述+上传文件自动拆解为子任务，包含用时和资源分配建议。</div>
             </div>
             <div className="px-5 py-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0 rounded-b-2xl">
               <button onClick={() => setShowAIDecompose(false)} className="px-4 py-2 text-gray-600 bg-white border rounded-lg text-sm">取消</button>
-              <button onClick={handleAIDecompose} disabled={decomposing || !decomposeDesc.trim()}
+              <button onClick={handleAIDecompose} disabled={decomposing || (!decomposeDesc.trim() && !decomposeFileText)}
                 className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm hover:bg-purple-600 disabled:bg-gray-300 flex items-center gap-1.5">
                 {decomposing ? <><Loader className="w-4 h-4 animate-spin"/>拆解中...</> : <><Sparkles className="w-4 h-4"/>开始拆解</>}
               </button>
