@@ -86,7 +86,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [addItemTargetSmId, setAddItemTargetSmId] = useState('');
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[], subTasks: [] as GuideSubTask[] });
+  const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[], subTasks: [] as GuideSubTask[], flowImage: '' as string });
 
   // 附件上传状态
   const [pendingAttachments, setPendingAttachments] = useState<{ fileName: string; data: string; size: number }[]>([]);
@@ -159,7 +159,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const openAddItem = (smId: string) => {
     setEditItemId(null);
     setAddItemTargetSmId(smId);
-    setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [], subTasks: [] });
+    setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [], subTasks: [], flowImage: '' });
     setPendingAttachments([]);
     setShowAddItemModal(true);
   };
@@ -172,7 +172,8 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     setNewItemForm({
       name: wi.name, duration: wi.duration || '', attachmentFormat: wi.attachmentFormat || '',
       predecessors: preds, successors: succs,
-      subTasks: wi.subTasks || []
+      subTasks: wi.subTasks || [],
+      flowImage: ''
     });
     // 加载已有附件（显示信息，不含 base64 数据）
     setPendingAttachments((wi.attachments || []).map(a => ({ fileName: a.fileName, data: '', size: 0 })));
@@ -744,66 +745,109 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
               </div>
               <button onClick={() => setShowAddItemModal(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-4 space-y-4 overflow-y-auto flex-1">
+            <div className="p-4 space-y-4 overflow-y-auto flex-1 text-black">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">工作项名称 *</label>
+                <label className="block text-sm font-medium text-black mb-1">工作项名称 *</label>
                 <input type="text" value={newItemForm.name} onChange={e => setNewItemForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="输入工作项名称" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500" />
+                  placeholder="输入工作项名称" className="w-full px-3 py-2 border border-gray-400 rounded-lg" />
               </div>
+
+              {/* 流程图上传+显示 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">时长</label>
+                <label className="block text-sm font-medium text-black mb-1">流程图</label>
+                <div className="border-2 border-dashed border-gray-400 rounded-lg bg-gray-100 flex items-center justify-center" style={{minHeight:'160px'}}>
+                  {newItemForm.flowImage ? (
+                    <img src={newItemForm.flowImage} className="max-w-full max-h-64 object-contain rounded" alt="流程图" />
+                  ) : (
+                    <label className="cursor-pointer text-center p-6 text-black hover:text-blue-600 transition-colors">
+                      <Upload className="w-8 h-8 mx-auto mb-1" />
+                      <span className="text-sm font-medium">点击上传流程图</span>
+                      <p className="text-xs mt-0.5">支持 PNG/JPG 格式，上传后在此区域显示</p>
+                      <input type="file" className="hidden" accept=".png,.jpg,.jpeg" onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          const r = new FileReader();
+                          r.onload = () => setNewItemForm(p => ({ ...p, flowImage: r.result as string }));
+                          r.readAsDataURL(f);
+                        }
+                      }} />
+                    </label>
+                  )}
+                </div>
+                {newItemForm.flowImage && (
+                  <button onClick={() => setNewItemForm(p => ({ ...p, flowImage: '' }))}
+                    className="text-xs text-red-600 hover:text-red-800 mt-1">移除流程图</button>
+                )}
+              </div>
+
+              {/* 子任务编辑区 */}
+              {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">子任务 (AI拆解)</label>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto border border-gray-400 rounded-lg p-2">
+                    {newItemForm.subTasks.map((st, i) => (
+                      <div key={st.id} className="flex items-center gap-1.5 rounded p-1.5">
+                        <span className="text-sm font-medium text-black w-5 shrink-0">{i+1}.</span>
+                        <input value={st.name}
+                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
+                          className="flex-1 px-1.5 py-0.5 text-sm text-black border rounded min-w-0" />
+                        <span className="text-sm text-black shrink-0">预计时长</span>
+                        <span className="text-base font-bold text-black">{st.plannedDuration || 0}</span>
+                        <span className="text-sm text-black shrink-0">天</span>
+                        <input type="number" value={st.plannedDuration || ''} placeholder="0"
+                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
+                          className="w-14 px-1.5 py-0.5 text-sm text-black border rounded" />
+                        <span className="text-sm text-black shrink-0">实际用时</span>
+                        <span className="text-base font-bold text-black">{st.actualDuration || 0}</span>
+                        <span className="text-sm text-black shrink-0">天</span>
+                        <span className="text-xs text-black shrink-0">{st.resource || ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-4 mt-1">
+                    <span className="text-sm font-bold text-black">预计总计 <span className="text-base">{newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)}</span> 天</span>
+                    <span className="text-sm font-bold text-black">实际总计 <span className="text-base">{newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)}</span> 天</span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">预计时长</label>
                 <input type="text" value={newItemForm.duration} onChange={e => setNewItemForm(p => ({ ...p, duration: e.target.value }))}
-                  placeholder="如 3天 / 1周 / 2个月" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500" />
+                  placeholder="如 3天 / 1周 / 2个月" className="w-full px-3 py-2 border border-gray-400 rounded-lg" />
               </div>
-              {/* 上传人 & 上传日期（自动获取） */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">上传人</label>
-                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                    {(() => { try { return JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.user?.username || '未登录'; } catch { return '未登录'; } })()}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">上传日期</label>
-                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                    {new Date().toLocaleDateString('zh-CN')}
-                  </div>
-                </div>
-              </div>
+
               {/* 附件上传 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-gray-700">附件上传</label>
-                  <label className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-blue-300 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer transition-colors">
+                  <label className="text-sm font-medium text-black">附件上传</label>
+                  <label className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer transition-colors">
                     <Upload className="w-3.5 h-3.5" /> 选择文件
                     <input type="file" className="hidden" multiple onChange={handleFileSelect}
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.dwg,.zip,.rar,.txt,.csv" />
                   </label>
                 </div>
-                {/* 已有附件列表 */}
                 {editItemId && pendingAttachments.filter(a => !a.data).length > 0 && (
                   <div className="space-y-1 mb-2">
-                    <p className="text-[10px] text-gray-400 mb-1">已有附件：</p>
+                    <p className="text-xs text-black mb-1">已有附件：</p>
                     {pendingAttachments.filter(a => !a.data).map((a, i) => (
-                      <div key={`old-${i}`} className="flex items-center gap-2 text-[11px] text-gray-500 bg-gray-50 rounded px-2 py-1">
+                      <div key={`old-${i}`} className="flex items-center gap-2 text-xs text-black bg-gray-50 rounded px-2 py-1">
                         <Paperclip className="w-3 h-3" /> {a.fileName}
-                        <span className="text-[10px] text-gray-400">（保持不变）</span>
                       </div>
                     ))}
                   </div>
                 )}
-                {/* 新上传附件列表 */}
                 {pendingAttachments.filter(a => !!a.data).length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-[10px] text-gray-400 mb-1">新上传：</p>
+                    <p className="text-xs text-black mb-1">新上传：</p>
                     {pendingAttachments.map((a, idx) => {
                       if (!a.data) return null;
                       return (
-                        <div key={`new-${idx}`} className="flex items-center gap-2 text-[11px] text-gray-600 bg-blue-50 rounded px-2 py-1 group">
-                          <Paperclip className="w-3 h-3 text-blue-500" /> {a.fileName}
-                          <span className="text-[10px] text-gray-400">({(a.size / 1024).toFixed(0)}KB)</span>
+                        <div key={`new-${idx}`} className="flex items-center gap-2 text-xs text-black bg-blue-50 rounded px-2 py-1 group">
+                          <Paperclip className="w-3 h-3 text-blue-600" /> {a.fileName}
+                          <span className="text-xs text-black">({(a.size / 1024).toFixed(0)}KB)</span>
                           <button onClick={() => handleRemovePendingAttachment(idx)}
-                            className="ml-auto opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-600 rounded transition-opacity">
+                            className="ml-auto opacity-0 group-hover:opacity-100 p-0.5 text-red-600 hover:text-red-800 rounded transition-opacity">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
@@ -812,77 +856,64 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                   </div>
                 )}
                 {pendingAttachments.length === 0 && (
-                  <p className="text-[10px] text-gray-400">支持 PDF/Word/Excel/图片/CAD 等格式，单文件≤10MB</p>
+                  <p className="text-xs text-black" style={{color:'#666'}}>支持 PDF/Word/Excel/图片/CAD 等格式，单文件≤10MB</p>
                 )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">前置工作项（可多选，选同层级工作项）</label>
-                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
-                  {subModules.map(sm => (
-                    <div key={sm.id} className="mb-1">
-                      <p className="text-[11px] font-semibold text-gray-400 px-1">{sm.id}. {sm.name}</p>
-                      {sm.workItems.map(wi => (
-                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm">
-                          <input type="checkbox" checked={newItemForm.predecessors.includes(wi.id)}
-                            onChange={e => setNewItemForm(p => ({ ...p, predecessors: e.target.checked ? [...p.predecessors, wi.id] : p.predecessors.filter(id => id !== wi.id) }))} className="rounded" />
-                          <span className="text-gray-400 text-xs">{wi.id}</span> {wi.name}
-                        </label>
-                      ))}
-                    </div>
-                  ))}
+
+              {/* 上传人+日期 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">上传人</label>
+                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-sm text-black">
+                    {(() => { try { return JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.user?.username || '未登录'; } catch { return '未登录'; } })()}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">后置工作项（可多选，选同层级工作项）</label>
-                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
-                  {subModules.map(sm => (
-                    <div key={sm.id} className="mb-1">
-                      <p className="text-[11px] font-semibold text-gray-400 px-1">{sm.id}. {sm.name}</p>
-                      {sm.workItems.map(wi => (
-                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm">
-                          <input type="checkbox" checked={newItemForm.successors.includes(wi.id)}
-                            onChange={e => setNewItemForm(p => ({ ...p, successors: e.target.checked ? [...p.successors, wi.id] : p.successors.filter(id => id !== wi.id) }))} className="rounded" />
-                          <span className="text-gray-400 text-xs">{wi.id}</span> {wi.name}
-                        </label>
-                      ))}
-                    </div>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">上传日期</label>
+                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-sm text-black">
+                    {new Date().toLocaleDateString('zh-CN')}
+                  </div>
                 </div>
               </div>
 
-              {/* 子任务编辑区 */}
-              {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">子任务 (AI拆解)
-                    <span className="text-xs text-gray-400 font-normal ml-2">
-                      计划总计 {newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)}天 / 实际总计 {newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)}天
-                    </span>
-                  </label>
-                  <div className="space-y-1.5 max-h-56 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                    {newItemForm.subTasks.map((st, i) => (
-                      <div key={st.id} className="flex items-center gap-1.5 bg-gray-50 rounded p-1.5">
-                        <span className="text-[10px] text-gray-400 w-5 shrink-0">{i+1}.</span>
-                        <input value={st.name}
-                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
-                          className="flex-1 px-1.5 py-0.5 text-xs border rounded min-w-0" />
-                        <span className="text-[10px] text-gray-400 shrink-0">计划</span>
-                        <input type="number" value={st.plannedDuration || ''} placeholder="天"
-                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
-                          className="w-12 px-1.5 py-0.5 text-xs border rounded" />
-                        <span className="text-[10px] text-gray-400 shrink-0">实际</span>
-                        <input type="number" value={st.actualDuration || ''} placeholder="天"
-                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, actualDuration: Number(e.target.value) || 0 } : t) }))}
-                          className="w-12 px-1.5 py-0.5 text-xs border rounded" />
-                        <span className="text-[10px] text-gray-400 shrink-0">{st.resource || ''}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">前置工作项（可多选，选同层级工作项）</label>
+                <div className="max-h-48 overflow-y-auto border border-gray-400 rounded-lg p-2 space-y-0.5">
+                  {subModules.map(sm => (
+                    <div key={sm.id} className="mb-1">
+                      <p className="text-xs font-semibold text-black px-1">{sm.id}. {sm.name}</p>
+                      {sm.workItems.map(wi => (
+                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm text-black">
+                          <input type="checkbox" checked={newItemForm.predecessors.includes(wi.id)}
+                            onChange={e => setNewItemForm(p => ({ ...p, predecessors: e.target.checked ? [...p.predecessors, wi.id] : p.predecessors.filter(id => id !== wi.id) }))} className="rounded" />
+                          {wi.id} {wi.name}
+                        </label>
+                      ))}
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">后置工作项（可多选，选同层级工作项）</label>
+                <div className="max-h-48 overflow-y-auto border border-gray-400 rounded-lg p-2 space-y-0.5">
+                  {subModules.map(sm => (
+                    <div key={sm.id} className="mb-1">
+                      <p className="text-xs font-semibold text-black px-1">{sm.id}. {sm.name}</p>
+                      {sm.workItems.map(wi => (
+                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm text-black">
+                          <input type="checkbox" checked={newItemForm.successors.includes(wi.id)}
+                            onChange={e => setNewItemForm(p => ({ ...p, successors: e.target.checked ? [...p.successors, wi.id] : p.successors.filter(id => id !== wi.id) }))} className="rounded" />
+                          {wi.id} {wi.name}
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
             </div>
             <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
-              <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
+              <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-black bg-white border border-gray-400 rounded-lg hover:bg-gray-50">取消</button>
               <button onClick={handleAddWorkItem} disabled={!newItemForm.name.trim()}
                 className={`px-4 py-2 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-1.5 ${colors.bg} ${colors.hover}`}>
                 <Plus className="w-4 h-4" /> {editItemId ? '保存修改' : '添加工作项'}
