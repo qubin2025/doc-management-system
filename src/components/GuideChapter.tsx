@@ -96,6 +96,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [decomposeFile, setDecomposeFile] = useState<File | null>(null);
   const [decomposeFileText, setDecomposeFileText] = useState('');
   const [decomposing, setDecomposing] = useState(false);
+  const [showFlowZoom, setShowFlowZoom] = useState(false);
 
   // 表单编辑弹窗
   const [formEditModal, setFormEditModal] = useState<{ code: string; name: string } | null>(null);
@@ -755,9 +756,13 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
               {/* 流程图上传+显示 */}
               <div>
                 <label className="block text-sm font-medium text-black mb-1">流程图</label>
-                <div className="border-2 border-dashed border-gray-400 rounded-lg bg-gray-100 flex items-center justify-center" style={{minHeight:'160px'}}>
+                <div className="border-2 border-dashed border-gray-400 rounded-lg bg-gray-100 flex items-center justify-center relative" style={{minHeight:'160px'}}>
                   {newItemForm.flowImage ? (
-                    <img src={newItemForm.flowImage} className="max-w-full max-h-64 object-contain rounded" alt="流程图" />
+                    <div className="relative w-full flex items-center justify-center">
+                      <img src={newItemForm.flowImage} className="max-w-full max-h-64 object-contain rounded" alt="流程图" />
+                      <button onClick={() => setShowFlowZoom(true)}
+                        className="absolute top-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded hover:bg-black/70">放大</button>
+                    </div>
                   ) : (
                     <label className="cursor-pointer text-center p-6 text-black hover:text-blue-600 transition-colors">
                       <Upload className="w-8 h-8 mx-auto mb-1" />
@@ -975,6 +980,16 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                 {decomposing ? <><Loader className="w-4 h-4 animate-spin"/>拆解中...</> : <><Sparkles className="w-4 h-4"/>开始拆解</>}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 流程图放大预览 */}
+      {showFlowZoom && newItemForm.flowImage && (
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center" onClick={() => setShowFlowZoom(false)}>
+          <div className="relative max-w-[95vw] max-h-[95vh] overflow-auto bg-white rounded-lg p-2" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowFlowZoom(false)} className="absolute top-3 right-3 z-10 px-3 py-1.5 bg-black/50 text-white text-sm rounded hover:bg-black/70">关闭</button>
+            <img src={newItemForm.flowImage} className="max-w-none" alt="流程图原尺寸" />
           </div>
         </div>
       )}
