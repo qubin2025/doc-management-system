@@ -316,6 +316,8 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
         ...s,
         workItems: s.workItems.map(wi => wi.id === decomposeTarget.wiId ? { ...wi, subTasks: tasks } : wi),
       } : s));
+      // 同步更新对话框中的子任务
+      setNewItemForm(p => ({ ...p, subTasks: tasks }));
       toast('AI已拆解工作流程', 'success');
     } catch (e: any) { toast('AI拆解失败: ' + (e.message || '请重试'), 'error'); }
     finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); setDecomposeFileText(''); }
