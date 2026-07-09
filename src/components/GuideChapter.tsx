@@ -263,16 +263,38 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     if (!decomposeTarget || (!decomposeDesc.trim() && !decomposeFileText && !decomposeFile)) return;
     setDecomposing(true);
     try {
-      let prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项包含名称、用时、资源分配。
+      const isImage = decomposeFile?.type?.startsWith('image/');
+      let prompt: string;
+      let model = 'auto';
+      let images: string[] = [];
+
+      if (isImage) {
+        // 流程图/图片：直接发GLM-4V做视觉理解+拆解
+        const base64 = await fileToBase64(decomposeFile!);
+        prompt = `你是工程管理专家。请根据这张流程图/图片的内容，将工作流程拆解为子任务（3-8项）。
+
+要求：
+1. 理解流程图的箭头方向、分支、并行/串行关系
+2. 每项子任务包含：名称、预计用时、所需资源
+3. 严格按JSON数组输出，不要其他文字
+4. 格式：[{"name":"子任务名","duration":"2天","resource":"项目经理+设计部"}]
+
+工作项：${decomposeTarget.wiName}
+${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
+        images = [base64];
+        model = 'glm-4v';
+      } else {
+        // 文档/文字：用DeepSeek文本模型
+        prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项包含名称、用时、资源分配。
 严格按JSON数组输出，不要其他文字：
 [{"name":"子任务名","duration":"2天","resource":"项目经理+设计部"}]
 
 工作项：${decomposeTarget.wiName}`;
-      if (decomposeDesc.trim()) prompt += `\n流程描述：${decomposeDesc}`;
-      if (decomposeFileText.trim()) prompt += `\n上传文档内容：${decomposeFileText.slice(0, 8000)}`;
+        if (decomposeDesc.trim()) prompt += `\n流程描述：${decomposeDesc}`;
+        if (decomposeFileText.trim()) prompt += `\n上传文档内容：${decomposeFileText.slice(0, 8000)}`;
+      }
 
-      const images = decomposeFile?.type?.startsWith('image/') ? [decomposeFile] : [];
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model: 'auto', images: images?.length ? [] : undefined });
+      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model, images });
       const json = reply.replace(/```json\n?|\n?```/g, '').trim();
       const tasks: GuideSubTask[] = JSON.parse(json).map((t: any, i: number) => ({
         id: `${decomposeTarget.wiId}.s${i + 1}`,
@@ -291,6 +313,14 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     } catch (e: any) { toast('AI拆解失败: ' + (e.message || '请重试'), 'error'); }
     finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); setDecomposeFileText(''); }
   };
+
+  // 文件转base64 Data URI (GLM-4V需要完整URI)
+  const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   // 上传AI拆解文件
   const handleDecomposeFile = async (f: File) => {
