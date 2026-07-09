@@ -203,8 +203,9 @@ export async function aiChat(
     ? `你是全过程工程咨询管理系统AI。当前项目：${opts.projectName}。${opts?.standard ? `规程：${opts.standard}。` : ''}`
     : '你是一个智能对话助手。';
 
-  // 检测是否需要视觉模型
-  const needVision = messages.some(m => m.content.includes('[图片:') || m.content.includes('图像识别'));
+  // 检测是否需要视觉模型（文本标记或显式传入images）
+  const needVision = messages.some(m => m.content.includes('[图片:') || m.content.includes('图像识别'))
+    || (opts?.images && opts.images.length > 0);
   const userModel = opts?.model || 'auto';
 
   if (needVision && userModel !== 'deepseek-v4-pro' && userModel !== 'deepseek-v4-flash') {

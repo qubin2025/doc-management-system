@@ -787,18 +787,30 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                 )}
               </div>
 
-              {/* 子任务编辑区(表格形式) */}
+              {/* 子任务编辑区(表格形式,支持增删+重新拆解) */}
               {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">子任务 (AI拆解)</label>
-                  <div className="max-h-56 overflow-y-auto border border-gray-400 rounded-lg">
+                <div className="border border-gray-400 rounded-lg">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-100 rounded-t-lg border-b border-gray-400">
+                    <span className="text-sm font-medium text-black">子任务 (AI拆解)</span>
+                    <button onClick={() => {
+                      setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName: newItemForm.name || '工作项' });
+                      setDecomposeDesc('');
+                      setDecomposeFile(null); setDecomposeFileText('');
+                      setShowAIDecompose(true);
+                    }}
+                      className="px-3 py-1 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3"/>AI重新拆解
+                    </button>
+                  </div>
+                  <div className="max-h-56 overflow-y-auto">
                     <table className="w-full text-xs text-black">
                       <thead>
-                        <tr className="bg-gray-100 text-left">
+                        <tr className="bg-gray-50 text-left border-b">
                           <th className="px-2 py-1.5 w-8">#</th>
                           <th className="px-2 py-1.5">子任务名称</th>
                           <th className="px-2 py-1.5 w-16 text-center">预计(天)</th>
                           <th className="px-2 py-1.5 w-16 text-center">实际(天)</th>
+                          <th className="px-2 py-1.5 w-8"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -820,6 +832,10 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                                 onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, actualDuration: Number(e.target.value) || 0 } : t) }))}
                                 className="w-full px-1 py-0.5 text-xs text-black text-center border rounded" />
                             </td>
+                            <td className="px-1 py-1 text-center">
+                              <button onClick={() => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.filter(t => t.id !== st.id) }))}
+                                className="text-red-400 hover:text-red-600 text-xs">×</button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -828,9 +844,17 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                           <td colSpan={2} className="px-2 py-1.5 text-right text-xs">合计</td>
                           <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)} 天</td>
                           <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)} 天</td>
+                          <td></td>
                         </tr>
                       </tfoot>
                     </table>
+                  </div>
+                  <div className="px-3 py-1.5 border-t bg-gray-50 rounded-b-lg">
+                    <button onClick={() => {
+                      const newId = `s${Date.now()}`;
+                      setNewItemForm(p => ({ ...p, subTasks: [...(p.subTasks || []), { id: newId, name: '新子任务', plannedDuration: 0, actualDuration: 0, checked: false }] }));
+                    }}
+                      className="text-xs text-blue-600 hover:text-blue-800">+ 添加子任务</button>
                   </div>
                 </div>
               )}
