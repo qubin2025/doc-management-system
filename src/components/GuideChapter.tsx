@@ -776,7 +776,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">前置工作项（可多选，选同层级工作项）</label>
                 <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
-                  {subModules.filter(s => s.id !== addItemTargetSmId).map(sm => (
+                  {subModules.map(sm => (
                     <div key={sm.id} className="mb-1">
                       <p className="text-[11px] font-semibold text-gray-400 px-1">{sm.id}. {sm.name}</p>
                       {sm.workItems.map(wi => (
@@ -793,7 +793,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">后置工作项（可多选，选同层级工作项）</label>
                 <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
-                  {subModules.filter(s => s.id !== addItemTargetSmId).map(sm => (
+                  {subModules.map(sm => (
                     <div key={sm.id} className="mb-1">
                       <p className="text-[11px] font-semibold text-gray-400 px-1">{sm.id}. {sm.name}</p>
                       {sm.workItems.map(wi => (
