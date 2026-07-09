@@ -500,26 +500,35 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                             ))}
                           </div>
                         )}
+                        {/* AI拆解子任务（可折叠） */}
                         {wi.subTasks && wi.subTasks.length > 0 && (
-                          <div className="ml-6 mt-1 space-y-0.5 border-l-2 border-purple-200 pl-2">
-                            <p className="text-[10px] text-purple-500 font-medium mb-1">子任务(AI拆解)</p>
-                            {wi.subTasks.map(st => (
-                              <div key={st.id} className="flex items-center gap-1.5 text-xs text-gray-600 group/st bg-purple-50/50 rounded px-1.5 py-0.5">
-                                <input type="checkbox" checked={st.checked}
-                                  onChange={() => {
-                                    setSubModules(prev => prev.map(s => s.id === sm.id ? {
-                                      ...s,
-                                      workItems: s.workItems.map(w => w.id === wi.id ? {
-                                        ...w,
-                                        subTasks: w.subTasks?.map(t => t.id === st.id ? { ...t, checked: !t.checked } : t),
-                                      } : w),
-                                    } : s));
-                                  }} className="rounded w-3 h-3" />
-                                <span className="flex-1 truncate">{st.name}</span>
-                                {st.duration && <span className="text-[10px] text-gray-400"><Clock className="w-2.5 h-2.5 inline" />{st.duration}</span>}
-                                {st.resource && <span className="text-[10px] text-gray-400">{st.resource}</span>}
+                          <div className="mt-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedAttachments(prev => { const n = new Set(prev); n.has('sub-' + wi.id) ? n.delete('sub-' + wi.id) : n.add('sub-' + wi.id); return n; }); }}
+                              className="flex items-center gap-1 text-[10px] text-purple-500 font-medium hover:text-purple-700 hover:bg-purple-50 px-1 py-0.5 rounded transition-colors">
+                              <Sparkles className="w-2.5 h-2.5" />AI子任务 ({wi.subTasks.length}) {expandedAttachments.has('sub-' + wi.id) ? '▾' : '▸'}
+                            </button>
+                            {expandedAttachments.has('sub-' + wi.id) && (
+                              <div className="ml-3 mt-0.5 space-y-0.5 border-l-2 border-purple-200 pl-2">
+                                {wi.subTasks.map(st => (
+                                  <div key={st.id} className="flex items-center gap-1.5 text-xs text-gray-600 group/st bg-purple-50/50 rounded px-1.5 py-0.5">
+                                    <input type="checkbox" checked={st.checked}
+                                      onChange={() => {
+                                        setSubModules(prev => prev.map(s => s.id === sm.id ? {
+                                          ...s,
+                                          workItems: s.workItems.map(w => w.id === wi.id ? {
+                                            ...w,
+                                            subTasks: w.subTasks?.map(t => t.id === st.id ? { ...t, checked: !t.checked } : t),
+                                          } : w),
+                                        } : s));
+                                      }} className="rounded w-3 h-3" />
+                                    <span className="flex-1 truncate">{st.name}</span>
+                                    {st.duration && <span className="text-[10px] text-gray-400"><Clock className="w-2.5 h-2.5 inline" />{st.duration}</span>}
+                                    {st.resource && <span className="text-[10px] text-gray-400">{st.resource}</span>}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
                         )}
                       </div>
