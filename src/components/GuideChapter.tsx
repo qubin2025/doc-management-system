@@ -790,16 +790,16 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                         <span className="text-sm font-medium text-black w-5 shrink-0">{i+1}.</span>
                         <input value={st.name}
                           onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
-                          className="flex-1 px-1.5 py-0.5 text-sm text-black border rounded min-w-0" />
-                        <span className="text-sm text-black shrink-0">预计时长</span>
+                          className="flex-1 px-1.5 py-0.5 text-xs text-black border rounded min-w-0" />
+                        <span className="text-xs text-black shrink-0">预计时长</span>
                         <span className="text-base font-bold text-black">{st.plannedDuration || 0}</span>
-                        <span className="text-sm text-black shrink-0">天</span>
+                        <span className="text-xs text-black shrink-0">天</span>
                         <input type="number" value={st.plannedDuration || ''} placeholder="0"
                           onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
-                          className="w-14 px-1.5 py-0.5 text-sm text-black border rounded" />
-                        <span className="text-sm text-black shrink-0">实际用时</span>
+                          className="w-14 px-1.5 py-0.5 text-xs text-black border rounded" />
+                        <span className="text-xs text-black shrink-0">实际用时</span>
                         <span className="text-base font-bold text-black">{st.actualDuration || 0}</span>
-                        <span className="text-sm text-black shrink-0">天</span>
+                        <span className="text-xs text-black shrink-0">天</span>
                         <span className="text-xs text-black shrink-0">{st.resource || ''}</span>
                       </div>
                     ))}
