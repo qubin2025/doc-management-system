@@ -785,33 +785,19 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                 )}
               </div>
 
-              {/* 子任务编辑区 */}
+              {/* 子任务编辑区(仅名称) */}
               {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">子任务 (AI拆解)</label>
-                  <div className="space-y-1.5 max-h-56 overflow-y-auto border border-gray-400 rounded-lg p-2">
+                  <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-400 rounded-lg p-2">
                     {newItemForm.subTasks.map((st, i) => (
-                      <div key={st.id} className="flex items-center gap-1.5 rounded p-1.5">
-                        <span className="text-sm font-medium text-black w-5 shrink-0">{i+1}.</span>
+                      <div key={st.id} className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-black w-5 shrink-0">{i+1}.</span>
                         <input value={st.name}
                           onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
-                          className="flex-1 px-1.5 py-0.5 text-xs text-black border rounded min-w-0" />
-                        <span className="text-xs text-black shrink-0">预计时长</span>
-                        <span className="text-base font-bold text-black">{st.plannedDuration || 0}</span>
-                        <span className="text-xs text-black shrink-0">天</span>
-                        <input type="number" value={st.plannedDuration || ''} placeholder="0"
-                          onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, plannedDuration: Number(e.target.value) || 0 } : t) }))}
-                          className="w-14 px-1.5 py-0.5 text-xs text-black border rounded" />
-                        <span className="text-xs text-black shrink-0">实际用时</span>
-                        <span className="text-base font-bold text-black">{st.actualDuration || 0}</span>
-                        <span className="text-xs text-black shrink-0">天</span>
-                        <span className="text-xs text-black shrink-0">{st.resource || ''}</span>
+                          className="flex-1 px-2 py-1 text-xs text-black border rounded" />
                       </div>
                     ))}
-                  </div>
-                  <div className="flex gap-4 mt-1">
-                    <span className="text-sm font-bold text-black">预计总计 <span className="text-base">{newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)}</span> 天</span>
-                    <span className="text-sm font-bold text-black">实际总计 <span className="text-base">{newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)}</span> 天</span>
                   </div>
                 </div>
               )}
