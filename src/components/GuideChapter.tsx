@@ -4,8 +4,10 @@ import {
   CheckSquare, FileText, GitBranch, Plus, Upload,
   X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Loader, Undo2, Save
 } from 'lucide-react';
-import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink } from '../types';
+import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink, GuideSubTask } from '../types';
+import * as api from '../data/api';
 import LogicDiagram from './LogicDiagram';
+import { toast } from './Toast';
 
 interface GuideChapterProps { chapter: GuideChapterType; onBack: () => void; }
 
@@ -87,6 +89,11 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
 
   // 附件上传状态
   const [pendingAttachments, setPendingAttachments] = useState<{ fileName: string; data: string; size: number }[]>([]);
+  const [showAIDecompose, setShowAIDecompose] = useState(false);
+  const [decomposeTarget, setDecomposeTarget] = useState<{ smId: string; wiId: string; wiName: string } | null>(null);
+  const [decomposeDesc, setDecomposeDesc] = useState('');
+  const [decomposeFile, setDecomposeFile] = useState<File | null>(null);
+  const [decomposing, setDecomposing] = useState(false);
 
   // 表单编辑弹窗
   const [formEditModal, setFormEditModal] = useState<{ code: string; name: string } | null>(null);
@@ -227,21 +234,54 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
         isCustom: true,
         attachments: mergedAttachments,
       };
-      const predSms = newItemForm.predecessors;
-      const succSms = newItemForm.successors;
       const newLinks: GuideLink[] = [];
-      predSms.forEach(psId => {
-        const pSm = subModules.find(s => s.id === psId);
-        if (pSm?.workItems.length) newLinks.push({ from: pSm.workItems[pSm.workItems.length - 1].id, to: newId, label: `${pSm.name}→${sm.name}`, isCustom: true });
+      // 前置/后置现在是工作项ID (同层级)
+      newItemForm.predecessors.forEach(predWiId => {
+        const fromSm = subModules.find(s => s.workItems.some(wi => wi.id === predWiId));
+        const fromWi = fromSm?.workItems.find(wi => wi.id === predWiId);
+        if (fromWi) newLinks.push({ from: predWiId, to: newId, label: `${fromWi.id}→${newId}`, isCustom: true });
       });
-      succSms.forEach(ssId => {
-        const sSm = subModules.find(s => s.id === ssId);
-        if (sSm?.workItems.length) newLinks.push({ from: newId, to: sSm.workItems[0].id, label: `${sm.name}→${sSm.name}`, isCustom: true });
+      newItemForm.successors.forEach(succWiId => {
+        const toSm = subModules.find(s => s.workItems.some(wi => wi.id === succWiId));
+        const toWi = toSm?.workItems.find(wi => wi.id === succWiId);
+        if (toWi) newLinks.push({ from: newId, to: succWiId, label: `${newId}→${toWi.id}`, isCustom: true });
       });
       setSubModules(prev => prev.map(s => s.id === addItemTargetSmId ? { ...s, workItems: [...s.workItems, newItem] } : s));
       if (newLinks.length > 0) setLinks(prev => [...prev, ...newLinks]);
     }
     setShowAddItemModal(false);
+  };
+
+  // AI拆解工作流程 → 子任务
+  const handleAIDecompose = async () => {
+    if (!decomposeTarget || (!decomposeDesc.trim() && !decomposeFile)) return;
+    setDecomposing(true);
+    try {
+      let prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项包含名称、用时、资源分配。
+严格按JSON数组输出，不要其他文字：
+[{"name":"子任务名","duration":"2天","resource":"项目经理+设计部"}]
+
+工作项：${decomposeTarget.wiName}`;
+      if (decomposeDesc.trim()) prompt += `\n流程描述：${decomposeDesc}`;
+
+      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model: 'auto' });
+      const json = reply.replace(/```json\n?|\n?```/g, '').trim();
+      const tasks: GuideSubTask[] = JSON.parse(json).map((t: any, i: number) => ({
+        id: `${decomposeTarget.wiId}.s${i + 1}`,
+        name: t.name || '',
+        duration: t.duration || '',
+        resource: t.resource || '',
+        checked: false,
+        isCustom: true,
+      }));
+
+      setSubModules(prev => prev.map(s => s.id === decomposeTarget.smId ? {
+        ...s,
+        workItems: s.workItems.map(wi => wi.id === decomposeTarget.wiId ? { ...wi, subTasks: tasks } : wi),
+      } : s));
+      toast('AI已拆解工作流程', 'success');
+    } catch (e: any) { toast('AI拆解失败: ' + (e.message || '请重试'), 'error'); }
+    finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); }
   };
   const handleDeleteWorkItem = (smId: string, itemId: string) => {
     pushUndoHistory();
@@ -377,6 +417,10 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
                           className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-600 rounded transition-opacity" title="修改">
                           <Edit3 className="w-3 h-3" />
                         </button>
+                        <button onClick={() => { setDecomposeTarget({ smId: sm.id, wiId: wi.id, wiName: wi.name }); setShowAIDecompose(true); }}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-purple-600 rounded transition-opacity" title="AI拆解">
+                          <Sparkles className="w-3 h-3" />
+                        </button>
                         {(wi.duration || wi.attachmentFormat || (wi.attachments && wi.attachments.length > 0)) && (
                           <div className="hidden sm:flex items-center gap-1 ml-1 text-[10px] text-gray-400">
                             {wi.duration && <span className="flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{wi.duration}</span>}
@@ -405,6 +449,28 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
                                   title="删除此附件">
                                   <Trash2 className="w-2.5 h-2.5" />
                                 </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {wi.subTasks && wi.subTasks.length > 0 && (
+                          <div className="ml-6 mt-1 space-y-0.5 border-l-2 border-purple-200 pl-2">
+                            <p className="text-[10px] text-purple-500 font-medium mb-1">子任务(AI拆解)</p>
+                            {wi.subTasks.map(st => (
+                              <div key={st.id} className="flex items-center gap-1.5 text-xs text-gray-600 group/st bg-purple-50/50 rounded px-1.5 py-0.5">
+                                <input type="checkbox" checked={st.checked}
+                                  onChange={() => {
+                                    setSubModules(prev => prev.map(s => s.id === sm.id ? {
+                                      ...s,
+                                      workItems: s.workItems.map(w => w.id === wi.id ? {
+                                        ...w,
+                                        subTasks: w.subTasks?.map(t => t.id === st.id ? { ...t, checked: !t.checked } : t),
+                                      } : w),
+                                    } : s));
+                                  }} className="rounded w-3 h-3" />
+                                <span className="flex-1 truncate">{st.name}</span>
+                                {st.duration && <span className="text-[10px] text-gray-400"><Clock className="w-2.5 h-2.5 inline" />{st.duration}</span>}
+                                {st.resource && <span className="text-[10px] text-gray-400">{st.resource}</span>}
                               </div>
                             ))}
                           </div>
@@ -693,26 +759,36 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
               {!editItemId && (
                 <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">前置工作项子模块（可多选）</label>
-                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">前置工作项（可多选，选同层级工作项）</label>
+                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
                   {subModules.filter(s => s.id !== addItemTargetSmId).map(sm => (
-                    <label key={sm.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm">
-                      <input type="checkbox" checked={newItemForm.predecessors.includes(sm.id)}
-                        onChange={e => setNewItemForm(p => ({ ...p, predecessors: e.target.checked ? [...p.predecessors, sm.id] : p.predecessors.filter(id => id !== sm.id) }))} className="rounded" />
-                      {sm.id}. {sm.name}
-                    </label>
+                    <div key={sm.id} className="mb-1">
+                      <p className="text-[11px] font-semibold text-gray-400 px-1">{sm.id}. {sm.name}</p>
+                      {sm.workItems.map(wi => (
+                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm">
+                          <input type="checkbox" checked={newItemForm.predecessors.includes(wi.id)}
+                            onChange={e => setNewItemForm(p => ({ ...p, predecessors: e.target.checked ? [...p.predecessors, wi.id] : p.predecessors.filter(id => id !== wi.id) }))} className="rounded" />
+                          <span className="text-gray-400 text-xs">{wi.id}</span> {wi.name}
+                        </label>
+                      ))}
+                    </div>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">后置工作项子模块（可多选）</label>
-                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">后置工作项（可多选，选同层级工作项）</label>
+                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-0.5">
                   {subModules.filter(s => s.id !== addItemTargetSmId).map(sm => (
-                    <label key={sm.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50 cursor-pointer text-sm">
-                      <input type="checkbox" checked={newItemForm.successors.includes(sm.id)}
-                        onChange={e => setNewItemForm(p => ({ ...p, successors: e.target.checked ? [...p.successors, sm.id] : p.successors.filter(id => id !== sm.id) }))} className="rounded" />
-                      {sm.id}. {sm.name}
-                    </label>
+                    <div key={sm.id} className="mb-1">
+                      <p className="text-[11px] font-semibold text-gray-400 px-1">{sm.id}. {sm.name}</p>
+                      {sm.workItems.map(wi => (
+                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm">
+                          <input type="checkbox" checked={newItemForm.successors.includes(wi.id)}
+                            onChange={e => setNewItemForm(p => ({ ...p, successors: e.target.checked ? [...p.successors, wi.id] : p.successors.filter(id => id !== wi.id) }))} className="rounded" />
+                          <span className="text-gray-400 text-xs">{wi.id}</span> {wi.name}
+                        </label>
+                      ))}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -729,6 +805,43 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
           </div>
         </div>
       )}
+
+      {/* AI拆解弹窗 */}
+      {showAIDecompose && decomposeTarget && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => e.target===e.currentTarget && setShowAIDecompose(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div className="px-5 py-4 border-b flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-gray-800 flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-500"/>AI拆解工作流程</h3>
+                <p className="text-xs text-gray-500 mt-0.5">工作项：{decomposeTarget.wiName}</p>
+              </div>
+              <button onClick={() => setShowAIDecompose(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">工作流程描述</label>
+                <textarea value={decomposeDesc} onChange={e => setDecomposeDesc(e.target.value)}
+                  placeholder="描述此工作项的执行流程，如：
+1. 编制专项施工方案
+2. 监理单位审核
+3. 施工单位技术交底
+4. 现场实施与旁站监督
+5. 验收确认"
+                  rows={6} className="w-full border rounded-lg p-3 text-sm resize-none outline-none" />
+              </div>
+              <div className="text-xs text-gray-400">AI将根据描述自动拆解为子任务，包含用时和资源分配建议。</div>
+            </div>
+            <div className="px-5 py-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0 rounded-b-2xl">
+              <button onClick={() => setShowAIDecompose(false)} className="px-4 py-2 text-gray-600 bg-white border rounded-lg text-sm">取消</button>
+              <button onClick={handleAIDecompose} disabled={decomposing || !decomposeDesc.trim()}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm hover:bg-purple-600 disabled:bg-gray-300 flex items-center gap-1.5">
+                {decomposing ? <><Loader className="w-4 h-4 animate-spin"/>拆解中...</> : <><Sparkles className="w-4 h-4"/>开始拆解</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -88,17 +88,28 @@ export interface ChatMessage {
 
 // ===== 全过程项目管理指南模块类型 =====
 
+// 子任务（AI拆解生成）
+export interface GuideSubTask {
+  id: string;
+  name: string;
+  duration?: string;    // 预计用时
+  resource?: string;    // 所需资源/负责人
+  checked: boolean;
+  isCustom?: boolean;
+}
+
 // 工作项（可勾选）
 export interface GuideWorkItem {
   id: string;
   name: string;
   checked: boolean;
-  duration?: string;        // 时长（如"3天"、"1周"）
-  attachmentFormat?: string; // 附件格式（如"PDF"、"Word/Excel"）
-  isCustom?: boolean;       // 是否用户自定义添加
-  completedAt?: string;     // 完成时间（ISO日期）
-  plannedDate?: string;     // 计划完成日期（ISO日期）
-  attachments?: { fileName: string; version: string; uploadTime: string; data?: string }[]; // 附件列表（data为base64）
+  duration?: string;
+  attachmentFormat?: string;
+  isCustom?: boolean;
+  completedAt?: string;
+  plannedDate?: string;
+  attachments?: { fileName: string; version: string; uploadTime: string; data?: string }[];
+  subTasks?: GuideSubTask[];  // AI拆解的子任务列表
 }
 
 // 子模块
