@@ -498,7 +498,22 @@ ${decomposeFileText.slice(0, 8000)}
                           className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-600 rounded transition-opacity" title="修改">
                           <Edit3 className="w-3 h-3" />
                         </button>
-                        <button onClick={() => { setDecomposeTarget({ smId: sm.id, wiId: wi.id, wiName: wi.name }); setShowAIDecompose(true); }}
+                        <button onClick={() => {
+                        setDecomposeTarget({ smId: sm.id, wiId: wi.id, wiName: wi.name });
+                        if (wi.flowImage && wi.flowImage.startsWith('data:image/')) {
+                          const b = wi.flowImage.split(',')[1];
+                          const blob = new Blob([Uint8Array.from(atob(b), c => c.charCodeAt(0))], {type:'image/png'});
+                          setDecomposeFile(new File([blob], 'flowchart.png', {type:'image/png'}));
+                          setDecomposeFileText('');
+                        } else {
+                          setDecomposeFile(null);
+                          const ctx = (wi.subTasks && wi.subTasks.length > 0)
+                            ? wi.subTasks.map((st,i) => `${i+1}.${st.name}(${st.plannedDuration||0}天)`).join('; ') : '';
+                          setDecomposeFileText(ctx);
+                        }
+                        setDecomposeDesc('');
+                        setShowAIDecompose(true);
+                      }}
                           className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-purple-600 rounded transition-opacity" title="AI拆解">
                           <Sparkles className="w-3 h-3" />
                         </button>
@@ -824,7 +839,23 @@ ${decomposeFileText.slice(0, 8000)}
                   </span>
                   <button onClick={() => {
                     setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName: newItemForm.name || '工作项' });
-                    setDecomposeDesc(`请对"${newItemForm.name || '当前工作项'}"重新拆解子任务`);
+                    // 有流程图：作为上传文件传给AI
+                    if (newItemForm.flowImage && newItemForm.flowImage.startsWith('data:image/')) {
+                      const b64 = newItemForm.flowImage.split(',')[1];
+                      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+                      const blob = new Blob([bytes], { type: 'image/png' });
+                      const fakeFile = new File([blob], 'flowchart.png', { type: 'image/png' });
+                      setDecomposeFile(fakeFile);
+                      setDecomposeFileText('');
+                    } else {
+                      setDecomposeFile(null);
+                      // 有子任务：当前子任务作为上下文
+                      const ctx = (newItemForm.subTasks && newItemForm.subTasks.length > 0)
+                        ? newItemForm.subTasks.map((st,i) => `${i+1}.${st.name}(${st.plannedDuration||0}天)`).join('; ')
+                        : '';
+                      setDecomposeFileText(ctx);
+                    }
+                    setDecomposeDesc('');
                     setShowAIDecompose(true);
                   }}
                     className="px-3 py-1 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
