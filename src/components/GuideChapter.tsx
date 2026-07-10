@@ -1128,19 +1128,22 @@ ${decomposeFileText.slice(0, 8000)}
         </div>
       )}
 
-      {/* draw.io流程图编辑器 */}
+      {/* 流程图编辑器 — 新窗口打开draw.io */}
       {showDrawioEditor && (
-        <div className="fixed inset-0 bg-black/70 z-[70] flex flex-col">
-          <div className="flex items-center justify-between px-4 py-2 bg-gray-900 text-white shrink-0">
-            <span className="text-sm">流程图编辑器 — 修改后截图保存到流程图区</span>
-            <div className="flex items-center gap-2">
-              <button onClick={() => window.open('https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json', '_blank')}
-                className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">新窗口打开</button>
-              <button onClick={() => setShowDrawioEditor(false)} className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">关闭</button>
+        <div className="fixed inset-0 bg-black/70 z-[70] flex items-center justify-center" onClick={() => setShowDrawioEditor(false)}>
+          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-2xl" onClick={e => e.stopPropagation()}>
+            <FileText className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-800 mb-2">流程图编辑器</h3>
+            <p className="text-sm text-gray-500 mb-6">draw.io 在线编辑器将在新窗口中打开。<br/>修改完成后，请导出为 PNG 图片，再上传替换原流程图。</p>
+            <div className="flex items-center justify-center gap-3">
+              <button onClick={() => { setShowDrawioEditor(false); }}
+                className="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-50">取消</button>
+              <button onClick={() => {
+                window.open('https://app.diagrams.net/', '_blank');
+                setShowDrawioEditor(false);
+              }} className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600">打开 draw.io</button>
             </div>
           </div>
-          <iframe src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&modified=unsavedChanges&proto=json"
-            className="flex-1 border-0 bg-white" title="流程图编辑器" />
         </div>
       )}
 
