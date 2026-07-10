@@ -97,6 +97,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [decomposeFileText, setDecomposeFileText] = useState('');
   const [decomposing, setDecomposing] = useState(false);
   const [showFlowZoom, setShowFlowZoom] = useState(false);
+  const [showDrawioEditor, setShowDrawioEditor] = useState(false);
 
   // 表单编辑弹窗
   const [formEditModal, setFormEditModal] = useState<{ code: string; name: string } | null>(null);
@@ -466,6 +467,18 @@ ${decomposeFileText.slice(0, 8000)}
                       <button onClick={() => handleSaveTemplate(sm.id)} className="px-2 py-0.5 text-[10px] rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="保存为模版">
                         <Save className="w-3 h-3 inline mr-0.5" />模版
                       </button>
+                      <button onClick={() => {
+                        if (confirm(`确认将"${sm.name}"恢复为默认模版状态？\n\n这将清除所有自定义工作项、子任务、流程图和附件，恢复为系统默认模版。`)) {
+                          const defaultCh = chapter;
+                          const defaultSm = defaultCh.subModules.find(s => s.id === sm.id);
+                          if (defaultSm) {
+                            setSubModules(prev => prev.map(s => s.id === sm.id ? { ...defaultSm, workItems: defaultSm.workItems.map(wi => ({...wi})) } : s));
+                            toast(`"${sm.name}"已恢复为默认模版`, 'success');
+                          }
+                        }
+                      }} className="px-2 py-0.5 text-[10px] rounded bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors" title="恢复默认模版">
+                        默认
+                      </button>
                       <button onClick={() => openAddItem(sm.id)} className="p-1 rounded hover:bg-gray-200 transition-colors" title="添加工作项"><Plus className="w-3.5 h-3.5 text-gray-500" /></button>
                     </div>
                   </div>
@@ -821,8 +834,14 @@ ${decomposeFileText.slice(0, 8000)}
                   )}
                 </div>
                 {newItemForm.flowImage && (
-                  <button onClick={() => setNewItemForm(p => ({ ...p, flowImage: '' }))}
-                    className="text-xs text-red-600 hover:text-red-800 mt-1">移除流程图</button>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button onClick={() => setShowDrawioEditor(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                      <Edit3 className="w-3 h-3"/>编辑流程图
+                    </button>
+                    <button onClick={() => setNewItemForm(p => ({ ...p, flowImage: '' }))}
+                      className="text-xs text-red-600 hover:text-red-800">移除</button>
+                  </div>
                 )}
               </div>
 
@@ -906,9 +925,21 @@ ${decomposeFileText.slice(0, 8000)}
                       </tbody>
                       <tfoot>
                         <tr className="border-t-2 border-gray-400 bg-gray-50 font-bold">
-                          <td colSpan={3} className="px-2 py-1.5 text-right text-xs">合计</td>
-                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s:any,t:any) => s + (t.plannedDuration||0), 0)} 天</td>
-                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s:any,t:any) => s + (t.actualDuration||0), 0)} 天</td>
+                          <td colSpan={3} className="px-2 py-1.5 text-right text-xs">工期(并行取最长泳道)</td>
+                          {(() => {
+                            const sts = newItemForm.subTasks || [];
+                            // 按泳道分组求和，取最大泳道总时长(并行泳道同时进行)
+                            const groups: Record<string,number> = {};
+                            sts.forEach(t => {
+                              const key = t.swimlane || '默认';
+                              groups[key] = (groups[key]||0) + (t.plannedDuration||0);
+                            });
+                            const maxPlanned = Object.keys(groups).length > 1
+                              ? Math.max(...Object.values(groups))
+                              : sts.reduce((s:any,t:any) => s + (t.plannedDuration||0), 0);
+                            const sumActual = sts.reduce((s:any,t:any) => s + (t.actualDuration||0), 0);
+                            return <><td className="px-2 py-1.5 text-center text-xs">{maxPlanned} 天</td><td className="px-2 py-1.5 text-center text-xs">{sumActual} 天</td></>;
+                          })()}
                           <td></td>
                         </tr>
                       </tfoot>
@@ -1094,6 +1125,20 @@ ${decomposeFileText.slice(0, 8000)}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* draw.io流程图编辑器 */}
+      {showDrawioEditor && (
+        <div className="fixed inset-0 bg-black/70 z-[70] flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-900 text-white shrink-0">
+            <span className="text-sm">流程图编辑器 — 修改后截图保存到流程图区</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">修改完成后请截图上传</span>
+              <button onClick={() => setShowDrawioEditor(false)} className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">关闭编辑器</button>
+            </div>
+          </div>
+          <iframe src="/drawio/index.html" className="flex-1 border-0" title="流程图编辑器" />
         </div>
       )}
 
