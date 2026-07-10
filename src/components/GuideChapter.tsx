@@ -307,22 +307,44 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
       const arrStart = json.indexOf('[');
       const arrEnd = json.lastIndexOf(']');
       if (arrStart !== -1 && arrEnd > arrStart) json = json.slice(arrStart, arrEnd + 1);
-      const tasks: GuideSubTask[] = JSON.parse(json).map((t: any, i: number) => ({
-        id: `${decomposeTarget.wiId}.s${i + 1}`,
-        name: t.name || '',
-        plannedDuration: typeof t.plannedDuration === 'number' ? t.plannedDuration : (parseInt(t.plannedDuration) || parseInt(t.duration) || 0),
-        actualDuration: typeof t.actualDuration === 'number' ? t.actualDuration : (parseInt(t.actualDuration) || 0),
-        checked: false,
-        isCustom: true,
-      }));
 
-      setSubModules(prev => prev.map(s => s.id === decomposeTarget.smId ? {
-        ...s,
-        workItems: s.workItems.map(wi => wi.id === decomposeTarget.wiId ? { ...wi, subTasks: tasks } : wi),
-      } : s));
-      // 同步更新对话框中的子任务
+      let tasks: GuideSubTask[] = [];
+      try {
+        tasks = JSON.parse(json).map((t: any, i: number) => ({
+          id: `${decomposeTarget.wiId}.s${i + 1}`,
+          name: t.name || t.title || '',
+          plannedDuration: typeof t.plannedDuration === 'number' ? t.plannedDuration : (parseInt(t.plannedDuration) || parseInt(t.duration) || 0),
+          actualDuration: typeof t.actualDuration === 'number' ? t.actualDuration : (parseInt(t.actualDuration) || 0),
+          checked: false,
+          isCustom: true,
+        }));
+      } catch {
+        // JSON解析失败: 按换行拆分作为fallback子任务
+        const lines = reply.split('\n').filter(l => l.match(/^\d+[\.\)、]|[A-Z]\.|第.*步/) && l.length > 3);
+        if (lines.length === 0) lines.push(...reply.split('\n').filter(l => l.trim().length > 5).slice(0, 8));
+        tasks = lines.map((l, i) => ({
+          id: `${decomposeTarget.wiId}.s${i + 1}`,
+          name: l.replace(/^[\d\.\)、\s]+/, '').slice(0, 50),
+          plannedDuration: 0,
+          actualDuration: 0,
+          checked: false,
+          isCustom: true,
+        }));
+      }
+
+      if (tasks.length === 0) throw new Error('未能解析出子任务，AI返回格式异常');
+      if (!decomposeTarget) return;
+
+      // 如果是已有工作项(非'new'),更新subModules
+      if (decomposeTarget.wiId !== 'new') {
+        setSubModules(prev => prev.map(s => s.id === decomposeTarget.smId ? {
+          ...s,
+          workItems: s.workItems.map(wi => wi.id === decomposeTarget.wiId ? { ...wi, subTasks: tasks } : wi),
+        } : s));
+      }
+      // 始终更新对话框中的子任务
       setNewItemForm(p => ({ ...p, subTasks: tasks }));
-      toast('AI已拆解工作流程', 'success');
+      toast(`AI已拆解 ${tasks.length} 项子任务`, 'success');
     } catch (e: any) { toast('AI拆解失败: ' + (e.message || '请重试'), 'error'); }
     finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); setDecomposeFileText(''); }
   };
