@@ -814,7 +814,7 @@ ${decomposeFileText.slice(0, 8000)}
               <div>
                 <label className="block text-sm font-medium text-black mb-1">工作项名称 *</label>
                 <input type="text" value={newItemForm.name} onChange={e => setNewItemForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="输入工作项名称" className="w-full px-3 py-2 border border-gray-400 rounded-lg" />
+                  placeholder="输入工作项名称" className="w-full px-3 py-2 border border-gray-400 rounded-lg placeholder:text-xs" />
               </div>
 
               {/* 流程图上传+显示 */}
@@ -983,7 +983,7 @@ ${decomposeFileText.slice(0, 8000)}
                 <label className="block text-sm font-medium text-black mb-1">参考官方网站</label>
                 <div className="flex items-center gap-2">
                   <input type="url" value={newItemForm.duration} onChange={e => setNewItemForm(p => ({ ...p, duration: e.target.value }))}
-                    placeholder="https://... 北京市官方办理网址" className="flex-1 px-3 py-2 border border-gray-400 rounded-lg" />
+                    placeholder="https://... 北京市官方办理网址" className="flex-1 px-3 py-2 border border-gray-400 rounded-lg placeholder:text-xs" />
                   <button onClick={async () => {
                     const q = (newItemForm.name || '工程建设项目') + ' 北京 官方办理 手续';
                     try {
@@ -1131,7 +1131,7 @@ ${decomposeFileText.slice(0, 8000)}
 3. 施工单位技术交底
 4. 现场实施与旁站监督
 5. 验收确认"
-                  rows={6} className="w-full border rounded-lg p-3 text-sm resize-none outline-none" />
+                  rows={6} className="w-full border rounded-lg p-3 text-sm resize-none outline-none placeholder:text-xs" />
               </div>
               <div className="flex items-center gap-2">
                 <label className="px-3 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 hover:border-purple-400 hover:text-purple-500 cursor-pointer flex items-center gap-1">
