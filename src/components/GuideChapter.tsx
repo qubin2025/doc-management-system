@@ -276,9 +276,12 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       // 优先级：图片视觉理解 > 文档文字 > 手动描述
       if (isImage) {
         const b64 = await fileToDataUri(decomposeFile!);
-        const aiPrompt = `分析这张流程图，拆解为子任务。理解箭头方向、分支、并行/串行关系。
-每项子任务只需：name(名称)、plannedDuration(预计天数)、actualDuration(默认0)。
-只输出JSON数组：[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]` + (decomposeDesc.trim() ? `\n参考说明：${decomposeDesc}` : '');
+        const aiPrompt = `分析这张流程图，拆解为子任务。
+要求：
+1. 识别图中泳道，每个泳道代表一个责任方/办理单位
+2. 每个子任务归属到对应泳道，swimlane字段标注责任方
+3. 理解箭头方向、分支、并行/串行关系
+4. 只输出JSON：[{"name":"子任务名","swimlane":"责任方","plannedDuration":2,"actualDuration":0}]` + (decomposeDesc.trim() ? `\n参考：${decomposeDesc}` : '');
         reply = await api.visionChat(b64, aiPrompt);
       } else if (decomposeFileText.trim()) {
         const aiPrompt = (decomposeDesc.trim() ? `补充说明：${decomposeDesc}\n\n` : '')
@@ -304,6 +307,7 @@ ${decomposeFileText.slice(0, 8000)}
         tasks = JSON.parse(json).map((t: any, i: number) => ({
           id: `${decomposeTarget.wiId}.s${i + 1}`,
           name: t.name || t.title || '',
+          swimlane: t.swimlane || '',
           plannedDuration: typeof t.plannedDuration === 'number' ? t.plannedDuration : (parseInt(t.plannedDuration) || parseInt(t.duration) || 0),
           actualDuration: typeof t.actualDuration === 'number' ? t.actualDuration : (parseInt(t.actualDuration) || 0),
           checked: false,
@@ -316,6 +320,7 @@ ${decomposeFileText.slice(0, 8000)}
         tasks = lines.map((l, i) => ({
           id: `${decomposeTarget.wiId}.s${i + 1}`,
           name: l.replace(/^[\d\.\)、\s]+/, '').slice(0, 50),
+          swimlane: '',
           plannedDuration: 0,
           actualDuration: 0,
           checked: false,
@@ -862,6 +867,7 @@ ${decomposeFileText.slice(0, 8000)}
                         <tr className="bg-gray-50 text-left border-b">
                           <th className="px-2 py-1.5 w-8">#</th>
                           <th className="px-2 py-1.5">子任务名称</th>
+                          <th className="px-2 py-1.5 w-20">责任方/泳道</th>
                           <th className="px-2 py-1.5 w-16 text-center">预计(天)</th>
                           <th className="px-2 py-1.5 w-16 text-center">实际(天)</th>
                           <th className="px-2 py-1.5 w-8"></th>
@@ -875,6 +881,11 @@ ${decomposeFileText.slice(0, 8000)}
                               <input value={st.name}
                                 onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, name: e.target.value } : t) }))}
                                 className="w-full px-1.5 py-0.5 text-xs text-black border rounded" />
+                            </td>
+                            <td className="px-2 py-1">
+                              <input value={st.swimlane || ''} placeholder="责任方"
+                                onChange={e => setNewItemForm(p => ({ ...p, subTasks: p.subTasks?.map(t => t.id === st.id ? { ...t, swimlane: e.target.value } : t) }))}
+                                className="w-full px-1.5 py-0.5 text-xs text-blue-600 border rounded bg-blue-50" />
                             </td>
                             <td className="px-2 py-1 text-center">
                               <input type="number" value={st.plannedDuration || ''} placeholder="0"
@@ -895,7 +906,7 @@ ${decomposeFileText.slice(0, 8000)}
                       </tbody>
                       <tfoot>
                         <tr className="border-t-2 border-gray-400 bg-gray-50 font-bold">
-                          <td colSpan={2} className="px-2 py-1.5 text-right text-xs">合计</td>
+                          <td colSpan={3} className="px-2 py-1.5 text-right text-xs">合计</td>
                           <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s:any,t:any) => s + (t.plannedDuration||0), 0)} 天</td>
                           <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s:any,t:any) => s + (t.actualDuration||0), 0)} 天</td>
                           <td></td>
@@ -906,7 +917,7 @@ ${decomposeFileText.slice(0, 8000)}
                   <div className="px-3 py-1.5 border-t bg-gray-50 rounded-b-lg">
                     <button onClick={() => {
                       const newId = `s${Date.now()}`;
-                      setNewItemForm(p => ({ ...p, subTasks: [...(p.subTasks || []), { id: newId, name: '新子任务', plannedDuration: 0, actualDuration: 0, checked: false }] }));
+                      setNewItemForm(p => ({ ...p, subTasks: [...(p.subTasks || []), { id: newId, name: '新子任务', swimlane: '', plannedDuration: 0, actualDuration: 0, checked: false }] }));
                     }}
                       className="text-xs text-blue-600 hover:text-blue-800">+ 添加子任务</button>
                   </div>
