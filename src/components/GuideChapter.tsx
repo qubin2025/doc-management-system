@@ -302,7 +302,11 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
       }
 
       const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model, images });
-      const json = reply.replace(/```json\n?|\n?```/g, '').trim();
+      // 提取JSON数组(处理markdown包裹+额外文本)
+      let json = reply.replace(/```json\n?|\n?```/g, '').trim();
+      const arrStart = json.indexOf('[');
+      const arrEnd = json.lastIndexOf(']');
+      if (arrStart !== -1 && arrEnd > arrStart) json = json.slice(arrStart, arrEnd + 1);
       const tasks: GuideSubTask[] = JSON.parse(json).map((t: any, i: number) => ({
         id: `${decomposeTarget.wiId}.s${i + 1}`,
         name: t.name || '',
