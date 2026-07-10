@@ -181,22 +181,24 @@ export async function aiChat(
   opts?: { projectName?: string; standard?: string; model?: string; images?: string[] }
 ): Promise<string> {
   const images = opts?.images || [];
-  // 优先尝试后端 API
-  try {
-    const res = await fetch(`${API_BASE}/ai/chat`, {
-      method: 'POST', body: JSON.stringify({
-        messages,
-        context: context || '',
-        projectName: opts?.projectName || '',
-        standard: opts?.standard || '',
-        model: opts?.model || 'auto',
-      }), headers: headers(),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.reply || data.message || JSON.stringify(data);
-    }
-  } catch {}
+  // 有图片时跳过代理直连视觉模型（后端代理不支持多模态）
+  if (images.length === 0) {
+    try {
+      const res = await fetch(`${API_BASE}/ai/chat`, {
+        method: 'POST', body: JSON.stringify({
+          messages,
+          context: context || '',
+          projectName: opts?.projectName || '',
+          standard: opts?.standard || '',
+          model: opts?.model || 'auto',
+        }), headers: headers(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.reply || data.message || JSON.stringify(data);
+      }
+    } catch {}
+  }
 
   // 构建系统提示
   const systemPrompt = opts?.projectName
