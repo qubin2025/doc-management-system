@@ -830,7 +830,7 @@ ${decomposeFileText.slice(0, 8000)}
                   ) : (
                     <label className="cursor-pointer text-center p-6 text-black hover:text-blue-600 transition-colors">
                       <Upload className="w-8 h-8 mx-auto mb-1" />
-                      <span className="text-sm font-medium">点击上传流程图</span>
+                      <span className="text-xs font-medium">点击上传流程图</span>
                       <p className="text-xs mt-0.5">支持 PNG/JPG 格式，上传后在此区域显示</p>
                       <input type="file" className="hidden" accept=".png,.jpg,.jpeg" onChange={e => {
                         const f = e.target.files?.[0];
@@ -1050,13 +1050,13 @@ ${decomposeFileText.slice(0, 8000)}
               {/* 上传人+日期 */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">上传人</label>
+                  <label className="block text-xs font-medium text-black mb-1">上传人</label>
                   <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-sm text-black">
                     {(() => { try { return JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.user?.username || '未登录'; } catch { return '未登录'; } })()}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">上传日期</label>
+                  <label className="block text-xs font-medium text-black mb-1">上传日期</label>
                   <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-sm text-black">
                     {new Date().toLocaleDateString('zh-CN')}
                   </div>
@@ -1064,7 +1064,7 @@ ${decomposeFileText.slice(0, 8000)}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-black mb-1">前置工作项（可多选，选同层级工作项）</label>
+                <label className="block text-xs font-medium text-black mb-1">前置工作项（可多选，选同层级工作项）</label>
                 <div className="max-h-48 overflow-y-auto border border-gray-400 rounded-lg p-2 space-y-0.5">
                   {subModules.map(sm => (
                     <div key={sm.id} className="mb-1">
@@ -1081,7 +1081,7 @@ ${decomposeFileText.slice(0, 8000)}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-black mb-1">后置工作项（可多选，选同层级工作项）</label>
+                <label className="block text-xs font-medium text-black mb-1">后置工作项（可多选，选同层级工作项）</label>
                 <div className="max-h-48 overflow-y-auto border border-gray-400 rounded-lg p-2 space-y-0.5">
                   {subModules.map(sm => (
                     <div key={sm.id} className="mb-1">
