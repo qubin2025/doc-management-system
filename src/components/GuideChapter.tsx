@@ -341,9 +341,6 @@ ${contentText.slice(0, 8000)}
     finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); setDecomposeFileText(''); }
   };
 
-  // 文件转base64 Data URI (GLM-4V需要完整URI)
-  });
-
   // 上传AI拆解文件
   const handleDecomposeFile = async (f: File) => {
     setDecomposeFile(f);
