@@ -1174,8 +1174,12 @@ ${decomposeFileText.slice(0, 8000)}
                       try {
                         const prompt = `根据以下资料，生成办理指南（≤200字），格式：\n一、办理要点：\n二、所需资料：\n三、重点经办人：\n（资料不足处标注"待补充"）\n\n工作项：${newItemForm.name}\n参考资料：${ctx || '无附件，根据工作项名称推断'}`;
                         const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
-                        setGuideNotesText(reply.slice(0, 300));
-                        setNewItemForm(p => ({...p, guideNotes: reply.slice(0, 300)}));
+                        const text = reply.slice(0, 300);
+                        setGuideNotesText(text);
+                        setNewItemForm(p => ({...p, guideNotes: text}));
+                        // DOM直写确保显示
+                        const ta = document.querySelector('#guide-note-area textarea') as HTMLTextAreaElement;
+                        if (ta) { ta.value = text; ta.dispatchEvent(new Event('input', {bubbles:true})); }
                         toast('AI已生成办理指南', 'success');
                       } catch { toast('生成失败', 'error'); }
                     }}
