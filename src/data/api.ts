@@ -209,18 +209,16 @@ export async function aiChat(
   const userModel = opts?.model || 'auto';
 
   if (needVision && userModel !== 'deepseek-v4-pro' && userModel !== 'deepseek-v4-flash') {
-    // 视觉模型路由：指定模型 > 自动(智谱 > 千问)
-    if (userModel === 'glm-4v' || userModel === 'qwen-vl-max') {
-      const key = userModel === 'glm-4v' ? import.meta.env.VITE_ZHIPU_API_KEY : import.meta.env.VITE_QWEN_API_KEY;
-      const endpoint = userModel === 'glm-4v' ? 'https://open.bigmodel.cn/api/paas/v4/chat/completions' : 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
-      const m = userModel === 'glm-4v' ? 'glm-4v' : 'qwen-vl-max';
-      if (!key) return '请配置对应的视觉模型 API Key';
-      const r = await fetch(endpoint, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({ model: m, messages: [{ role: 'system', content: systemPrompt + ' 如果用户上传了图片，请详细描述图片内容，并基于图片内容回答用户问题，像人类对话一样自然。' }, ...messages.map(msg => ({ role: msg.role, content: msg.content }))], temperature: 0.7, max_tokens: 2000 }),
-      });
-      if (r.ok) { const d = await r.json(); return d.choices?.[0]?.message?.content || ''; }
-      throw new Error('视觉模型调用失败');
+    // 视觉模型路由：统一使用 callVisionModel(内建buildVisionMessages嵌入图片)
+    if (userModel === 'glm-4v' || userModel === 'glm-4v') {
+      try { return await callVisionModel(messages, systemPrompt, 'glm-4v', images); } catch {}
+      try { return await callVisionModel(messages, systemPrompt, 'qwen-vl-max', images); } catch {}
+      return '视觉模型调用失败，请检查 API Key 或网络连接。';
+    }
+    if (userModel === 'qwen-vl-max') {
+      try { return await callVisionModel(messages, systemPrompt, 'qwen-vl-max', images); } catch {}
+      try { return await callVisionModel(messages, systemPrompt, 'glm-4v', images); } catch {}
+      return '视觉模型调用失败，请检查 API Key 或网络连接。';
     }
     // 自动路由
     try { return await callVisionModel(messages, systemPrompt, 'glm-4v', images); } catch {}
