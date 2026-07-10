@@ -113,7 +113,8 @@ export interface GuideWorkItem {
   plannedDate?: string;
   attachments?: { fileName: string; version: string; uploadTime: string; data?: string }[];
   subTasks?: GuideSubTask[];
-  flowImage?: string;  // 流程图base64(data URI)
+  flowImage?: string;
+  guideNotes?: string;  // 办理指南
 }
 
 // 子模块
