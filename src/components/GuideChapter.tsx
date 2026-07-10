@@ -276,29 +276,28 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       let images: string[] = [];
 
       if (isImage) {
-        // 流程图/图片：直接发GLM-4V做视觉理解+拆解
+        // 流程图/图片：GLM-4V视觉理解，图片为主+工作项为上下文
         const base64 = await fileToBase64(decomposeFile!);
-        prompt = `你是工程管理专家。请根据这张流程图/图片的内容，将工作流程拆解为子任务（3-8项）。
-
-要求：
-1. 理解流程图的箭头方向、分支、并行/串行关系
-2. 每项子任务仅包含：子任务名称(name)、预计天数(plannedDuration，数字)、实际天数(actualDuration，默认为0)
-3. 严格按JSON数组输出，不要其他文字
-4. 格式：[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]
-
-工作项：${decomposeTarget.wiName}
-${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
+        prompt = `请仔细分析这张流程图/图片，根据图中的流程步骤拆解为子任务（3-8项）。
+注意：
+1. 以图片内容为主要依据，理解箭头方向、分支、并行/串行关系
+2. 每项子任务仅包含：name(子任务名称)、plannedDuration(预计天数)、actualDuration(实际天数，默认0)
+3. 只输出JSON数组：[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]
+${decomposeDesc.trim() ? `4. 参考说明：${decomposeDesc}` : ''}`;
         images = [base64];
         model = 'glm-4v';
+      } else if (decomposeFileText.trim()) {
+        // 上传了文档：文档内容为主+工作项为上下文
+        prompt = `根据以下文档内容，拆解工作流程为子任务（3-8项）：
+${decomposeFileText.slice(0, 8000)}
+---
+每项子任务只需name(名称)、plannedDuration(预计天数)、actualDuration(实际天数，默认0)。
+只输出JSON数组：[{"name":"任务名","plannedDuration":2,"actualDuration":0}]`;
+        if (decomposeDesc.trim()) prompt = `补充说明：${decomposeDesc}\n\n` + prompt;
       } else {
-        // 文档/文字：用DeepSeek文本模型
-        prompt = `你是工程管理专家。请将以下工作流程拆解为子任务（3-8项），每项仅包含名称(name)、预计天数(plannedDuration)、实际天数(actualDuration=0)。
-严格按JSON数组输出，不要其他文字：
-[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]
-
-工作项：${decomposeTarget.wiName}`;
-        if (decomposeDesc.trim()) prompt += `\n流程描述：${decomposeDesc}`;
-        if (decomposeFileText.trim()) prompt += `\n上传文档内容：${decomposeFileText.slice(0, 8000)}`;
+        // 纯文字描述
+        prompt = `将以下工作流程拆解为子任务（3-8项），直接输出JSON：[{"name":"任务名","plannedDuration":2,"actualDuration":0}]
+流程：${decomposeDesc}`;
       }
 
       const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model, images });
