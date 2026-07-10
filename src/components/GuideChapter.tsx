@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft, ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   CheckSquare, FileText, GitBranch, Plus, Upload,
-  X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Loader, Undo2, Save
+  X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Lightbulb, Loader, Undo2, Save
 } from 'lucide-react';
 import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink, GuideSubTask } from '../types';
 import * as api from '../data/api';
@@ -1134,7 +1134,7 @@ ${decomposeFileText.slice(0, 8000)}
                 </div>
               )}
 
-              <div className="text-sm text-gray-500 leading-relaxed"><Sparkles className="w-4 h-4 inline mr-1" />更新流程图子任务需重新上传文档（包括文档、图片），按子项名称生成子任务需删除对话框内已有图片或对流程进行基本描述（无文档、图片时）。</div>
+              <div className="text-xs text-gray-500 leading-relaxed"><Lightbulb className="w-4 h-4 inline mr-1 text-yellow-500" />更新流程图子任务需重新上传文档（包括文档、图片），按子项名称生成子任务需删除对话框内已有图片或对流程进行基本描述（无文档、图片时）。</div>
             </div>
             <div className="px-5 py-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0 rounded-b-2xl">
               <button onClick={() => setShowAIDecompose(false)} className="px-4 py-2 text-gray-600 bg-white border rounded-lg text-sm">取消</button>
