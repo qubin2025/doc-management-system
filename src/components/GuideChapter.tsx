@@ -168,6 +168,32 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const totalItems = subModules.reduce((s, sm) => s + sm.workItems.length, 0);
   const checkedCount = checkedItems.size;
 
+  // ===== AI生成办理指南 =====
+  const handleAIGuide = async () => {
+    const texts: string[] = [];
+    for (const a of pendingAttachments) {
+      if (a.data && a.data.includes('base64')) {
+        try {
+          const b64 = a.data.split(',')[1] || a.data;
+          const raw = atob(b64);
+          if (raw.length < 50000 && !raw.includes('\0')) texts.push(a.fileName + ': ' + raw.slice(0, 3000));
+        } catch {}
+      }
+    }
+    if (newItemForm.flowImage && newItemForm.flowImage.length > 200) texts.push('流程图内容');
+    const ctx = texts.join('\n\n').slice(0, 6000);
+    if (!ctx && !newItemForm.name) { toast('请先上传附件或填写工作项名称', 'warning'); return; }
+    try {
+      const prompt = `根据以下资料生成办理指南（≤200字），格式：\n一、办理要点：\n二、所需资料：\n三、重点经办人：\n（资料不足处标注"待补充"）\n\n工作项：${newItemForm.name}\n参考资料：${ctx || '无附件，根据工作项名称推断'}`;
+      const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
+      const text = reply.slice(0, 300);
+      setGuideNotesText(text);
+      // 同时更新 newItemForm 以持久化
+      setNewItemForm(p => ({...p, guideNotes: text}));
+      toast(`AI已生成(${text.length}字)`, 'success');
+    } catch (e: any) { toast('生成失败: ' + (e.message||''), 'error'); }
+  };
+
   // ===== 添加/编辑工作项 =====
   const openAddItem = (smId: string) => {
     setEditItemId(null);
@@ -1156,35 +1182,7 @@ ${decomposeFileText.slice(0, 8000)}
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium text-black">办理指南</label>
                   <div className="flex items-center gap-2">
-                    <button onClick={async () => {
-                      // 收集所有附件文本
-                      const texts: string[] = [];
-                      for (const a of pendingAttachments) {
-                        if (a.data && a.data.includes('base64')) {
-                          try {
-                            const b64 = a.data.split(',')[1] || a.data;
-                            const raw = atob(b64);
-                            if (raw.length < 50000 && !raw.includes('\0')) texts.push(a.fileName + ': ' + raw.slice(0, 3000));
-                          } catch {}
-                        }
-                      }
-                      if (newItemForm.flowImage && newItemForm.flowImage.length > 200) texts.push('流程图内容');
-                      const ctx = texts.join('\n\n').slice(0, 6000);
-                      if (!ctx && !newItemForm.name) { toast('请先上传附件或填写工作项名称', 'warning'); return; }
-                      try {
-                        const prompt = `根据以下资料，生成办理指南（≤200字），格式：\n一、办理要点：\n二、所需资料：\n三、重点经办人：\n（资料不足处标注"待补充"）\n\n工作项：${newItemForm.name}\n参考资料：${ctx || '无附件，根据工作项名称推断'}`;
-                        const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
-                        const text = reply.slice(0, 300);
-                        setGuideNotesText(text);
-                        setNewItemForm(p => ({...p, guideNotes: text}));
-                        // React受控组件可能不即时渲染,DOM兜底
-                        setTimeout(() => {
-                          const ta = document.querySelector('#guide-note-area textarea') as HTMLTextAreaElement;
-                          if (ta && !ta.value) { ta.value = text; ta.dispatchEvent(new Event('input',{bubbles:true})); }
-                        }, 100);
-                        toast(`AI已生成(${text.length}字)`, 'success');
-                      } catch { toast('生成失败', 'error'); }
-                    }}
+                    <button onClick={handleAIGuide}
                       className="px-2 py-0.5 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
                       <Sparkles className="w-3 h-3"/>AI分析
                     </button>
