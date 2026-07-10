@@ -1148,7 +1148,57 @@ ${decomposeFileText.slice(0, 8000)}
               </div>
 
               <div id="guide-note-area">
-                <label className="block text-xs font-medium text-black mb-1">办理指南</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-black">办理指南</label>
+                  <div className="flex items-center gap-2">
+                    <button onClick={async () => {
+                      // 收集所有附件文本
+                      const texts: string[] = [];
+                      for (const a of pendingAttachments) {
+                        if (a.data && a.data.includes('base64')) {
+                          try {
+                            const b64 = a.data.split(',')[1] || a.data;
+                            const raw = atob(b64);
+                            if (raw.length < 50000 && !raw.includes('\0')) texts.push(a.fileName + ': ' + raw.slice(0, 3000));
+                          } catch {}
+                        }
+                      }
+                      if (newItemForm.flowImage && newItemForm.flowImage.length > 200) texts.push('流程图内容');
+                      const ctx = texts.join('\n\n').slice(0, 6000);
+                      if (!ctx && !newItemForm.name) { toast('请先上传附件或填写工作项名称', 'warning'); return; }
+                      try {
+                        const prompt = `根据以下资料，生成办理指南（≤200字），格式：\n一、办理要点：\n二、所需资料：\n三、重点经办人：\n（资料不足处标注"待补充"）\n\n工作项：${newItemForm.name}\n参考资料：${ctx || '无附件，根据工作项名称推断'}`;
+                        const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
+                        setNewItemForm(p => ({...p, guideNotes: reply.slice(0, 300)}));
+                        toast('AI已生成办理指南', 'success');
+                      } catch { toast('生成失败', 'error'); }
+                    }}
+                      className="px-2 py-0.5 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3"/>AI分析
+                    </button>
+                    {(newItemForm.guideNotes || '') && (
+                      <button onClick={() => {
+                        const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>办理指南 — ${newItemForm.name||'工作项'}</title>
+<style>body{font-family:"Microsoft YaHei",sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.8;color:#333}
+h1{text-align:center;color:#2563eb;font-size:1.5em}h2{color:#1e40af;border-bottom:2px solid #2563eb;padding-bottom:6px;margin-top:24px}
+.meta{text-align:center;color:#64748b;font-size:.85em;margin-bottom:24px}
+.guide{background:#f8fafc;padding:20px;border-radius:8px;white-space:pre-wrap;line-height:2}
+.files{font-size:.85em;color:#64748b;margin-top:16px}footer{text-align:center;color:#94a3b8;font-size:.8em;margin-top:32px;border-top:1px solid #e2e8f0;padding-top:16px}</style></head><body>
+<h1>办理指南</h1><p class="meta">工作项：${newItemForm.name||'未命名'} | 生成时间：${new Date().toLocaleString('zh-CN')}</p>
+<h2>指南内容</h2><div class="guide">${(newItemForm.guideNotes||'').replace(/\n/g,'<br>')}</div>
+<h2>附件清单</h2><div class="files">${pendingAttachments.map(a=>'· '+a.fileName).join('<br>')||'无'}</div>
+<footer>全过程工程咨询管理服务平台 · 自动生成</footer></body></html>`;
+                        const blob = new Blob(['\uFEFF'+html], {type:'text/html;charset=utf-8'});
+                        const url = URL.createObjectURL(blob);
+                        const el = document.createElement('a'); el.href = url; el.download = `办理指南_${newItemForm.name||'工作项'}.html`; el.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                        className="px-2 py-0.5 text-xs text-blue-600 border border-blue-300 rounded hover:bg-blue-50 flex items-center gap-1" title="下载HTML指南">
+                        <Download className="w-3 h-3"/>下载
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <textarea value={newItemForm.guideNotes || ''} onChange={e => setNewItemForm(p => ({...p, guideNotes: e.target.value}))}
                   placeholder="输入办理要点、注意事项、所需材料清单等..."
                   rows={4} className="w-full px-3 py-2 border border-gray-400 rounded-lg text-xs resize-none outline-none placeholder:text-xs" />
