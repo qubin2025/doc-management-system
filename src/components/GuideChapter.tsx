@@ -9,7 +9,7 @@ import * as api from '../data/api';
 import LogicDiagram from './LogicDiagram';
 import { toast } from './Toast';
 import { parseDocument } from '../data/documentParser';
-import { extractFlowImages, restoreFlowImages } from '../data/imageStore';
+import { saveModules, loadModules } from '../data/imageStore';
 
 interface GuideChapterProps { chapter: GuideChapterType; onBack: () => void; }
 
@@ -32,12 +32,18 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const STORAGE_KEY = `guide-chapter-${initialChapter.id}`;
   const LINKS_KEY = `guide-item-links-${initialChapter.id}`;
 
-  // 子模块
-  const [subModules, setSubModules] = useState<GuideSubModule[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}-modules`);
-    if (saved) { try { return JSON.parse(saved); } catch {} }
-    return JSON.parse(JSON.stringify(initialChapter.subModules));
-  });
+  // 子模块（异步从localStorage+IndexedDB加载）
+  const [subModules, setSubModules] = useState<GuideSubModule[]>(() =>
+    JSON.parse(JSON.stringify(initialChapter.subModules))
+  );
+  const [modulesLoaded, setModulesLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const saved = await loadModules(`${STORAGE_KEY}-modules`);
+      if (saved) setSubModules(saved);
+      setModulesLoaded(true);
+    })();
+  }, []);
 
   // 勾选（选中=蓝色计划，完成=绿色）
   const [checkedItems, setCheckedItems] = useState<Set<string>>(() => {
@@ -114,30 +120,11 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   };
 
   // 持久化
+  // 持久化：优先完整存储，超额时自动将flowImage迁至IndexedDB
   useEffect(() => {
-    (async () => {
-      try {
-        const slim = await extractFlowImages(subModules);
-        localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(slim));
-      } catch {
-        localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(subModules));
-      }
-    })();
-  }, [subModules]);
-
-  // 初始化时从 IndexedDB 恢复 flowImage
-  useEffect(() => {
-    (async () => {
-      try {
-        const stored = localStorage.getItem(`${STORAGE_KEY}-modules`);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const restored = await restoreFlowImages(parsed);
-          setSubModules(restored);
-        }
-      } catch {}
-    })();
-  }, []);
+    if (!modulesLoaded) return;
+    saveModules(subModules, `${STORAGE_KEY}-modules`);
+  }, [subModules, modulesLoaded]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedItems])); }, [checkedItems]);
   useEffect(() => { localStorage.setItem(`${STORAGE_KEY}-done`, JSON.stringify([...completedItems])); }, [completedItems]);
   useEffect(() => { localStorage.setItem(LINKS_KEY, JSON.stringify(links)); }, [links]);
