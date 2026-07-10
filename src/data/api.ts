@@ -175,6 +175,20 @@ async function callVisionModel(messages: { role: string; content: string }[], sy
   return d.choices?.[0]?.message?.content || '';
 }
 
+/** 后端代理视觉模型 — 绕过前端网络限制 */
+export async function visionChat(imageBase64: string, prompt: string, model = 'auto'): Promise<string> {
+  const res = await fetch(`${API_BASE}/ai/vision`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ image: imageBase64, prompt, model }),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error || '视觉模型调用失败');
+  }
+  const d = await res.json();
+  return d.reply || '';
+}
+
 export async function aiChat(
   messages: { role: string; content: string }[],
   context?: string,

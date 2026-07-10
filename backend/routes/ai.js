@@ -106,6 +106,51 @@ router.get('/models', requireAuth, async (req, res) => {
   res.json({ models: available });
 });
 
+// POST /api/ai/vision — 后端代理视觉模型（GLM-4V/千问VL）
+router.post('/vision', requireAuth, requirePermission('can_use_ai'), async (req, res) => {
+  const { image, prompt, model: vModel } = req.body;
+  if (!image || !prompt) return res.status(400).json({ error: '缺少 image 或 prompt' });
+
+  const preferredModel = vModel || 'glm-4v';
+  const candidates = preferredModel === 'auto'
+    ? ['glm-4v', 'qwen-vl-max']
+    : [preferredModel, ...(preferredModel === 'glm-4v' ? ['qwen-vl-max'] : ['glm-4v'])];
+
+  for (const m of candidates) {
+    const key = m === 'glm-4v' ? process.env.ZHIPU_API_KEY : process.env.QWEN_API_KEY;
+    const endpoint = m === 'glm-4v'
+      ? 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+      : 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    const modelId = m === 'glm-4v' ? 'glm-4v' : 'qwen-vl-max';
+    if (!key) continue;
+
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: image } },
+            ],
+          }],
+          max_tokens: 2000,
+        }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (resp.ok) {
+        const d = await resp.json();
+        const reply = d.choices?.[0]?.message?.content || '';
+        if (reply) return res.json({ reply, model: m });
+      }
+    } catch (e) { /* next candidate */ }
+  }
+  res.status(500).json({ error: '视觉模型调用失败，所有可用模型均不可达' });
+});
+
 // POST /api/ai/chat
 router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) => {
   if (!checkRate(req.user?.id)) {

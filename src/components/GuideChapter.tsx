@@ -271,29 +271,28 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     setDecomposing(true);
     try {
       const isImage = decomposeFile?.type?.startsWith('image/');
-      let prompt: string;
+      let reply: string;
 
-      let contentText = decomposeFileText;
-      if (isImage && !contentText) {
-        // 图片：先OCR提取文字
-        try { contentText = await parseDocument(decomposeFile!); setDecomposeFileText(contentText.slice(0, 8000)); } catch {}
-      }
-      // 统一走文本拆解(图片OCR文字/文档原文/手动描述)
-      if (contentText.trim()) {
-        // 上传了文档：文档内容为主+工作项为上下文
-        prompt = `根据以下文档内容，拆解工作流程为子任务（3-8项）：
-${contentText.slice(0, 8000)}
+      // 优先级：图片视觉理解 > 文档文字 > 手动描述
+      if (isImage) {
+        const b64 = await fileToDataUri(decomposeFile!);
+        const aiPrompt = `分析这张流程图，拆解为子任务。理解箭头方向、分支、并行/串行关系。
+每项子任务只需：name(名称)、plannedDuration(预计天数)、actualDuration(默认0)。
+只输出JSON数组：[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]` + (decomposeDesc.trim() ? `\n参考说明：${decomposeDesc}` : '');
+        reply = await api.visionChat(b64, aiPrompt);
+      } else if (decomposeFileText.trim()) {
+        const aiPrompt = (decomposeDesc.trim() ? `补充说明：${decomposeDesc}\n\n` : '')
+          + `根据以下文档内容拆解工作流程为子任务（3-8项）：
+${decomposeFileText.slice(0, 8000)}
 ---
-每项子任务只需name(名称)、plannedDuration(预计天数)、actualDuration(实际天数，默认0)。
+每项子任务只需name、plannedDuration、actualDuration。
 只输出JSON数组：[{"name":"任务名","plannedDuration":2,"actualDuration":0}]`;
-        if (decomposeDesc.trim()) prompt = `补充说明：${decomposeDesc}\n\n` + prompt;
+        reply = await api.aiChat([{ role: 'user', content: aiPrompt }], '', { model: 'auto' });
       } else {
-        // 纯文字描述
-        prompt = `将以下工作流程拆解为子任务（3-8项），直接输出JSON：[{"name":"任务名","plannedDuration":2,"actualDuration":0}]
+        const aiPrompt = `将以下工作流程拆解为子任务（3-8项），直接输出JSON：[{"name":"任务名","plannedDuration":2,"actualDuration":0}]
 流程：${decomposeDesc}`;
+        reply = await api.aiChat([{ role: 'user', content: aiPrompt }], '', { model: 'auto' });
       }
-
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model: 'auto' });
       // 提取JSON数组(处理markdown包裹+额外文本)
       let json = reply.replace(/```json\n?|\n?```/g, '').trim();
       const arrStart = json.indexOf('[');
@@ -340,6 +339,14 @@ ${contentText.slice(0, 8000)}
     } catch (e: any) { toast('AI拆解失败: ' + (e.message || '请重试'), 'error'); }
     finally { setDecomposing(false); setShowAIDecompose(false); setDecomposeDesc(''); setDecomposeFile(null); setDecomposeFileText(''); }
   };
+
+  // 文件转Data URI
+  const fileToDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   // 上传AI拆解文件
   const handleDecomposeFile = async (f: File) => {
