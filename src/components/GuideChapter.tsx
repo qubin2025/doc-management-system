@@ -1177,10 +1177,12 @@ ${decomposeFileText.slice(0, 8000)}
                         const text = reply.slice(0, 300);
                         setGuideNotesText(text);
                         setNewItemForm(p => ({...p, guideNotes: text}));
-                        // DOM直写确保显示
-                        const ta = document.querySelector('#guide-note-area textarea') as HTMLTextAreaElement;
-                        if (ta) { ta.value = text; ta.dispatchEvent(new Event('input', {bubbles:true})); }
-                        toast('AI已生成办理指南', 'success');
+                        // React受控组件可能不即时渲染,DOM兜底
+                        setTimeout(() => {
+                          const ta = document.querySelector('#guide-note-area textarea') as HTMLTextAreaElement;
+                          if (ta && !ta.value) { ta.value = text; ta.dispatchEvent(new Event('input',{bubbles:true})); }
+                        }, 100);
+                        toast(`AI已生成(${text.length}字)`, 'success');
                       } catch { toast('生成失败', 'error'); }
                     }}
                       className="px-2 py-0.5 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
