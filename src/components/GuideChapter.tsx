@@ -815,20 +815,25 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                 )}
               </div>
 
-              {/* 子任务编辑区(表格形式,支持增删+重新拆解) */}
-              {newItemForm.subTasks && newItemForm.subTasks.length > 0 && (
-                <div className="border border-gray-400 rounded-lg">
-                  <div className="flex items-center justify-between px-3 py-2 bg-gray-100 rounded-t-lg border-b border-gray-400">
-                    <span className="text-sm font-medium text-black">子任务 (AI拆解)</span>
-                    <button onClick={() => {
-                      setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName: newItemForm.name || '工作项' });
-                      setDecomposeDesc(`请对"${newItemForm.name || '当前工作项'}"重新拆解子任务`);
-                      setShowAIDecompose(true);
-                    }}
-                      className="px-3 py-1 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3"/>AI重新拆解
-                    </button>
-                  </div>
+              {/* 子任务编辑区(始终显示,支持增删+重新拆解) */}
+              <div className="border border-gray-400 rounded-lg">
+                <div className="flex items-center justify-between px-3 py-2 bg-gray-100 rounded-t-lg border-b border-gray-400">
+                  <span className="text-sm font-medium text-black">子任务 (AI拆解)
+                    {(newItemForm.subTasks && newItemForm.subTasks.length > 0) &&
+                      <span className="text-xs text-gray-500 ml-1">({newItemForm.subTasks.length}项)</span>
+                    }
+                  </span>
+                  <button onClick={() => {
+                    setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName: newItemForm.name || '工作项' });
+                    setDecomposeDesc(`请对"${newItemForm.name || '当前工作项'}"重新拆解子任务`);
+                    setShowAIDecompose(true);
+                  }}
+                    className="px-3 py-1 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3"/>AI拆解
+                  </button>
+                </div>
+                {(newItemForm.subTasks && newItemForm.subTasks.length > 0) ? (
+                  <>
                   <div className="max-h-56 overflow-y-auto">
                     <table className="w-full text-xs text-black">
                       <thead>
@@ -869,8 +874,8 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                       <tfoot>
                         <tr className="border-t-2 border-gray-400 bg-gray-50 font-bold">
                           <td colSpan={2} className="px-2 py-1.5 text-right text-xs">合计</td>
-                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s,t) => s + (t.plannedDuration||0), 0)} 天</td>
-                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s,t) => s + (t.actualDuration||0), 0)} 天</td>
+                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s:any,t:any) => s + (t.plannedDuration||0), 0)} 天</td>
+                          <td className="px-2 py-1.5 text-center text-xs">{newItemForm.subTasks.reduce((s:any,t:any) => s + (t.actualDuration||0), 0)} 天</td>
                           <td></td>
                         </tr>
                       </tfoot>
@@ -883,8 +888,13 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                     }}
                       className="text-xs text-blue-600 hover:text-blue-800">+ 添加子任务</button>
                   </div>
-                </div>
-              )}
+                  </>
+                ) : (
+                  <div className="px-4 py-6 text-center text-xs text-gray-400">
+                    点击右上角 [AI拆解] 按钮，通过文字描述或上传文件自动拆解子任务
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-black mb-1">预计时长</label>
