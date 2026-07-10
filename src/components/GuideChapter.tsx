@@ -822,8 +822,7 @@ ${decomposeDesc.trim() ? `补充说明：${decomposeDesc}` : ''}`;
                     <span className="text-sm font-medium text-black">子任务 (AI拆解)</span>
                     <button onClick={() => {
                       setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName: newItemForm.name || '工作项' });
-                      setDecomposeDesc('');
-                      setDecomposeFile(null); setDecomposeFileText('');
+                      setDecomposeDesc(`请对"${newItemForm.name || '当前工作项'}"重新拆解子任务`);
                       setShowAIDecompose(true);
                     }}
                       className="px-3 py-1 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
