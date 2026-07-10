@@ -1029,6 +1029,17 @@ ${decomposeFileText.slice(0, 8000)}
                         <Paperclip className="w-3 h-3" /> {a.fileName}
                         <span className="text-xs text-gray-400">(已保存)</span>
                         <div className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => {
+                            const sm = subModules.find(s => s.id === addItemTargetSmId);
+                            const wi = sm?.workItems.find(w => w.id === editItemId);
+                            const att = wi?.attachments?.[i];
+                            if (att?.data) {
+                              const blob = new Blob([Uint8Array.from(atob(att.data.split(',')[1]||att.data), c=>c.charCodeAt(0))], {type:'application/octet-stream'});
+                              const url = URL.createObjectURL(blob);
+                              const el = document.createElement('a'); el.href = url; el.download = att.fileName; el.click();
+                              URL.revokeObjectURL(url);
+                            } else { toast('文件数据不可用', 'warning'); }
+                          }} className="p-0.5 text-blue-600 hover:text-blue-800 rounded" title="下载"><Download className="w-3 h-3"/></button>
                           <label className="p-0.5 text-green-600 hover:text-green-800 rounded cursor-pointer" title="替换">
                             <Edit3 className="w-3 h-3"/>
                             <input type="file" className="hidden" onChange={e => {
@@ -1142,9 +1153,10 @@ ${decomposeFileText.slice(0, 8000)}
                 <label className="block text-xs font-medium text-black mb-1">办理指南</label>
                 <textarea value={newItemForm.guideNotes || ''} onChange={e => setNewItemForm(p => ({...p, guideNotes: e.target.value}))}
                   placeholder="输入办理要点、注意事项、所需材料清单等..."
-                  rows={4} className="w-full border border-gray-400 rounded-lg p-3 text-xs resize-none outline-none placeholder:text-xs" />
+                  rows={4} className="w-full px-3 py-2 border border-gray-400 rounded-lg text-xs resize-none outline-none placeholder:text-xs" />
               </div>
-
+            </div>
+            <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
               <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-black bg-white border border-gray-400 rounded-lg hover:bg-gray-50">取消</button>
               <button onClick={handleAddWorkItem} disabled={!newItemForm.name.trim()}
                 className={`px-4 py-2 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-1.5 ${colors.bg} ${colors.hover}`}>
