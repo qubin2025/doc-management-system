@@ -1134,11 +1134,13 @@ ${decomposeFileText.slice(0, 8000)}
           <div className="flex items-center justify-between px-4 py-2 bg-gray-900 text-white shrink-0">
             <span className="text-sm">流程图编辑器 — 修改后截图保存到流程图区</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">修改完成后请截图上传</span>
-              <button onClick={() => setShowDrawioEditor(false)} className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">关闭编辑器</button>
+              <button onClick={() => window.open('https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json', '_blank')}
+                className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">新窗口打开</button>
+              <button onClick={() => setShowDrawioEditor(false)} className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">关闭</button>
             </div>
           </div>
-          <iframe src="/drawio/index.html" className="flex-1 border-0" title="流程图编辑器" />
+          <iframe src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&modified=unsavedChanges&proto=json"
+            className="flex-1 border-0 bg-white" title="流程图编辑器" />
         </div>
       )}
 
