@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft, ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   CheckSquare, FileText, GitBranch, Plus, Upload,
-  X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Lightbulb, Loader, Undo2, Save
+  X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Lightbulb, Loader, Undo2, Save, Download
 } from 'lucide-react';
 import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink, GuideSubTask } from '../types';
 import * as api from '../data/api';
@@ -1018,8 +1018,11 @@ ${decomposeFileText.slice(0, 8000)}
                   <div className="space-y-1 mb-2">
                     <p className="text-xs text-black mb-1">已有附件：</p>
                     {pendingAttachments.filter(a => !a.data).map((a, i) => (
-                      <div key={`old-${i}`} className="flex items-center gap-2 text-xs text-black bg-gray-50 rounded px-2 py-1">
+                      <div key={`old-${i}`} className="flex items-center gap-2 text-xs text-black bg-gray-50 rounded px-2 py-1 group">
                         <Paperclip className="w-3 h-3" /> {a.fileName}
+                        <div className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleDeleteAttachment(addItemTargetSmId, editItemId!, i)} className="p-0.5 text-red-600 hover:text-red-800 rounded" title="删除"><Trash2 className="w-3 h-3"/></button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1033,10 +1036,26 @@ ${decomposeFileText.slice(0, 8000)}
                         <div key={`new-${idx}`} className="flex items-center gap-2 text-xs text-black bg-blue-50 rounded px-2 py-1 group">
                           <Paperclip className="w-3 h-3 text-blue-600" /> {a.fileName}
                           <span className="text-xs text-black">({(a.size / 1024).toFixed(0)}KB)</span>
-                          <button onClick={() => handleRemovePendingAttachment(idx)}
-                            className="ml-auto opacity-0 group-hover:opacity-100 p-0.5 text-red-600 hover:text-red-800 rounded transition-opacity">
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          <div className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => {
+                              const blob = new Blob([Uint8Array.from(atob(a.data.split(',')[1]||a.data), c=>c.charCodeAt(0))], {type:'application/octet-stream'});
+                              const url = URL.createObjectURL(blob);
+                              const el = document.createElement('a'); el.href = url; el.download = a.fileName; el.click();
+                              URL.revokeObjectURL(url);
+                            }} className="p-0.5 text-blue-600 hover:text-blue-800 rounded" title="下载"><Download className="w-3 h-3"/></button>
+                            <label className="p-0.5 text-green-600 hover:text-green-800 rounded cursor-pointer" title="替换">
+                              <Edit3 className="w-3 h-3"/>
+                              <input type="file" className="hidden" onChange={e => {
+                                const f = e.target.files?.[0];
+                                if (f) {
+                                  const r = new FileReader();
+                                  r.onload = () => { pendingAttachments[idx] = { fileName: f.name, data: r.result as string, size: f.size }; setPendingAttachments([...pendingAttachments]); };
+                                  r.readAsDataURL(f);
+                                }
+                              }} />
+                            </label>
+                            <button onClick={() => handleRemovePendingAttachment(idx)} className="p-0.5 text-red-600 hover:text-red-800 rounded" title="删除"><Trash2 className="w-3 h-3"/></button>
+                          </div>
                         </div>
                       );
                     })}
