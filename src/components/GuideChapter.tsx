@@ -1191,10 +1191,29 @@ ${decomposeFileText.slice(0, 8000)}
               <div id="guide-note-area">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium text-black">提示词框架</label>
-                  <button onClick={() => {
-                    localStorage.setItem('guide-ai-prompt', guidePrompt);
-                    toast('提示词已保存', 'success');
-                  }} className="text-xs text-gray-400 hover:text-blue-500">保存</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={async () => {
+                      const info = [
+                        '工作项：' + (newItemForm.name || '未命名'),
+                        '所属子模块：' + (subModules.find(s=>s.id===addItemTargetSmId)?.name || ''),
+                        '附件：' + (pendingAttachments.map(a=>a.fileName).join(', ') || '无'),
+                        '子任务：' + ((newItemForm.subTasks||[]).map(s=>s.name).join(', ') || '无'),
+                        '流程图：' + (newItemForm.flowImage ? '已上传' : '无'),
+                      ].join('\n');
+                      try {
+                        const reply = await api.aiChat([{role:'user',content:'请根据以下工作项信息，编写一个AI提示词模板，用于生成该工作的办理指南。模板使用{name}和{context}作为占位符。只输出提示词模板，不要其他文字。\n\n' + info}],'',{model:'auto'});
+                        setGuidePrompt(reply.slice(0, 500));
+                        toast('AI已生成提示词', 'success');
+                      } catch { toast('生成失败', 'error'); }
+                    }}
+                      className="text-xs text-purple-500 hover:text-purple-700 flex items-center gap-0.5">
+                      <Sparkles className="w-3 h-3"/>AI生成
+                    </button>
+                    <button onClick={() => {
+                      localStorage.setItem('guide-ai-prompt', guidePrompt);
+                      toast('提示词已保存', 'success');
+                    }} className="text-xs text-gray-400 hover:text-blue-500">保存</button>
+                  </div>
                 </div>
                 <textarea value={guidePrompt} onChange={e => setGuidePrompt(e.target.value)}
                   rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs resize-none outline-none placeholder:text-xs font-mono mb-3" />
