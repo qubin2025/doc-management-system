@@ -168,7 +168,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const checkedCount = checkedItems.size;
 
   // ===== AI生成办理指南 =====
-  const DEFAULT_GUIDE_PROMPT = `根据以下资料生成办理指南（≤200字），格式：
+  const DEFAULT_GUIDE_PROMPT = `根据以下资料生成办理指南，格式：
 一、办理要点：
 二、所需资料：
 三、重点经办人：
@@ -200,9 +200,8 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
         .replace('{name}', newItemForm.name)
         .replace('{context}', ctx || '无附件，根据工作项名称推断');
       const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
-      const text = reply.slice(0, 300);
-      setNewItemForm(p => ({...p, guideNotes: text}));
-      toast(`AI已生成(${text.length}字)`, 'success');
+      setNewItemForm(p => ({...p, guideNotes: reply}));
+      toast(`AI已生成(${reply.length}字)`, 'success');
     } catch (e: any) { toast('生成失败: ' + (e.message||''), 'error'); }
   };
 
