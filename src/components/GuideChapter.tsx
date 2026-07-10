@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft, ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   CheckSquare, FileText, GitBranch, Plus, Upload,
@@ -95,6 +95,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[], subTasks: [] as GuideSubTask[], flowImage: '' as string, guideNotes: '' as string });
   const [guideNotesText, setGuideNotesText] = useState('');
+  const guideTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 附件上传状态
   const [pendingAttachments, setPendingAttachments] = useState<{ fileName: string; data: string; size: number }[]>([]);
@@ -188,8 +189,9 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
       const text = reply.slice(0, 300);
       setGuideNotesText(text);
-      // 同时更新 newItemForm 以持久化
       setNewItemForm(p => ({...p, guideNotes: text}));
+      // 直接写入DOM确保显示
+      if (guideTextareaRef.current) guideTextareaRef.current.value = text;
       toast(`AI已生成(${text.length}字)`, 'success');
     } catch (e: any) { toast('生成失败: ' + (e.message||''), 'error'); }
   };
@@ -1209,7 +1211,7 @@ h1{text-align:center;color:#2563eb;font-size:1.5em}h2{color:#1e40af;border-botto
                     )}
                   </div>
                 </div>
-                <textarea value={guideNotesText} onChange={e => { setGuideNotesText(e.target.value); setNewItemForm(p => ({...p, guideNotes: e.target.value})); }}
+                <textarea ref={guideTextareaRef} value={guideNotesText} onChange={e => { setGuideNotesText(e.target.value); setNewItemForm(p => ({...p, guideNotes: e.target.value})); }}
                   placeholder="输入办理要点、注意事项、所需材料清单等..."
                   rows={4} className="w-full px-3 py-2 border border-gray-400 rounded-lg text-xs resize-none outline-none placeholder:text-xs" />
               </div>
