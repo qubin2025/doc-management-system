@@ -806,7 +806,7 @@ ${decomposeFileText.slice(0, 8000)}
             <div className="flex items-center justify-between p-4 border-b shrink-0">
               <div>
                 <h3 className="text-lg font-semibold">{editItemId ? '修改工作项' : '添加工作项'}</h3>
-                <p className="text-sm text-gray-500 mt-0.5">子模块：{subModules.find(s => s.id === addItemTargetSmId)?.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">子模块：{subModules.find(s => s.id === addItemTargetSmId)?.name}</p>
               </div>
               <button onClick={() => setShowAddItemModal(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
             </div>
@@ -819,7 +819,7 @@ ${decomposeFileText.slice(0, 8000)}
 
               {/* 流程图上传+显示 */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1">流程图</label>
+                <label className="block text-xs font-medium text-black mb-1">流程图</label>
                 <div className="border-2 border-dashed border-gray-400 rounded-lg bg-gray-100 flex items-center justify-center relative" style={{minHeight:'160px'}}>
                   {newItemForm.flowImage ? (
                     <div className="relative w-full flex items-center justify-center">
@@ -865,7 +865,7 @@ ${decomposeFileText.slice(0, 8000)}
               {/* 子任务编辑区(始终显示,支持增删+重新拆解) */}
               <div className="border border-gray-400 rounded-lg">
                 <div className="flex items-center justify-between px-3 py-2 bg-gray-100 rounded-t-lg border-b border-gray-400">
-                  <span className="text-sm font-medium text-black">子任务 (AI拆解)
+                  <span className="text-xs font-medium text-black">子任务 (AI拆解)
                     {(newItemForm.subTasks && newItemForm.subTasks.length > 0) &&
                       <span className="text-xs text-gray-500 ml-1">({newItemForm.subTasks.length}项)</span>
                     }
@@ -980,7 +980,7 @@ ${decomposeFileText.slice(0, 8000)}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-black mb-1">参考官方网站</label>
+                <label className="block text-xs font-medium text-black mb-1">参考官方网站</label>
                 <div className="flex items-center gap-2">
                   <input type="url" value={newItemForm.duration} onChange={e => setNewItemForm(p => ({ ...p, duration: e.target.value }))}
                     placeholder="https://... 北京市官方办理网址" className="flex-1 px-3 py-2 border border-gray-400 rounded-lg placeholder:text-xs" />
@@ -1007,7 +1007,7 @@ ${decomposeFileText.slice(0, 8000)}
               {/* 附件上传 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-black">附件上传</label>
+                  <label className="text-xs font-medium text-black">附件上传</label>
                   <label className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer transition-colors">
                     <Upload className="w-3.5 h-3.5" /> 选择文件
                     <input type="file" className="hidden" multiple onChange={handleFileSelect}
@@ -1051,13 +1051,13 @@ ${decomposeFileText.slice(0, 8000)}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-black mb-1">上传人</label>
-                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-sm text-black">
+                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-xs text-black">
                     {(() => { try { return JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.user?.username || '未登录'; } catch { return '未登录'; } })()}
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-black mb-1">上传日期</label>
-                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-sm text-black">
+                  <div className="w-full px-3 py-2 bg-gray-50 border border-gray-400 rounded-lg text-xs text-black">
                     {new Date().toLocaleDateString('zh-CN')}
                   </div>
                 </div>
@@ -1070,7 +1070,7 @@ ${decomposeFileText.slice(0, 8000)}
                     <div key={sm.id} className="mb-1">
                       <p className="text-xs font-semibold text-black px-1">{sm.id}. {sm.name}</p>
                       {sm.workItems.map(wi => (
-                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm text-black">
+                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-xs text-black">
                           <input type="checkbox" checked={newItemForm.predecessors.includes(wi.id)}
                             onChange={e => setNewItemForm(p => ({ ...p, predecessors: e.target.checked ? [...p.predecessors, wi.id] : p.predecessors.filter(id => id !== wi.id) }))} className="rounded" />
                           {wi.id} {wi.name}
@@ -1087,7 +1087,7 @@ ${decomposeFileText.slice(0, 8000)}
                     <div key={sm.id} className="mb-1">
                       <p className="text-xs font-semibold text-black px-1">{sm.id}. {sm.name}</p>
                       {sm.workItems.map(wi => (
-                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-sm text-black">
+                        <label key={wi.id} className="flex items-center gap-2 p-1 pl-4 rounded hover:bg-gray-50 cursor-pointer text-xs text-black">
                           <input type="checkbox" checked={newItemForm.successors.includes(wi.id)}
                             onChange={e => setNewItemForm(p => ({ ...p, successors: e.target.checked ? [...p.successors, wi.id] : p.successors.filter(id => id !== wi.id) }))} className="rounded" />
                           {wi.id} {wi.name}
@@ -1116,7 +1116,7 @@ ${decomposeFileText.slice(0, 8000)}
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="px-5 py-4 border-b flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-base font-bold text-gray-800 flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-500"/>AI拆解工作流程</h3>
+                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-500"/>AI拆解工作流程</h3>
                 <p className="text-xs text-gray-500 mt-0.5">工作项：{decomposeTarget.wiName}</p>
               </div>
               <button onClick={() => setShowAIDecompose(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
