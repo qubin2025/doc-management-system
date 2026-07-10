@@ -9,6 +9,7 @@ import * as api from '../data/api';
 import LogicDiagram from './LogicDiagram';
 import { toast } from './Toast';
 import { parseDocument } from '../data/documentParser';
+import { extractFlowImages, restoreFlowImages } from '../data/imageStore';
 
 interface GuideChapterProps { chapter: GuideChapterType; onBack: () => void; }
 
@@ -114,18 +115,29 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
 
   // 持久化
   useEffect(() => {
-    try {
-      localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(subModules));
-    } catch (e) {
-      // localStorage 配额不足：裁剪 flowImage 后重试
-      const slim = subModules.map(s => ({
-        ...s,
-        workItems: s.workItems.map(wi => wi.flowImage && wi.flowImage.length > 50000
-          ? { ...wi, flowImage: wi.flowImage.slice(0, 100) + '...(已裁剪)' } : wi)
-      }));
-      try { localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(slim)); } catch {}
-    }
+    (async () => {
+      try {
+        const slim = await extractFlowImages(subModules);
+        localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(slim));
+      } catch {
+        localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(subModules));
+      }
+    })();
   }, [subModules]);
+
+  // 初始化时从 IndexedDB 恢复 flowImage
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = localStorage.getItem(`${STORAGE_KEY}-modules`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const restored = await restoreFlowImages(parsed);
+          setSubModules(restored);
+        }
+      } catch {}
+    })();
+  }, []);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedItems])); }, [checkedItems]);
   useEffect(() => { localStorage.setItem(`${STORAGE_KEY}-done`, JSON.stringify([...completedItems])); }, [completedItems]);
   useEffect(() => { localStorage.setItem(LINKS_KEY, JSON.stringify(links)); }, [links]);
