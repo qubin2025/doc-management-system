@@ -980,9 +980,28 @@ ${decomposeFileText.slice(0, 8000)}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-black mb-1">预计时长</label>
-                <input type="text" value={newItemForm.duration} onChange={e => setNewItemForm(p => ({ ...p, duration: e.target.value }))}
-                  placeholder="如 3天 / 1周 / 2个月" className="w-full px-3 py-2 border border-gray-400 rounded-lg" />
+                <label className="block text-sm font-medium text-black mb-1">参考官方网站</label>
+                <div className="flex items-center gap-2">
+                  <input type="url" value={newItemForm.duration} onChange={e => setNewItemForm(p => ({ ...p, duration: e.target.value }))}
+                    placeholder="https://... 北京市官方办理网址" className="flex-1 px-3 py-2 border border-gray-400 rounded-lg" />
+                  <button onClick={async () => {
+                    const q = (newItemForm.name || '工程建设项目') + ' 北京 官方办理 手续';
+                    try {
+                      const reply = await api.aiChat([{role:'user',content:`搜索"${q}"的北京市官方政府网站办理链接。只返回1-2个最相关的完整URL，每行一个，不要其他文字。`}],'');
+                      const urls = reply.split('\n').filter(l=>l.startsWith('http'));
+                      if (urls.length > 0) setNewItemForm(p=>({...p,duration:urls[0].trim()}));
+                      else toast('未找到相关链接，请手动输入','warning');
+                    } catch { toast('搜索失败，请手动输入链接','error'); }
+                  }}
+                    className="px-3 py-2 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-1 shrink-0"
+                    title="AI搜索北京官方办理网站">
+                    <Sparkles className="w-3.5 h-3.5"/>AI搜索
+                  </button>
+                </div>
+                {newItemForm.duration && newItemForm.duration.startsWith('http') && (
+                  <a href={newItemForm.duration} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-blue-500 hover:underline mt-1 inline-block">🔗 打开链接</a>
+                )}
               </div>
 
               {/* 附件上传 */}
