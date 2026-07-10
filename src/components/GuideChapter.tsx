@@ -97,7 +97,6 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [decomposeFileText, setDecomposeFileText] = useState('');
   const [decomposing, setDecomposing] = useState(false);
   const [showFlowZoom, setShowFlowZoom] = useState(false);
-  const [showDrawioEditor, setShowDrawioEditor] = useState(false);
 
   // 表单编辑弹窗
   const [formEditModal, setFormEditModal] = useState<{ code: string; name: string } | null>(null);
@@ -835,10 +834,17 @@ ${decomposeFileText.slice(0, 8000)}
                 </div>
                 {newItemForm.flowImage && (
                   <div className="flex items-center gap-3 mt-1">
-                    <button onClick={() => setShowDrawioEditor(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                      <Edit3 className="w-3 h-3"/>编辑流程图
-                    </button>
+                    <label className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+                      <Edit3 className="w-3 h-3"/>替换流程图
+                      <input type="file" className="hidden" accept=".png,.jpg,.jpeg" onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          const r = new FileReader();
+                          r.onload = () => setNewItemForm(p => ({ ...p, flowImage: r.result as string }));
+                          r.readAsDataURL(f);
+                        }
+                      }} />
+                    </label>
                     <button onClick={() => setNewItemForm(p => ({ ...p, flowImage: '' }))}
                       className="text-xs text-red-600 hover:text-red-800">移除</button>
                   </div>
@@ -1125,21 +1131,6 @@ ${decomposeFileText.slice(0, 8000)}
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* draw.io流程图编辑器 — 通过Vite代理加载 */}
-      {showDrawioEditor && (
-        <div className="fixed inset-0 bg-black/70 z-[70] flex flex-col">
-          <div className="flex items-center justify-between px-4 py-2 bg-gray-900 text-white shrink-0">
-            <span className="text-sm">draw.io 流程图编辑器（通过本地代理）</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">修改后导出PNG→上传替换</span>
-              <button onClick={() => setShowDrawioEditor(false)} className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">关闭</button>
-            </div>
-          </div>
-          <iframe src="/drawio-proxy/?embed=1&proto=json&lang=zh&ui=atlas&spin=1"
-            className="flex-1 border-0 bg-white" title="流程图编辑器" />
         </div>
       )}
 
