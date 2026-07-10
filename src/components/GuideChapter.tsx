@@ -257,6 +257,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
           attachments: mergedAttachments,
           subTasks: newItemForm.subTasks,
           flowImage: newItemForm.flowImage || undefined,
+          guideNotes: newItemForm.guideNotes as any,
         } : wi)
       } : s));
       // 重建链接
@@ -270,6 +271,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
         attachments: mergedAttachments,
         subTasks: newItemForm.subTasks,
         flowImage: newItemForm.flowImage || undefined,
+        guideNotes: newItemForm.guideNotes as any,
       };
       setSubModules(prev => prev.map(s => s.id === addItemTargetSmId ? { ...s, workItems: [...s.workItems, newItem] } : s));
       if (newLinks.length > 0) setLinks(prev => [...prev, ...newLinks]);
