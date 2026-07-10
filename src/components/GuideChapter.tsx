@@ -272,24 +272,17 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     try {
       const isImage = decomposeFile?.type?.startsWith('image/');
       let prompt: string;
-      let model = 'auto';
-      let images: string[] = [];
 
-      if (isImage) {
-        // 流程图/图片：GLM-4V视觉理解，图片为主+工作项为上下文
-        const base64 = await fileToBase64(decomposeFile!);
-        prompt = `请仔细分析这张流程图/图片，根据图中的流程步骤拆解为子任务（3-8项）。
-注意：
-1. 以图片内容为主要依据，理解箭头方向、分支、并行/串行关系
-2. 每项子任务仅包含：name(子任务名称)、plannedDuration(预计天数)、actualDuration(实际天数，默认0)
-3. 只输出JSON数组：[{"name":"子任务名","plannedDuration":2,"actualDuration":0}]
-${decomposeDesc.trim() ? `4. 参考说明：${decomposeDesc}` : ''}`;
-        images = [base64];
-        model = 'glm-4v';
-      } else if (decomposeFileText.trim()) {
+      let contentText = decomposeFileText;
+      if (isImage && !contentText) {
+        // 图片：先OCR提取文字
+        try { contentText = await parseDocument(decomposeFile!); setDecomposeFileText(contentText.slice(0, 8000)); } catch {}
+      }
+      // 统一走文本拆解(图片OCR文字/文档原文/手动描述)
+      if (contentText.trim()) {
         // 上传了文档：文档内容为主+工作项为上下文
         prompt = `根据以下文档内容，拆解工作流程为子任务（3-8项）：
-${decomposeFileText.slice(0, 8000)}
+${contentText.slice(0, 8000)}
 ---
 每项子任务只需name(名称)、plannedDuration(预计天数)、actualDuration(实际天数，默认0)。
 只输出JSON数组：[{"name":"任务名","plannedDuration":2,"actualDuration":0}]`;
@@ -300,7 +293,7 @@ ${decomposeFileText.slice(0, 8000)}
 流程：${decomposeDesc}`;
       }
 
-      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model, images });
+      const reply = await api.aiChat([{ role: 'user', content: prompt }], '', { model: 'auto' });
       // 提取JSON数组(处理markdown包裹+额外文本)
       let json = reply.replace(/```json\n?|\n?```/g, '').trim();
       const arrStart = json.indexOf('[');
@@ -349,11 +342,6 @@ ${decomposeFileText.slice(0, 8000)}
   };
 
   // 文件转base64 Data URI (GLM-4V需要完整URI)
-  const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
   });
 
   // 上传AI拆解文件
