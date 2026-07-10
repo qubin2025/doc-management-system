@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft, ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   CheckSquare, FileText, GitBranch, Plus, Upload,
-  X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Lightbulb, Loader, Undo2, Save, Download
+  X, Clock, Paperclip, ListChecks, Edit3, Trash2, ZoomIn, ZoomOut, Maximize2, Sparkles, Lightbulb, Loader, Undo2, Save, Download, BookOpen
 } from 'lucide-react';
 import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink, GuideSubTask } from '../types';
 import * as api from '../data/api';
@@ -93,7 +93,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [addItemTargetSmId, setAddItemTargetSmId] = useState('');
   const [editItemId, setEditItemId] = useState<string | null>(null);
-  const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[], subTasks: [] as GuideSubTask[], flowImage: '' as string });
+  const [newItemForm, setNewItemForm] = useState({ name: '', duration: '', attachmentFormat: '', predecessors: [] as string[], successors: [] as string[], subTasks: [] as GuideSubTask[], flowImage: '' as string, guideNotes: '' as string });
 
   // 附件上传状态
   const [pendingAttachments, setPendingAttachments] = useState<{ fileName: string; data: string; size: number }[]>([]);
@@ -171,7 +171,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const openAddItem = (smId: string) => {
     setEditItemId(null);
     setAddItemTargetSmId(smId);
-    setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [], subTasks: [], flowImage: '' });
+    setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [], subTasks: [], flowImage: '', guideNotes: '' });
     setPendingAttachments([]);
     setShowAddItemModal(true);
   };
@@ -185,7 +185,8 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       name: wi.name, duration: wi.duration || '', attachmentFormat: wi.attachmentFormat || '',
       predecessors: preds, successors: succs,
       subTasks: wi.subTasks || [],
-      flowImage: wi.flowImage || ''
+      flowImage: wi.flowImage || '',
+      guideNotes: (wi as any).guideNotes || ''
     });
     // 加载已有附件（显示信息，不含 base64 数据）
     setPendingAttachments((wi.attachments || []).map(a => ({ fileName: a.fileName, data: '', size: 0 })));
@@ -808,7 +809,13 @@ ${decomposeFileText.slice(0, 8000)}
                 <h3 className="text-lg font-semibold">{editItemId ? '修改工作项' : '添加工作项'}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">子模块：{subModules.find(s => s.id === addItemTargetSmId)?.name}</p>
               </div>
-              <button onClick={() => setShowAddItemModal(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => document.getElementById('guide-note-area')?.scrollIntoView({behavior:'smooth'})}
+                  className="px-3 py-1.5 text-xs text-indigo-600 border border-indigo-300 rounded-lg hover:bg-indigo-50 flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5"/>工作指南
+                </button>
+                <button onClick={() => setShowAddItemModal(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+              </div>
             </div>
             <div className="p-4 space-y-4 overflow-y-auto flex-1 text-black">
               <div>
@@ -1020,7 +1027,19 @@ ${decomposeFileText.slice(0, 8000)}
                     {pendingAttachments.filter(a => !a.data).map((a, i) => (
                       <div key={`old-${i}`} className="flex items-center gap-2 text-xs text-black bg-gray-50 rounded px-2 py-1 group">
                         <Paperclip className="w-3 h-3" /> {a.fileName}
+                        <span className="text-xs text-gray-400">(已保存)</span>
                         <div className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <label className="p-0.5 text-green-600 hover:text-green-800 rounded cursor-pointer" title="替换">
+                            <Edit3 className="w-3 h-3"/>
+                            <input type="file" className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                const r = new FileReader();
+                                r.onload = () => { pendingAttachments[i] = { fileName: f.name, data: r.result as string, size: f.size }; setPendingAttachments([...pendingAttachments]); };
+                                r.readAsDataURL(f);
+                              }
+                            }} />
+                          </label>
                           <button onClick={() => handleDeleteAttachment(addItemTargetSmId, editItemId!, i)} className="p-0.5 text-red-600 hover:text-red-800 rounded" title="删除"><Trash2 className="w-3 h-3"/></button>
                         </div>
                       </div>
@@ -1119,6 +1138,13 @@ ${decomposeFileText.slice(0, 8000)}
 
             </div>
             <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
+              <div id="guide-note-area">
+                <label className="block text-xs font-medium text-black mb-1">办理指南</label>
+                <textarea value={newItemForm.guideNotes || ''} onChange={e => setNewItemForm(p => ({...p, guideNotes: e.target.value}))}
+                  placeholder="输入办理要点、注意事项、所需材料清单等..."
+                  rows={4} className="w-full border border-gray-400 rounded-lg p-3 text-xs resize-none outline-none placeholder:text-xs" />
+              </div>
+
               <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-black bg-white border border-gray-400 rounded-lg hover:bg-gray-50">取消</button>
               <button onClick={handleAddWorkItem} disabled={!newItemForm.name.trim()}
                 className={`px-4 py-2 text-white rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-1.5 ${colors.bg} ${colors.hover}`}>
