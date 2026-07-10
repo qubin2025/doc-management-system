@@ -1147,14 +1147,13 @@ ${decomposeFileText.slice(0, 8000)}
                 </div>
               </div>
 
-            </div>
-            <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
               <div id="guide-note-area">
                 <label className="block text-xs font-medium text-black mb-1">办理指南</label>
                 <textarea value={newItemForm.guideNotes || ''} onChange={e => setNewItemForm(p => ({...p, guideNotes: e.target.value}))}
                   placeholder="输入办理要点、注意事项、所需材料清单等..."
                   rows={4} className="w-full px-3 py-2 border border-gray-400 rounded-lg text-xs resize-none outline-none placeholder:text-xs" />
               </div>
+
             </div>
             <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 shrink-0">
               <button onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-black bg-white border border-gray-400 rounded-lg hover:bg-gray-50">取消</button>
