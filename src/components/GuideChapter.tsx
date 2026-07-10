@@ -469,7 +469,7 @@ ${decomposeFileText.slice(0, 8000)}
                       </button>
                       <button onClick={() => {
                         if (confirm(`确认将"${sm.name}"恢复为默认模版状态？\n\n这将清除所有自定义工作项、子任务、流程图和附件，恢复为系统默认模版。`)) {
-                          const defaultCh = chapter;
+                          const defaultCh = initialChapter;
                           const defaultSm = defaultCh.subModules.find(s => s.id === sm.id);
                           if (defaultSm) {
                             setSubModules(prev => prev.map(s => s.id === sm.id ? { ...defaultSm, workItems: defaultSm.workItems.map(wi => ({...wi})) } : s));
