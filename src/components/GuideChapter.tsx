@@ -196,7 +196,6 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     setEditItemId(null);
     setAddItemTargetSmId(smId);
     setNewItemForm({ name: '', duration: '', attachmentFormat: '', predecessors: [], successors: [], subTasks: [], flowImage: '', guideNotes: '' });
-    setGuideNotesText('');
     setPendingAttachments([]);
     setShowAddItemModal(true);
   };
