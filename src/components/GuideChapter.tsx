@@ -684,9 +684,9 @@ ${decomposeFileText.slice(0, 8000)}
               <p className="text-sm text-gray-500 mt-1">各附表格式与资料管理系统表格格式一致 · 支持样本预览、上传、AI自动填写</p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead className="bg-gray-50">
-                  <tr className="text-sm">
+                  <tr className="text-xs">
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 w-28">附表编号</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">表格名称</th>
                     <th className="text-center px-4 py-3 font-semibold text-gray-600 w-16">状态</th>
@@ -696,11 +696,11 @@ ${decomposeFileText.slice(0, 8000)}
                 <tbody>
                   {initialChapter.forms.map((form, i) => (
                     <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-sm text-gray-500">{form.code}</td>
-                      <td className="px-4 py-3 text-gray-800 text-sm">{form.name}</td>
-                      <td className="px-4 py-3 text-center"><span className="px-2 py-0.5 text-sm rounded-full bg-gray-100 text-gray-500">{form.description || '待填'}</span></td>
+                      <td className="px-4 py-3 text-xs text-gray-500" style={{fontFamily:'Microsoft YaHei, sans-serif'}}>{form.code}</td>
+                      <td className="px-4 py-3 text-gray-800 text-xs">{form.name}</td>
+                      <td className="px-4 py-3 text-center"><span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">{form.description || '待填'}</span></td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2 text-sm">
+                        <div className="flex items-center justify-center gap-2 text-xs">
                           <button onClick={() => {
                             const sampleContent = `【${form.name}】\n编号：${form.code}\n项目名称：________\n日期：________\n内容：________\n\n（此为样本格式，请根据实际项目填写具体内容）\n\n审核人：________\n批准人：________`;
                             setFormEditContent(sampleContent);
