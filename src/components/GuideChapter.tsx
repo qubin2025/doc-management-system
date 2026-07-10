@@ -113,7 +113,19 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   };
 
   // 持久化
-  useEffect(() => { localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(subModules)); }, [subModules]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(subModules));
+    } catch (e) {
+      // localStorage 配额不足：裁剪 flowImage 后重试
+      const slim = subModules.map(s => ({
+        ...s,
+        workItems: s.workItems.map(wi => wi.flowImage && wi.flowImage.length > 50000
+          ? { ...wi, flowImage: wi.flowImage.slice(0, 100) + '...(已裁剪)' } : wi)
+      }));
+      try { localStorage.setItem(`${STORAGE_KEY}-modules`, JSON.stringify(slim)); } catch {}
+    }
+  }, [subModules]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedItems])); }, [checkedItems]);
   useEffect(() => { localStorage.setItem(`${STORAGE_KEY}-done`, JSON.stringify([...completedItems])); }, [completedItems]);
   useEffect(() => { localStorage.setItem(LINKS_KEY, JSON.stringify(links)); }, [links]);
@@ -860,24 +872,26 @@ ${decomposeFileText.slice(0, 8000)}
                     }
                   </span>
                   <button onClick={() => {
-                    setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName: newItemForm.name || '工作项' });
+                    const wiName = newItemForm.name || '工作项';
+                    setDecomposeTarget({ smId: addItemTargetSmId, wiId: editItemId || 'new', wiName });
                     // 有流程图：作为上传文件传给AI
                     if (newItemForm.flowImage && newItemForm.flowImage.startsWith('data:image/')) {
                       const b64 = newItemForm.flowImage.split(',')[1];
                       const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
                       const blob = new Blob([bytes], { type: 'image/png' });
-                      const fakeFile = new File([blob], 'flowchart.png', { type: 'image/png' });
-                      setDecomposeFile(fakeFile);
+                      setDecomposeFile(new File([blob], 'flowchart.png', { type: 'image/png' }));
                       setDecomposeFileText('');
-                    } else {
+                      setDecomposeDesc('');
+                    } else if (newItemForm.subTasks && newItemForm.subTasks.length > 0) {
                       setDecomposeFile(null);
-                      // 有子任务：当前子任务作为上下文
-                      const ctx = (newItemForm.subTasks && newItemForm.subTasks.length > 0)
-                        ? newItemForm.subTasks.map((st,i) => `${i+1}.${st.name}(${st.plannedDuration||0}天)`).join('; ')
-                        : '';
-                      setDecomposeFileText(ctx);
+                      setDecomposeFileText(newItemForm.subTasks.map((st,i) => `${i+1}.${st.name}(${st.plannedDuration||0}天)`).join('; '));
+                      setDecomposeDesc('');
+                    } else {
+                      // 无数据：预填工作项名称作为拆解提示
+                      setDecomposeFile(null);
+                      setDecomposeFileText('');
+                      setDecomposeDesc(`请对"${wiName}"进行拆解，输入流程描述或上传文件`);
                     }
-                    setDecomposeDesc('');
                     setShowAIDecompose(true);
                   }}
                     className="px-3 py-1 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
