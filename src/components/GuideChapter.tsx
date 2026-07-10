@@ -168,6 +168,19 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
   const checkedCount = checkedItems.size;
 
   // ===== AI生成办理指南 =====
+  const DEFAULT_GUIDE_PROMPT = `根据以下资料生成办理指南（≤200字），格式：
+一、办理要点：
+二、所需资料：
+三、重点经办人：
+（资料不足处标注"待补充"）
+
+工作项：{name}
+参考资料：{context}`;
+
+  const [guidePrompt, setGuidePrompt] = useState(() => {
+    return localStorage.getItem('guide-ai-prompt') || DEFAULT_GUIDE_PROMPT;
+  });
+
   const handleAIGuide = async () => {
     const texts: string[] = [];
     for (const a of pendingAttachments) {
@@ -183,7 +196,9 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     const ctx = texts.join('\n\n').slice(0, 6000);
     if (!ctx && !newItemForm.name) { toast('请先上传附件或填写工作项名称', 'warning'); return; }
     try {
-      const prompt = `根据以下资料生成办理指南（≤200字），格式：\n一、办理要点：\n二、所需资料：\n三、重点经办人：\n（资料不足处标注"待补充"）\n\n工作项：${newItemForm.name}\n参考资料：${ctx || '无附件，根据工作项名称推断'}`;
+      const prompt = guidePrompt
+        .replace('{name}', newItemForm.name)
+        .replace('{context}', ctx || '无附件，根据工作项名称推断');
       const reply = await api.aiChat([{role:'user',content:prompt}], '', {model:'auto'});
       const text = reply.slice(0, 300);
       setNewItemForm(p => ({...p, guideNotes: text}));
@@ -1174,6 +1189,15 @@ ${decomposeFileText.slice(0, 8000)}
               </div>
 
               <div id="guide-note-area">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-black">提示词框架</label>
+                  <button onClick={() => {
+                    localStorage.setItem('guide-ai-prompt', guidePrompt);
+                    toast('提示词已保存', 'success');
+                  }} className="text-xs text-gray-400 hover:text-blue-500">保存</button>
+                </div>
+                <textarea value={guidePrompt} onChange={e => setGuidePrompt(e.target.value)}
+                  rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs resize-none outline-none placeholder:text-xs font-mono mb-3" />
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium text-black">办理指南</label>
                   <div className="flex items-center gap-2">
