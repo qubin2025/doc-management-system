@@ -181,7 +181,10 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     return localStorage.getItem('guide-ai-prompt') || DEFAULT_GUIDE_PROMPT;
   });
 
+  const [guideAnalyzing, setGuideAnalyzing] = useState(false);
+
   const handleAIGuide = async () => {
+    if (guideAnalyzing) return;
     const texts: string[] = [];
     for (const a of pendingAttachments) {
       if (a.data && a.data.includes('base64')) {
@@ -195,6 +198,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
     if (newItemForm.flowImage && newItemForm.flowImage.length > 200) texts.push('流程图内容');
     const ctx = texts.join('\n\n').slice(0, 6000);
     if (!ctx && !newItemForm.name) { toast('请先上传附件或填写工作项名称', 'warning'); return; }
+    setGuideAnalyzing(true);
     try {
       const prompt = guidePrompt
         .replace('{name}', newItemForm.name)
@@ -203,6 +207,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
       setNewItemForm(p => ({...p, guideNotes: reply}));
       toast(`AI已生成(${reply.length}字)`, 'success');
     } catch (e: any) { toast('生成失败: ' + (e.message||''), 'error'); }
+    finally { setGuideAnalyzing(false); }
   };
 
   // ===== 添加/编辑工作项 =====
@@ -1219,9 +1224,9 @@ ${decomposeFileText.slice(0, 8000)}
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium text-black">办理指南</label>
                   <div className="flex items-center gap-2">
-                    <button onClick={handleAIGuide}
-                      className="px-2 py-0.5 text-xs text-purple-600 border border-purple-300 rounded hover:bg-purple-50 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3"/>AI分析
+                    <button onClick={handleAIGuide} disabled={guideAnalyzing}
+                      className={`px-2 py-0.5 text-xs border rounded flex items-center gap-1 ${guideAnalyzing ? 'text-gray-400 border-gray-200 cursor-not-allowed' : 'text-purple-600 border-purple-300 hover:bg-purple-50'}`}>
+                      {guideAnalyzing ? <><Loader className="w-3 h-3 animate-spin"/>分析中</> : <><Sparkles className="w-3 h-3"/>AI分析</>}
                     </button>
                     {(newItemForm.guideNotes) && (
                       <button onClick={() => {
