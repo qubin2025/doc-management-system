@@ -68,6 +68,74 @@ function initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_documents_doc_id ON documents(doc_id);
     CREATE INDEX IF NOT EXISTS idx_documents_standard ON documents(standard);
     CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+
+    -- P0-4: 目标管理体系
+    CREATE TABLE IF NOT EXISTS objectives (
+      id TEXT PRIMARY KEY,
+      project_name TEXT NOT NULL,
+      parent_id TEXT,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      level TEXT NOT NULL CHECK(level IN ('root','phase','deliverable','work-item')),
+      weight REAL DEFAULT 0,
+      progress REAL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'not-started' CHECK(status IN ('not-started','in-progress','completed')),
+      linked_work_item_ids TEXT DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (project_name) REFERENCES projects(name) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_objectives_project ON objectives(project_name);
+    CREATE INDEX IF NOT EXISTS idx_objectives_parent ON objectives(parent_id);
+
+    -- P0-4: 三大基线快照
+    CREATE TABLE IF NOT EXISTS baselines (
+      id TEXT PRIMARY KEY,
+      project_name TEXT NOT NULL,
+      baseline_type TEXT NOT NULL CHECK(baseline_type IN ('scope','schedule','cost')),
+      version INTEGER NOT NULL DEFAULT 1,
+      snapshot TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_by TEXT NOT NULL,
+      FOREIGN KEY (project_name) REFERENCES projects(name) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_baselines_project ON baselines(project_name);
+    CREATE INDEX IF NOT EXISTS idx_baselines_active ON baselines(project_name, is_active);
+
+    -- P0-2/P0-4: 知识加工产物索引
+    CREATE TABLE IF NOT EXISTS knowledge_artifacts (
+      id TEXT PRIMARY KEY,
+      project_name TEXT NOT NULL,
+      artifact_type TEXT NOT NULL CHECK(artifact_type IN ('chunk','summary','graph','category','qa-pair')),
+      source_type TEXT NOT NULL CHECK(source_type IN ('document','form','work-item','ai-generated')),
+      source_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      metadata TEXT DEFAULT '{}',
+      vector_id TEXT,
+      confidence REAL DEFAULT 1.0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (project_name) REFERENCES projects(name) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_knowledge_artifacts_project ON knowledge_artifacts(project_name);
+    CREATE INDEX IF NOT EXISTS idx_knowledge_artifacts_type ON knowledge_artifacts(project_name, artifact_type);
+
+    -- P0-4: 操作审计日志
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_name TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      action TEXT NOT NULL CHECK(action IN ('create','update','delete','view','export','import')),
+      target_type TEXT NOT NULL CHECK(target_type IN ('project','objective','baseline','document','work-item','form','configuration')),
+      target_id TEXT NOT NULL,
+      detail TEXT DEFAULT '{}',
+      ip_address TEXT DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_log_project ON audit_log(project_name);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_user ON audit_log(user_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
   `);
 
   // 迁移：给旧 users 表添加缺失列（如果旧表已存在则 ALTER）

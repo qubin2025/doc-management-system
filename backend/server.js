@@ -12,6 +12,7 @@ import backupRouter from './routes/backup.js';
 import aiRouter from './routes/ai.js';
 import kgRouter from './routes/kg.js';
 import ragflowRouter from './routes/ragflow.js';
+import objectivesRouter from './routes/objectives.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,6 +57,7 @@ app.use('/api/backup', backupRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/kg', kgRouter);
 app.use('/api/ragflow', ragflowRouter);
+app.use('/api/objectives', objectivesRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
@@ -70,6 +72,13 @@ app.get('/api/stats', async (req, res) => {
     const documents = db.prepare('SELECT COUNT(*) as c FROM documents').get().c;
     const users = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
     const activeUsers = db.prepare('SELECT COUNT(*) as c FROM users WHERE is_active=1').get().c;
+    let objectives = 0, baselines = 0, artifacts = 0, auditLogs = 0;
+    try {
+      objectives = db.prepare('SELECT COUNT(*) as c FROM objectives').get().c;
+      baselines = db.prepare('SELECT COUNT(*) as c FROM baselines').get().c;
+      artifacts = db.prepare('SELECT COUNT(*) as c FROM knowledge_artifacts').get().c;
+      auditLogs = db.prepare('SELECT COUNT(*) as c FROM audit_log').get().c;
+    } catch { /* 新表可能尚未创建 */ }
 
     // 服务健康检查（并发探测）
     const health = {
@@ -108,6 +117,7 @@ app.get('/api/stats', async (req, res) => {
 
     res.json({
       projects, documents, users, activeUsers,
+      objectives, baselines, artifacts, auditLogs,
       health,
       uptime: Math.floor(process.uptime()),
       memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),

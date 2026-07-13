@@ -3,8 +3,9 @@
 import * as api from './api';
 import { vectorStore, VectorDoc } from './vectorStore';
 import * as documentParser from './documentParser';
+import { autoChunk } from './chunker';
 
-/** 索引文档：文件→文本→向量→存储 */
+/** 索引文档：文件→文本→分块→向量→存储 (P0-2: 整合chunker) */
 export async function indexDocument(
   file: File,
   projectName: string,
@@ -14,22 +15,30 @@ export async function indexDocument(
     throw new Error('文档内容为空，无法索引');
   }
 
-  // 文本截断到8000字符以内（Embedding API限制）
-  const truncated = text.length > 8000 ? text.slice(0, 8000) : text;
+  // 智能分块（修复chunker未使用的问题）
+  const chunks = autoChunk(text, 1500);
 
-  // 向量化
-  const embedding = await api.embedText(truncated);
+  // 逐块向量化并存储
+  let indexedCount = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    try {
+      const embedding = await api.embedText(chunk.text, 'document');
+      if (embedding && embedding.length > 0) {
+        vectorStore.addDocument(chunk.text, embedding, {
+          projectName,
+          fileName: file.name,
+          fileType: file.type,
+          chunkIndex: i,
+          chunkCount: chunks.length,
+          uploadTime: new Date().toISOString(),
+        });
+        indexedCount++;
+      }
+    } catch { /* skip failed chunk */ }
+  }
 
-  // 存储（单文档单向量，精确语义检索）
-  vectorStore.addDocument(truncated, embedding, {
-    projectName,
-    fileName: file.name,
-    fileType: file.type,
-    uploadTime: new Date().toISOString(),
-  });
-
-  const stats = vectorStore.stats(projectName);
-  return { text: truncated, chunks: stats.count };
+  return { text: text.slice(0, 200), chunks: indexedCount };
 }
 
 /** RAG查询：用户问题→向量化→检索相关文档→拼接上下文→增强AI回答 */

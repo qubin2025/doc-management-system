@@ -504,3 +504,64 @@ export async function ragflowChat(datasetIds: string[], query: string) {
   });
   return res.json();
 }
+
+// ========== 目标管理体系 (P0-1) ==========
+
+export async function fetchObjectives(projectName: string) {
+  const res = await fetch(`${API_BASE}/objectives?project=${encodeURIComponent(projectName)}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error('获取目标失败');
+  return res.json();
+}
+
+export async function createObjective(data: {
+  projectName: string;
+  parentId?: string | null;
+  title: string;
+  description?: string;
+  level: string;
+  weight?: number;
+  linkedWorkItemIds?: string[];
+}) {
+  const res = await fetch(`${API_BASE}/objectives`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('创建目标失败');
+  return res.json();
+}
+
+export async function updateObjective(id: string, data: Record<string, unknown>) {
+  const res = await fetch(`${API_BASE}/objectives/${encodeURIComponent(id)}`, {
+    method: 'PUT', headers: headers(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('更新目标失败');
+  return res.json();
+}
+
+export async function deleteObjective(id: string) {
+  const res = await fetch(`${API_BASE}/objectives/${encodeURIComponent(id)}`, {
+    method: 'DELETE', headers: headers(),
+  });
+  if (!res.ok) throw new Error('删除目标失败');
+  return res.json();
+}
+
+export async function linkWorkItem(objectiveId: string, workItemId: string) {
+  const res = await fetch(`${API_BASE}/objectives/${encodeURIComponent(objectiveId)}/link`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ workItemId }),
+  });
+  if (!res.ok) throw new Error('关联工作项失败');
+  return res.json();
+}
+
+export async function unlinkWorkItem(objectiveId: string, workItemId: string) {
+  const res = await fetch(`${API_BASE}/objectives/${encodeURIComponent(objectiveId)}/link/${encodeURIComponent(workItemId)}`, {
+    method: 'DELETE', headers: headers(),
+  });
+  if (!res.ok) throw new Error('取消关联失败');
+  return res.json();
+}

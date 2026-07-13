@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -25,6 +25,8 @@ import ConstructionReview from './components/ConstructionReview';
 import ContractReview from './components/ContractReview';
 import BidReview from './components/BidReview';
 import PlanGenerator from './components/PlanGenerator';
+import TargetManager from './components/TargetManager';
+import TailoringEngine from './components/TailoringEngine';
 import { guideChapters } from './data/guideModules';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
@@ -451,6 +453,16 @@ const App: React.FC = () => {
     return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
+  // ===== 模块裁剪引擎 (P0-3) =====
+  if (view === 'tailoring-engine' && currentProject) {
+    return <TailoringEngine projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 目标管理 (P0-1) =====
+  if (view === 'target-manager' && currentProject) {
+    return <TargetManager projectName={currentProject} guideChapters={guideChapters} onBack={() => setView('homepage')} />;
+  }
+
   // ===== 登录页 =====
   if (view === 'login') {
     return <LoginPage onLogin={handleLogin} />;
@@ -592,6 +604,28 @@ const App: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">功能模块</h2>
           <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位打通数据联系，大模型智能分析驱动全过程管理</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* P0新功能: 模块裁剪 */}
+            <button onClick={() => setView('tailoring-engine')}
+              className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl shadow-sm p-5 text-left border-2 border-purple-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-purple-500 text-white font-bold">NEW</div>
+              <div className="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <ClipboardCheck className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">模块裁剪 <span className="text-xs text-purple-500">P0</span></h3>
+              <p className="text-xs text-gray-500 leading-relaxed">项目特征问卷 · PMBOK裁剪建议 · 灵活组装模块</p>
+            </button>
+
+            {/* P0新功能: 目标管理 */}
+            <button onClick={() => setView('target-manager')}
+              className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl shadow-sm p-5 text-left border-2 border-sky-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-sky-500 text-white font-bold">NEW</div>
+              <div className="w-11 h-11 rounded-lg bg-sky-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Target className="w-6 h-6 text-sky-600" />
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">目标管理 <span className="text-xs text-sky-500">P0</span></h3>
+              <p className="text-xs text-gray-500 leading-relaxed">OKR/WBS分解 · 目标-工作项联动 · 达成度自动计算</p>
+            </button>
+
             {/* 资料管理 - 已上线 */}
             <button
               onClick={() => setView('standard-select')}

@@ -185,6 +185,63 @@ export interface FormAttachment {
   fileSize: number;
 }
 
+// ===== 目标管理体系 (P0-1) =====
+export interface ProjectObjective {
+  id: string;
+  projectName: string;
+  parentId: string | null;
+  title: string;
+  description: string;
+  level: 'root' | 'phase' | 'deliverable' | 'work-item';
+  weight: number;
+  progress: number;
+  status: 'not-started' | 'in-progress' | 'completed';
+  linkedWorkItemIds: string[];
+  children?: ProjectObjective[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ===== 三大基线 (P0-4) =====
+export interface Baseline {
+  id: string;
+  projectName: string;
+  baselineType: 'scope' | 'schedule' | 'cost';
+  version: number;
+  snapshot: string;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  createdBy: string;
+}
+
+// ===== 知识加工产物索引 (P0-2) =====
+export interface KnowledgeArtifact {
+  id: string;
+  projectName: string;
+  artifactType: 'chunk' | 'summary' | 'graph' | 'category' | 'qa-pair';
+  sourceType: 'document' | 'form' | 'work-item' | 'ai-generated';
+  sourceId: string;
+  content: string;
+  metadata: string;
+  vectorId: string | null;
+  confidence: number;
+  createdAt: string;
+}
+
+// ===== 操作审计 (P0-4) =====
+export interface AuditLog {
+  id: number;
+  projectName: string;
+  userId: string;
+  action: 'create' | 'update' | 'delete' | 'view' | 'export' | 'import';
+  targetType: 'project' | 'objective' | 'baseline' | 'document' | 'work-item' | 'form' | 'configuration';
+  targetId: string;
+  detail: string;
+  ipAddress: string;
+  createdAt: string;
+}
+
 // 章节
 export interface GuideChapter {
   id: string;
