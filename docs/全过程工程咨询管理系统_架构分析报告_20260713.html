@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 — 架构审视与发展分析报告</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    padding: 2rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 3rem; font-size: 0.95rem; }
+  h2 {
+    font-size: 1.5rem;
+    margin: 3rem 0 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+  }
+  h3 {
+    font-size: 1.2rem;
+    margin: 2rem 0 1rem;
+    color: var(--purple);
+  }
+  h4 {
+    font-size: 1.05rem;
+    margin: 1.5rem 0 0.75rem;
+    color: var(--orange);
+  }
+  p { margin: 0.75rem 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin: 1.5rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+  }
+  th {
+    background: rgba(56,189,248,0.1);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  td { color: var(--text); }
+  tr:nth-child(even) td { background: rgba(30,41,59,0.5); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.3rem;
+  }
+  .badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(250,204,21,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .badge-blue { background: rgba(56,189,248,0.15); color: var(--accent); }
+  .badge-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+  .arch-diagram {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    font-family: "Courier New", "Source Code Pro", monospace;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--muted);
+  }
+  .arch-diagram .l1 { color: #6ee7b7; }
+  .arch-diagram .l2 { color: #93c5fd; }
+  .arch-diagram .l3 { color: #c4b5fd; }
+  .arch-diagram .l4 { color: #fde68a; }
+  .arch-diagram .l0 { color: #fca5a5; }
+  .arch-diagram .hl { color: #38bdf8; font-weight: bold; }
+
+  .progress-bar {
+    height: 10px;
+    background: var(--border);
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 0.3rem 0 0.6rem;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s;
+  }
+  .fill-green { background: linear-gradient(90deg, var(--green), #22c55e); }
+  .fill-yellow { background: linear-gradient(90deg, var(--yellow), #fbbf24); }
+  .fill-orange { background: linear-gradient(90deg, var(--orange), #f97316); }
+  .fill-red { background: linear-gradient(90deg, var(--red), #ef4444); }
+  .fill-blue { background: linear-gradient(90deg, var(--accent), #0ea5e9); }
+
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.85rem; margin-top: 0.3rem;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 0.5rem 1.5rem;
+    margin: 1.5rem 0;
+    background: rgba(56,189,248,0.05);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  .flow-arrows {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+  .flow-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    min-width: 80px;
+  }
+  .arrow { color: var(--accent); font-size: 1.2rem; }
+
+  .toc { margin: 2rem 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc li { margin: 0.3rem 0; }
+
+  .key-gap {
+    border-left: 3px solid var(--red);
+    padding-left: 1rem;
+    margin: 1rem 0;
+  }
+  .key-done {
+    border-left: 3px solid var(--green);
+    padding-left: 1rem;
+    margin: 1rem 0;
+  }
+
+  .priority-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .p0 { background: #dc2626; color: #fff; }
+  .p1 { background: #ea580c; color: #fff; }
+  .p2 { background: #2563eb; color: #fff; }
+
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+
+  @media print {
+    body { background: #fff; color: #000; padding: 1cm; }
+    .card { background: #f8fafc; border-color: #cbd5e1; }
+    h1 { -webkit-text-fill-color: #1e40af; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>全过程工程咨询管理系统<br>架构审视与发展分析报告</h1>
+<p class="subtitle">
+  视角：项目管理专家 &nbsp;|&nbsp; 基准：PMBOK第6版/第7版 &nbsp;|&nbsp; 日期：2026-07-13 &nbsp;|&nbsp; 当前版本：v2.5.0
+</p>
+
+<!-- 目录 -->
+<div class="card toc">
+  <h4 style="margin-top:0">📑 目录</h4>
+  <ol>
+    <li><a href="#s1">目标管理驱动 vs 表单流程驱动 — 现状评估</a></li>
+    <li><a href="#s2">AI知识库架构 — 概念优化与现状对比</a></li>
+    <li><a href="#s3">四层架构审视 — 已实现 vs 待开发</a></li>
+    <li><a href="#s4">后续开发内容建议（按优先级排序）</a></li>
+    <li><a href="#s5">系统架构总图</a></li>
+    <li><a href="#s6">总结判断与关键建议</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 第一章 ==================== -->
+<h2 id="s1">一、目标管理驱动 vs 表单流程驱动 — 现状评估</h2>
+
+<h3>1.1 你的目标</h3>
+<blockquote>
+  以目标管理为驱动源动力，摈弃表单流程/审批驱动，以PMBOK第6版、第7版为内核，根据项目管理目标灵活裁剪、敏捷匹配功能模块，完成项目总目标及各子目标的高效实现。
+</blockquote>
+
+<h3>1.2 当前状态：正在转型中，方向正确但未完成</h3>
+
+<h4>已做对的 ✅</h4>
+<table>
+  <tr><th>已实现功能</th><th>对应PMBOK</th><th>评价</th></tr>
+  <tr>
+    <td>GuideChapter 4章41子模块~200工作项</td>
+    <td>过程组映射（启动/规划/执行/监控/收尾）</td>
+    <td><span class="badge badge-yellow">骨架正确</span> 但工作项是预定义静态清单而非从目标动态推导</td>
+  </tr>
+  <tr>
+    <td>工作项勾选(计划/完成) + 进度统计</td>
+    <td>进度管理</td>
+    <td><span class="badge badge-yellow">基础跟踪</span> 缺少目标层级联动</td>
+  </tr>
+  <tr>
+    <td>AI拆解子任务</td>
+    <td>范围管理/WBS</td>
+    <td><span class="badge badge-green">方向正确</span> 拆解结果未回写到目标体系</td>
+  </tr>
+  <tr>
+    <td>GanttChart + NetworkDiagram + CPM</td>
+    <td>进度管理/关键路径</td>
+    <td><span class="badge badge-green">完整度高</span> 是亮点</td>
+  </tr>
+  <tr>
+    <td>CPI/SPI/完整度/质量分 Dashboard</td>
+    <td>挣值管理(EVM)</td>
+    <td><span class="badge badge-yellow">指标正确</span> 缺少目标基准线(baseline)</td>
+  </tr>
+  <tr>
+    <td>多项目对比</td>
+    <td>项目组合管理</td>
+    <td><span class="badge badge-blue">基础框架存在</span></td>
+  </tr>
+</table>
+
+<h4>核心差距 ❌</h4>
+
+<div class="card">
+  <div class="flow-arrows">
+    <div class="flow-box" style="background:rgba(248,113,113,0.1);border-color:var(--red)">当前模式</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">附表清单</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">工作项</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">勾选完成</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">进度统计</div>
+  </div>
+  <div class="flow-arrows" style="margin-top:1.5rem">
+    <div class="flow-box" style="background:rgba(74,222,128,0.1);border-color:var(--green)">目标模式</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">项目目标</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">子目标分解</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">策略映射</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">工作项选择</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">执行追踪</div>
+    <div class="arrow">→</div>
+    <div class="flow-box">目标达成验证</div>
+  </div>
+</div>
+
+<table>
+  <tr><th>差距项</th><th>当前状态</th><th>目标状态</th></tr>
+  <tr>
+    <td><strong>目标层级体系</strong></td>
+    <td><span class="badge badge-red">无</span></td>
+    <td>项目总目标 → 阶段目标 → 可交付成果 → 工作包 → 活动</td>
+  </tr>
+  <tr>
+    <td><strong>模块裁剪引擎</strong></td>
+    <td><span class="badge badge-red">静态全量</span></td>
+    <td>根据项目类型/规模/复杂度，向导式裁剪模块</td>
+  </tr>
+  <tr>
+    <td><strong>PMBOK知识领域映射</strong></td>
+    <td><span class="badge badge-yellow">隐式分散</span></td>
+    <td>显式10大知识领域 + 8大绩效域框架</td>
+  </tr>
+  <tr>
+    <td><strong>价值交付度量</strong></td>
+    <td><span class="badge badge-red">无</span></td>
+    <td>PMBOK第7版核心：成果→价值 的度量链</td>
+  </tr>
+  <tr>
+    <td><strong>裁剪指南引擎</strong></td>
+    <td><span class="badge badge-red">无</span></td>
+    <td>项目特征 → 环境因素 → 裁剪建议 → 模块推荐</td>
+  </tr>
+  <tr>
+    <td><strong>基线管理</strong></td>
+    <td><span class="badge badge-red">无</span></td>
+    <td>范围/进度/成本三大基线</td>
+  </tr>
+</table>
+
+<h3>1.3 本章结论</h3>
+<p>
+  项目已从"纯表单驱动"迈出了关键一步（有了工作项级别的进度管理），但尚未达到"目标管理驱动"。
+  <strong style="color:var(--accent)">GuideChapter 是核心改造对象</strong>——它需要从一个"工作项清单"升级为一个"目标分解与执行追踪引擎"。
+</p>
+
+<!-- ==================== 第二章 ==================== -->
+<h2 id="s2">二、AI知识库架构 — 概念优化与现状对比</h2>
+
+<h3>2.1 原始描述</h3>
+<blockquote>
+  通过各环节资料、文档等全部数据沉淀，形成AI知识库基础，通过AI学习分析打通底层数据池，建立数据库→知识库→AI模型专业底座→打通项目管理各项流程之间的数据→大模型分析向量化→知识库（知识图谱）→AI分析能力→（+RAG+Agent+skill+mcp)项目管理应用自动化按钮→自动化填写表单、生成成果→同时沉淀数据→同时提升系统自动化搭建、管理能力
+</blockquote>
+
+<h3>2.2 优化后的架构描述</h3>
+
+<h4>核心四层架构</h4>
+<div class="arch-diagram">
+┌──────────────────────────────────────────────────────────┐
+│        <span class="l4">应用自动化层 (Action Layer)</span>                       │
+│        Agent · Skill · MCP · 一键触发按钮                  │
+│        自动填表 · 方案生成 · 审查 · 报告                    │
+├──────────────────────────────────────────────────────────┤
+│        <span class="l3">AI分析推理层 (Intelligence)</span>                      │
+│        RAG检索增强 · 知识图谱推理 · LLM分析                 │
+│        语义搜索 · 实体链接 · 上下文组装                     │
+├──────────────────────────────────────────────────────────┤
+│        <span class="l2">知识工程层 (Knowledge)</span>                          │
+│        向量数据库 · 知识图谱(Neo4j) · 全文索引               │
+│        文档分块 · 实体抽取 · 关系构建                       │
+├──────────────────────────────────────────────────────────┤
+│        <span class="l1">数据沉淀层 (Data Foundation)</span>                    │
+│        项目数据 · 文档资料 · 审查记录 · 表单                 │
+│        过程数据 · 指标数据 · 用户反馈                       │
+└──────────────────────────────────────────────────────────┘
+</div>
+
+<h4>核心闭环逻辑</h4>
+<div class="arch-diagram">
+项目活动 ──→ 产生数据 ──→ 数据入湖(结构化+非结构化)
+    │
+    ▼
+数据加工 ──→ 实体/关系抽取 ──→ 知识图谱构建 ──→ 向量化索引
+    │
+    ▼
+AI检索增强(RAG) ──→ 上下文组装 ──→ LLM推理生成 ──→ 自动填表/生成成果
+    │
+    ▼
+生成成果 ──→ 人工确认/修正 ──→ 反馈数据回流 ──→ 知识库更新迭代
+    │
+    ▼
+知识库成长 ──→ AI分析能力提升 ──→ 自动化程度提高 ──→ 项目管理效率提升 ──→ 更多活动数据 ──→ (循环)
+</div>
+
+<h4>关键概念修正</h4>
+<table>
+  <tr><th>原始表述</th><th>优化表述</th><th>原因</th></tr>
+  <tr>
+    <td>"大模型分析向量化"</td>
+    <td>"文档→分块→Embedding→向量索引"</td>
+    <td>向量化是数据预处理步骤，不是大模型的职责</td>
+  </tr>
+  <tr>
+    <td>"打通数据"</td>
+    <td>"知识图谱实体对齐与关系融合"</td>
+    <td>打通数据的具体工程手段是实体链接和关系抽取</td>
+  </tr>
+  <tr>
+    <td>"AI模型专业底座"</td>
+    <td>"领域微调模型 + RAG增强检索"</td>
+    <td>专业底座不是训练一个大模型，而是RAG+知识库让通用模型获得专业能力</td>
+  </tr>
+</table>
+
+<h3>2.3 当前AI架构现状 vs 目标</h3>
+<table>
+  <tr><th>层级</th><th>已完成</th><th>待完成</th></tr>
+  <tr>
+    <td><strong>数据沉淀层</strong></td>
+    <td>
+      <span class="badge badge-green">SQLite三表</span>
+      <span class="badge badge-green">localStorage</span>
+      <span class="badge badge-green">IndexedDB</span>
+    </td>
+    <td>
+      <span class="badge badge-red">统一数据湖设计</span>
+      <span class="badge badge-red">非结构化数据管道</span>
+      <span class="badge badge-red">变更数据捕获(CDC)</span>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>知识工程层</strong></td>
+    <td>
+      <span class="badge badge-green">本地向量库(768维)</span>
+      <span class="badge badge-green">Neo4j知识图谱</span>
+      <span class="badge badge-green">LightRAG 3路检索</span>
+      <span class="badge badge-green">RAGFlow Docker</span>
+    </td>
+    <td>
+      <span class="badge badge-red"><strong>统一知识编排器</strong>(4系统各自孤立)</span>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>AI分析推理层</strong></td>
+    <td>
+      <span class="badge badge-green">RAG检索增强</span>
+      <span class="badge badge-green">7种模型切换</span>
+      <span class="badge badge-green">AI Agent扫描</span>
+    </td>
+    <td>
+      <span class="badge badge-yellow">Agent缺工具调用/多步推理/任务编排</span>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>应用自动化层</strong></td>
+    <td>
+      <span class="badge badge-green">填表/生成/审查 手动触发</span>
+    </td>
+    <td>
+      <span class="badge badge-red">Agent驱动的自动化工作流</span>
+      <span class="badge badge-red">Skill/MCP框架实现</span>
+    </td>
+  </tr>
+</table>
+
+<!-- ==================== 第三章 ==================== -->
+<h2 id="s3">三、四层架构审视 — 已实现 vs 待开发</h2>
+
+<h3>3.1 L1: 数据库层 — 完成度 40%</h3>
+
+<div class="progress-bar"><div class="progress-fill fill-orange" style="width:40%"></div></div>
+<div class="progress-label"><span>完成度 40%</span><span>目标 100%</span></div>
+
+<h4>已完成</h4>
+<div class="key-done">
+  ✅ SQLite 项目/文档/用户三表<br>
+  ✅ localStorage 工作项状态<br>
+  ✅ IndexedDB 流程图图片<br>
+  ✅ 后端文件磁盘存储
+</div>
+
+<h4>待开发</h4>
+<div class="key-gap">
+  ❌ <strong>objectives</strong> 表（目标层级）<br>
+  ❌ <strong>baselines</strong> 表（三大基线快照）<br>
+  ❌ <strong>knowledge_artifacts</strong> 表（知识加工产物索引）<br>
+  ❌ <strong>audit_log</strong> 表（操作审计，满足ISO27001）<br>
+  ❌ 数据血缘追踪（哪个操作产生了哪条数据）<br>
+  ❌ PostgreSQL迁移（多租户必须）
+</div>
+
+<blockquote>
+  <strong>关键判断：</strong>当前数据库设计是"表单存储"模式，不是"知识沉淀"模式。需要从 schema 层面重构以支撑四层架构。
+</blockquote>
+
+<h3>3.2 L2: 知识库层 — 完成度 35%</h3>
+
+<div class="progress-bar"><div class="progress-fill fill-red" style="width:35%"></div></div>
+<div class="progress-label"><span>完成度 35%</span><span>目标 100%</span></div>
+
+<h4>已完成</h4>
+<div class="key-done">
+  ✅ 本地向量存储(768维, 余弦相似度)<br>
+  ✅ Neo4j 知识图谱(9类节点, 6类关系)<br>
+  ✅ LightRAG(实体抽取 + 3路混合检索)<br>
+  ✅ RAGFlow Docker（企业级知识库）<br>
+  ✅ Lunr 全文检索<br>
+  ✅ 智能分块(chunker.ts, 3种策略)
+</div>
+
+<h4>待开发</h4>
+<div class="key-gap">
+  ❌ <strong>KnowledgeOrchestrator 知识编排器</strong> — 统一四套系统的入口与管道<br>
+  ❌ 知识图谱自动构建管道（当前需手动同步Neo4j）<br>
+  ❌ LightRAG 与 Neo4j 的双向同步<br>
+  ❌ RAGFlow 实际接入前端使用<br>
+  ❌ 跨知识源的联合检索(federated search)<br>
+  ❌ 分块策略的项目级自适应<br>
+  ❌ 知识版本管理（规范更新时知识库同步更新）
+</div>
+
+<h3>3.3 L3: AI应用层 — 完成度 45%</h3>
+
+<div class="progress-bar"><div class="progress-fill fill-orange" style="width:45%"></div></div>
+<div class="progress-label"><span>完成度 45%</span><span>目标 100%</span></div>
+
+<h4>已完成</h4>
+<div class="key-done">
+  ✅ 7种模型切换 + Auto降级<br>
+  ✅ RAG检索增强问答<br>
+  ✅ AI审查（施工组织设计/合同/招投标）<br>
+  ✅ AI方案生成（7种模板）<br>
+  ✅ AI表单填写<br>
+  ✅ AI拆解子任务<br>
+  ✅ AI办理指南<br>
+  ✅ aiAgent.ts 周期性扫描<br>
+  ✅ AI视觉理解（GLM-4V/千问VL）
+</div>
+
+<h4>待开发</h4>
+<div class="key-gap">
+  ❌ <strong>Agent框架</strong> — 多步推理/工具调用/任务编排/错误恢复<br>
+  ❌ <strong>Skill机制</strong> — 审查/生成/填表封装为可组合 Skill，注册表模式<br>
+  ❌ <strong>MCP协议实现</strong> — 工具标准化注册/发现/调用<br>
+  ❌ 自动化工作流引擎（Agent串联多步操作）<br>
+  ❌ 审查结果的结构化入库与趋势分析<br>
+  ❌ Agent的多项目管理与跨项目学习
+</div>
+
+<blockquote>
+  <strong>关键判断：</strong>当前AI功能都是<b>独立触发、单次执行</b>，缺少 Agent 的多步推理能力。例如无法实现"分析进度滞后→自动生成赶工方案→调整甘特图"这样的端到端自动化。
+</blockquote>
+
+<h3>3.4 L4: 项目管理系统层 — 完成度 55%</h3>
+
+<div class="progress-bar"><div class="progress-fill fill-yellow" style="width:55%"></div></div>
+<div class="progress-label"><span>完成度 55%</span><span>目标 100%</span></div>
+
+<h4>已完成</h4>
+<div class="key-done">
+  ✅ 工程资料双规程管理（DB11/T695-2025 + DB11/T808-2020）<br>
+  ✅ 全过程指南（4章41子模块200+工作项）<br>
+  ✅ 甘特图 + CPM网络图 + 进度统计<br>
+  ✅ 挣值管理 Dashboard（CPI/SPI/完整度/质量分）<br>
+  ✅ 供应商管理 / 造价管理 / 归档管理<br>
+  ✅ 多项目对比<br>
+  ✅ AI对话/AI审查/AI方案生成
+</div>
+
+<h4>待开发</h4>
+<div class="key-gap">
+  ❌ <strong>目标管理体系</strong>（目标设定→分解→追踪→达成）<br>
+  ❌ <strong>模块裁剪引擎</strong>（项目特征→模块推荐→灵活组装）<br>
+  ❌ <strong>PMBOK知识领域显式框架</strong>（10大领域 + 8大绩效域）<br>
+  ❌ 基线管理与变更控制<br>
+  ❌ 干系人管理模块<br>
+  ❌ 项目组合/项目集管理
+</div>
+
+<h3>3.5 总体进度汇总</h3>
+
+<table>
+  <tr><th>层级</th><th>完成度</th><th>进度</th><th>评价</th></tr>
+  <tr>
+    <td>L1 数据库层</td>
+    <td>40%</td>
+    <td>
+      <div class="progress-bar"><div class="progress-fill fill-orange" style="width:40%"></div></div>
+    </td>
+    <td>基础可用，但 schema 需要为知识和目标管理重构</td>
+  </tr>
+  <tr>
+    <td>L2 知识库层</td>
+    <td>35%</td>
+    <td>
+      <div class="progress-bar"><div class="progress-fill fill-red" style="width:35%"></div></div>
+    </td>
+    <td>能力碎片化严重，缺统一编排层</td>
+  </tr>
+  <tr>
+    <td>L3 AI应用层</td>
+    <td>45%</td>
+    <td>
+      <div class="progress-bar"><div class="progress-fill fill-orange" style="width:45%"></div></div>
+    </td>
+    <td>单点能力丰富，缺Agent/Skill/MCP框架</td>
+  </tr>
+  <tr>
+    <td>L4 项目管理层</td>
+    <td>55%</td>
+    <td>
+      <div class="progress-bar"><div class="progress-fill fill-yellow" style="width:55%"></div></div>
+    </td>
+    <td>功能最丰富，但缺目标驱动内核</td>
+  </tr>
+  <tr style="font-weight:bold;background:rgba(56,189,248,0.08)">
+    <td>综合</td>
+    <td>~44%</td>
+    <td>
+      <div class="progress-bar"><div class="progress-fill fill-orange" style="width:44%"></div></div>
+    </td>
+    <td>从"表单工具"向"目标驱动的AI增强平台"转型的关键期</td>
+  </tr>
+</table>
+
+<!-- ==================== 第四章 ==================== -->
+<h2 id="s4">四、后续开发内容建议（按优先级排序）</h2>
+
+<h3>P0 — 核心架构（必须先行）</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:25%">开发内容</th><th style="width:40%">说明</th><th style="width:10%">影响层级</th><th style="width:20%">预估工作量</th></tr>
+    <tr>
+      <td><span class="priority-tag p0">P0</span></td>
+      <td><strong>目标管理体系</strong></td>
+      <td>目标CRUD + WBS分解树 + 目标-工作项关联 + 达成度计算</td>
+      <td>L4</td>
+      <td>3-5天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p0">P0</span></td>
+      <td><strong>统一知识编排器</strong><br><small>KnowledgeOrchestrator</small></td>
+      <td>四套知识系统的统一入口、自动管道、版本管理、联合检索</td>
+      <td>L2</td>
+      <td>5-7天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p0">P0</span></td>
+      <td><strong>模块裁剪引擎</strong></td>
+      <td>项目特征问卷 → PMBOK裁剪建议 → 模块推荐 → 自动组装</td>
+      <td>L4</td>
+      <td>3-5天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p0">P0</span></td>
+      <td><strong>数据库Schema升级</strong></td>
+      <td>objectives / baselines / knowledge_artifacts / audit_log 四张新表</td>
+      <td>L1</td>
+      <td>2-3天</td>
+    </tr>
+  </table>
+</div>
+
+<h3>P1 — 能力增强</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:25%">开发内容</th><th style="width:40%">说明</th><th style="width:10%">影响层级</th><th style="width:20%">预估工作量</th></tr>
+    <tr>
+      <td><span class="priority-tag p1">P1</span></td>
+      <td><strong>Agent 框架</strong></td>
+      <td>多步推理、工具注册/调用、任务编排、错误恢复</td>
+      <td>L3</td>
+      <td>5-7天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p1">P1</span></td>
+      <td><strong>Skill 机制</strong></td>
+      <td>审查/生成/填表 封装为可组合 Skill，注册表模式</td>
+      <td>L3</td>
+      <td>3-4天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p1">P1</span></td>
+      <td><strong>MCP 协议实现</strong></td>
+      <td>工具标准化接口，支持外部MCP Server接入</td>
+      <td>L3</td>
+      <td>3-4天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p1">P1</span></td>
+      <td><strong>PMBOK知识领域框架</strong></td>
+      <td>10大知识领域 + 8大绩效域的显式数据模型和UI</td>
+      <td>L4</td>
+      <td>3-4天</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p1">P1</span></td>
+      <td><strong>知识图谱自动构建管道</strong></td>
+      <td>文档入库 → 自动实体/关系抽取 → 图谱同步（去手动触发）</td>
+      <td>L2</td>
+      <td>2-3天</td>
+    </tr>
+  </table>
+</div>
+
+<h3>P2 — 平台化与体验</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:25%">开发内容</th><th style="width:40%">说明</th><th style="width:10%">影响层级</th></tr>
+    <tr>
+      <td><span class="priority-tag p2">P2</span></td>
+      <td><strong>自动化工作流引擎</strong></td>
+      <td>Agent串联多步操作，一键式端到端执行</td>
+      <td>L3</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p2">P2</span></td>
+      <td><strong>基线管理与变更控制</strong></td>
+      <td>范围/进度/成本三大基线，变更请求→审批→更新</td>
+      <td>L4</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p2">P2</span></td>
+      <td><strong>干系人管理</strong></td>
+      <td>干系人登记、权力/利益矩阵、沟通计划</td>
+      <td>L4</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p2">P2</span></td>
+      <td><strong>PostgreSQL迁移</strong></td>
+      <td>多租户基础，从SQLite升级</td>
+      <td>L1</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p2">P2</span></td>
+      <td><strong>项目组合管理</strong></td>
+      <td>多项目的战略对齐、资源分配、优先级排序</td>
+      <td>L4</td>
+    </tr>
+    <tr>
+      <td><span class="priority-tag p2">P2</span></td>
+      <td><strong>SSO/OAuth集成</strong></td>
+      <td>企业级认证，RBAC细粒度权限</td>
+      <td>全层</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ==================== 第五章 ==================== -->
+<h2 id="s5">五、系统架构总图</h2>
+
+<div class="arch-diagram" style="font-size:0.65rem; line-height:1.4;">
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                    <span class="hl">全过程工程咨询管理系统 v3.0 — 目标架构</span>                            │
+│                    目标驱动 · AI增强 · 知识沉淀 · 敏捷裁剪                               │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
+│  │                    <span class="l4">L4 · 项目管理系统 (PM Application)</span>                           │   │
+│  │                                                                              │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐          │   │
+│  │  │ <span class="l4">目标管理</span>  │ │ <span class="l4">进度管理</span>  │ │ <span class="l4">成本管理</span>  │ │ <span class="l4">质量管理</span>  │ │ <span class="l4">风险管理</span>  │          │   │
+│  │  │ OKR/WBS  │ │Gantt/CPM │ │ EVM/BCWS │ │ 质量评分  │ │ 风险矩阵  │          │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘          │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐          │   │
+│  │  │ <span class="l4">范围管理</span>  │ │ <span class="l4">资源管理</span>  │ │ <span class="l4">采购管理</span>  │ │ <span class="l4">干系人</span>    │ │ <span class="l4">沟通管理</span>  │          │   │
+│  │  │ WBS/变更 │ │ 团队/物资 │ │ 招标/合同 │ │ 矩阵/计划 │ │ 报告/日志 │          │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘          │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐               │   │
+│  │  │ <span class="l4">资料管理</span>  │ │ <span class="l4">模块裁剪</span>  │ │ <span class="l4">基线管理</span>  │ │  <span class="l4">项目组合管理</span>    │               │   │
+│  │  │ 双规程   │ │ 灵活组装  │ │ 变更控制  │ │  多项目/项目集    │               │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘               │   │
+│  └──────────────────────────────────┬───────────────────────────────────────────┘   │
+│                                     │ 数据流                                         │
+│  ┌──────────────────────────────────▼───────────────────────────────────────────┐   │
+│  │                    <span class="l3">L3 · AI应用层 (Intelligence)</span>                                │   │
+│  │                                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────────────────────┐   │   │
+│  │  │                    <span class="l3">Agent 智能体编排引擎</span>                                  │   │   │
+│  │  │  多步推理 ◇ 任务分解 ◇ 工具调用 ◇ 结果验证 ◇ 错误恢复                    │   │   │
+│  │  └──────────────────────────────────────────────────────────────────────┘   │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                      │   │
+│  │  │ <span class="l3">AI审查</span>   │ │ <span class="l3">AI生成</span>   │ │ <span class="l3">AI分析</span>   │ │ <span class="l3">AI助手</span>   │                      │   │
+│  │  │施工/合同  │ │ 方案/报告 │ │ 指标/风险 │ │ 对话/问答 │                      │   │
+│  │  │招投标     │ │ 填表/指南 │ │ 趋势/预警 │ │ 建议/推荐 │                      │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘                      │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐                           │   │
+│  │  │ <span class="l3">Skill</span>   │ │  <span class="l3">MCP</span>    │ │ <span class="l3">RAG检索增强</span>      │                           │   │
+│  │  │ 技能注册 │ │ 工具协议 │ │ 语义/混合/全文    │                           │   │
+│  │  │ 热插拔   │ │ 标准化   │ │ 上下文组装        │                           │   │
+│  │  └──────────┘ └──────────┘ └──────────────────┘                           │   │
+│  └──────────────────────────────────┬───────────────────────────────────────────┘   │
+│                                     │ 知识检索                                       │
+│  ┌──────────────────────────────────▼───────────────────────────────────────────┐   │
+│  │                    <span class="l2">L2 · 知识工程层 (Knowledge)</span>                                 │   │
+│  │                                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────────────────────┐   │   │
+│  │  │               <span class="l2">Knowledge Orchestrator 知识编排器</span>                              │   │   │
+│  │  │  统一入口 ◇ 自动管道 ◇ 版本管理 ◇ 联合检索 ◇ 质量评估                       │   │   │
+│  │  └──────────────────────────────────────────────────────────────────────┘   │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                      │   │
+│  │  │ <span class="l2">向量数据库</span>│ │ <span class="l2">知识图谱</span>  │ │ <span class="l2">LightRAG</span> │ │ <span class="l2">RAGFlow</span>  │                      │   │
+│  │  │ Embedding│ │  Neo4j   │ │ 混合检索 │ │ 企业知识库│                      │   │
+│  │  │ 余弦搜索 │ │ 9类6关系 │ │ 3路检索  │ │ES+MinIO  │                      │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘                      │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐                                   │   │
+│  │  │ <span class="l2">实体抽取</span>  │ │ <span class="l2">智能分块</span>  │ │ <span class="l2">全文索引</span>  │                                   │   │
+│  │  │ NER/关系 │ │段落/句子 │ │  Lunr    │                                   │   │
+│  │  │ 正则+AI  │ │ /Token   │ │ 关键词   │                                   │   │
+│  │  └──────────┘ └──────────┘ └──────────┘                                   │   │
+│  └──────────────────────────────────┬───────────────────────────────────────────┘   │
+│                                     │ 数据加工                                       │
+│  ┌──────────────────────────────────▼───────────────────────────────────────────┐   │
+│  │                    <span class="l1">L1 · 数据沉淀层 (Data Foundation)</span>                           │   │
+│  │                                                                              │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                      │   │
+│  │  │ <span class="l1">项目数据</span>  │ │ <span class="l1">文档资料</span>  │ │ <span class="l1">审查记录</span>  │ │ <span class="l1">表单数据</span>  │                      │   │
+│  │  │目标/进度 │ │PDF/DOC/XLS│ │AI审查结果│ │ 附表/规程│                      │   │
+│  │  │成本/质量 │ │图纸/图片  │ │人工反馈  │ │上传/下载 │                      │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘                      │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                      │   │
+│  │  │ <span class="l1">指标数据</span>  │ │ <span class="l1">过程数据</span>  │ │ <span class="l1">知识制品</span>  │ │ <span class="l1">审计日志</span>  │                      │   │
+│  │  │CPI/SPI   │ │操作/状态  │ │图谱/向量 │ │变更/访问 │                      │   │
+│  │  │质量分    │ │工作流记录 │ │嵌入/索引 │ │合规追踪 │                      │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘                      │   │
+│  │                                                                              │   │
+│  │  ┌──────────────────────────────────────────────────────────────────────┐   │   │
+│  │  │       <span class="l1">PostgreSQL + 文件存储 + Redis缓存 + 对象存储(MinIO)</span>                    │   │   │
+│  │  └──────────────────────────────────────────────────────────────────────┘   │   │
+│  └──────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         <span class="l0">外部服务与基础设施</span>                                            │   │
+│  │                                                                              │   │
+│  │  <span class="l0">PaddleOCR</span> ───── 文档 OCR 解析 (EasyOCR→PaddleOCR→Tesseract 三级降级)                │   │
+│  │  <span class="l0">DeepSeek</span> ───── 主力 LLM (V3/V4 Pro/R1 三种模式)                                │   │
+│  │  <span class="l0">智谱 GLM-4</span> ─── 备用 LLM + 视觉理解 (GLM-4V)                                    │   │
+│  │  <span class="l0">通义千问</span> ───── 备用 LLM + 视觉理解 (千问VL) + Embedding                         │   │
+│  │  <span class="l0">Ollama</span> ─────── 本地 LLM (Qwen/Llama)                                          │   │
+│  │  <span class="l0">Neo4j</span> ──────── 知识图谱存储与查询                                                  │   │
+│  │  <span class="l0">Elasticsearch</span> ─ 全文检索 (RAGFlow 依赖)                                           │   │
+│  │  <span class="l0">Docker</span> ─────── 容器化部署 (5个服务编排)                                          │   │
+│  │  <span class="l0">Nginx</span> ──────── 反向代理 + 静态资源                                                 │   │
+│  │  <span class="l0">PM2</span> ────────── 进程守护                                                          │   │
+│  │  <span class="l0">GitHub Actions</span>  CI/CD 自动化 (规划中)                                               │   │
+│  │  <span class="l0">K8s</span> ────────── 生产级编排 (规划中)                                                  │   │
+│  └──────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────────────┐   │
+│  │                      <span class="hl">数据闭环 (Knowledge Flywheel)</span>                                 │   │
+│  │                                                                              │   │
+│  │         ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     │   │
+│  │         │ <span class="l4">项目活动</span>  │ ──→ │ <span class="l1">数据产生</span>  │ ──→ │ <span class="l2">知识抽取</span>  │ ──→ │ <span class="l3">AI学习</span>    │     │   │
+│  │         └──────────┘     └──────────┘     └──────────┘     └──────────┘     │   │
+│  │              ↑                                                   │         │   │
+│  │              │                                                   ↓         │   │
+│  │         ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     │   │
+│  │         │ <span class="l4">效率提升</span>  │ ←── │ <span class="l3">自动执行</span>  │ ←── │ <span class="l3">能力增强</span>  │ ←── │ <span class="l3">模型进化</span>  │     │   │
+│  │         └──────────┘     └──────────┘     └──────────┘     └──────────┘     │   │
+│  └──────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- ==================== 第六章 ==================== -->
+<h2 id="s6">六、总结判断与关键建议</h2>
+
+<h3>6.1 方向吻合度：<span style="color:var(--green)">高</span></h3>
+
+<p>
+  你的"目标管理驱动 + AI知识沉淀 + 四层架构"愿景，与项目当前发展方向<b style="color:var(--green)">高度一致</b>。代码中已经有大量正确的探索和实现（AI审查、知识图谱、向量检索、多模型切换、CPM挣值管理等）。
+</p>
+
+<h3>6.2 项目正处在一个 <span style="color:var(--accent)">"临界点"</span></h3>
+
+<div class="card" style="text-align:center">
+  <div class="flow-arrows">
+    <div class="flow-box" style="background:rgba(74,222,128,0.1);border-color:var(--green);min-width:120px">
+      <strong>表单工具期</strong><br><small>已走过</small>
+    </div>
+    <div class="arrow">→</div>
+    <div class="flow-box" style="background:rgba(56,189,248,0.15);border:2px solid var(--accent);min-width:120px">
+      <strong>转型关键期</strong><br><small>← 你在这里</small>
+    </div>
+    <div class="arrow">→</div>
+    <div class="flow-box" style="background:rgba(167,139,250,0.1);border-color:var(--purple);min-width:140px">
+      <strong>目标驱动AI平台期</strong><br><small>尚未到达</small>
+    </div>
+  </div>
+</div>
+
+<p>
+  <strong style="color:var(--red)">如果不做架构升级（P0四项）</strong>，项目会一直停留在"有很多AI功能的表单管理工具"阶段。
+  <strong style="color:var(--green)">做完P0四项</strong>，才能完成从"表单工具"到"目标驱动AI平台"的质变。
+</p>
+
+<h3>6.3 当前最该做的事</h3>
+
+<div class="card" style="border-color:var(--accent); background:rgba(56,189,248,0.05)">
+  <p style="font-size:1.1rem; text-align:center; margin:1rem 0;">
+    <strong style="color:var(--accent)">不是加更多AI功能，而是补上两个架构地基：</strong>
+  </p>
+  <div style="display:flex; gap:2rem; justify-content:center; flex-wrap:wrap">
+    <div style="text-align:center; padding:1.5rem; background:var(--card); border-radius:12px; min-width:200px">
+      <div style="font-size:2rem; margin-bottom:0.5rem">🎯</div>
+      <strong>目标管理体系</strong>
+      <p style="color:var(--muted);font-size:0.85rem">OKR/WBS分解树<br>目标-工作项关联<br>达成度计算引擎</p>
+    </div>
+    <div style="text-align:center; padding:1.5rem; background:var(--card); border-radius:12px; min-width:200px">
+      <div style="font-size:2rem; margin-bottom:0.5rem">🧠</div>
+      <strong>统一知识编排层</strong>
+      <p style="color:var(--muted);font-size:0.85rem">向量库+图谱+RAG<br>联合检索统一API<br>自动管道版本管理</p>
+    </div>
+  </div>
+  <p style="text-align:center; margin-top:1.5rem;">
+    地基打好后，已有的AI审查/生成/分析能力才能从"独立小功能"串联成<b style="color:var(--accent)">"端到端自动化流水线"</b>。
+  </p>
+</div>
+
+<h3>6.4 项目优势盘点</h3>
+
+<table>
+  <tr><th>优势</th><th>说明</th></tr>
+  <tr>
+    <td>技术栈完备</td>
+    <td>前端React+后端Express+Python微服务+Docker部署，全栈覆盖</td>
+  </tr>
+  <tr>
+    <td>AI能力丰富</td>
+    <td>7种模型、4套知识系统、3类审查、7种方案模板、视觉理解等</td>
+  </tr>
+  <tr>
+    <td>工程规范扎实</td>
+    <td>双规程附录A数据、41子模块200+工作项、86项归档分类，专业深度到位</td>
+  </tr>
+  <tr>
+    <td>项目管理专业</td>
+    <td>CPM关键路径、挣值管理EVM、甘特图/网络图、多项目对比</td>
+  </tr>
+  <tr>
+    <td>架构方向正确</td>
+    <td>四层架构、数据闭环、知识驱动等理念与PMBOK第7版高度吻合</td>
+  </tr>
+</table>
+
+<div class="footer">
+  <p>全过程工程咨询管理系统 — 架构审视与发展分析报告</p>
+  <p>生成日期：2026-07-13 &nbsp;|&nbsp; 当前版本：v2.5.0 &nbsp;|&nbsp; 基准：PMBOK第6版/第7版</p>
+  <p style="margin-top:0.5rem; color:var(--accent)">分析完成，建议优先启动 P0 四项工作</p>
+</div>
+
+</div>
+</body>
+</html>
