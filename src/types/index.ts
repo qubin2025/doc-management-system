@@ -255,3 +255,114 @@ export interface GuideChapter {
   links: GuideLink[];  // 默认时序逻辑关系
   forms: GuideForm[];   // 附表清单
 }
+
+// ===== Agent智能体框架 (P1-1) =====
+export interface AgentAction {
+  name: string;
+  description: string;
+  category: 'query' | 'compute' | 'mutate' | 'knowledge' | 'system';
+  handler: (params: Record<string, unknown>, context: AgentContext) => Promise<ActionResult>;
+  requiresConfirmation?: boolean;
+}
+
+export interface ActionResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+export interface AgentContext {
+  projectName: string;
+  userId: string;
+  conversationId: string;
+  history: AgentStep[];
+  memory: Map<string, unknown>;
+}
+
+export interface AgentStep {
+  stepIndex: number;
+  thought: string;
+  actionName: string | null;
+  actionParams: Record<string, unknown> | null;
+  observation: string | null;
+  completedAt: string | null;
+  status: 'pending' | 'thinking' | 'executing' | 'completed' | 'failed';
+}
+
+export interface AgentTask {
+  id: string;
+  goal: string;
+  steps: AgentStep[];
+  currentStep: number;
+  status: 'planning' | 'executing' | 'completed' | 'failed' | 'cancelled';
+  maxSteps: number;
+  startedAt: string;
+  completedAt?: string;
+  result?: string;
+}
+
+// ===== Skill技能机制 (P1-2) =====
+export interface SkillDefinition {
+  id: string;
+  name: string;
+  description: string;
+  category: 'review' | 'generate' | 'fill' | 'guide' | 'analysis';
+  icon: string;
+  tags: string[];
+  executor: (input: SkillInput, context: SkillContext) => Promise<SkillResult>;
+  agentActionName?: string;
+  uiComponent?: string;
+}
+
+export interface SkillInput {
+  projectName: string;
+  params: Record<string, unknown>;
+  files?: File[];
+  options?: { model?: string };
+}
+
+export interface SkillContext {
+  projectName: string;
+  userId: string;
+}
+
+export interface SkillResult {
+  success: boolean;
+  data?: unknown;
+  report?: string;
+  suggestions?: string[];
+  duration: number;
+}
+
+// ===== 工作流引擎 (P2-1) =====
+export interface WorkflowDefinition {
+  id: string;
+  name: string;
+  description: string;
+  version: number;
+  steps: WorkflowStep[];
+  createdAt: string;
+}
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  type: 'agent-task' | 'skill' | 'mcp-tool' | 'condition' | 'wait' | 'parallel' | 'human-approval';
+  agentGoal?: string;
+  skillId?: string;
+  toolName?: string;
+  params?: Record<string, unknown>;
+  timeout?: number;
+  retryCount?: number;
+}
+
+export interface WorkflowInstance {
+  id: string;
+  workflowId: string;
+  projectName: string;
+  status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  currentStepIndex: number;
+  context: Record<string, unknown>;
+  startedAt: string;
+  completedAt?: string;
+}

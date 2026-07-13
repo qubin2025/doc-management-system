@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target, Bot, Zap } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -27,7 +27,11 @@ import BidReview from './components/BidReview';
 import PlanGenerator from './components/PlanGenerator';
 import TargetManager from './components/TargetManager';
 import TailoringEngine from './components/TailoringEngine';
+import AgentConsole from './components/AgentConsole';
+import SkillPanel from './components/SkillPanel';
+import PMBOKFramework from './components/PMBOKFramework';
 import { guideChapters } from './data/guideModules';
+import { kgPipeline } from './data/kgPipeline';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
 import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType, AuthState, Permissions } from './types';
@@ -265,6 +269,7 @@ const App: React.FC = () => {
         }
       };
     });
+    kgPipeline.onDocumentChange();
   }, [currentProject, apiAvailable, standard]);
 
   const handleDelete = useCallback((docId: string, fileIndex: number) => {
@@ -285,6 +290,7 @@ const App: React.FC = () => {
 
       return { ...prev, [currentProject]: projectData };
     });
+    kgPipeline.onDocumentChange();
   }, [currentProject, apiAvailable, standard]);
 
   const handleExport = () => {
@@ -458,6 +464,21 @@ const App: React.FC = () => {
     return <TailoringEngine projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
+  // ===== Agent智能体 (P1-1) =====
+  if (view === 'agent-console' && currentProject) {
+    return <AgentConsole projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 技能面板 (P1-2) =====
+  if (view === 'skill-panel' && currentProject) {
+    return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== PMBOK框架 (P1-4) =====
+  if (view === 'pmbok' && currentProject) {
+    return <PMBOKFramework projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
   // ===== 目标管理 (P0-1) =====
   if (view === 'target-manager' && currentProject) {
     return <TargetManager projectName={currentProject} guideChapters={guideChapters} onBack={() => setView('homepage')} />;
@@ -604,6 +625,39 @@ const App: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">功能模块</h2>
           <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位打通数据联系，大模型智能分析驱动全过程管理</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* P1新功能: AI智能体 */}
+            <button onClick={() => setView('agent-console')}
+              className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm p-5 text-left border-2 border-purple-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-purple-500 text-white font-bold">NEW</div>
+              <div className="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Bot className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">AI智能体 <span className="text-xs text-purple-500">P1</span></h3>
+              <p className="text-xs text-gray-500 leading-relaxed">自主规划执行 · ReAct推理 · 多工具编排</p>
+            </button>
+
+            {/* P1新功能: 技能面板 */}
+            <button onClick={() => setView('skill-panel')}
+              className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl shadow-sm p-5 text-left border-2 border-amber-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-amber-500 text-white font-bold">NEW</div>
+              <div className="w-11 h-11 rounded-lg bg-amber-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6 text-amber-600" />
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">技能面板 <span className="text-xs text-amber-500">P1</span></h3>
+              <p className="text-xs text-gray-500 leading-relaxed">7个AI技能 · 审查/生成/填写 · 一键执行</p>
+            </button>
+
+            {/* P1新功能: PMBOK框架 */}
+            <button onClick={() => setView('pmbok')}
+              className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl shadow-sm p-5 text-left border-2 border-blue-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-blue-500 text-white font-bold">NEW</div>
+              <div className="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">PMBOK框架 <span className="text-xs text-blue-500">P1</span></h3>
+              <p className="text-xs text-gray-500 leading-relaxed">10大知识领域 · 49过程 · 8大绩效域</p>
+            </button>
+
             {/* P0新功能: 模块裁剪 */}
             <button onClick={() => setView('tailoring-engine')}
               className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl shadow-sm p-5 text-left border-2 border-purple-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">

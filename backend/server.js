@@ -13,6 +13,7 @@ import aiRouter from './routes/ai.js';
 import kgRouter from './routes/kg.js';
 import ragflowRouter from './routes/ragflow.js';
 import objectivesRouter from './routes/objectives.js';
+import mcpRouter from './routes/mcp.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/kg', kgRouter);
 app.use('/api/ragflow', ragflowRouter);
 app.use('/api/objectives', objectivesRouter);
+app.use('/api/mcp', mcpRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
