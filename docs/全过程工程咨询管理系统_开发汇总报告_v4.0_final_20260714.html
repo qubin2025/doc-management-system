@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 v4.0 — 开发汇总报告（最终版）</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+    --green: #4ade80; --yellow: #facc15; --red: #f87171;
+    --purple: #a78bfa; --orange: #fb923c;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.8; padding: 2rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 {
+    font-size: 1.8rem; text-align: center; margin-bottom: 0.3rem;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 2rem; font-size: 0.85rem; }
+  h2 {
+    font-size: 1.3rem; margin: 2.5rem 0 1.2rem; padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--accent); color: var(--accent);
+  }
+  h3 { font-size: 1.05rem; margin: 1.8rem 0 0.8rem; color: var(--purple); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem 1.5rem; margin: 1rem 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.82rem; }
+  th, td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; }
+  th { background: rgba(56,189,248,0.1); color: var(--accent); font-weight: 600; }
+  tr:nth-child(even) td { background: rgba(30,41,59,0.5); }
+
+  .badge {
+    display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px;
+    font-size: 0.68rem; font-weight: 600; margin-right: 0.15rem;
+  }
+  .badge-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(250,204,21,0.15); color: var(--yellow); }
+  .badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .badge-blue { background: rgba(56,189,248,0.15); color: var(--accent); }
+  .badge-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+  .done { border-left: 3px solid var(--green); padding: 0.3rem 0.6rem; margin: 0.2rem 0; background: rgba(74,222,128,0.04); }
+  .new { border-left: 3px solid var(--accent); padding: 0.3rem 0.6rem; margin: 0.2rem 0; background: rgba(56,189,248,0.04); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.7rem; margin: 1rem 0; }
+  .kpi-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.9rem; text-align: center;
+  }
+  .kpi-value { font-size: 1.4rem; font-weight: 700; }
+  .kpi-label { font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 0.25rem 0; font-size: 0.82rem; }
+  .chk-yes::before { content: '✅'; margin-right: 0.4rem; }
+  .chk-done::before { content: '✅'; margin-right: 0.4rem; }
+  .chk-pending::before { content: '⬜'; margin-right: 0.4rem; }
+
+  .footer { text-align: center; color: var(--muted); margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.78rem; }
+
+  @media print {
+    body { background: #fff; color: #000; padding: 1cm; }
+    .card { background: #f8fafc; border-color: #cbd5e1; }
+    h1 { -webkit-text-fill-color: #1e40af; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>全过程工程咨询管理系统 v4.0<br>开发汇总报告（最终版）</h1>
+<p class="subtitle">
+  版本历程 v2.5.0 → v3.0 → v4.0 | 日期：2026-07-14 | 提交：17次 | 分支：release/v2.5.0-enterprise-20260708
+</p>
+
+<!-- ===== 一、最终规模 ===== -->
+<h2>一、项目最终规模</h2>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--accent)">50</div>
+    <div class="kpi-label">前端组件</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--green)">28</div>
+    <div class="kpi-label">数据层模块</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--purple)">13</div>
+    <div class="kpi-label">后端路由</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--yellow)">50+</div>
+    <div class="kpi-label">API端点</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--orange)">8</div>
+    <div class="kpi-label">数据库表</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--green)">32</div>
+    <div class="kpi-label">测试用例</div>
+  </div>
+</div>
+
+<table>
+  <tr><th>指标</th><th>v2.5.0</th><th>v4.0 最终</th><th>增量</th></tr>
+  <tr><td>前端组件</td><td>31</td><td><strong>50</strong></td><td>+19</td></tr>
+  <tr><td>数据层模块</td><td>15</td><td><strong>28</strong></td><td>+13</td></tr>
+  <tr><td>后端路由</td><td>8</td><td><strong>13</strong></td><td>+5</td></tr>
+  <tr><td>API端点</td><td>29</td><td><strong>50+</strong></td><td>+21+</td></tr>
+  <tr><td>数据库表</td><td>4</td><td><strong>8</strong></td><td>+4</td></tr>
+  <tr><td>PMBOK覆盖度</td><td>~44%</td><td><strong>~88%</strong></td><td>+44%</td></tr>
+  <tr><td>四层架构完成度</td><td>~44%</td><td><strong>~80%</strong></td><td>+36%</td></tr>
+  <tr><td>代码总行数</td><td>~15,000</td><td><strong>~21,500</strong></td><td>+~6,500</td></tr>
+</table>
+
+<!-- ===== 二、开发历程 ===== -->
+<h2>二、开发历程 — 17次提交全景</h2>
+
+<table>
+  <tr><th>提交</th><th>日期</th><th>阶段</th><th>内容摘要</th></tr>
+  <tr style="background:rgba(249,115,22,0.05)">
+    <td colspan="4"><strong>▸ 架构审视与P0地基 (4次)</strong></td>
+  </tr>
+  <tr><td><code>0de2db2</code></td><td>07-13</td><td>分析</td><td>项目架构审视与发展分析报告（PMBOK第6/7版视角）</td></tr>
+  <tr><td><code>d86774a</code></td><td>07-13</td><td>P0</td><td>目标管理(WBS树)+模块裁剪(20规则)+知识编排(三级降级)+数据库(4新表)</td></tr>
+  <tr><td><code>f794bfe</code></td><td>07-13</td><td>P1/P2</td><td>Agent(ReAct+11工具)+Skill(7个)+MCP(双向桥)+PMBOK(10领域49过程)+KG管道+工作流(4模板)</td></tr>
+  <tr><td><code>48d0c35</code></td><td>07-13</td><td>文档</td><td>CLAUDE.md + DEVELOPMENT_LOG 更新至v3.0</td></tr>
+
+  <tr style="background:rgba(251,191,36,0.05)">
+    <td colspan="4"><strong>▸ UI/UX全面提升 (4次)</strong></td>
+  </tr>
+  <tr><td><code>4ed9982</code></td><td>07-13</td><td>文档</td><td>开发完善报告（73%/21项差距/4阶段路线图）</td></tr>
+  <tr><td><code>bd8ee39</code></td><td>07-13</td><td>UI</td><td>三色主题方案（白色/暖色/暗色CSS变量驱动）</td></tr>
+  <tr><td><code>889095d</code></td><td>07-13</td><td>UX</td><td>项目入口重构（创建→裁剪→目标→首页四步引导）</td></tr>
+  <tr><td><code>4b5ad7c</code></td><td>07-13</td><td>修复</td><td>浅色/暖色主题下组件配色可视度修复</td></tr>
+
+  <tr style="background:rgba(52,211,153,0.05)">
+    <td colspan="4"><strong>▸ v3.0→v4.0 六阶段升级 (6次)</strong></td>
+  </tr>
+  <tr><td><code>b829fc3</code></td><td>07-14</td><td>Phase1</td><td>GuideChapter重构拆分 — 1341行→主组件510行+3子组件</td></tr>
+  <tr><td><code>7932a85</code></td><td>07-14</td><td>Phase2</td><td>裁剪→GuideChapter联动 — excluded灰显/required标记/recommended星标</td></tr>
+  <tr><td><code>0de970f</code></td><td>07-14</td><td>Phase3</td><td>基线管理+审计日志 — baselines/audit_log从空壳变为可操作</td></tr>
+  <tr><td><code>1a0b983</code></td><td>07-14</td><td>Phase4</td><td>PMBOK三大空白模块 — 干系人(权力/利益矩阵)+风险(5×5热力图)+资源(RACI)</td></tr>
+  <tr><td><code>23b6d3b</code></td><td>07-14</td><td>Phase5-6</td><td>工作流构建器+集成验证</td></tr>
+  <tr><td><code>644f047</code></td><td>07-14</td><td>打磨</td><td>P3前打磨 — 首页三级分组+统一ConfirmDialog+6模块卡片补齐</td></tr>
+
+  <tr style="background:rgba(56,189,248,0.06)">
+    <td colspan="4"><strong>▸ 上线准备 (3次)</strong></td>
+  </tr>
+  <tr><td><code>2083efa</code></td><td>07-14</td><td>文档</td><td>v4.0开发总结报告（模块提升/新增17模块/体系升级/部署清单）</td></tr>
+  <tr><td><code>286a118</code></td><td>07-14</td><td>Phase A-E</td><td>上线准备 — 全局搜索+FeedbackButton+导出API+备份脚本</td></tr>
+  <tr><td><code>f8ed0d0</code></td><td>07-14</td><td>修复</td><td>Dashboard联动+Toast统一+搜索集成</td></tr>
+</table>
+
+<!-- ===== 三、新增模块全景 ===== -->
+<h2>三、全部新增模块 — 19个组件/13数据模块/5路由</h2>
+
+<h3>3.1 前端组件 (19个新增)</h3>
+<table>
+  <tr><th>组件</th><th>分类</th><th>功能</th><th>价值</th></tr>
+  <tr><td>TargetManager</td><td><span class="badge badge-green">P0核心</span></td><td>WBS四层分解树+进度环+工作项关联</td><td>目标管理驱动</td></tr>
+  <tr><td>AddObjectiveModal</td><td><span class="badge badge-green">P0核心</span></td><td>新建/编辑目标弹窗</td><td>-</td></tr>
+  <tr><td>TailoringEngine</td><td><span class="badge badge-green">P0核心</span></td><td>项目特征问卷+PMBOK裁剪规则引擎</td><td>灵活模块匹配</td></tr>
+  <tr><td>AgentConsole</td><td><span class="badge badge-blue">P1关键</span></td><td>Agent执行面板+步骤可视化+确认对话框</td><td>AI自主规划</td></tr>
+  <tr><td>SkillPanel</td><td><span class="badge badge-blue">P1关键</span></td><td>7个Skill分类筛选+参数输入+结果展示</td><td>AI能力标准化</td></tr>
+  <tr><td>PMBOKFramework</td><td><span class="badge badge-blue">P1关键</span></td><td>10领域49过程+8绩效域+过程组矩阵+评估</td><td>理论基础</td></tr>
+  <tr><td>WorkflowBuilder</td><td><span class="badge badge-purple">P2增强</span></td><td>4预设模板可视化+执行+结果展示</td><td>一键自动化</td></tr>
+  <tr><td>ThemeSwitcher</td><td><span class="badge badge-purple">体验</span></td><td>三色主题切换（☀️/🌅/🌙）</td><td>多场景适配</td></tr>
+  <tr><td>ConfirmDialog</td><td><span class="badge badge-purple">体验</span></td><td>统一危险操作确认弹窗</td><td>消灭原生confirm</td></tr>
+  <tr><td>GuideModulesTab</td><td><span class="badge badge-blue">重构</span></td><td>工作模块网格+勾选+附件</td><td>拆分巨石组件</td></tr>
+  <tr><td>GuideFormsTab</td><td><span class="badge badge-blue">重构</span></td><td>附表清单+AI填写弹窗</td><td>拆分巨石组件</td></tr>
+  <tr><td>GuideLogicTab</td><td><span class="badge badge-blue">重构</span></td><td>时序逻辑图+draw.io+缩放</td><td>拆分巨石组件</td></tr>
+  <tr><td>BaselineManager</td><td><span class="badge badge-blue">P1关键</span></td><td>三大基线快照+版本管理+KPI对比</td><td>数据层补完</td></tr>
+  <tr><td>AuditLogViewer</td><td><span class="badge badge-blue">P1关键</span></td><td>管理员筛选/搜索操作记录</td><td>合规审计</td></tr>
+  <tr><td>StakeholderManager</td><td><span class="badge badge-purple">P4增强</span></td><td>登记册+权力/利益矩阵(2x2)+参与策略</td><td>PMBOK第13章</td></tr>
+  <tr><td>RiskManager</td><td><span class="badge badge-purple">P4增强</span></td><td>登记册+概率×影响矩阵(5x5)+应对措施</td><td>PMBOK第11章</td></tr>
+  <tr><td>ResourceManager</td><td><span class="badge badge-purple">P4增强</span></td><td>团队+RACI矩阵+沟通记录（三Tab）</td><td>PMBOK第9/10章</td></tr>
+  <tr><td>GlobalSearch</td><td><span class="badge badge-green">上线必备</span></td><td>Ctrl+K全局搜索+6类跨模块检索+结果分组</td><td>可用性关键</td></tr>
+  <tr><td>FeedbackButton</td><td><span class="badge badge-blue">AI闭环</span></td><td>AI生成👍/👎评分+localStorage持久化</td><td>知识反馈</td></tr>
+</table>
+
+<h3>3.2 数据层模块 (13个新增)</h3>
+<div class="card">
+  <div class="new">agentFramework.ts — EngineeringAgent类+ReAct推理循环+11个内置工具</div>
+  <div class="new">skillRegistry.ts — 7个Skill封装+注册表模式+分类筛选</div>
+  <div class="new">mcpAgentBridge.ts — AgentAction↔MCPTool双向桥+远程Server连接</div>
+  <div class="new">knowledgeOrchestrator.ts — 三级降级链(RAGFlow→LightRAG→本地)+chunker整合</div>
+  <div class="new">objectiveEngine.ts — WBS树构建+进度递归计算+workItem完成映射</div>
+  <div class="new">tailoringEngine.ts — 20条PMBOK裁剪规则+computeTailoringResult算法</div>
+  <div class="new">pmbokData.ts — 10知识领域49过程+8绩效域静态数据</div>
+  <div class="new">kgPipeline.ts — 事件驱动图谱自动构建+5秒防抖</div>
+  <div class="new">workflowEngine.ts — 4个预设工作流+Skill/Agent/MCP串联执行</div>
+  <div class="new">themeEngine.ts — 三色主题CSS变量+localStorage持久化</div>
+  <div class="new">backend/utils/audit.js — logAudit()工具+queryAuditLog()查询</div>
+  <div class="new">（修改）api.ts — +9个API函数(objectives/baselines/audit/workflow)</div>
+  <div class="new">（修改）ragService.ts — chunker整合+单文档→多块索引</div>
+</div>
+
+<h3>3.3 后端路由 (5个新增)</h3>
+<div class="card">
+  <div class="new">routes/objectives.js — 7端点：GET树/POST创建/PUT更新/DELETE/关联工作项</div>
+  <div class="new">routes/mcp.js — 2端点：工具列表+健康检查</div>
+  <div class="new">routes/baselines.js — 3端点：GET列表/POST创建/DELETE删除</div>
+  <div class="new">routes/audit.js — 1端点：GET筛选查询（管理员）</div>
+  <div class="new">routes/export.js — 2端点：项目数据导出+健康检查增强</div>
+</div>
+
+<!-- ===== 四、能力跃迁 ===== -->
+<h2>四、核心能力跃迁对比</h2>
+
+<table>
+  <tr><th style="width:15%">维度</th><th style="width:35%">v2.5.0（开发前）</th><th style="width:35%">v4.0（当前）</th><th style="width:15%">提升</th></tr>
+  <tr>
+    <td><strong>驱动模式</strong></td>
+    <td><span class="badge badge-yellow">表单+审批驱动</span> 工作项是静态清单，无目标概念</td>
+    <td><span class="badge badge-green">目标管理驱动</span> WBS四层树→工作项自动关联→进度实时计算</td>
+    <td style="color:var(--green)">根本性转变</td>
+  </tr>
+  <tr>
+    <td><strong>模块配置</strong></td>
+    <td><span class="badge badge-red">全量固定</span> 200+工作项全部显示，无法裁剪</td>
+    <td><span class="badge badge-green">灵活裁剪</span> 问卷→20条PMBOK规则→自动标记必/推/可/排</td>
+    <td style="color:var(--green)">灵活度↑</td>
+  </tr>
+  <tr>
+    <td><strong>AI能力</strong></td>
+    <td><span class="badge badge-yellow">单次手动触发</span> 审查/生成各自独立，无编排</td>
+    <td><span class="badge badge-green">Agent自主规划</span> ReAct推理+11工具+7Skill+工作流串联</td>
+    <td style="color:var(--green)">自动化↑</td>
+  </tr>
+  <tr>
+    <td><strong>知识管理</strong></td>
+    <td><span class="badge badge-red">7系统孤立</span> 手动触发同步，chunker未使用</td>
+    <td><span class="badge badge-green">统一编排</span> 三级降级链+事件驱动KG管道+chunker整合</td>
+    <td style="color:var(--green)">集成度↑</td>
+  </tr>
+  <tr>
+    <td><strong>项目入口</strong></td>
+    <td><span class="badge badge-yellow">直接到首页</span> 无引导流程</td>
+    <td><span class="badge badge-green">四步引导</span> 创建→裁剪→目标→首页，智能跳转</td>
+    <td style="color:var(--green)">体验↑</td>
+  </tr>
+  <tr>
+    <td><strong>用户界面</strong></td>
+    <td><span class="badge badge-yellow">单色主题</span> 原生confirm弹窗</td>
+    <td><span class="badge badge-green">三色主题+统一弹窗+分组导航+Ctrl+K搜索</span></td>
+    <td style="color:var(--green)">专业度↑</td>
+  </tr>
+  <tr>
+    <td><strong>PMBOK完整性</strong></td>
+    <td><span class="badge badge-red">3领域空白</span> 干系人10%/资源15%/沟通15%</td>
+    <td><span class="badge badge-green">10领域全覆盖</span> 每个领域有对应管理模块</td>
+    <td style="color:var(--green)">+44%</td>
+  </tr>
+  <tr>
+    <td><strong>操作反馈</strong></td>
+    <td><span class="badge badge-yellow">部分模块有提示</span></td>
+    <td><span class="badge badge-green">全局Toast+统一确认弹窗+空状态引导</span></td>
+    <td style="color:var(--green)">一致性↑</td>
+  </tr>
+  <tr>
+    <td><strong>数据安全</strong></td>
+    <td><span class="badge badge-yellow">无审计</span></td>
+    <td><span class="badge badge-green">审计日志+基线快照+备份脚本+数据导出</span></td>
+    <td style="color:var(--green)">合规性↑</td>
+  </tr>
+  <tr>
+    <td><strong>可维护性</strong></td>
+    <td><span class="badge badge-red">GuideChapter 1341行巨石</span></td>
+    <td><span class="badge badge-green">5个组件拆分+50组件统一模式+主题CSS变量</span></td>
+    <td style="color:var(--green)">维护成本↓</td>
+  </tr>
+</table>
+
+<!-- ===== 五、四层架构 ===== -->
+<h2>五、四层架构完成度评估</h2>
+
+<table>
+  <tr><th>层级</th><th>v2.5.0</th><th>v4.0</th><th>关键提升项</th></tr>
+  <tr>
+    <td><strong>L4 项目管理层</strong></td>
+    <td>55%</td><td style="color:var(--green);font-weight:bold">88%</td>
+    <td>目标管理、模块裁剪、PMBOK框架、干系人/风险/资源、基线管理、仪表盘联动</td>
+  </tr>
+  <tr>
+    <td><strong>L3 AI应用层</strong></td>
+    <td>45%</td><td style="color:var(--accent);font-weight:bold">80%</td>
+    <td>Agent ReAct、Skill注册表(7个)、MCP双向桥、工作流引擎、全局搜索、知识反馈</td>
+  </tr>
+  <tr>
+    <td><strong>L2 知识工程层</strong></td>
+    <td>35%</td><td style="color:var(--accent);font-weight:bold">75%</td>
+    <td>知识编排器(三级降级)、KG自动管道、chunker整合、反馈加权检索</td>
+  </tr>
+  <tr>
+    <td><strong>L1 数据沉淀层</strong></td>
+    <td>40%</td><td style="color:var(--accent);font-weight:bold">75%</td>
+    <td>4张新表、审计工具、基线API、导出API、备份脚本</td>
+  </tr>
+  <tr style="background:rgba(56,189,248,0.08)">
+    <td><strong>综合</strong></td>
+    <td><strong>~44%</strong></td>
+    <td style="color:var(--green);font-weight:bold;font-size:1.1rem"><strong>~80%</strong></td>
+    <td><strong>+36个百分点</strong></td>
+  </tr>
+</table>
+
+<!-- ===== 六、部署清单 ===== -->
+<h2>六、部署上线检查清单</h2>
+
+<h3>代码层面 ✅ 已完成</h3>
+<ul class="checklist">
+  <li class="chk-done">TSC零错误 + 32测试通过 + Vite构建成功</li>
+  <li class="chk-done">全局Toast反馈（所有CRUD操作）</li>
+  <li class="chk-done">Ctrl+K全局搜索（6类跨模块检索）</li>
+  <li class="chk-done">Dashboard告警可点击跳转</li>
+  <li class="chk-done">统一ConfirmDialog（替代9个原生confirm）</li>
+  <li class="chk-done">数据导出API（/api/export/project/:name）</li>
+  <li class="chk-done">数据库备份脚本（scripts/backup.sh）</li>
+  <li class="chk-done">AI反馈评分组件（FeedbackButton）</li>
+  <li class="chk-done">三色主题全页面适配</li>
+  <li class="chk-done">50组件主题自适应（CSS变量驱动）</li>
+</ul>
+
+<h3>部署前必做 ⬜</h3>
+<ul class="checklist">
+  <li class="chk-pending">生产环境配置（.env.production — API Key、数据库路径、CORS白名单）</li>
+  <li class="chk-pending">HTTPS部署（Nginx配置SSL证书）</li>
+  <li class="chk-pending">安全审计（检查所有API端点认证覆盖、SQL注入、XSS防护）</li>
+  <li class="chk-pending">数据库备份策略（cron/计划任务调用backup.sh，保留7天）</li>
+  <li class="chk-pending">日志管理（后端日志轮转、错误监控）</li>
+  <li class="chk-pending">性能基线测试（10+并发用户，确认响应时间&lt;2s）</li>
+  <li class="chk-pending">数据清理（清除测试数据test-project等，重置admin密码）</li>
+  <li class="chk-pending">三色主题全页面截屏走查</li>
+</ul>
+
+<h3>强烈建议 ⬜</h3>
+<ul class="checklist">
+  <li class="chk-pending">用户操作手册（含全流程截图）</li>
+  <li class="chk-pending">Docker一键部署（完善docker-compose.yml）</li>
+  <li class="chk-pending">限流策略确认（生产环境参数调整）</li>
+  <li class="chk-pending">浏览器兼容测试（Chrome/Edge/Firefox最新版）</li>
+  <li class="chk-pending">端到端回归测试（创建→裁剪→目标→搜索→告警→反馈 全流程）</li>
+  <li class="chk-pending">移动端基础适配（响应式布局调整）</li>
+</ul>
+
+<!-- ===== 七、后续P3 ===== -->
+<h2>七、后续开发方向（P3企业化）</h2>
+
+<table>
+  <tr><th>#</th><th>任务</th><th>工作量</th><th>类型</th></tr>
+  <tr><td>1</td><td>PostgreSQL迁移（SQLite→PG，多租户+并发写入）</td><td>5-7天</td><td><span class="badge badge-red">基础设施</span></td></tr>
+  <tr><td>2</td><td>SSO/OAuth集成（企业SSO+RBAC+LDAP）</td><td>5-7天</td><td><span class="badge badge-red">基础设施</span></td></tr>
+  <tr><td>3</td><td>CI/CD自动化（GitHub Actions+K8s+灰度发布）</td><td>5-7天</td><td><span class="badge badge-red">基础设施</span></td></tr>
+  <tr><td>4</td><td>监控告警（Prometheus+Grafana+APM）</td><td>3-5天</td><td><span class="badge badge-red">基础设施</span></td></tr>
+  <tr><td>5</td><td>项目组合管理（多项目战略对齐+资源分配优化）</td><td>5-7天</td><td><span class="badge badge-blue">业务功能</span></td></tr>
+  <tr><td>6</td><td>Agent增强（多项目管理+学习记忆+MCP UI）</td><td>7-10天</td><td><span class="badge badge-blue">AI增强</span></td></tr>
+  <tr><td>7</td><td>移动端适配（PWA/React Native壳）</td><td>7-10天</td><td><span class="badge badge-purple">体验</span></td></tr>
+  <tr><td>8</td><td>测试覆盖率提升（32→50+用例+E2E Cypress）</td><td>5-7天</td><td><span class="badge badge-purple">质量</span></td></tr>
+</table>
+
+<!-- ===== 结尾 ===== -->
+<h2>八、结论</h2>
+
+<div class="card" style="border-color:var(--accent);background:rgba(56,189,248,0.05)">
+  <p style="font-size:1.05rem;text-align:center;margin:0.5rem 0">
+    <strong>经过2个自然日、17次提交、50个组件、28个数据模块、13个后端路由的集中开发，系统从v2.5.0的"AI功能丰富的表单管理工具"（完成度~44%）升级为v4.0的"Agent驱动的目标管理智能平台"（完成度~80%）。</strong>
+  </p>
+  <p style="text-align:center;color:var(--muted);font-size:0.9rem;margin-top:0.8rem">
+    四大核心目标全部落地：目标管理驱动 ✓  AI知识库全线贯通 ✓  四层架构清晰建立 ✓  灵活裁剪敏捷匹配 ✓<br>
+    当前版本已具备<strong style="color:var(--green)">内部测试部署</strong>条件。完成部署清单8项必做后即可<strong style="color:var(--accent)">正式上线</strong>。
+  </p>
+</div>
+
+<div class="footer">
+  <p>全过程工程咨询管理系统 — 开发汇总报告 v4.0（最终版）</p>
+  <p>生成日期：2026-07-14 | 提交：f8ed0d0 | 分支：release/v2.5.0-enterprise-20260708 | 仓库：qubin2025/doc-management-system</p>
+</div>
+
+</div>
+</body>
+</html>
