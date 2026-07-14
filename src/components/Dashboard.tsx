@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck } from 'lucide-react';
 import { computeIndicators, ProjectIndicators, getAllProjectIndicators } from '../data/indicatorEngine';
 
-interface Props { projectName: string; onBack: () => void; }
+interface Props { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
 
 const gaugeColor = (v: number, thresholds: [number, number] = [0.6, 0.85]): string =>
   v >= thresholds[1] ? 'text-green-500' : v >= thresholds[0] ? 'text-amber-500' : 'text-red-500';
@@ -10,7 +10,8 @@ const gaugeColor = (v: number, thresholds: [number, number] = [0.6, 0.85]): stri
 const barColor = (v: number): string =>
   v >= 80 ? 'bg-green-500' : v >= 50 ? 'bg-amber-500' : 'bg-red-500';
 
-const Dashboard: React.FC<Props> = ({ projectName, onBack }) => {
+const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
+  const alertNavMap: Record<string, string> = { cost: 'baseline', schedule: 'plan-manager', completeness: 'standard-select', quality: 'construction-review' };
   const [indicators, setIndicators] = useState<ProjectIndicators | null>(null);
   const [allIndicators, setAllIndicators] = useState<ProjectIndicators[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -83,12 +84,13 @@ const Dashboard: React.FC<Props> = ({ projectName, onBack }) => {
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {indicators?.alerts.map((a, i) => (
-                  <div key={i} className={`flex items-start gap-2 p-2.5 rounded-lg text-xs ${
-                    a.level === 'danger' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                  <button key={i} onClick={() => onNavigate?.(alertNavMap[a.type] || 'homepage')}
+                    className={`w-full text-left flex items-start gap-2 p-2.5 rounded-lg text-xs transition hover:shadow-sm cursor-pointer ${
+                    a.level === 'danger' ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
                   }`}>
                     {a.level === 'danger' ? <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> : <Clock className="w-3.5 h-3.5 mt-0.5 shrink-0" />}
-                    <span>{a.message}</span>
-                  </div>
+                    <span>{a.message} → 点击查看</span>
+                  </button>
                 ))}
               </div>
             )}

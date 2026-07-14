@@ -37,6 +37,7 @@ import StakeholderManager from './components/StakeholderManager';
 import RiskManager from './components/RiskManager';
 import ResourceManager from './components/ResourceManager';
 import WorkflowBuilder from './components/WorkflowBuilder';
+import GlobalSearch from './components/GlobalSearch';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
 import { appendixAData as buildingData } from './data/appendixA';
@@ -417,7 +418,7 @@ const App: React.FC = () => {
   }
 
   if (view === 'dashboard' && currentProject) {
-    return <Dashboard projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <Dashboard projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v) => setView(v)} />;
   }
 
   if (view === 'plan-manager') {
@@ -648,6 +649,10 @@ const App: React.FC = () => {
                   <Shield className="w-4 h-4" /> 管理
                 </button>
               )}
+              {currentProject && <GlobalSearch projectName={currentProject} onNavigate={(view, params) => {
+                if (params?.chapterId) { setGuideChapterId(params.chapterId); setView('guide-chapter'); }
+                else setView(view);
+              }} />}
               <ThemeSwitcher />
               <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                 <LogOut className="w-4 h-4" /> 退出

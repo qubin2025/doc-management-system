@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit2, Trash2, Users, Briefcase, MessageSquare } from 'lucide-react';
+import { toast } from './Toast';
 
 interface TeamMember { id: string; name: string; role: string; dept: string; availability: string; }
 interface RaciItem { id: string; task: string; responsible: string; accountable: string; consulted: string; informed: string; }
@@ -27,7 +28,7 @@ const ResourceManager: React.FC<Props> = ({ projectName, onBack }) => {
     } else {
       setMembers(prev => [...prev, { ...form, id: `tm-${Date.now()}` } as TeamMember]);
     }
-    setEditing(null); setForm({});
+    setEditing(null); setForm({}); toast('保存成功', 'success');
   };
   const handleSaveRaci = () => {
     if (!form.task) return;
@@ -36,7 +37,7 @@ const ResourceManager: React.FC<Props> = ({ projectName, onBack }) => {
     } else {
       setRaciItems(prev => [...prev, { ...form, id: `rc-${Date.now()}` } as RaciItem]);
     }
-    setEditing(null); setForm({});
+    setEditing(null); setForm({}); toast('保存成功', 'success');
   };
 
   return (

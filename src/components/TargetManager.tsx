@@ -9,6 +9,7 @@ import {
 } from '../data/objectiveEngine';
 import * as api from '../data/api';
 import AddObjectiveModal from './AddObjectiveModal';
+import { toast } from './Toast';
 
 interface TargetManagerProps {
   projectName: string;
@@ -155,7 +156,7 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
       });
     };
     deleteRecursive(id);
-    try { api.deleteObjective(id); } catch { /* 后端不可用 */ }
+    try { api.deleteObjective(id); toast('已删除','success'); } catch { /* 后端不可用 */ }
   };
 
   // 渲染进度环

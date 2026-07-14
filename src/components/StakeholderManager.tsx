@@ -1,5 +1,6 @@
 import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
+import { toast } from './Toast';
 import { ArrowLeft, Plus, Edit2, Trash2, Users } from 'lucide-react';
 
 interface Stakeholder { id: string; name: string; role: string; org: string; power: 'high'|'low'; interest: 'high'|'low'; influence: string; strategy: string; contact: string; }
@@ -22,12 +23,12 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
     } else {
       setStakeholders(prev => [...prev, { ...form, id: `sh-${Date.now()}` } as Stakeholder]);
     }
-    setEditing(null); setForm({});
+    setEditing(null); setForm({}); toast('保存成功','success');
   };
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const handleDelete = (id: string) => { setStakeholders(prev => prev.filter(s => s.id !== id)); setConfirmDelete(null); };
+  const handleDelete = (id: string) => { setStakeholders(prev => prev.filter(s => s.id !== id)); setConfirmDelete(null); toast('已删除','success'); };
 
   const highP = stakeholders.filter(s => s.power === 'high' && s.interest === 'high').length;
   const highI = stakeholders.filter(s => s.power === 'low' && s.interest === 'high').length;

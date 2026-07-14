@@ -1,5 +1,6 @@
 import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
+import { toast } from './Toast';
 import { ArrowLeft, Plus, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 
 interface RiskItem { id: string; name: string; category: string; probability: number; impact: number; score: number; response: string; owner: string; status: 'open'|'mitigated'|'closed'; }
@@ -23,7 +24,7 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
     } else {
       setRisks(prev => [...prev, { ...form, id: `rk-${Date.now()}`, score } as RiskItem]);
     }
-    setEditing(null); setForm({ probability: 3, impact: 3, status: 'open' });
+    setEditing(null); setForm({ probability: 3, impact: 3, status: 'open' }); toast('保存成功','success');
   };
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
