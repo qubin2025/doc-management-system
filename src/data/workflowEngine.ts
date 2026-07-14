@@ -60,6 +60,61 @@ export const PRESET_WORKFLOWS: WorkflowDefinition[] = [
   },
 ];
 
+/** 保存工作流副作用到项目数据 */
+function applySideEffects(projectName: string, stepId: string, result: any): void {
+  if (!result?.success) return;
+  const data = result.data;
+
+  // AI表单填写结果 → 保存到localStorage
+  if (typeof data === 'string' && data.length > 20) {
+    try {
+      // 尝试识别表单填写结果并保存
+      const formKey = `form-content-wf-${projectName}-${stepId}`;
+      const existing = JSON.parse(localStorage.getItem(formKey) || '{}');
+      localStorage.setItem(formKey, JSON.stringify({
+        content: data,
+        lastModified: new Date().toISOString(),
+        version: (existing.version || 0) + 1,
+        filledByAi: true,
+      }));
+    } catch {}
+  }
+
+  // 审查结果 → 存入知识产物
+  try {
+    const artifacts = JSON.parse(localStorage.getItem(`knowledge-artifacts-${projectName}`) || '[]');
+    artifacts.push({
+      id: `ka-${Date.now()}-${stepId}`,
+      projectName,
+      artifactType: 'summary',
+      sourceType: 'ai-generated',
+      sourceId: stepId,
+      content: typeof data === 'string' ? data.slice(0, 500) : JSON.stringify(data).slice(0, 500),
+      confidence: 0.85,
+      createdAt: new Date().toISOString(),
+    });
+    // 只保留最近20条
+    if (artifacts.length > 20) artifacts.splice(0, artifacts.length - 20);
+    localStorage.setItem(`knowledge-artifacts-${projectName}`, JSON.stringify(artifacts));
+  } catch {}
+}
+
+/** 记录工作流执行历史 */
+function logWorkflowExecution(projectName: string, wfName: string, steps: any[], status: string): void {
+  try {
+    const history = JSON.parse(localStorage.getItem(`wf-history-${projectName}`) || '[]');
+    history.unshift({
+      name: wfName,
+      status,
+      stepsCompleted: steps.filter((s: any) => s.success).length,
+      stepsTotal: steps.length,
+      executedAt: new Date().toISOString(),
+    });
+    if (history.length > 20) history.pop();
+    localStorage.setItem(`wf-history-${projectName}`, JSON.stringify(history));
+  } catch {}
+}
+
 /** 执行一个工作流 */
 export async function executeWorkflow(
   definition: WorkflowDefinition,
@@ -80,14 +135,14 @@ export async function executeWorkflow(
     instance.currentStepIndex = i;
 
     try {
+      let result: any = null;
       switch (step.type) {
         case 'skill':
           if (step.skillId) {
-            const result = await skillRegistry.execute(step.skillId, {
+            result = await skillRegistry.execute(step.skillId, {
               projectName,
               params: step.params || {},
             }, { projectName, userId: 'admin' });
-            (instance.context as any)[step.id] = result;
           }
           break;
         case 'agent-task':
@@ -95,29 +150,40 @@ export async function executeWorkflow(
             const ctx: AgentContext = { projectName, userId: 'admin', conversationId: instance.id, history: [], memory: new Map() };
             const task = await engineeringAgent.plan(step.agentGoal, ctx);
             await engineeringAgent.execute(task, ctx);
-            (instance.context as any)[step.id] = task.result;
+            result = { success: true, data: task.result };
           }
           break;
         case 'mcp-tool':
           if (step.toolName) {
-            const result = await mcpRegistry.callTool(step.toolName, step.params || {});
-            (instance.context as any)[step.id] = result;
+            result = await mcpRegistry.callTool(step.toolName, step.params || {});
           }
           break;
         case 'human-approval':
-          // 在UI层处理，此处跳过
-          (instance.context as any)[step.id] = { status: 'pending-approval', message: step.params?.approvalPrompt || '需要审批' };
+          result = { success: true, data: { status: 'pending-approval', message: step.params?.approvalPrompt || '需要审批' } };
           break;
         default:
-          (instance.context as any)[step.id] = { status: 'skipped' };
+          result = { success: true, data: { status: 'skipped' } };
+      }
+
+      (instance.context as any)[step.id] = result;
+
+      // 写入副作用：结果保存到项目数据
+      if (result?.success) {
+        applySideEffects(projectName, step.id, result);
       }
     } catch (e: any) {
-      (instance.context as any)[step.id] = { status: 'failed', error: e.message };
+      (instance.context as any)[step.id] = { success: false, error: e.message };
     }
   }
 
   instance.status = 'completed';
   instance.completedAt = new Date().toISOString();
+
+  // 记录执行历史 + 触发KG管道更新
+  const steps = Object.values(instance.context as any || {});
+  logWorkflowExecution(projectName, definition.name, steps, 'completed');
+  try { (await import('./kgPipeline')).kgPipeline.onDocumentChange(); } catch {}
+
   return instance;
 }
 

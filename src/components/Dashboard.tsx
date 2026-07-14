@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck, Zap } from 'lucide-react';
 import { computeIndicators, ProjectIndicators, getAllProjectIndicators } from '../data/indicatorEngine';
 
 interface Props { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
@@ -36,6 +36,12 @@ const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
           </div>
           <button onClick={() => setRefreshKey(k => k + 1)}
             className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">刷新</button>
+          {onNavigate && (
+            <button onClick={() => onNavigate('workflow')}
+              className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 flex items-center gap-1">
+              <Zap size={12} /> 工作流
+            </button>
+          )}
         </div>
       </header>
 
