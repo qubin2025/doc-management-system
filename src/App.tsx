@@ -31,6 +31,8 @@ import AgentConsole from './components/AgentConsole';
 import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
 import ThemeSwitcher from './components/ThemeSwitcher';
+import BaselineManager from './components/BaselineManager';
+import AuditLogViewer from './components/AuditLogViewer';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
 import { appendixAData as buildingData } from './data/appendixA';
@@ -501,6 +503,16 @@ const App: React.FC = () => {
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
     return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 基线管理 (Phase 3) =====
+  if (view === 'baseline' && currentProject) {
+    return <BaselineManager projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 审计日志 (Phase 3) =====
+  if (view === 'audit-log') {
+    return <AuditLogViewer projectName={currentProject} onBack={() => isAdmin ? setView('admin') : setView('homepage')} />;
   }
 
   // ===== PMBOK框架 (P1-4) =====

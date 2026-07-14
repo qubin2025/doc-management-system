@@ -14,6 +14,8 @@ import kgRouter from './routes/kg.js';
 import ragflowRouter from './routes/ragflow.js';
 import objectivesRouter from './routes/objectives.js';
 import mcpRouter from './routes/mcp.js';
+import baselinesRouter from './routes/baselines.js';
+import auditRouter from './routes/audit.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +62,8 @@ app.use('/api/kg', kgRouter);
 app.use('/api/ragflow', ragflowRouter);
 app.use('/api/objectives', objectivesRouter);
 app.use('/api/mcp', mcpRouter);
+app.use('/api/baselines', baselinesRouter);
+app.use('/api/audit', auditRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
