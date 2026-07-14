@@ -278,8 +278,16 @@ export class EngineeringAgent {
         { projectName: context.projectName }
       );
       // 提取HTML内容（去除可能的markdown包裹）
-      const html = finalReply.replace(/```html\n?/g, '').replace(/\n?```/g, '').trim();
-      task.result = html || summary;
+      let html = finalReply;
+      // 移除 ```html ... ``` 或 ````html ... ```` 包裹
+      html = html.replace(/````html\n?/g, '').replace(/\n?````/g, '');
+      html = html.replace(/```html\n?/g, '').replace(/\n?```/g, '');
+      // 如果LLM在外面加了说明文字，提取<html>到</html>之间的内容
+      const htmlStart = html.indexOf('<!DOCTYPE') !== -1 ? html.indexOf('<!DOCTYPE') : html.indexOf('<html');
+      if (htmlStart > 0) html = html.slice(htmlStart);
+      const htmlEnd = html.lastIndexOf('</html>');
+      if (htmlEnd > 0) html = html.slice(0, htmlEnd + 7);
+      task.result = html.trim() || summary;
     } catch {
       task.result = `<div style="font-family:sans-serif;padding:20px"><h2 style="color:#dc2626">报告生成失败</h2><pre>${summary}</pre></div>`;
     }

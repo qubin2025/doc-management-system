@@ -237,7 +237,7 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
                   <CheckCircle2 size={16} className="text-green-400" />
                   <span className="text-sm font-bold text-[var(--text-primary)]">执行报告</span>
                 </div>
-                {task.result.startsWith('<') ? (
+                {(task.result.startsWith('<') || task.result.includes('<html') || task.result.includes('<div') || task.result.includes('<!DOCTYPE')) ? (
                   <div className="max-h-[70vh] overflow-y-auto"
                     dangerouslySetInnerHTML={{ __html: task.result }} />
                 ) : (
