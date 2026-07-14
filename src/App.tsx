@@ -38,6 +38,7 @@ import RiskManager from './components/RiskManager';
 import ResourceManager from './components/ResourceManager';
 import WorkflowBuilder from './components/WorkflowBuilder';
 import GlobalSearch from './components/GlobalSearch';
+import PortfolioManager from './components/PortfolioManager';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
 import { appendixAData as buildingData } from './data/appendixA';
@@ -508,6 +509,11 @@ const App: React.FC = () => {
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
     return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 项目组合管理 (P3) =====
+  if (view === 'portfolio') {
+    return <PortfolioManager onBack={() => setView('homepage')} />;
   }
 
   // ===== 工作流构建器 (Phase 5) =====
