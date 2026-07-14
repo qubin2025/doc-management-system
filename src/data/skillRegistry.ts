@@ -43,7 +43,27 @@ class SkillRegistry {
 
 export const skillRegistry = new SkillRegistry();
 
-// ===== 注册7个技能 =====
+// ===== 注册8个技能 =====
+
+// 0. 通用AI对话（Agent工具代理）
+skillRegistry.register({
+  id: 'ai_chat',
+  name: '通用AI对话',
+  description: '调用AI模型进行分析、总结、问答等通用任务',
+  category: 'analysis',
+  icon: 'Sparkles',
+  tags: ['AI', '对话', '通用'],
+  executor: async (input, ctx) => {
+    const query = String(input.params.query || input.params.prompt || '请分析项目情况');
+    const result = await api.aiChat(
+      [{ role: 'user', content: query }],
+      '你是项目管理AI助手，请根据用户需求提供专业分析。',
+      { projectName: ctx.projectName }
+    );
+    return { success: true, data: result, report: 'AI分析完成', duration: 0 };
+  },
+  agentActionName: 'ai_chat',
+});
 
 // 1. AI表单填写
 skillRegistry.register({
