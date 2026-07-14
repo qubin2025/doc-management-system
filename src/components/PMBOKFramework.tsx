@@ -29,8 +29,8 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
     setCoverage(computePMBOKCoverage(Array.from(completedSet)));
   }, [projectName]);
 
-  const scoreColor = (score: number) => score >= 80 ? 'text-green-400' : score >= 40 ? 'text-sky-400' : score > 0 ? 'text-amber-400' : 'text-gray-600';
-  const barColor = (score: number) => score >= 80 ? 'bg-green-400' : score >= 40 ? 'bg-sky-400' : score > 0 ? 'bg-amber-400' : 'bg-gray-700';
+  const scoreColor = (score: number) => score >= 80 ? 'text-green-400' : score >= 40 ? 'text-sky-400' : score > 0 ? 'text-amber-400' : 'text-[var(--text-muted)]';
+  const barColor = (score: number) => score >= 80 ? 'bg-green-400' : score >= 40 ? 'bg-sky-400' : score > 0 ? 'bg-amber-400' : 'bg-[var(--bg-tertiary)]';
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
@@ -45,7 +45,7 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
         <div className="flex gap-2 mb-6">
           {(['areas', 'domains', 'matrix', 'assessment'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-1.5 text-sm rounded-lg transition ${activeTab === tab ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-gray-800 text-[var(--text-secondary)] hover:bg-gray-700'}`}>
+              className={`px-4 py-1.5 text-sm rounded-lg transition ${activeTab === tab ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}>
               {{ areas: '10大知识领域', domains: '8大绩效域', matrix: '过程组矩阵', assessment: '项目评估' }[tab]}
             </button>
           ))}
@@ -72,7 +72,7 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
                   <p className="text-xs text-[var(--text-muted)] mb-3">{area.description}</p>
                   <div className="flex flex-wrap gap-1">
                     {area.processes.map(p => (
-                      <span key={p.id} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-[var(--text-secondary)]">
+                      <span key={p.id} className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-[var(--text-secondary)]">
                         {p.id} {p.name}
                       </span>
                     ))}
@@ -157,7 +157,7 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
                 <div className="text-[10px] text-[var(--text-muted)]">低覆盖(&lt;40%)</div>
               </div>
               <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
-                <div className="text-2xl font-bold text-gray-600">{coverage.filter(c => c.score === 0).length}</div>
+                <div className="text-2xl font-bold text-[var(--text-muted)]">{coverage.filter(c => c.score === 0).length}</div>
                 <div className="text-[10px] text-[var(--text-muted)]">未覆盖</div>
               </div>
               <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">

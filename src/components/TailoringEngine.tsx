@@ -150,7 +150,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
       case 'required': return 'bg-red-500/10 text-red-400 border-red-500/30';
       case 'recommended': return 'bg-sky-500/10 text-sky-400 border-sky-500/30';
       case 'optional': return 'bg-gray-500/10 text-[var(--text-secondary)] border-gray-500/30';
-      case 'excluded': return 'bg-gray-700/20 text-gray-600 border-[var(--border-secondary)]/30';
+      case 'excluded': return 'bg-[var(--bg-tertiary)]/20 text-[var(--text-muted)] border-[var(--border-secondary)]/30';
     }
   };
   const statusBg = (s: WorkItemStatus) => {
@@ -184,7 +184,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
             <div className="flex gap-2">
               {Object.entries(PROFILE_TEMPLATES).map(([name]) => (
                 <button key={name} onClick={() => applyTemplate(name)}
-                  className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] rounded-lg transition">
+                  className="px-3 py-1.5 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] rounded-lg transition">
                   {name}
                 </button>
               ))}
@@ -201,7 +201,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                     className={`px-3 py-2 rounded-lg text-xs border transition ${
                       profile.projectType === t.value
                         ? 'bg-purple-500/20 border-purple-500 text-purple-400'
-                        : 'bg-gray-800 border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-gray-600'}`}>
+                        : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-accent)]'}`}>
                     {t.label}
                   </button>
                 ))}
@@ -218,7 +218,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs border transition ${
                         profile.investmentLevel === l.value
                           ? 'bg-purple-500/20 border-purple-500 text-purple-400'
-                          : 'bg-gray-800 border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-gray-600'}`}>
+                          : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-accent)]'}`}>
                       {l.label}
                     </button>
                   ))}
@@ -228,7 +228,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                 <h3 className="text-sm font-medium mb-3">计划工期 (月)</h3>
                 <input type="number" value={profile.durationMonths}
                   onChange={e => updateProfile('durationMonths', Number(e.target.value))}
-                  className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                  className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                 <h3 className="text-sm font-medium mt-4 mb-3">项目复杂度</h3>
                 <div className="space-y-2">
                   {COMPLEXITY_LEVELS.map(c => (
@@ -236,7 +236,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs border transition ${
                         profile.complexity === c.value
                           ? 'bg-purple-500/20 border-purple-500 text-purple-400'
-                          : 'bg-gray-800 border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-gray-600'}`}>
+                          : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-accent)]'}`}>
                       {c.label}
                     </button>
                   ))}
@@ -255,7 +255,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                       className={`px-3 py-2 rounded-lg text-xs border transition ${
                         selected
                           ? 'bg-purple-500/20 border-purple-500 text-purple-400'
-                          : 'bg-gray-800 border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-gray-600'}`}>
+                          : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-accent)]'}`}>
                       {selected && <Check size={10} className="inline mr-1" />}
                       {s.label}
                     </button>
@@ -295,7 +295,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                   <input type="number" value={profile.stakeholderCount}
                     onChange={e => updateProfile('stakeholderCount', Number(e.target.value))}
                     min={1} max={20}
-                    className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                    className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div className="space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -350,11 +350,11 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
           </div>
           <div className="flex gap-2">
             <button onClick={() => setStep('questionnaire')}
-              className="px-3 py-1.5 text-sm bg-gray-800 hover:bg-[var(--bg-hover)] rounded-lg transition flex items-center gap-1">
+              className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition flex items-center gap-1">
               <RotateCcw size={14} /> 重新评估
             </button>
             <button onClick={() => setShowExcluded(!showExcluded)}
-              className="px-3 py-1.5 text-sm bg-gray-800 hover:bg-[var(--bg-hover)] rounded-lg transition flex items-center gap-1">
+              className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition flex items-center gap-1">
               {showExcluded ? <EyeOff size={14} /> : <Eye size={14} />}
               {showExcluded ? '隐藏排除项' : '显示全部'}
             </button>
@@ -409,7 +409,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
             <div className="text-xs text-[var(--text-muted)]">可选</div>
           </div>
           <div className="bg-gray-900 border border-[var(--border-secondary)]/50 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-gray-600">{result.summary.excluded}</div>
+            <div className="text-2xl font-bold text-[var(--text-muted)]">{result.summary.excluded}</div>
             <div className="text-xs text-[var(--text-muted)]">排除</div>
           </div>
         </div>
@@ -421,7 +421,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
               className={`px-4 py-1.5 text-sm rounded-lg transition ${
                 activeChapter === ch.id
                   ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                  : 'bg-gray-800 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
               }`}>
               第{ch.number}章 {ch.title}
             </button>
@@ -440,7 +440,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                 if (!showExcluded && status === 'excluded') return null;
                 const isAdjusted = manualAdjustments.has(wi.id);
                 return (
-                  <div key={wi.id} className={`flex items-center gap-3 px-4 py-2 border-l-2 ${statusBg(status)} hover:bg-gray-800/30 transition`}>
+                  <div key={wi.id} className={`flex items-center gap-3 px-4 py-2 border-l-2 ${statusBg(status)} hover:bg-[var(--bg-hover)] transition`}>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${statusColor(status)}`}>
                       {statusLabel(status)}
                     </span>
@@ -454,7 +454,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                         return (
                           <button key={s} onClick={() => adjustStatus(wi.id, s)}
                             className={`px-1.5 py-0.5 text-[10px] rounded border transition ${
-                              isCurrent ? statusColor(s) : 'bg-gray-800 border-[var(--border-secondary)] text-gray-600 hover:border-gray-600'
+                              isCurrent ? statusColor(s) : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-muted)] hover:border-[var(--border-accent)]'
                             }`} title={`设为${statusLabel(s)}`}>
                             {s === 'required' ? '必' : s === 'recommended' ? '荐' : s === 'optional' ? '可' : '排'}
                           </button>

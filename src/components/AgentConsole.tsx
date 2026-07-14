@@ -98,7 +98,7 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
               onKeyDown={e => e.key === 'Enter' && handleStart()}
               placeholder="例：对项目进行健康检查 / 审查施工方案 / 生成周报..."
               disabled={running}
-              className="flex-1 bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 focus:outline-none disabled:opacity-50"
+              className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 focus:outline-none disabled:opacity-50"
             />
             {running ? (
               <button onClick={handleStop} className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition flex items-center gap-2">
@@ -161,7 +161,7 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs text-[var(--text-muted)]">步骤 {i + 1}</span>
                         {step.actionName && (
-                          <span className="text-[10px] bg-gray-800 px-1.5 py-0.5 rounded text-[var(--text-secondary)]">
+                          <span className="text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded text-[var(--text-secondary)]">
                             {step.actionName}
                           </span>
                         )}
@@ -188,7 +188,7 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
 
             {/* 结果摘要 */}
             {task.result && (
-              <div className="px-4 py-3 border-t border-gray-800 bg-gray-800/30">
+              <div className="px-4 py-3 border-t border-[var(--border-primary)] bg-[var(--bg-hover)]">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{task.result}</p>
@@ -217,13 +217,13 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
               Agent 想要执行: <span className="text-purple-400">{confirmAction.action}</span>
             </p>
             {Object.keys(confirmAction.params).length > 0 && (
-              <pre className="text-xs text-[var(--text-muted)] bg-gray-800 p-2 rounded mt-2 mb-3 max-h-32 overflow-y-auto">
+              <pre className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] p-2 rounded mt-2 mb-3 max-h-32 overflow-y-auto">
                 {JSON.stringify(confirmAction.params, null, 2)}
               </pre>
             )}
             <div className="flex gap-3 mt-4">
               <button onClick={() => { confirmAction.resolve(false); setConfirmAction(null); }}
-                className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition">
+                className="flex-1 px-4 py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg text-sm transition">
                 取消
               </button>
               <button onClick={() => { confirmAction.resolve(true); setConfirmAction(null); }}

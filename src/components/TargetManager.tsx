@@ -168,7 +168,7 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
           strokeLinecap="round" transform="rotate(-90 30 30)"
           style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
         <text x="30" y="30" textAnchor="middle" dominantBaseline="central"
-          fill="#e2e8f0" fontSize="13" fontWeight="bold">
+          fill="var(--text-primary)" opacity="0.9" fontSize="13" fontWeight="bold">
           {Math.round(progress * 100)}%
         </text>
       </svg>
@@ -191,13 +191,13 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={collapseAll} className="px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 rounded-lg transition">
+            <button onClick={collapseAll} className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition">
               折叠全部
             </button>
-            <button onClick={expandAll} className="px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 rounded-lg transition">
+            <button onClick={expandAll} className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition">
               展开全部
             </button>
-            <button onClick={refreshProgress} className="px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 rounded-lg transition">
+            <button onClick={refreshProgress} className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition">
               刷新进度
             </button>
             <button onClick={syncToBackend} disabled={syncing}
@@ -242,7 +242,7 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
               <div className="text-xs text-[var(--text-muted)]">总体进度</div>
             </div>
             <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)] flex flex-col justify-center">
-              <div className="text-2xl font-bold text-white">{stats.total}</div>
+              <div className="text-2xl font-bold text-[var(--text-primary)]">{stats.total}</div>
               <div className="text-xs text-[var(--text-muted)]">目标总数</div>
             </div>
             <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)] flex flex-col justify-center">
@@ -390,7 +390,7 @@ const TargetNode: React.FC<TargetNodeProps> = ({
           {node.linkedWorkItemIds.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {node.linkedWorkItemIds.slice(0, 3).map(wid => (
-                <span key={wid} className="text-[10px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">
+                <span key={wid} className="text-[10px] bg-[var(--bg-secondary)] text-[var(--text-muted)] px-1.5 py-0.5 rounded">
                   {getWorkItemName(wid).split(' > ').pop()}
                 </span>
               ))}
@@ -404,7 +404,7 @@ const TargetNode: React.FC<TargetNodeProps> = ({
           )}
           {/* 展开更多关联 */}
           {showLinks && (
-            <div className="mt-1 p-2 bg-gray-800 rounded text-xs text-gray-400 max-h-32 overflow-y-auto">
+            <div className="mt-1 p-2 bg-[var(--bg-secondary)] rounded text-xs text-[var(--text-muted)] max-h-32 overflow-y-auto">
               {node.linkedWorkItemIds.map(wid => (
                 <div key={wid} className="py-0.5">{getWorkItemName(wid)}</div>
               ))}
@@ -420,11 +420,11 @@ const TargetNode: React.FC<TargetNodeProps> = ({
         {/* 操作按钮 */}
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
           <button onClick={() => onAddChild(node.id)}
-            className="p-1 hover:bg-gray-700 rounded transition" title="添加子目标">
+            className="p-1 hover:bg-[var(--bg-hover)] rounded transition" title="添加子目标">
             <Plus size={14} />
           </button>
           <button onClick={() => onEdit(node)}
-            className="p-1 hover:bg-gray-700 rounded transition" title="编辑">
+            className="p-1 hover:bg-[var(--bg-hover)] rounded transition" title="编辑">
             <Edit2 size={14} />
           </button>
           <button onClick={() => { if (confirm(`确定删除目标"${node.title}"及其所有子目标?`)) onDelete(node.id); }}

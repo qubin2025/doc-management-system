@@ -148,7 +148,7 @@ const AddObjectiveModal: React.FC<AddObjectiveModalProps> = ({
                     className={`px-3 py-2 rounded-lg text-xs font-medium border transition ${
                       level === opt.v
                         ? 'bg-sky-500/20 border-sky-500 text-sky-400'
-                        : 'bg-gray-800 border-gray-700 text-[var(--text-secondary)] hover:border-gray-600'
+                        : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-[var(--border-accent)]'
                     }`}>
                     {opt.l}
                   </button>
@@ -212,7 +212,7 @@ const AddObjectiveModal: React.FC<AddObjectiveModalProps> = ({
           {/* 按钮 */}
           <div className="flex gap-3 pt-3 border-t border-[var(--border-primary)]">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-800 hover:bg-[var(--bg-hover)] rounded-lg text-sm transition">
+              className="flex-1 px-4 py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg text-sm transition">
               取消
             </button>
             <button type="submit" disabled={!title.trim()}

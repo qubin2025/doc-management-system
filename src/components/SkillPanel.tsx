@@ -72,7 +72,7 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack }) => {
           {categories.map(c => (
             <button key={c.id} onClick={() => setFilterCategory(c.id)}
               className={`px-3 py-1.5 text-sm rounded-lg transition ${
-                filterCategory === c.id ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-gray-800 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                filterCategory === c.id ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
               }`}>
               {c.label}
             </button>
@@ -124,26 +124,26 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack }) => {
                 {skill.id === 'ai-fill-form' && (
                   <>
                     <input type="text" placeholder="表单编号" onChange={e => setParams(p => ({ ...p, formCode: e.target.value }))}
-                      className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                      className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                     <input type="text" placeholder="表单名称" onChange={e => setParams(p => ({ ...p, formName: e.target.value }))}
-                      className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                      className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                   </>
                 )}
                 {skill.category === 'review' && (
                   <input type="text" placeholder="文件内容（粘贴文本）" onChange={e => setParams(p => ({ ...p, fileContent: e.target.value }))}
-                    className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                    className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                 )}
                 {skill.category === 'guide' && (
                   <input type="text" placeholder="工作项名称/描述" onChange={e => setParams(p => ({ ...p, itemName: e.target.value }))}
-                    className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                    className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                 )}
                 {skill.id === 'plan-generate' && (
                   <>
                     <input type="text" placeholder="方案类型" defaultValue="施工组织设计"
                       onChange={e => setParams(p => ({ ...p, planType: e.target.value }))}
-                      className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                      className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                     <input type="text" placeholder="章节名称（留空生成大纲）" onChange={e => setParams(p => ({ ...p, chapterName: e.target.value }))}
-                      className="w-full bg-gray-800 border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
+                      className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                   </>
                 )}
               </div>
