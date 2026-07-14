@@ -273,13 +273,15 @@ export class EngineeringAgent {
 
     try {
       const finalReply = await api.aiChat(
-        [{ role: 'user', content: `任务执行完毕，请根据以下步骤结果，生成一个综合摘要:\n${summary}\n\n用户原始目标: ${task.goal}` }],
-        '你是项目管理AI助手，请简洁总结执行结果。',
+        [{ role: 'user', content: `任务执行完毕，请根据以下步骤结果，生成一份格式化的HTML综合报告。\n\n执行步骤:\n${summary}\n\n用户原始目标: ${task.goal}\n\nHTML报告要求:\n1. 使用完整的HTML结构，包含<style>内联样式\n2. 风格参考专业项目管理报告：深色背景(#f8fafc卡片)、蓝色标题(#1e40af)\n3. 包含: 报告标题、执行摘要、步骤详情表格、关键发现、建议行动\n4. 每个步骤用✓/✗标记成功/失败\n5. 如果有KPI数据，用彩色进度条展示\n6. 字体使用系统默认中文无衬线字体\n7. 整体风格简洁专业` }],
+        '你是项目管理AI报告生成器。请返回完整的HTML文档，使用内联样式。只输出HTML代码，不要```html标记。',
         { projectName: context.projectName }
       );
-      task.result = finalReply || summary;
+      // 提取HTML内容（去除可能的markdown包裹）
+      const html = finalReply.replace(/```html\n?/g, '').replace(/\n?```/g, '').trim();
+      task.result = html || summary;
     } catch {
-      task.result = summary;
+      task.result = `<div style="font-family:sans-serif;padding:20px"><h2 style="color:#dc2626">报告生成失败</h2><pre>${summary}</pre></div>`;
     }
 
     task.status = 'completed';

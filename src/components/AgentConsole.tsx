@@ -230,13 +230,19 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
               ))}
             </div>
 
-            {/* 结果摘要 */}
+            {/* 结果摘要 — HTML渲染 */}
             {task.result && (
-              <div className="px-4 py-3 border-t border-[var(--border-primary)] bg-[var(--bg-hover)]">
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{task.result}</p>
+              <div className="border-t border-[var(--border-primary)]">
+                <div className="flex items-center gap-2 px-4 py-3 bg-green-500/5 border-b border-[var(--border-primary)]">
+                  <CheckCircle2 size={16} className="text-green-400" />
+                  <span className="text-sm font-bold text-[var(--text-primary)]">执行报告</span>
                 </div>
+                {task.result.startsWith('<') ? (
+                  <div className="max-h-[70vh] overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: task.result }} />
+                ) : (
+                  <div className="px-4 py-3"><p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{task.result}</p></div>
+                )}
               </div>
             )}
           </div>
