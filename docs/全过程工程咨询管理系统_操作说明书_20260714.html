@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 — 操作说明书 v4.1</title>
+<style>
+  :root { --bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--green:#4ade80;--yellow:#facc15;--red:#f87171;--purple:#a78bfa;--orange:#fb923c; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:2rem;scroll-behavior:smooth}
+  .container{max-width:1000px;margin:0 auto}
+  h1{font-size:2rem;text-align:center;margin-bottom:.5rem;background:linear-gradient(135deg,var(--accent),var(--purple),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .subtitle{text-align:center;color:var(--muted);margin-bottom:2rem;font-size:.9rem}
+  h2{font-size:1.3rem;margin:3rem 0 1rem;padding:.5rem 0;border-bottom:2px solid var(--accent);color:var(--accent);display:flex;align-items:center;gap:.5rem}
+  h3{font-size:1.05rem;margin:1.8rem 0 .8rem;color:var(--purple)}
+  h4{font-size:.9rem;margin:1.2rem 0 .5rem;color:var(--orange)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0}
+  table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.82rem}
+  th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left}
+  th{background:rgba(56,189,248,.1);color:var(--accent);font-weight:600}
+  tr:nth-child(even) td{background:rgba(30,41,59,.5)}
+  .step{display:flex;align-items:flex-start;gap:1rem;margin:.8rem 0;padding:.8rem;background:rgba(56,189,248,.05);border-radius:8px}
+  .step-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+  .step-content{flex:1}
+  .step-content .title{font-weight:700;color:var(--accent);margin-bottom:.2rem}
+  .step-content .desc{font-size:.82rem;color:var(--muted)}
+  .tip{background:rgba(250,204,21,.06);border:1px solid rgba(250,204,21,.2);border-radius:8px;padding:.6rem 1rem;margin:.8rem 0;font-size:.8rem}
+  .tip::before{content:'💡 提示：';color:var(--yellow);font-weight:700}
+  .warn{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:.6rem 1rem;margin:.8rem 0;font-size:.8rem}
+  .warn::before{content:'⚠️ 注意：';color:var(--red);font-weight:700}
+  .kbd{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:.1rem .4rem;font-family:monospace;font-size:.78rem}
+  .shortcut{color:var(--accent)}
+  .footer{text-align:center;color:var(--muted);margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);font-size:.8rem}
+  .toc{columns:2;line-height:2;font-size:.85rem}
+  .toc a{color:var(--accent);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  @media(max-width:768px){body{padding:.5rem}.toc{columns:1}}
+  @media print{body{background:#fff;color:#000}.card{background:#f8fafc;border-color:#cbd5e1}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>全过程工程咨询管理系统<br>操作说明书</h1>
+<p class="subtitle">版本 v4.1 · 2026-07-14 · qubin2025/doc-management-system</p>
+
+<!-- 目录 -->
+<div class="card">
+  <h3 style="margin-top:0">📑 目录</h3>
+  <div class="toc">
+    <a href="#s1">一、系统概述</a><br>
+    <a href="#s2">二、快速入门</a><br>
+    <a href="#s3">三、项目创建与引导</a><br>
+    <a href="#s4">四、模块裁剪引擎</a><br>
+    <a href="#s5">五、目标管理（WBS树）</a><br>
+    <a href="#s6">六、全过程工作指南</a><br>
+    <a href="#s7">七、PMBOK知识框架</a><br>
+    <a href="#s8">八、干系人/风险/资源管理</a><br>
+    <a href="#s9">九、基线管理</a><br>
+    <a href="#s10">十、AI智能体与技能面板</a><br>
+    <a href="#s11">十一、AI审查/生成/对话</a><br>
+    <a href="#s12">十二、仪表盘与分析中心</a><br>
+    <a href="#s13">十三、工作流引擎</a><br>
+    <a href="#s14">十四、全局搜索</a><br>
+    <a href="#s15">十五、主题与偏好</a><br>
+    <a href="#s16">十六、管理员功能</a><br>
+    <a href="#s17">十七、快捷键速查</a><br>
+    <a href="#s18">十八、常见问题</a><br>
+  </div>
+</div>
+
+<!-- ===== 一 ===== -->
+<h2 id="s1">一、系统概述</h2>
+<p>全过程工程咨询管理系统是一个<strong>以目标管理为驱动、以PMBOK第6/7版为内核、以AI智能体为引擎</strong>的全过程工程咨询管理平台。系统覆盖项目从前期工作、招标采购、工程施工到竣工验收的全生命周期。</p>
+
+<div class="card">
+  <table>
+    <tr><th style="width:20%">能力层</th><th>包含模块</th></tr>
+    <tr><td><strong>项目管理</strong></td><td>目标管理 · 模块裁剪 · 全过程指南 · PMBOK框架 · 干系人 · 风险 · 资源 · 基线 · 仪表盘 · 进度 · 成本 · 质量 · 资料 · 供应商 · 归档</td></tr>
+    <tr><td><strong>AI智能</strong></td><td>Agent智能体 · Skill技能面板(7个) · AI审查(施工/合同/招投标) · AI方案生成 · AI表单填写 · AI对话(7模型) · MCP协议</td></tr>
+    <tr><td><strong>知识工程</strong></td><td>知识编排器 · 知识图谱(3D) · RAG检索 · 向量存储 · LightRAG · RAGFlow</td></tr>
+    <tr><td><strong>系统管理</strong></td><td>用户管理 · 审计日志 · 数据备份 · 项目管理 · 模型配置 · 主题切换</td></tr>
+  </table>
+</div>
+
+<div class="tip">首次使用建议按引导流程操作：创建项目 → 模块裁剪 → 目标管理 → 进入工作首页。</div>
+
+<!-- ===== 二 ===== -->
+<h2 id="s2">二、快速入门</h2>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-content">
+    <div class="title">登录系统</div>
+    <div class="desc">打开浏览器访问系统地址。默认管理员账户：<kbd>admin</kbd> / <kbd>admin123</kbd>。系统支持4种角色：管理员、项目经理、建设单位、查看者。</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-content">
+    <div class="title">创建项目</div>
+    <div class="desc">在项目入口页点击「创建新项目」，输入项目名称。系统自动进入引导流程。</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-content">
+    <div class="title">模块裁剪</div>
+    <div class="desc">填写项目特征问卷（类型、规模、复杂度、管理范围等），系统根据PMBOK规则自动推荐必选/推荐/可选模块。</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-content">
+    <div class="title">设定目标</div>
+    <div class="desc">创建WBS目标树（项目总目标→阶段目标→交付物→工作包），关联工作指南中的工作项。</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">5</div>
+  <div class="step-content">
+    <div class="title">开始工作</div>
+    <div class="desc">进入首页，使用各功能模块。根据裁剪结果，指南中会标记必选/推荐/可选工作项。</div>
+  </div>
+</div>
+
+<!-- ===== 三 ===== -->
+<h2 id="s3">三、项目创建与引导</h2>
+
+<h3>3.1 创建项目</h3>
+<p>登录后进入<strong>项目入口页</strong>，可以看到已有项目列表。点击右上角「创建新项目」按钮，输入项目名称即可。</p>
+<p>创建后系统<strong>自动跳转</strong>到模块裁剪引擎。如果选择已有项目，系统会根据配置状态智能跳转：</p>
+<table>
+  <tr><th>项目状态</th><th>跳转目标</th></tr>
+  <tr><td>无裁剪配置</td><td>→ 模块裁剪引擎</td></tr>
+  <tr><td>有裁剪、无目标</td><td>→ 目标管理</td></tr>
+  <tr><td>配置完备</td><td>→ 工作首页</td></tr>
+</table>
+
+<h3>3.2 首页导航</h3>
+<p>首页按功能分为<strong>三个区域</strong>：</p>
+<table>
+  <tr><th>区域</th><th>包含模块</th></tr>
+  <tr><td><strong>功能模块</strong></td><td>AI智能体 · 技能面板 · PMBOK框架 · 模块裁剪 · 目标管理 · 资料管理 · 仪表盘 · 进度计划 · 供应商 · 造价 · 知识库 · 分析中心 · AI审查/生成等</td></tr>
+  <tr><td><strong>管理模块</strong></td><td>干系人管理 · 风险管理 · 资源与沟通 · 基线管理</td></tr>
+  <tr><td><strong>高级工具</strong></td><td>工作流引擎 · 审计日志（管理员）</td></tr>
+</table>
+
+<!-- ===== 四 ===== -->
+<h2 id="s4">四、模块裁剪引擎</h2>
+
+<h3>4.1 填写项目特征问卷</h3>
+<p>裁剪引擎分为两步：<strong>填写问卷</strong> → <strong>查看结果</strong>。</p>
+<p>问卷涵盖以下维度：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>项目类型</strong>：建筑工程 / 市政工程 / 工业工程 / 综合工程</li>
+  <li><strong>投资规模</strong>：小型(＜5000万) ~ 特大型(＞10亿)</li>
+  <li><strong>计划工期</strong>：月数</li>
+  <li><strong>项目复杂度</strong>：简单 / 常规 / 复杂 / 高复杂度</li>
+  <li><strong>管理范围</strong>：10个领域多选（前期、招标、施工、竣工、造价、进度、质量、安全、合同、资料）</li>
+  <li><strong>特殊需求</strong>：文保、环评、交通影响、地下施工、特殊结构、市政管线</li>
+  <li><strong>组织特征</strong>：参与方数量、设计管理、招标代理</li>
+</ul>
+<div class="tip">可使用「快速模板」一键填充常见项目类型的预设值。</div>
+
+<h3>4.2 查看裁剪结果</h3>
+<p>点击「生成裁剪方案」后，系统根据<strong>20条PMBOK裁剪规则</strong>计算每个工作项的状态：</p>
+<table>
+  <tr><th>标记</th><th>含义</th><th>在指南中的表现</th></tr>
+  <tr><td><span style="color:var(--red)">必选</span></td><td>该项目必须执行</td><td>左侧红色标记 + "必选"徽章</td></tr>
+  <tr><td><span style="color:var(--accent)">推荐</span></td><td>建议执行</td><td>蓝色星标</td></tr>
+  <tr><td>可选</td><td>默认状态</td><td>正常显示</td></tr>
+  <tr><td><span style="color:#64748b">排除</span></td><td>该项目不需要</td><td>灰显</td></tr>
+</table>
+<p>每个工作项的状态可以<strong>手动调整</strong>（点击「必/荐/可/排」按钮）。保存配置后自动应用到工作指南。</p>
+
+<!-- ===== 五 ===== -->
+<h2 id="s5">五、目标管理（WBS树）</h2>
+
+<h3>5.1 创建目标层级</h3>
+<p>目标管理采用<strong>WBS四层分解</strong>结构：</p>
+<table>
+  <tr><th>层级</th><th>说明</th><th>示例</th></tr>
+  <tr><td>root · 总目标</td><td>项目最高目标</td><td>"项目按时高质量交付"</td></tr>
+  <tr><td>phase · 阶段目标</td><td>按阶段分解</td><td>"前期工作按时完成"</td></tr>
+  <tr><td>deliverable · 交付物</td><td>可交付成果</td><td>"施工许可证取得"</td></tr>
+  <tr><td>work-item · 工作包</td><td>最小工作单元</td><td>"施工图审查通过"</td></tr>
+</table>
+
+<h3>5.2 关联工作项</h3>
+<p>每个目标可以关联工作指南中的工作项。目标进度会根据关联工作项的完成状态<strong>自动计算</strong>：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li>叶子节点进度 = 已完成关联工作项数 / 总关联工作项数</li>
+  <li>非叶子节点进度 = 子节点加权平均</li>
+  <li>点击「刷新进度」手动触发重算</li>
+</ul>
+
+<h3>5.3 目标树操作</h3>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>新增目标</strong> — 点击右上角「新增目标」</li>
+  <li><strong>添加子目标</strong> — 悬停目标行，点击「+」</li>
+  <li><strong>编辑/删除</strong> — 悬停显示编辑和删除按钮</li>
+  <li><strong>展开/折叠</strong> — 点击目标前的箭头</li>
+  <li><strong>权重设置</strong> — 编辑弹窗中拖拽滑块（0-100%）</li>
+</ul>
+
+<!-- ===== 六 ===== -->
+<h2 id="s6">六、全过程工作指南</h2>
+
+<p>工作指南按工程行业DB11规程分为<strong>4个章节</strong>，每个章节包含<strong>三个Tab</strong>：</p>
+
+<h3>6.1 工作模块 Tab</h3>
+<p>以子模块卡片形式展示工作项列表。每个工作项可以：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>勾选"计划"</strong> — 标记为正在执行（蓝色）</li>
+  <li><strong>勾选"完成"</strong> — 标记为已完成（绿色）</li>
+  <li><strong>全选/取消全选</strong> — 子模块级别批量操作</li>
+  <li><strong>编辑工作项</strong> — 点击编辑按钮，可上传流程图、添加附件、拆解子任务</li>
+  <li><strong>AI拆解子任务</strong> — 上传流程图或输入描述，AI自动拆解为子任务步骤</li>
+  <li><strong>AI办理指南</strong> — AI根据附件信息自动生成办理流程和注意事项</li>
+</ul>
+
+<h3>6.2 时序逻辑图 Tab</h3>
+<p>以流程图形式展示工作项之间的依赖关系。支持：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>缩放</strong> — 25%~200%</li>
+  <li><strong>编辑模式</strong> — 拖拽连线创建依赖关系</li>
+  <li><strong>只读模式</strong> — 查看流程图</li>
+</ul>
+
+<h3>6.3 附表清单 Tab</h3>
+<p>展示本章节对应的工程附表模板。每个附表可以：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>编辑内容</strong> — 打开编辑弹窗，支持Markdown格式</li>
+  <li><strong>AI自动填写</strong> — 根据项目上下文自动填充表单字段</li>
+  <li><strong>保存</strong> — 保存到localStorage</li>
+</ul>
+
+<div class="tip">裁剪配置会自动标记工作项的必选/推荐状态，子模块标题会显示统计（必X/推X/可X）。</div>
+
+<!-- ===== 七 ===== -->
+<h2 id="s7">七、PMBOK知识框架</h2>
+
+<p>PMBOK框架提供<strong>四个视图</strong>：</p>
+<table>
+  <tr><th>视图</th><th>内容</th></tr>
+  <tr><td><strong>10大知识领域</strong></td><td>整合/范围/进度/成本/质量/资源/沟通/风险/采购/干系人 — 每个领域显示49过程中已覆盖的比例</td></tr>
+  <tr><td><strong>8大绩效域</strong></td><td>干系人/团队/开发方法/规划/项目工作/交付/度量/不确定性（PMBOK第7版）</td></tr>
+  <tr><td><strong>过程组矩阵</strong></td><td>5过程组(启动→规划→执行→监控→收尾) × 10知识领域的49过程映射表</td></tr>
+  <tr><td><strong>项目评估</strong></td><td>根据工作项完成状态计算每个知识领域的覆盖率评分</td></tr>
+</table>
+
+<!-- ===== 八 ===== -->
+<h2 id="s8">八、干系人/风险/资源管理</h2>
+
+<h3>8.1 干系人管理</h3>
+<p>包括<strong>干系人登记册</strong>和<strong>权力/利益矩阵(2x2)</strong>：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li>登记册记录干系人的姓名、角色、组织、权力、利益、参与策略</li>
+  <li>2x2矩阵自动分类：高权力高利益(密切管理)、高权力低利益(令其满意)、低权力高利益(随时告知)、低权力低利益(监督)</li>
+</ul>
+
+<h3>8.2 风险管理</h3>
+<p>包括<strong>风险登记册</strong>和<strong>概率×影响矩阵(5x5)</strong>：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li>每条风险记录名称、类别、概率(1-5)、影响(1-5)、评分(=概率×影响)、应对措施、负责人</li>
+  <li>5x5热力图显示风险分布，红色(≥15高风险)、橙色(8-14中风险)、绿色(<8低风险)</li>
+</ul>
+
+<h3>8.3 资源与沟通</h3>
+<p>包含<strong>三个Tab</strong>：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>团队</strong> — 成员登记（姓名、角色、部门、可用性）</li>
+  <li><strong>RACI矩阵</strong> — 任务×角色的责任分配（R执行/A负责/C咨询/I知会）</li>
+  <li><strong>沟通记录</strong> — 会议纪要模板和信息分发记录</li>
+</ul>
+
+<!-- ===== 九 ===== -->
+<h2 id="s9">九、基线管理</h2>
+
+<p>基线管理用于<strong>记录项目关键指标的基准快照</strong>，支持后续对比和变更追踪：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li>支持三大基线类型：<strong>范围基线</strong>、<strong>进度基线</strong>、<strong>成本基线</strong></li>
+  <li>每次创建新基线，旧基线自动标记为"非活跃"</li>
+  <li>当前KPI值（CPI/SPI/完整度/质量分）与基线值对比显示</li>
+  <li>支持多版本管理</li>
+</ul>
+
+<div class="warn">基线创建后不可修改内容（只能创建新版本或删除）。请确认数据无误后再创建。</div>
+
+<!-- ===== 十 ===== -->
+<h2 id="s10">十、AI智能体与技能面板</h2>
+
+<h3>10.1 AI智能体 (Agent Console)</h3>
+<p>输入<strong>自然语言目标</strong>，Agent自动规划多步执行计划：</p>
+<div class="step">
+  <div class="step-num">1</div><div class="step-content"><div class="title">输入目标</div><div class="desc">如"对项目进行健康检查"、"审查施工方案"、"生成周报"。</div></div>
+</div>
+<div class="step">
+  <div class="step-num">2</div><div class="step-content"><div class="title">Agent规划</div><div class="desc">LLM分析目标 → 制定多步JSON计划 → 展示步骤列表。</div></div>
+</div>
+<div class="step">
+  <div class="step-num">3</div><div class="step-content"><div class="title">执行与确认</div><div class="desc">逐步执行，变更类操作(如填表、索引)弹出确认对话框。每步显示状态(执行中/已完成/失败)。</div></div>
+</div>
+<div class="step">
+  <div class="step-num">4</div><div class="step-content"><div class="title">查看结果</div><div class="desc">全部步骤完成后生成综合摘要。</div></div>
+</div>
+
+<p>Agent拥有<strong>11个内置工具</strong>：ai_chat、compute_kpi、scan_workitems、scan_forms、knowledge_search、knowledge_graph、rag_search、index_document、fill_form、health_check等。</p>
+
+<h3>10.2 技能面板 (Skill Panel)</h3>
+<p>提供<strong>7个预封装AI技能</strong>，可分类筛选和独立执行：</p>
+<table>
+  <tr><th>类别</th><th>技能</th><th>功能</th></tr>
+  <tr><td rowspan="3">审查类</td><td>施工方案审查</td><td>AI逐章审查施工组织设计，输出合规性报告</td></tr>
+  <tr><td>合同审查</td><td>识别条款风险（高/中/低）并给出修改建议</td></tr>
+  <tr><td>招投标审查</td><td>检查9要素合规性</td></tr>
+  <tr><td>生成类</td><td>AI方案生成</td><td>根据模板和参数逐章生成工程方案</td></tr>
+  <tr><td>填写类</td><td>AI表单填写</td><td>自动填写工程表单字段</td></tr>
+  <tr><td rowspan="2">指南类</td><td>AI办理指南</td><td>根据附件生成办理流程</td></tr>
+  <tr><td>AI拆解子任务</td><td>拆解工作项为详细子任务步骤</td></tr>
+</table>
+
+<!-- ===== 十一 ===== -->
+<h2 id="s11">十一、AI审查/生成/对话</h2>
+
+<h3>11.1 AI审查</h3>
+<table>
+  <tr><th>审查类型</th><th>输入</th><th>输出</th></tr>
+  <tr><td>施工组织设计审查</td><td>上传施工方案文件</td><td>逐章节审查结果(pass/warn/fail) + 综合报告</td></tr>
+  <tr><td>合同审查</td><td>上传合同文件</td><td>条款风险分级 + 修改建议</td></tr>
+  <tr><td>招投标文件审查</td><td>上传招投标文件</td><td>9要素合规性分析</td></tr>
+</table>
+<p>审查过程中会自动进行<strong>RAG标准条款检索</strong>，将审查结果与标准规范对照。</p>
+
+<h3>11.2 AI方案生成</h3>
+<p>支持<strong>7种方案模板</strong>：施工组织设计、深基坑方案、塔吊方案、脚手架方案、模板方案、临时用电方案、冬期施工方案。</p>
+<p>生成时可注入<strong>知识库上下文</strong>和<strong>标准规范内容</strong>，生成后自动进行<strong>完整性校验</strong>。</p>
+
+<h3>11.3 AI对话</h3>
+<p>支持<strong>7种AI模型</strong>切换：DeepSeek-V3/V4 Pro/R1、通义千问、智谱GLM-4、Ollama Qwen/Llama。</p>
+<p>功能特性：多会话管理、RAG开关（自动检索项目文档增强回答）、文件/图片上传、延伸建议、对话导出。</p>
+
+<!-- ===== 十二 ===== -->
+<h2 id="s12">十二、仪表盘与分析中心</h2>
+
+<h3>12.1 项目仪表盘</h3>
+<p>实时显示<strong>四大核心指标</strong>：</p>
+<table>
+  <tr><th>指标</th><th>说明</th><th>正常范围</th></tr>
+  <tr><td><strong>CPI</strong>（成本绩效指数）</td><td>已签合同额/批复概算</td><td>0.95~1.05</td></tr>
+  <tr><td><strong>SPI</strong>（进度绩效指数）</td><td>已完成工作项/总工作项</td><td>≥0.8</td></tr>
+  <tr><td><strong>完整度</strong></td><td>实际上传文档数/基准80</td><td>≥60%</td></tr>
+  <tr><td><strong>质量分</strong></td><td>综合评分</td><td>≥75</td></tr>
+</table>
+<p><strong>告警可点击</strong>：成本告警→跳转基线管理、进度告警→跳转进度计划、完整度告警→跳转资料管理。</p>
+
+<h3>12.2 智能分析中心</h3>
+<p>提供一次性的<strong>综合扫描</strong>：工作项扫描 + 表单扫描 + KPI计算 + AI综合建议。同时展示知识图谱概览。</p>
+
+<!-- ===== 十三 ===== -->
+<h2 id="s13">十三、工作流引擎</h2>
+
+<p>系统内置<strong>4个预设工作流模板</strong>，一键执行多步AI任务：</p>
+<table>
+  <tr><th>工作流</th><th>步骤</th></tr>
+  <tr><td><strong>项目健康检查</strong></td><td>计算KPI → 扫描工作项 → AI综合报告</td></tr>
+  <tr><td><strong>文档智能审查</strong></td><td>知识库检索 → AI审查 → 生成审查报告</td></tr>
+  <tr><td><strong>方案自动生成</strong></td><td>检索标准规范 → 生成大纲 → 完整性校验</td></tr>
+  <tr><td><strong>表单批量填写</strong></td><td>扫描缺失表单 → AI批量填写 → 确认结果</td></tr>
+</table>
+<p>在首页「工作流引擎」卡片中展开查看步骤，点击「执行」即可运行。</p>
+
+<!-- ===== 十四 ===== -->
+<h2 id="s14">十四、全局搜索</h2>
+<p>快捷键 <kbd>Ctrl + K</kbd> 唤起全局搜索面板。搜索范围覆盖：</p>
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>工作项</strong> — 按名称或ID搜索</li>
+  <li><strong>目标</strong> — 按标题搜索</li>
+  <li><strong>干系人</strong> — 按姓名或角色搜索</li>
+  <li><strong>风险</strong> — 按名称或类别搜索</li>
+  <li><strong>资源</strong> — 按姓名或角色搜索</li>
+  <li><strong>裁剪配置</strong> — 按建议内容搜索</li>
+</ul>
+<p>点击搜索结果可直接跳转到对应模块。</p>
+<div class="tip">首页头部也有搜索按钮，点击即可打开。</div>
+
+<!-- ===== 十五 ===== -->
+<h2 id="s15">十五、主题与偏好</h2>
+<p>系统支持<strong>三种配色方案</strong>，在首页头部右侧<strong>主题切换器</strong>中选择：</p>
+<table>
+  <tr><th>主题</th><th>适用场景</th></tr>
+  <tr><td>☀️ <strong>亮白</strong></td><td>白天办公，高对比度</td></tr>
+  <tr><td>🌅 <strong>暖色</strong></td><td>长时间使用，护眼舒适</td></tr>
+  <tr><td>🌙 <strong>暗色</strong></td><td>夜间/低光环境，专业风格</td></tr>
+</table>
+<p>主题选择会自动保存到浏览器，下次打开自动恢复。</p>
+
+<!-- ===== 十六 ===== -->
+<h2 id="s16">十六、管理员功能</h2>
+
+<h3>16.1 用户管理</h3>
+<p>管理员（admin角色）可以：创建用户、修改用户角色/权限、启用/禁用账户、删除用户。</p>
+<p>系统支持4种角色：<kbd>admin</kbd>（管理员）、<kbd>project_manager</kbd>（项目经理）、<kbd>construction_unit</kbd>（建设单位）、<kbd>viewer</kbd>（查看者）。</p>
+
+<h3>16.2 审计日志</h3>
+<p>记录所有关键操作：创建/更新/删除/查看/导出/导入。可按项目、用户、操作类型筛选。</p>
+
+<h3>16.3 模型配置</h3>
+<p>管理员可在「模型配置」中查看7个AI模型的连通性状态，并逐个进行连通性测试。</p>
+
+<h3>16.4 数据备份</h3>
+<p>支持<strong>全部项目</strong>和<strong>单项目</strong>两种备份模式，以ZIP格式下载（含metadata + 文件）。</p>
+
+<!-- ===== 十七 ===== -->
+<h2 id="s17">十七、快捷键速查</h2>
+<div class="card">
+  <table>
+    <tr><th style="width:20%">快捷键</th><th>功能</th></tr>
+    <tr><td><kbd>Ctrl + K</kbd></td><td>全局搜索</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>关闭弹窗/搜索面板</td></tr>
+    <tr><td><kbd>Enter</kbd></td><td>确认/发送（在输入框中）</td></tr>
+  </table>
+</div>
+
+<!-- ===== 十八 ===== -->
+<h2 id="s18">十八、常见问题</h2>
+
+<div class="card">
+  <h4>Q: AI功能不可用怎么办？</h4>
+  <p>A: 检查 .env 中是否配置了有效的 DEEPSEEK_API_KEY。系统会自动降级：先尝试后端代理 → 直连DeepSeek API → 离线关键词分析。</p>
+
+  <h4>Q: 知识图谱显示为空？</h4>
+  <p>A: 知识图谱需要项目中有数据（工作项、文档、表单等）才会显示。确认项目中有实际操作后再查看。</p>
+
+  <h4>Q: 如何修改管理员密码？</h4>
+  <p>A: 管理员登录后，在「系统管理」→「用户管理」中可修改用户密码。</p>
+
+  <h4>Q: 数据存储在哪里？</h4>
+  <p>A: 工作状态和配置存储在前端localStorage，项目和文档数据存储在后端SQLite数据库。数据库文件路径：<kbd>backend/data/planning.db</kbd>。</p>
+
+  <h4>Q: 如何备份数据？</h4>
+  <p>A: 首页「数据备份」按钮可下载ZIP备份。服务器端可配置cron定时备份（参考 <kbd>scripts/backup.sh</kbd>）。</p>
+
+  <h4>Q: 支持哪些浏览器？</h4>
+  <p>A: Chrome 90+、Edge 90+、Firefox 88+、Safari 15+。</p>
+</div>
+
+<div class="footer">
+  <p>全过程工程咨询管理系统 · 操作说明书 v4.1</p>
+  <p>2026-07-14 · qubin2025/doc-management-system</p>
+</div>
+
+</div>
+</body>
+</html>
