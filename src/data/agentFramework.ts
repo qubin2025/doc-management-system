@@ -266,91 +266,20 @@ export class EngineeringAgent {
       }
     }
 
-    // 汇总结果 — 客户端构建HTML报告
+    // 汇总结果
+    const summary = task.steps
+      .map(s => `步骤${s.stepIndex + 1}: ${s.status === 'completed' ? '✓' : '✗'} ${s.thought} → ${(s.observation || '').slice(0, 80)}`)
+      .join('\n');
+
     try {
-      // 尝试用AI生成分析文本
-      const stepsSummary = task.steps
-        .map(s => `${s.status === 'completed' ? '✓' : '✗'} ${s.thought}: ${(s.observation || '').slice(0, 100)}`)
-        .join('\n');
-      let aiAnalysis = '';
-      try {
-        aiAnalysis = await api.aiChat(
-          [{ role: 'user', content: `根据以下步骤结果，用2-3句话总结关键发现和建议:\n${stepsSummary}\n\n目标: ${task.goal}` }],
-          '你是项目管理AI，请用简洁中文总结。',
-          { projectName: context.projectName }
-        );
-      } catch { aiAnalysis = 'AI分析暂时不可用，请查看步骤详情。'; }
-
-      // 构建HTML报告
-      const completed = task.steps.filter(s => s.status === 'completed').length;
-      const total = task.steps.length;
-      const successRate = Math.round((completed / total) * 100);
-      const barColor = successRate >= 80 ? '#22c55e' : successRate >= 50 ? '#f59e0b' : '#ef4444';
-
-      task.result = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="UTF-8"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:#f8fafc;margin:0;padding:20px;color:#1e293b">
-<div style="max-width:800px;margin:0 auto">
-  <div style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:24px 28px;border-radius:12px 12px 0 0">
-    <h1 style="margin:0;font-size:1.3rem">📊 ${escapeHtml(task.goal)}</h1>
-    <p style="margin:6px 0 0;opacity:.85;font-size:.85rem">${new Date().toLocaleString('zh-CN')} · ${total}步 · 完成${completed}步</p>
-  </div>
-
-  <div style="background:#fff;padding:24px 28px;border:1px solid #e2e8f0;border-top:0">
-    <div style="display:flex;gap:16px;margin-bottom:20px">
-      <div style="flex:1;text-align:center;background:#f8fafc;border-radius:8px;padding:16px">
-        <div style="font-size:2rem;font-weight:700;color:#1e40af">${total}</div>
-        <div style="font-size:.75rem;color:#64748b">总步骤</div>
-      </div>
-      <div style="flex:1;text-align:center;background:#f0fdf4;border-radius:8px;padding:16px">
-        <div style="font-size:2rem;font-weight:700;color:#22c55e">${completed}</div>
-        <div style="font-size:.75rem;color:#64748b">已完成</div>
-      </div>
-      <div style="flex:1;text-align:center;background:#fef2f2;border-radius:8px;padding:16px">
-        <div style="font-size:2rem;font-weight:700;color:#ef4444">${total - completed}</div>
-        <div style="font-size:.75rem;color:#64748b">失败/未完成</div>
-      </div>
-    </div>
-
-    <div style="background:#f1f5f9;border-radius:8px;height:8px;overflow:hidden;margin-bottom:24px">
-      <div style="background:${barColor};height:100%;width:${successRate}%;border-radius:8px"></div>
-    </div>
-    <div style="text-align:center;font-size:.8rem;color:#64748b;margin-top:-18px;margin-bottom:20px">成功率 ${successRate}%</div>
-
-    <h2 style="font-size:1rem;color:#1e40af;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px">步骤详情</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-      <thead><tr style="background:#f1f5f9">
-        <th style="padding:8px 10px;text-align:left;border:1px solid #e2e8f0;width:40px">#</th>
-        <th style="padding:8px 10px;text-align:left;border:1px solid #e2e8f0">操作</th>
-        <th style="padding:8px 10px;text-align:left;border:1px solid #e2e8f0;width:60px">状态</th>
-        <th style="padding:8px 10px;text-align:left;border:1px solid #e2e8f0">结果</th>
-      </tr></thead>
-      <tbody>
-        ${task.steps.map((s, i) => `
-          <tr>
-            <td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:700">${i + 1}</td>
-            <td style="padding:8px 10px;border:1px solid #e2e8f0;font-weight:500">${escapeHtml(s.thought)}</td>
-            <td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:center">
-              <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:600;${s.status === 'completed' ? 'background:#dcfce7;color:#16a34a' : s.status === 'failed' ? 'background:#fef2f2;color:#dc2626' : 'background:#f1f5f9;color:#64748b'}">${s.status === 'completed' ? '✓ 完成' : s.status === 'failed' ? '✗ 失败' : '··· ' + s.status}</span>
-            </td>
-            <td style="padding:8px 10px;border:1px solid #e2e8f0;font-size:.75rem;color:#64748b;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml((s.observation || '-').slice(0, 80))}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-
-    <div style="margin-top:24px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px">
-      <h2 style="font-size:.95rem;color:#1e40af;margin:0 0 8px">💡 AI分析建议</h2>
-      <p style="font-size:.82rem;color:#334155;margin:0;line-height:1.7">${escapeHtml(aiAnalysis)}</p>
-    </div>
-  </div>
-  <div style="text-align:center;padding:12px;font-size:.7rem;color:#94a3b8">全过程工程咨询管理系统 · Agent自动生成</div>
-</div>
-</body>
-</html>`;
+      const finalReply = await api.aiChat(
+        [{ role: 'user', content: `任务执行完毕，请根据以下步骤结果，生成一个综合摘要:\n${summary}\n\n用户原始目标: ${task.goal}` }],
+        '你是项目管理AI助手，请简洁总结执行结果。',
+        { projectName: context.projectName }
+      );
+      task.result = finalReply || summary;
     } catch {
-      task.result = `<div style="font-family:sans-serif;padding:20px"><h2 style="color:#dc2626">报告生成失败</h2><p>请重试</p></div>`;
+      task.result = summary;
     }
 
     task.status = 'completed';
@@ -471,9 +400,4 @@ export class EngineeringAgent {
 }
 
 // 全局单例
-/** HTML转义工具 */
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 export const engineeringAgent = new EngineeringAgent();

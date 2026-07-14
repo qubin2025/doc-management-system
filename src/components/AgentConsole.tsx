@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, Sparkles, Copy, Download, FileText, FileDown } from 'lucide-react';
 import { engineeringAgent, type AgentTask, type AgentStep, type AgentContext } from '../data/agentFramework';
 import { toast } from './Toast';
@@ -26,64 +26,67 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
   const [confirmAction, setConfirmAction] = useState<{ action: string; params: Record<string, unknown>; resolve: (v: boolean) => void } | null>(null);
-  const reportRef = useRef<HTMLIFrameElement>(null);
 
-  // 获取报告HTML源码
-  const getReportHtml = () => {
-    if (!task?.result || !isHtml(task.result)) return '';
-    return task.result;
-  };
+  const getReportText = () => task?.result || '';
 
   // 复制报告
   const handleCopyReport = () => {
-    const html = getReportHtml();
-    if (!html) { toast('无报告内容', 'warning'); return; }
-    const text = html.replace(/<[^>]*>/g, '').replace(/\s{2,}/g, '\n').trim();
+    const text = getReportText();
+    if (!text) { toast('无报告内容', 'warning'); return; }
     navigator.clipboard.writeText(text).then(() => toast('已复制到剪贴板', 'success')).catch(() => toast('复制失败', 'error'));
   };
 
+  // 构建Word文档（Word兼容HTML格式）
+  const buildWordDoc = () => {
+    const text = getReportText();
+    const title = task?.goal || 'Agent执行报告';
+    const lines = text.split('\n').filter(l => l.trim());
+    let body = '';
+    for (const line of lines) {
+      if (line.startsWith('步骤') || line.match(/^\d+[\.\)]/)) {
+        body += `<p style="margin:6px 0;font-size:12pt">${escapeWord(line)}</p>`;
+      } else if (line.startsWith('---') || line.startsWith('===')) {
+        body += '<hr style="border:1px solid #ccc">';
+      } else {
+        body += `<p style="margin:4px 0;font-size:12pt">${escapeWord(line)}</p>`;
+      }
+    }
+    return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--></head>
+<body style="font-family:'宋体',SimSun,serif;margin:40px 60px">
+  <h1 style="text-align:center;font-size:18pt;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:8px">${escapeWord(title)}</h1>
+  <p style="text-align:center;color:#666;font-size:10pt">全过程工程咨询管理系统 · Agent执行报告 · ${new Date().toLocaleString('zh-CN')}</p>
+  ${body}
+  <hr style="margin-top:30px">
+  <p style="text-align:center;color:#999;font-size:9pt">全过程工程咨询管理系统 · 自动生成</p>
+</body></html>`;
+  };
+
+  const escapeWord = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
   // 下载HTML
   const handleDownloadHtml = () => {
-    const html = getReportHtml();
-    if (!html) return;
-    const blob = new Blob(['\uFEFF' + html], { type: 'text/html;charset=utf-8' });
-    downloadBlob(blob, `Agent报告_${new Date().toISOString().slice(0,10)}.html`);
+    const text = getReportText();
+    if (!text) return;
+    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>Agent报告</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:2;color:#1e293b}
+pre{white-space:pre-wrap;background:#f8fafc;padding:20px;border-radius:8px;font-size:14px}</style></head><body>
+<h1 style="color:#1e40af;border-bottom:2px solid #e2e8f0;padding-bottom:8px">${escapeWord(task?.goal||'执行报告')}</h1>
+<p style="color:#64748b">${new Date().toLocaleString('zh-CN')}</p>
+<pre>${escapeWord(text)}</pre></body></html>`;
+    downloadBlob(new Blob(['\uFEFF'+html],{type:'text/html;charset=utf-8'}), `Agent报告_${new Date().toISOString().slice(0,10)}.html`);
   };
 
-  // 下载Markdown
-  const handleDownloadMd = () => {
-    const html = getReportHtml();
-    if (!html) return;
-    let md = html.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n');
-    md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n');
-    md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n');
-    md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n');
-    md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
-    md = md.replace(/<td[^>]*>(.*?)<\/td>/gi, '| $1 ');
-    md = md.replace(/<tr[^>]*>/gi, '\n');
-    md = md.replace(/<\/?[^>]+>/g, '').replace(/\n{3,}/g, '\n\n');
-    const blob = new Blob(['\uFEFF' + md.trim()], { type: 'text/markdown;charset=utf-8' });
-    downloadBlob(blob, `Agent报告_${new Date().toISOString().slice(0,10)}.md`);
-  };
-
-  // 下载Word (HTML伪装)
+  // 下载Word
   const handleDownloadWord = () => {
-    const html = getReportHtml();
-    if (!html) return;
-    const wordHtml = html.replace(/<style>/g, '<style>body{font-family:"SimSun",serif;font-size:14px}');
-    const blob = new Blob(['\uFEFF' + wordHtml], { type: 'application/msword;charset=utf-8' });
-    downloadBlob(blob, `Agent报告_${new Date().toISOString().slice(0,10)}.doc`);
+    const doc = buildWordDoc();
+    downloadBlob(new Blob(['\uFEFF'+doc],{type:'application/msword;charset=utf-8'}), `Agent报告_${new Date().toISOString().slice(0,10)}.doc`);
   };
 
-  // 下载PDF (浏览器打印)
+  // 下载PDF (浏览器打印当前报告区域)
   const handleDownloadPdf = () => {
-    const iframe = reportRef.current;
-    if (iframe?.contentWindow) {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    } else {
-      window.print();
-    }
+    window.print();
   };
 
   const downloadBlob = (blob: Blob, filename: string) => {
@@ -91,8 +94,6 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
     const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   };
-
-  const isHtml = (str: string) => str.startsWith('<') || str.includes('<html') || str.includes('<!DOCTYPE');
 
   const handleStart = async (promptQuery?: string) => {
     const q = promptQuery || goal;
@@ -298,42 +299,32 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
               ))}
             </div>
 
-            {/* 结果摘要 — iframe隔离HTML渲染 */}
+            {/* 结果摘要 — Word兼容文字输出 */}
             {task.result && (
               <div className="border-t border-[var(--border-primary)]">
-                <div className="flex items-center justify-between px-4 py-2.5 bg-green-500/5 border-b border-[var(--border-primary)]">
+                <div className="flex items-center justify-between px-5 py-3 bg-green-500/5 border-b border-[var(--border-primary)]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-green-400" />
-                    <span className="text-sm font-bold text-[var(--text-primary)]">执行报告</span>
+                    <CheckCircle2 size={22} className="text-green-400" />
+                    <span className="text-base font-bold text-[var(--text-primary)]">执行报告</span>
                   </div>
-                  {isHtml(task.result) && (
-                    <div className="flex items-center gap-1">
-                      <button onClick={handleCopyReport} className="px-2.5 py-1 text-[10px] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded flex items-center gap-1 transition" title="复制文本">
-                        <Copy size={11} /> 复制
-                      </button>
-                      <button onClick={handleDownloadWord} className="px-2.5 py-1 text-[10px] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded flex items-center gap-1 transition" title="下载Word">
-                        <FileText size={11} /> Word
-                      </button>
-                      <button onClick={handleDownloadPdf} className="px-2.5 py-1 text-[10px] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded flex items-center gap-1 transition" title="打印为PDF">
-                        <FileDown size={11} /> PDF
-                      </button>
-                      <button onClick={handleDownloadMd} className="px-2.5 py-1 text-[10px] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded flex items-center gap-1 transition" title="下载Markdown">
-                        <Download size={11} /> MD
-                      </button>
-                      <button onClick={handleDownloadHtml} className="px-2.5 py-1 text-[10px] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded flex items-center gap-1 transition" title="下载HTML">
-                        HTML
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleCopyReport} className="px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg flex items-center gap-1.5 transition font-medium" title="复制文本">
+                      <Copy size={20} /> 复制
+                    </button>
+                    <button onClick={handleDownloadWord} className="px-4 py-2 text-sm bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg flex items-center gap-1.5 transition font-medium" title="下载Word文档">
+                      <FileText size={20} /> Word
+                    </button>
+                    <button onClick={handleDownloadPdf} className="px-4 py-2 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg flex items-center gap-1.5 transition font-medium" title="打印为PDF">
+                      <FileDown size={20} /> PDF
+                    </button>
+                    <button onClick={handleDownloadHtml} className="px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg flex items-center gap-1.5 transition font-medium" title="下载HTML">
+                      <Download size={20} /> HTML
+                    </button>
+                  </div>
                 </div>
-                {isHtml(task.result) ? (
-                  <iframe ref={reportRef} srcDoc={task.result}
-                    className="w-full border-0 bg-white"
-                    style={{ minHeight: '500px', height: '70vh' }}
-                    title="执行报告" sandbox="allow-same-origin allow-scripts" />
-                ) : (
-                  <div className="px-4 py-3"><p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{task.result}</p></div>
-                )}
+                <div className="p-5 bg-white">
+                  <pre className="text-sm text-gray-800 whitespace-pre-wrap font-sans leading-relaxed" style={{fontFamily:'-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif'}}>{task.result}</pre>
+                </div>
               </div>
             )}
           </div>
