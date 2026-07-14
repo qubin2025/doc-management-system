@@ -32,20 +32,22 @@ app.use(cors(isProduction ? (corsOrigin ? {
 app.use(morgan(isProduction ? 'combined' : 'short'));
 app.use(express.json({ limit: '100mb' }));
 
-// 全局限流
+// 全局限流 — 生产环境更严格
 app.use(rateLimit({
   windowMs: 60 * 1000,
-  max: isProduction ? 200 : 1000,
+  max: isProduction ? 100 : 500,
   message: { error: '请求过于频繁，请稍后重试' },
   standardHeaders: true,
   legacyHeaders: false,
 }));
 
-// 安全头
+// 安全头增强
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', isProduction ? 'max-age=31536000; includeSubDomains' : '');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 });
 
