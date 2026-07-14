@@ -10,10 +10,11 @@ import { toast } from './Toast';
 import { parseDocument } from '../data/documentParser';
 import { saveModules, loadModules } from '../data/imageStore';
 import GuideModulesTab from './GuideModulesTab';
+import { loadTailoringConfig } from '../data/tailoringEngine';
 import GuideFormsTab from './GuideFormsTab';
 import GuideLogicTab from './GuideLogicTab';
 
-interface GuideChapterProps { chapter: GuideChapterType; onBack: () => void; }
+interface GuideChapterProps { chapter: GuideChapterType; projectName?: string; onBack: () => void; }
 
 const iconMap: Record<string, React.ReactNode> = {
   ClipboardCheck: <ClipboardCheck className="w-8 h-8 text-blue-600" />,
@@ -29,7 +30,10 @@ const colorMap: Record<string, { bg: string; border: string; text: string; light
   indigo:  { bg: 'bg-indigo-500', border: 'border-indigo-500', text: 'text-indigo-700', light: 'bg-indigo-50', hover: 'hover:bg-indigo-600' },
 };
 
-const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, onBack }) => {
+const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, projectName, onBack }) => {
+  // 加载裁剪配置
+  const tailoringConfig = projectName ? loadTailoringConfig(projectName) : null;
+  const tailoringStatus = tailoringConfig?.result?.workItemStatus;
   const colors = colorMap[initialChapter.color] || colorMap.blue;
   const STORAGE_KEY = `guide-chapter-${initialChapter.id}`;
   const LINKS_KEY = `guide-item-links-${initialChapter.id}`;
@@ -406,6 +410,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, on
           <GuideModulesTab
             subModules={subModules} checkedItems={checkedItems} completedItems={completedItems}
             expandedAttachments={expandedAttachments} colors={colors}
+            tailoringStatus={tailoringStatus} showExcluded={!!projectName}
             onToggleItem={toggleItem} onToggleComplete={toggleComplete}
             onToggleAllInSubModule={toggleAllInSubModule} onOpenAddItem={openAddItem}
             onOpenEditItem={openEditItem} onDeleteWorkItem={handleDeleteWorkItem}

@@ -1,6 +1,8 @@
 import React from 'react';
-import { Plus, Edit3, Trash2, Paperclip, Download, Sparkles, ListChecks } from 'lucide-react';
+import { Plus, Edit3, Trash2, Paperclip, Download, Sparkles, ListChecks, Star } from 'lucide-react';
 import { GuideSubModule, GuideWorkItem } from '../types';
+
+type WorkItemStatus = 'required' | 'recommended' | 'optional' | 'excluded';
 
 interface GuideModulesTabProps {
   subModules: GuideSubModule[];
@@ -8,6 +10,8 @@ interface GuideModulesTabProps {
   completedItems: Set<string>;
   expandedAttachments: Set<string>;
   colors: { bg: string; border: string; text: string; light: string; hover: string };
+  tailoringStatus?: Record<string, WorkItemStatus>; // 裁剪配置
+  showExcluded?: boolean; // 是否显示被排除的工作项
   onToggleItem: (itemId: string) => void;
   onToggleComplete: (itemId: string) => void;
   onToggleAllInSubModule: (smId: string) => void;
@@ -31,7 +35,16 @@ const GuideModulesTab: React.FC<GuideModulesTabProps> = ({
   onOpenAddItem, onOpenEditItem, onDeleteWorkItem, onDeleteAttachment,
   onToggleAttachments, onEditSmName, onSaveTemplate, onAIDecomposeFromItem,
   editingSmId, editingSmName, onEditingSmNameChange, onSaveSmName,
+  tailoringStatus, showExcluded = true,
 }) => {
+  const statusStyle = (s: WorkItemStatus) => {
+    switch (s) {
+      case 'required': return 'border-l-red-500';
+      case 'recommended': return 'border-l-blue-400';
+      case 'excluded': return 'opacity-40 grayscale';
+      default: return '';
+    }
+  };
   const downloadFile = (data: string, fileName: string) => {
     try {
       const b64 = data.split(',')[1] || data;
@@ -49,6 +62,14 @@ const GuideModulesTab: React.FC<GuideModulesTabProps> = ({
         const smChecked = sm.workItems.length > 0 && sm.workItems.every(wi => checkedItems.has(wi.id));
         const smDone = sm.workItems.length > 0 && sm.workItems.every(wi => completedItems.has(wi.id));
         const smPartial = !smChecked && sm.workItems.some(wi => checkedItems.has(wi.id));
+        // 裁剪统计
+        let tailorStats = '';
+        if (tailoringStatus) {
+          const r = sm.workItems.filter(wi => tailoringStatus[wi.id] === 'required').length;
+          const rec = sm.workItems.filter(wi => tailoringStatus[wi.id] === 'recommended').length;
+          const opt = sm.workItems.filter(wi => tailoringStatus[wi.id] === 'optional').length;
+          tailorStats = `必${r}/推${rec}/可${opt}`;
+        }
         return (
           <div key={sm.id} className={`bg-white rounded-lg border-2 p-4 transition-all duration-200 ${
             smDone ? 'border-green-300 bg-green-50/30' :
@@ -63,7 +84,9 @@ const GuideModulesTab: React.FC<GuideModulesTabProps> = ({
                   onBlur={onSaveSmName} onKeyDown={e => e.key === 'Enter' && onSaveSmName()}
                   className="flex-1 px-2 py-1 text-sm border-b-2 border-blue-500 outline-none font-medium" autoFocus />
               ) : (
-                <h3 className="font-semibold text-sm" title={sm.id}>{sm.name}</h3>
+                <h3 className="font-semibold text-sm" title={sm.id}>{sm.name}
+              {tailorStats && <span className="ml-1 text-[10px] text-purple-500 font-normal">({tailorStats})</span>}
+            </h3>
               )}
               <div className="flex items-center gap-1">
                 <button onClick={() => onToggleAllInSubModule(sm.id)}
@@ -93,16 +116,20 @@ const GuideModulesTab: React.FC<GuideModulesTabProps> = ({
               <p className="text-xs text-gray-400 text-center py-4">暂无工作项，点击 + 添加</p>
             ) : (
               <div className="space-y-1.5">
-                {sm.workItems.map(wi => {
+                {sm.workItems.filter(wi => {
+                  if (!showExcluded && tailoringStatus?.[wi.id] === 'excluded') return false;
+                  return true;
+                }).map(wi => {
                   const isChecked = checkedItems.has(wi.id);
                   const isCompleted = completedItems.has(wi.id);
+                  const tStatus = tailoringStatus?.[wi.id] || 'optional';
                   const expKey = `${sm.id}-${wi.id}`;
                   const isExpanded = expandedAttachments.has(expKey);
                   return (
-                    <div key={wi.id} className={`rounded-lg border p-2.5 transition ${
+                    <div key={wi.id} className={`rounded-lg border p-2.5 transition border-l-2 ${
                       isCompleted ? 'border-green-200 bg-green-50' :
                       isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-100'
-                    }`}>
+                    } ${statusStyle(tStatus)}`}>
                       <div className="flex items-start gap-2">
                         <button onClick={() => onToggleItem(wi.id)}
                           className={`mt-0.5 w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition ${
@@ -115,6 +142,9 @@ const GuideModulesTab: React.FC<GuideModulesTabProps> = ({
                             <span className={`text-sm ${isCompleted ? 'line-through text-green-700' : isChecked ? 'text-blue-700' : 'text-gray-700'}`}>
                               {wi.id} {wi.name}
                             </span>
+                            {tStatus === 'required' && <span className="text-[9px] bg-red-100 text-red-600 px-1 rounded font-bold">必选</span>}
+                            {tStatus === 'recommended' && <Star size={10} className="text-blue-400 inline" />}
+                            {tStatus === 'excluded' && <span className="text-[9px] text-gray-400">(已排除)</span>}
                             {wi.subTasks && wi.subTasks.length > 0 && (
                               <span className="text-[10px] bg-purple-100 text-purple-700 px-1 rounded">{wi.subTasks.length}子任务</span>
                             )}

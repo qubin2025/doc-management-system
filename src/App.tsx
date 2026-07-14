@@ -458,7 +458,7 @@ const App: React.FC = () => {
   if (view === 'guide-chapter' && guideChapterId) {
     const chapter = guideChapters.find(c => c.id === guideChapterId);
     if (chapter) {
-      return <GuideChapter chapter={chapter} onBack={() => { setGuideChapterId(null); setView('homepage'); }} />;
+      return <GuideChapter chapter={chapter} projectName={currentProject} onBack={() => { setGuideChapterId(null); setView('homepage'); }} />;
     }
   }
 
