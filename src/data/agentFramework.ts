@@ -273,11 +273,31 @@ export class EngineeringAgent {
 
     try {
       const finalReply = await api.aiChat(
-        [{ role: 'user', content: `任务执行完毕，请根据以下步骤结果，生成一个综合摘要:\n${summary}\n\n用户原始目标: ${task.goal}` }],
-        '你是项目管理AI助手，请简洁总结执行结果。',
+        [{ role: 'user', content: `任务执行完毕。请根据以下步骤结果，生成一份综合报告。
+
+格式要求（重要）：
+- 使用自然中文段落，不要使用任何Markdown符号（不要用#、**、-、*、>等符号）
+- 报告标题用"一、"、"二、"等中文序号标注章节
+- 每个步骤用"步骤1：""步骤2："标注
+- 关键数值直接写在段落中，不需要特殊强调符号
+- 重要结论用"【】"括起来
+
+执行步骤:
+${summary}
+
+用户原始目标: ${task.goal}` }],
+        '你是项目管理报告撰写专家。请用专业中文撰写报告，输出纯文本，不使用任何Markdown格式符号。章节用中文序号（一、二、三），段落自然换行，重点用【】标注。',
         { projectName: context.projectName }
       );
-      task.result = finalReply || summary;
+      // 清理残留的markdown符号
+      const clean = finalReply
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/\*{1,3}(.+?)\*{1,3}/g, '【$1】')
+        .replace(/^[-*+]\s+/gm, '· ')
+        .replace(/`{1,3}[^`]*`{1,3}/g, '')
+        .replace(/^>/gm, '')
+        .replace(/_{1,3}/g, '');
+      task.result = clean || summary;
     } catch {
       task.result = summary;
     }

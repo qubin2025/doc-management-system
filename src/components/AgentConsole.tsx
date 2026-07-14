@@ -36,30 +36,53 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
     navigator.clipboard.writeText(text).then(() => toast('已复制到剪贴板', 'success')).catch(() => toast('复制失败', 'error'));
   };
 
-  // 构建Word文档（Word兼容HTML格式）
+  // 构建Word文档（Word兼容HTML，支持章节/段落/加粗格式）
   const buildWordDoc = () => {
     const text = getReportText();
     const title = task?.goal || 'Agent执行报告';
-    const lines = text.split('\n').filter(l => l.trim());
+    const lines = text.split('\n');
     let body = '';
-    for (const line of lines) {
-      if (line.startsWith('步骤') || line.match(/^\d+[\.\)]/)) {
-        body += `<p style="margin:6px 0;font-size:12pt">${escapeWord(line)}</p>`;
-      } else if (line.startsWith('---') || line.startsWith('===')) {
-        body += '<hr style="border:1px solid #ccc">';
-      } else {
-        body += `<p style="margin:4px 0;font-size:12pt">${escapeWord(line)}</p>`;
+    for (let line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) { body += '<br>'; continue; }
+
+      // 一级标题：一、二、三、...
+      if (/^[一二三四五六七八九十]、/.test(trimmed)) {
+        body += `<h2 style="font-size:16pt;color:#1e40af;font-weight:bold;margin:18px 0 10px;border-bottom:1px solid #e2e8f0;padding-bottom:4px">${escapeWord(trimmed)}</h2>`;
+      }
+      // 二级标题：(一)(二) 或 1. 2.
+      else if (/^[（(][一二三四五六七八九十]+[)）]|^\d+[\.、]/.test(trimmed)) {
+        body += `<h3 style="font-size:13pt;color:#334155;font-weight:bold;margin:12px 0 8px">${escapeWord(trimmed)}</h3>`;
+      }
+      // 步骤行
+      else if (trimmed.startsWith('步骤')) {
+        body += `<p style="margin:8px 0;font-size:12pt;font-weight:bold;color:#1e40af">${escapeWord(trimmed)}</p>`;
+      }
+      // 【重点】内容加粗
+      else if (trimmed.includes('【')) {
+        body += `<p style="margin:6px 0;font-size:12pt;line-height:1.8">${escapeWord(trimmed).replace(/【(.+?)】/g, '<b style="color:#dc2626">【$1】</b>')}</p>`;
+      }
+      // · 列表项
+      else if (trimmed.startsWith('·')) {
+        body += `<p style="margin:3px 0 3px 20px;font-size:12pt">${escapeWord(trimmed)}</p>`;
+      }
+      // 普通段落
+      else {
+        body += `<p style="margin:6px 0;font-size:12pt;line-height:1.8;text-indent:2em">${escapeWord(trimmed)}</p>`;
       }
     }
     return `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
-<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--></head>
-<body style="font-family:'宋体',SimSun,serif;margin:40px 60px">
-  <h1 style="text-align:center;font-size:18pt;color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:8px">${escapeWord(title)}</h1>
-  <p style="text-align:center;color:#666;font-size:10pt">全过程工程咨询管理系统 · Agent执行报告 · ${new Date().toLocaleString('zh-CN')}</p>
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>@page{size:A4;margin:2cm}@media print{body{width:21cm}}</style>
+</head>
+<body style="font-family:'宋体',SimSun,serif;margin:40px 60px;color:#1e293b">
+  <h1 style="text-align:center;font-size:20pt;color:#1e40af;font-weight:bold;border-bottom:2px solid #1e40af;padding-bottom:10px;margin-bottom:5px">${escapeWord(title)}</h1>
+  <p style="text-align:center;color:#64748b;font-size:10pt;margin-bottom:24px">全过程工程咨询管理系统 · Agent执行报告 · ${new Date().toLocaleString('zh-CN')}</p>
   ${body}
-  <hr style="margin-top:30px">
-  <p style="text-align:center;color:#999;font-size:9pt">全过程工程咨询管理系统 · 自动生成</p>
+  <hr style="margin-top:30px;border:1px solid #e2e8f0">
+  <p style="text-align:center;color:#94a3b8;font-size:9pt">全过程工程咨询管理系统 · 自动生成</p>
 </body></html>`;
   };
 
