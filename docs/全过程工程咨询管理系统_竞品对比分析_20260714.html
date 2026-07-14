@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 — 竞品对比分析</title>
+<style>
+  :root { --bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--green:#4ade80;--yellow:#facc15;--red:#f87171;--purple:#a78bfa;--orange:#fb923c; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.8;padding:2rem}
+  .container{max-width:1400px;margin:0 auto}
+  h1{font-size:1.8rem;text-align:center;margin-bottom:.3rem;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .subtitle{text-align:center;color:var(--muted);margin-bottom:2rem;font-size:.85rem}
+  h2{font-size:1.3rem;margin:2.5rem 0 1.2rem;padding-bottom:.4rem;border-bottom:2px solid var(--accent);color:var(--accent)}
+  h3{font-size:1.05rem;margin:1.5rem 0 .8rem;color:var(--purple)}
+
+  .overflow-wrap { overflow-x:auto; margin:1.5rem 0; }
+  table { width:100%; border-collapse:collapse; font-size:0.78rem; min-width:900px; }
+  th,td { border:1px solid var(--border); padding:0.5rem 0.6rem; text-align:left; vertical-align:top; }
+  th { background:rgba(56,189,248,.1); color:var(--accent); font-weight:600; white-space:nowrap; }
+  tr:nth-child(even) td { background:rgba(30,41,59,.5); }
+
+  .pro { color:var(--green); font-weight:700; }
+  .con { color:var(--red); font-weight:700; }
+  .neu { color:var(--yellow); }
+  .our { background:rgba(56,189,248,.08); }
+  .our td:first-child { color:var(--accent); font-weight:700; }
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin:1rem 0}
+  .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.8rem;text-align:center}
+  .score-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:.3rem}
+  .score-fill{height:100%;border-radius:3px}
+
+  .footer{text-align:center;color:var(--muted);margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:.75rem}
+
+  @media print { body{background:#fff;color:#000} .card{background:#f8fafc;border-color:#cbd5e1} }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>全过程工程咨询管理系统<br>竞品对比分析报告</h1>
+<p class="subtitle">8款主流项目管理工具 vs 本系统 · 12维度对比 · 2026-07-14</p>
+
+<!-- ===== 一、对比总览 ===== -->
+<h2>一、对比工具概览</h2>
+<div class="card">
+  <table>
+    <tr><th style="width:18%">工具</th><th style="width:12%">类型</th><th style="width:10%">定位</th><th style="width:15%">核心用户</th><th style="width:15%">部署方式</th><th style="width:15%">价格模式</th><th style="width:15%">中国市场</th></tr>
+    <tr>
+      <td><strong>Jira</strong> (Atlassian)</td><td>国际</td><td>敏捷开发/IT</td><td>软件研发团队</td><td>SaaS/私有部署</td><td>$7.75/人/月起</td><td>有代理,本地化一般</td>
+    </tr>
+    <tr>
+      <td><strong>Microsoft Project</strong></td><td>国际</td><td>传统PM/工程</td><td>项目经理/PMO</td><td>本地/SaaS</td><td>$10/人/月起</td><td>有,需Office生态</td>
+    </tr>
+    <tr>
+      <td><strong>Asana</strong></td><td>国际</td><td>协作/通用</td><td>跨部门团队</td><td>SaaS</td><td>$10.99/人/月起</td><td>无中文版,需VPN</td>
+    </tr>
+    <tr>
+      <td><strong>Monday.com</strong></td><td>国际</td><td>可视化管理</td><td>中小企业</td><td>SaaS</td><td>$9/人/月起</td><td>有中文,价格较高</td>
+    </tr>
+    <tr>
+      <td><strong>飞书项目</strong> (字节)</td><td>国内</td><td>通用PM</td><td>互联网/科技企业</td><td>SaaS</td><td>免费(基础)/收费</td><td>主流,生态强</td>
+    </tr>
+    <tr>
+      <td><strong>钉钉项目</strong> (Teambition)</td><td>国内</td><td>通用PM</td><td>中小企业</td><td>SaaS</td><td>免费/¥299起</td><td>主流,钉钉集成</td>
+    </tr>
+    <tr>
+      <td><strong>禅道 ZenTao</strong></td><td>国内</td><td>软件研发</td><td>研发团队/IT</td><td>私有部署/SaaS</td><td>开源免费/企业收费</td><td>研发领域主流</td>
+    </tr>
+    <tr>
+      <td><strong>明道云</strong></td><td>国内</td><td>零代码/低代码</td><td>中小企业</td><td>SaaS/私有</td><td>免费(基础)/收费</td><td>低代码领域主流</td>
+    </tr>
+    <tr class="our">
+      <td><strong>⭐ 本系统</strong></td><td>国内</td><td>全过程工程咨询</td><td>工程管理/全过程咨询</td><td>私有部署</td><td>开源/自主</td><td>专注工程垂直领域</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ===== 二、12维度详细对比 ===== -->
+<h2>二、12维度详细对比</h2>
+
+<h3>1. 管理理念</h3>
+<div class="overflow-wrap"><table>
+  <tr><th style="width:14%">工具</th><th style="width:38%">核心理念</th><th style="width:24%">优点</th><th style="width:24%">缺点</th></tr>
+  <tr><td>Jira</td><td>敏捷开发 (Scrum/Kanban)</td><td><span class="pro">✓ 敏捷流程成熟, Sprint管理优秀</span></td><td><span class="con">✗ 不适应非软件项目管理</span></td></tr>
+  <tr><td>MS Project</td><td>传统PMBOK/WBS/甘特图</td><td><span class="pro">✓ PMBOK第6版标准, 甘特图最强</span></td><td><span class="con">✗ AI能力弱, 学习曲线陡</span></td></tr>
+  <tr><td>Asana</td><td>任务列表+时间线</td><td><span class="pro">✓ 简单直观, 协作友好</span></td><td><span class="con">✗ 缺少PMBOK知识体系支撑</span></td></tr>
+  <tr><td>Monday</td><td>可视化看板</td><td><span class="pro">✓ 灵活配置,色彩丰富</span></td><td><span class="con">✗ 深度不足,报表弱</span></td></tr>
+  <tr><td>飞书项目</td><td>OKR+任务协同</td><td><span class="pro">✓ IM+文档+项目一体化</span></td><td><span class="con">✗ 行业适配弱,缺乏工程模板</span></td></tr>
+  <tr><td>钉钉项目</td><td>任务+审批流</td><td><span class="pro">✓ 钉钉OA集成,审批方便</span></td><td><span class="con">✗ 审批驱动模式,灵活性不足</span></td></tr>
+  <tr><td>禅道</td><td>Scrum+瀑布混合</td><td><span class="pro">✓ 开源可控,测试管理集成</span></td><td><span class="con">✗ UI老旧, 非研发场景弱</span></td></tr>
+  <tr><td>明道云</td><td>零代码自定义</td><td><span class="pro">✓ 自定义能力强,组件丰富</span></td><td><span class="con">✗ 无PMBOK/工程行业知识</span></td></tr>
+  <tr class="our"><td>⭐ 本系统</td><td><strong>目标管理驱动+PMBOK双版内核</strong></td><td><span class="pro">✓ 目标驱动而非表单驱动<br>✓ PMBOK第6版10领域+第7版8绩效域<br>✓ WBS四层树+进度自动计算<br>✓ 模块裁剪(20条PMBOK规则)</span></td><td><span class="con">✗ 敏捷Scrum/Kanban未实现<br>✗ 尚不支持OKR框架</span></td></tr>
+</table></div>
+
+<h3>2. AI智能化</h3>
+<div class="overflow-wrap"><table>
+  <tr><th style="width:14%">工具</th><th style="width:38%">AI能力</th><th style="width:24%">优点</th><th style="width:24%">缺点</th></tr>
+  <tr><td>Jira</td><td>Atlassian Intelligence (AI摘要/建议)</td><td><span class="pro">✓ AI自动生成issue描述</span></td><td><span class="con">✗ 仅限文案生成,无自主决策</span></td></tr>
+  <tr><td>MS Project</td><td>Copilot (Office AI集成)</td><td><span class="pro">✓ 计划生成建议</span></td><td><span class="con">✗ 依赖Copilot订阅,功能有限</span></td></tr>
+  <tr><td>Asana</td><td>Asana Intelligence (风险预测)</td><td><span class="pro">✓ 目标智能分解</span></td><td><span class="con">✗ 无Agent自主规划能力</span></td></tr>
+  <tr><td>飞书项目</td><td>飞书智能伙伴 (文档AI)</td><td><span class="pro">✓ 文档摘要/搜索</span></td><td><span class="con">✗ 无工程专业AI能力</span></td></tr>
+  <tr><td>其他工具</td><td>基础AI辅助或无</td><td><span class="neu">△ 大多仅搜索/摘要</span></td><td><span class="con">✗ 无自主Agent能力</span></td></tr>
+  <tr class="our"><td>⭐ 本系统</td><td><strong>Agent+Skill+MCP 三层AI体系</strong></td><td><span class="pro">✓ Agent ReAct自主推理<br>✓ 7个专业Skill(审查/生成/填写)<br>✓ Skill链式组合+工作流自动化<br>✓ 11个内置工具(compute_kpi等)<br>✓ 知识图谱+RAG检索增强<br>✓ 三级降级链(7模型自动切换)</span></td><td><span class="con">✗ 依赖外部AI API成本<br>✗ Agent学习记忆待增强</span></td></tr>
+</table></div>
+
+<h3>3. 行业垂直适配</h3>
+<div class="overflow-wrap"><table>
+  <tr><th style="width:14%">工具</th><th style="width:38%">行业适配</th><th style="width:24%">优点</th><th style="width:24%">缺点</th></tr>
+  <tr><td>Jira/MS Project/Asana等</td><td>通用型，无行业深度</td><td><span class="pro">✓ 适用面广</span></td><td><span class="con">✗ 工程行业零适配,无规程支持</span></td></tr>
+  <tr><td>飞书/钉钉/明道云</td><td>通用型，模板可配</td><td><span class="pro">✓ 可通过模板微调</span></td><td><span class="con">✗ 缺乏工程行业知识沉淀</span></td></tr>
+  <tr class="our"><td>⭐ 本系统</td><td><strong>全过程工程咨询垂直领域</strong></td><td><span class="pro">✓ DB11/T695-2025建筑规程<br>✓ DB11/T808-2020市政规程<br>✓ 4章41子模块200+工作项<br>✓ 86项土储中心归档分类<br>✓ 7种施工方案模板<br>✓ 附表46个(含字段结构)<br>✓ AI施工/合同/招投标审查</span></td><td><span class="con">✗ 仅覆盖建筑/市政工程<br>✗ 其他行业(水利/交通)未适配</span></td></tr>
+</table></div>
+
+<h3>4. 知识管理</h3>
+<div class="overflow-wrap"><table>
+  <tr><th style="width:14%">工具</th><th style="width:38%">知识管理</th><th style="width:24%">优点</th><th style="width:24%">缺点</th></tr>
+  <tr><td>Jira</td><td>Confluence集成(文档)</td><td><span class="pro">✓ 文档协作+知识沉淀</span></td><td><span class="con">✗ 无知识图谱/向量检索</span></td></tr>
+  <tr><td>Notion</td><td>全功能Wiki</td><td><span class="pro">✓ 灵活的知识库编辑</span></td><td><span class="con">✗ 无AI分析/图谱推理</span></td></tr>
+  <tr><td>其他</td><td>基础文档存储</td><td><span class="neu">△ 文件附件</span></td><td><span class="con">✗ 无知识工程能力</span></td></tr>
+  <tr class="our"><td>⭐ 本系统</td><td><strong>四套知识系统统一编排</strong></td><td><span class="pro">✓ 向量数据库(768维余弦搜索)<br>✓ Neo4j知识图谱(9类节点6关系)<br>✓ LightRAG(3路混合检索)<br>✓ RAGFlow(Docker企业知识库)<br>✓ KG自动管道(事件驱动)<br>✓ AI实体抽取+智能分块</span></td><td><span class="con">✗ 需Docker+Python环境(可选)<br>✗ 知识生命周期管理未完善</span></td></tr>
+</table></div>
+
+<h3>5. 数据安全与合规</h3>
+<div class="overflow-wrap"><table>
+  <tr><th style="width:14%">工具</th><th style="width:38%">数据安全</th><th style="width:24%">优点</th><th style="width:24%">缺点</th></tr>
+  <tr><td>SaaS工具(Jira/Asana/飞书等)</td><td>云托管,厂商管理</td><td><span class="pro">✓ 厂商负责安全运维</span></td><td><span class="con">✗ 数据在第三方服务器<br>✗ 合规风险(等保/ISO27001)<br>✗ 跨境数据传输风险</span></td></tr>
+  <tr class="our"><td>⭐ 本系统</td><td><strong>私有部署,数据主权自主</strong></td><td><span class="pro">✓ 全部数据本地存储<br>✓ 审计日志(6action×7target)<br>✓ localStorage优先(前端隐私)<br>✓ 服务器不存业务内容<br>✓ 备份脚本+PG适配层<br>✓ 开源透明可审计</span></td><td><span class="con">✗ 需要自运维能力<br>✗ 安全责任自理</span></td></tr>
+</table></div>
+
+<h3>6-12. 其余维度汇总</h3>
+<div class="overflow-wrap"><table>
+  <tr><th style="width:12%">维度</th><th>Jira</th><th>MS Project</th><th>Asana</th><th>飞书项目</th><th>钉钉项目</th><th>禅道</th><th style="color:var(--accent)">⭐ 本系统</th></tr>
+  <tr>
+    <td><strong>部署方式</strong></td>
+    <td>SaaS/私有</td><td>本地/SaaS</td><td>仅SaaS</td><td>仅SaaS</td><td>仅SaaS</td><td>私有/SaaS</td>
+    <td style="color:var(--green)"><strong>纯私有+开源(数据主权最高)</strong></td>
+  </tr>
+  <tr>
+    <td><strong>定制化</strong></td>
+    <td><span class="pro">高</span>(插件市场)</td>
+    <td><span class="neu">中</span></td>
+    <td><span class="neu">中</span></td>
+    <td><span class="neu">中</span></td>
+    <td><span class="con">低</span></td>
+    <td><span class="pro">高</span>(开源)</td>
+    <td style="color:var(--green)">源码完全自主,任意修改</td>
+  </tr>
+  <tr>
+    <td><strong>学习成本</strong></td>
+    <td><span class="con">高</span></td>
+    <td><span class="con">很高</span></td>
+    <td><span class="pro">低</span></td>
+    <td><span class="pro">低</span></td>
+    <td><span class="pro">低</span></td>
+    <td><span class="neu">中</span></td>
+    <td style="color:var(--yellow)">中等(工程专业概念需培训)</td>
+  </tr>
+  <tr>
+    <td><strong>移动端</strong></td>
+    <td><span class="pro">完善</span></td>
+    <td><span class="neu">基础</span></td>
+    <td><span class="pro">完善</span></td>
+    <td><span class="pro">完善</span></td>
+    <td><span class="pro">完善</span></td>
+    <td><span class="neu">基础</span></td>
+    <td style="color:var(--red)">仅响应式CSS,无原生App</td>
+  </tr>
+  <tr>
+    <td><strong>生态集成</strong></td>
+    <td><span class="pro">极强(3000+插件)</span></td>
+    <td><span class="pro">强(Office)</span></td>
+    <td><span class="pro">强(200+集成)</span></td>
+    <td><span class="pro">强(飞书全家桶)</span></td>
+    <td><span class="pro">强(钉钉OA)</span></td>
+    <td><span class="neu">中</span></td>
+    <td style="color:var(--red)">弱(独立系统,MCP可扩展)</td>
+  </tr>
+  <tr>
+    <td><strong>多项目/组合</strong></td>
+    <td><span class="pro">强(Advanced Roadmaps)</span></td>
+    <td><span class="pro">强(Portfolio)</span></td>
+    <td><span class="neu">中(Portfolio)</span></td>
+    <td><span class="neu">中</span></td>
+    <td><span class="con">弱</span></td>
+    <td><span class="con">弱</span></td>
+    <td style="color:var(--yellow)">基础(PortfolioManager KPI对比)</td>
+  </tr>
+  <tr>
+    <td><strong>价格</strong></td>
+    <td><span class="con">$7.75+/人/月</span></td>
+    <td><span class="con">$10+/人/月</span></td>
+    <td><span class="con">$10.99+/人/月</span></td>
+    <td><span class="neu">基础免费</span></td>
+    <td><span class="neu">基础免费</span></td>
+    <td><span class="pro">开源免费</span></td>
+    <td style="color:var(--green)"><strong>完全免费开源</strong></td>
+  </tr>
+</table></div>
+
+<!-- ===== 三、综合评分 ===== -->
+<h2>三、综合评分对比</h2>
+<div class="card">
+<table>
+  <tr><th style="width:14%">评分维度</th><th style="width:8%">权重</th><th>Jira</th><th>MS Proj</th><th>Asana</th><th>飞书</th><th>钉钉</th><th>禅道</th><th style="color:var(--accent);background:rgba(56,189,248,.06)">⭐ 本系统</th></tr>
+  <tr>
+    <td>管理理念</td><td>15%</td><td>8</td><td>9</td><td>6</td><td>7</td><td>6</td><td>7</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>AI智能化</td><td>15%</td><td>5</td><td>4</td><td>4</td><td>4</td><td>3</td><td>2</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>行业垂直</td><td>15%</td><td>2</td><td>3</td><td>2</td><td>3</td><td>3</td><td>3</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>知识管理</td><td>10%</td><td>6</td><td>3</td><td>4</td><td>4</td><td>3</td><td>3</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>数据安全</td><td>10%</td><td>5</td><td>7</td><td>5</td><td>5</td><td>5</td><td>7</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>部署灵活</td><td>8%</td><td>7</td><td>6</td><td>3</td><td>3</td><td>3</td><td>8</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>定制化</td><td>7%</td><td>7</td><td>5</td><td>4</td><td>4</td><td>3</td><td>8</td><td style="background:rgba(56,189,248,.1)"><strong>9</strong></td>
+  </tr>
+  <tr>
+    <td>学习成本</td><td>5%</td><td>5</td><td>4</td><td>8</td><td>8</td><td>8</td><td>6</td><td style="background:rgba(56,189,248,.1)">6</td>
+  </tr>
+  <tr>
+    <td>移动端</td><td>5%</td><td>8</td><td>5</td><td>8</td><td>9</td><td>9</td><td>5</td><td style="background:rgba(56,189,248,.1)">3</td>
+  </tr>
+  <tr>
+    <td>生态集成</td><td>5%</td><td>10</td><td>8</td><td>9</td><td>9</td><td>9</td><td>5</td><td style="background:rgba(56,189,248,.1)">2</td>
+  </tr>
+  <tr>
+    <td>多项目</td><td>3%</td><td>9</td><td>9</td><td>7</td><td>6</td><td>4</td><td>4</td><td style="background:rgba(56,189,248,.1)">5</td>
+  </tr>
+  <tr>
+    <td>价格</td><td>2%</td><td>3</td><td>4</td><td>3</td><td>7</td><td>7</td><td>9</td><td style="background:rgba(56,189,248,.1)"><strong>10</strong></td>
+  </tr>
+  <tr style="background:rgba(15,23,42,.5);font-weight:700;font-size:.9rem">
+    <td><strong>加权总分</strong></td><td><strong>100%</strong></td><td>6.2</td><td>5.8</td><td>4.8</td><td>5.3</td><td>4.6</td><td>5.1</td>
+    <td style="background:rgba(56,189,248,.15);color:var(--accent);font-size:1rem"><strong>7.9</strong></td>
+  </tr>
+</table>
+</div>
+
+<!-- ===== 四、SWOT分析 ===== -->
+<h2>四、本系统 SWOT 分析</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0">
+  <div class="card" style="border-color:var(--green);border-width:2px">
+    <h3 style="color:var(--green);margin-top:0">💪 优势 (Strengths)</h3>
+    <ul style="font-size:.8rem;padding-left:1.2rem;line-height:1.8">
+      <li><strong>目标管理驱动</strong> — 区别于所有竞品的表单/审批驱动模式</li>
+      <li><strong>AI三层体系</strong> — Agent+Skill+MCP是独有架构</li>
+      <li><strong>PMBOK双版内核</strong> — 10领域49过程+8绩效域</li>
+      <li><strong>工程行业垂直</strong> — 双规程+200工作项+46附表</li>
+      <li><strong>知识工程闭环</strong> — 向量+图谱+RAG+编排 四位一体</li>
+      <li><strong>数据主权</strong> — 纯私有部署,满足等保合规</li>
+      <li><strong>模块裁剪</strong> — 20条PMBOK规则,灵活匹配</li>
+      <li><strong>完全免费</strong> — 零许可成本</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color:var(--red);border-width:2px">
+    <h3 style="color:var(--red);margin-top:0">⚡ 劣势 (Weaknesses)</h3>
+    <ul style="font-size:.8rem;padding-left:1.2rem;line-height:1.8">
+      <li><strong>移动端缺失</strong> — 无原生App,仅响应式</li>
+      <li><strong>生态孤立</strong> — 无第三方集成/插件生态</li>
+      <li><strong>品牌知名度</strong> — 无,Jira/MS等有成熟品牌</li>
+      <li><strong>学习曲线</strong> — 工程专业概念需培训</li>
+      <li><strong>并发性能</strong> — SQLite单机,大并发需PG</li>
+      <li><strong>国际化弱</strong> — 无英文版</li>
+      <li><strong>社区支持</strong> — 无,Jira等有庞大社区</li>
+      <li><strong>敏捷支持弱</strong> — 无Scrum/Kanban</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color:var(--accent);border-width:2px">
+    <h3 style="color:var(--accent);margin-top:0">🚀 机会 (Opportunities)</h3>
+    <ul style="font-size:.8rem;padding-left:1.2rem;line-height:1.8">
+      <li><strong>数字中国/新基建</strong> — 工程数字化转型政策红利</li>
+      <li><strong>AI+工程</strong> — AI与工程结合是蓝海</li>
+      <li><strong>信创替代</strong> — 国产化替代MS Project需求</li>
+      <li><strong>全过程咨询</strong> — 行业规范化带来工具需求</li>
+      <li><strong>数据安全法规</strong> — 等保/ISO27001合规需求增长</li>
+      <li><strong>BIM集成</strong> — 与BIM系统的整合机会</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color:var(--yellow);border-width:2px">
+    <h3 style="color:var(--yellow);margin-top:0">⚠️ 威胁 (Threats)</h3>
+    <ul style="font-size:.8rem;padding-left:1.2rem;line-height:1.8">
+      <li><strong>大厂进入</strong> — 飞书/钉钉加AI能力可快速覆盖</li>
+      <li><strong>AI API依赖</strong> — DeepSeek等外部服务不稳定</li>
+      <li><strong>维护成本</strong> — 自运维需专业团队</li>
+      <li><strong>技术迭代</strong> — 前端+AI技术栈更新快</li>
+      <li><strong>用户习惯</strong> — 企业已习惯Jira/钉钉</li>
+      <li><strong>人才获取</strong> — 工程+AI复合人才稀缺</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== 五、适用场景 ===== -->
+<h2>五、各工具最适合的场景</h2>
+<div class="card">
+<table>
+  <tr><th>场景</th><th style="color:var(--green)">推荐工具</th><th>原因</th></tr>
+  <tr><td><strong>软件研发团队</strong></td><td>Jira / 禅道</td><td>敏捷流程成熟,Sprint/Backlog管理专业</td></tr>
+  <tr><td><strong>大型工程/基建项目</strong></td><td>MS Project / <span style="color:var(--accent)">本系统</span></td><td>MS甘特图最强; 本系统PMBOK+行业垂直</td></tr>
+  <tr><td><strong>全过程工程咨询</strong></td><td style="color:var(--accent);font-weight:700">⭐ 本系统</td><td>唯一覆盖全过程+双规程+AI审查+知识管理的方案</td></tr>
+  <tr><td><strong>中小企业通用PM</strong></td><td>飞书项目 / 钉钉项目</td><td>免费基础版,IM+OA集成,上手快</td></tr>
+  <tr><td><strong>跨部门协作</strong></td><td>Asana / Monday</td><td>界面友好,协作功能强,通知及时</td></tr>
+  <tr><td><strong>数据安全敏感</strong></td><td>禅道 / <span style="color:var(--accent)">本系统</span></td><td>私有部署,数据不出企业</td></tr>
+  <tr><td><strong>零代码定制</strong></td><td>明道云</td><td>拖拽配置,适合非技术人员</td></tr>
+  <tr><td><strong>AI+项目管理</strong></td><td style="color:var(--accent);font-weight:700">⭐ 本系统(独有)</td><td>唯一具备Agent自主规划+Skill组合+知识闭环</td></tr>
+</table>
+</div>
+
+<!-- ===== 六、结论 ===== -->
+<h2>六、结论</h2>
+
+<div class="card" style="border-color:var(--accent);background:rgba(56,189,248,.05)">
+  <table>
+    <tr><th style="width:30%">对比维度</th><th style="width:70%">核心结论</th></tr>
+    <tr>
+      <td><strong>最强项<br>(独有优势)</strong></td>
+      <td>
+        <span class="pro">1. 目标管理驱动</span> — 区别于所有竞品的核心理念<br>
+        <span class="pro">2. Agent+Skill+MCP</span> — 唯一具备AI自主规划能力的PM工具<br>
+        <span class="pro">3. 工程行业垂直</span> — 唯一覆盖DB11规程+全过程咨询<br>
+        <span class="pro">4. 知识工程闭环</span> — 向量+图谱+RAG 四合一,竞品无此能力<br>
+        <span class="pro">5. 数据主权</span> — 开源+私有部署,满足等保合规
+      </td>
+    </tr>
+    <tr>
+      <td><strong>最弱项<br>(需补强)</strong></td>
+      <td>
+        <span class="con">1. 移动端缺失</span> — 需要原生App/PWA<br>
+        <span class="con">2. 生态集成弱</span> — 需要企业微信/钉钉/飞书集成<br>
+        <span class="con">3. 品牌知名度</span> — 需要标杆案例和行业推广<br>
+        <span class="con">4. 并发性能</span> — PG迁移后可解决<br>
+        <span class="con">5. 敏捷支持</span> — Scrum/Kanban为补充
+      </td>
+    </tr>
+    <tr>
+      <td><strong>差异化定位</strong></td>
+      <td style="font-size:.95rem">
+        <strong>"AI驱动的全过程工程咨询管理平台"</strong> —
+        不做通用PM工具(那是Jira/飞书的战场)，专注工程垂直领域，以<strong>目标管理+AI智能体+知识工程</strong>三引擎驱动，填补"工程行业AI项目管理"的空白。
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="footer">
+  <p>全过程工程咨询管理系统 · 竞品对比分析报告 · 2026-07-14 · qubin2025/doc-management-system</p>
+</div>
+
+</div>
+</body>
+</html>
