@@ -213,3 +213,38 @@ th, td { white-space: nowrap; }
 [data-theme="warm"] .hover\:bg-gray-50:hover { background-color: #fdf0dd; }
 [data-theme="warm"] .bg-indigo-50 { background-color: rgba(99,102,241,0.08); }
 [data-theme="warm"] .bg-red-50 { background-color: rgba(239,68,68,0.08); }
+
+/* ===== 移动端响应式 ===== */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-cols-5 { grid-template-columns: repeat(2, 1fr) !important; }
+  .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-7xl { padding-left: 0.5rem; padding-right: 0.5rem; }
+  table { font-size: 10px; }
+  th, td { padding: 0.25rem 0.4rem; white-space: normal; word-break: break-word; }
+  .sticky { position: relative; }
+  .hidden.sm\:inline { display: none; }
+}
+
+@media (max-width: 480px) {
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+  .grid-cols-3 { grid-template-columns: 1fr !important; }
+  h1 { font-size: 1.2rem; }
+  h2 { font-size: 1rem; }
+  body { padding: 0.5rem; }
+}
+
+/* ===== 打印样式 ===== */
+@media print {
+  .sticky, .fixed, header { position: static !important; }
+  body { background: #fff; color: #000; }
+  .bg-\[var\(--bg-page\)\] { background: #fff; }
+  .min-h-screen { min-height: auto; }
+  button { display: none; }
+  .no-print { display: none; }
+}
+
+/* ===== 浏览器兼容声明 ===== */
+/* 支持: Chrome 90+, Edge 90+, Firefox 88+, Safari 15+ */
+/* 需要: ES2020, CSS Grid, CSS Variables, Fetch API */
+/* IE11 不支持，请升级浏览器 */
