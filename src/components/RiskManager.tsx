@@ -1,3 +1,4 @@
+import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 
@@ -25,7 +26,8 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
     setEditing(null); setForm({ probability: 3, impact: 3, status: 'open' });
   };
 
-  const handleDelete = (id: string) => { if (confirm('确定删除此风险？')) setRisks(prev => prev.filter(r => r.id !== id)); };
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const handleDelete = (id: string) => { setRisks(prev => prev.filter(r => r.id !== id)); setConfirmDelete(null); };
 
   const highRisks = risks.filter(r => r.score >= 15);
   const medRisks = risks.filter(r => r.score >= 8 && r.score < 15);
@@ -91,7 +93,7 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
                     <td className="px-4 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${lv.color}`}>{lv.label}</span></td>
                     <td className="px-4 py-2 text-[var(--text-secondary)] text-xs max-w-[120px] truncate">{r.response}</td>
                     <td className="px-4 py-2 text-[var(--text-secondary)] text-xs">{r.owner}</td>
-                    <td className="px-4 py-2"><div className="flex gap-1"><button onClick={() => { setEditing(r); setForm(r); }} className="p-1"><Edit2 size={12} /></button><button onClick={() => handleDelete(r.id)} className="p-1"><Trash2 size={12} className="text-red-400" /></button></div></td>
+                    <td className="px-4 py-2"><div className="flex gap-1"><button onClick={() => { setEditing(r); setForm(r); }} className="p-1"><Edit2 size={12} /></button><button onClick={() => setConfirmDelete(r.id)} className="p-1"><Trash2 size={12} className="text-red-400" /></button></div></td>
                   </tr>
                 );})}
               </tbody>
@@ -120,6 +122,10 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
               </div>
             </div>
           </div>
+        )}
+        {confirmDelete && (
+          <ConfirmDialog title="删除风险" message="确定删除此风险条目吗？"
+            danger onConfirm={() => handleDelete(confirmDelete)} onCancel={() => setConfirmDelete(null)} />
         )}
       </div>
     </div>

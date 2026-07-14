@@ -1,3 +1,4 @@
+import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, History, Trash2, Plus, CheckCircle2, Clock } from 'lucide-react';
 import { computeIndicators } from '../data/indicatorEngine';
@@ -54,12 +55,14 @@ const BaselineManager: React.FC<BaselineManagerProps> = ({ projectName, onBack }
     } catch { /* offline */ }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定删除此基线？')) return;
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const executeDelete = async (id: string) => {
     try {
       await fetch(`/api/baselines/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       loadData();
     } catch { /* offline */ }
+    setConfirmDelete(null);
   };
 
   const typeLabel = (t: string) => t === 'scope' ? '范围基线' : t === 'schedule' ? '进度基线' : '成本基线';
@@ -133,7 +136,7 @@ const BaselineManager: React.FC<BaselineManagerProps> = ({ projectName, onBack }
                     <div>{bl.createdBy}</div>
                     <div><Clock size={10} className="inline mr-0.5" />{new Date(bl.createdAt).toLocaleString('zh-CN')}</div>
                   </div>
-                  <button onClick={() => handleDelete(bl.id)}
+                  <button onClick={() => setConfirmDelete(bl.id)}
                     className="p-1 text-red-400 hover:text-red-500 transition"><Trash2 size={14} /></button>
                 </div>
               </div>
@@ -162,6 +165,10 @@ const BaselineManager: React.FC<BaselineManagerProps> = ({ projectName, onBack }
               </div>
             </div>
           </div>
+        )}
+        {confirmDelete && (
+          <ConfirmDialog title="删除基线" message="确定删除此基线吗？此操作不可撤销。"
+            danger onConfirm={() => executeDelete(confirmDelete)} onCancel={() => setConfirmDelete(null)} />
         )}
       </div>
     </div>

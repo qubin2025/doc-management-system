@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target, Bot, Zap } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target, Bot, Zap, Users, AlertTriangle, Briefcase, History } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -911,6 +911,56 @@ const App: React.FC = () => {
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">招标文件合规性审查、评标要素提取、知识库辅助</p>
             </button>
+          </div>
+
+          {/* ===== PMBOK管理模块 (Phase 4) ===== */}
+          <h2 className="text-2xl font-bold text-gray-800 text-center mt-8 mb-2">管理模块</h2>
+          <p className="text-center text-gray-500 mb-6 text-sm">干系人 · 风险 · 资源 · 基线 — PMBOK全套管理工具</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <button onClick={() => setView('stakeholder')}
+              className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm p-5 text-left border-2 border-orange-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+              <div className="w-11 h-11 rounded-lg bg-orange-100 flex items-center justify-center mb-3"><Users className="w-6 h-6 text-orange-600" /></div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">干系人管理</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">登记册 · 权力/利益矩阵 · 参与策略</p>
+            </button>
+            <button onClick={() => setView('risk')}
+              className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl shadow-sm p-5 text-left border-2 border-red-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+              <div className="w-11 h-11 rounded-lg bg-red-100 flex items-center justify-center mb-3"><AlertTriangle className="w-6 h-6 text-red-600" /></div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">风险管理</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">登记册 · 概率×影响矩阵 · 应对跟踪</p>
+            </button>
+            <button onClick={() => setView('resource')}
+              className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl shadow-sm p-5 text-left border-2 border-blue-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+              <div className="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center mb-3"><Briefcase className="w-6 h-6 text-blue-600" /></div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">资源与沟通</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">团队 · RACI矩阵 · 沟通记录</p>
+            </button>
+            <button onClick={() => setView('baseline')}
+              className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-sm p-5 text-left border-2 border-teal-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+              <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3"><History className="w-6 h-6 text-teal-600" /></div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">基线管理</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">三大基线快照 · 版本对比 · KPI追踪</p>
+            </button>
+          </div>
+
+          {/* ===== 高级工具 (Phase 5) ===== */}
+          <h2 className="text-2xl font-bold text-gray-800 text-center mt-6 mb-2">高级工具</h2>
+          <p className="text-center text-gray-500 mb-6 text-sm">工作流引擎 · 审计日志 — 自动化与合规工具</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <button onClick={() => setView('workflow')}
+              className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl shadow-sm p-5 text-left border-2 border-violet-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+              <div className="w-11 h-11 rounded-lg bg-violet-100 flex items-center justify-center mb-3"><Zap className="w-6 h-6 text-violet-600" /></div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">工作流引擎</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">4个预设模板 · 一键执行 · 步骤可视化</p>
+            </button>
+            {isAdmin && (
+              <button onClick={() => setView('audit-log')}
+                className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl shadow-sm p-5 text-left border-2 border-gray-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+                <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center mb-3"><Shield className="w-6 h-6 text-gray-600" /></div>
+                <h3 className="text-base font-bold text-gray-800 mb-1">审计日志</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">操作追溯 · 合规审计 · 安全监控</p>
+              </button>
+            )}
           </div>
         </div>
         <footer className="text-center text-xs text-gray-400 py-8">全过程工程咨询管理服务平台 · 内网系统</footer>

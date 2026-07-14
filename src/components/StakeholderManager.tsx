@@ -1,3 +1,4 @@
+import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit2, Trash2, Users } from 'lucide-react';
 
@@ -24,9 +25,9 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
     setEditing(null); setForm({});
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('确定删除此干系人？')) setStakeholders(prev => prev.filter(s => s.id !== id));
-  };
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const handleDelete = (id: string) => { setStakeholders(prev => prev.filter(s => s.id !== id)); setConfirmDelete(null); };
 
   const highP = stakeholders.filter(s => s.power === 'high' && s.interest === 'high').length;
   const highI = stakeholders.filter(s => s.power === 'low' && s.interest === 'high').length;
@@ -101,7 +102,7 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
                     <td className="px-4 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${s.power === 'high' ? 'bg-red-500/10 text-red-400' : 'bg-gray-500/10 text-gray-400'}`}>{s.power === 'high' ? '高' : '低'}</span></td>
                     <td className="px-4 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${s.interest === 'high' ? 'bg-sky-500/10 text-sky-400' : 'bg-gray-500/10 text-gray-400'}`}>{s.interest === 'high' ? '高' : '低'}</span></td>
                     <td className="px-4 py-2 text-[var(--text-secondary)] text-xs">{s.strategy}</td>
-                    <td className="px-4 py-2"><div className="flex gap-1"><button onClick={() => { setEditing(s); setForm(s); }} className="p-1 text-[var(--text-muted)] hover:text-[var(--accent-primary)]"><Edit2 size={12} /></button><button onClick={() => handleDelete(s.id)} className="p-1 text-[var(--text-muted)] hover:text-red-400"><Trash2 size={12} /></button></div></td>
+                    <td className="px-4 py-2"><div className="flex gap-1"><button onClick={() => { setEditing(s); setForm(s); }} className="p-1 text-[var(--text-muted)] hover:text-[var(--accent-primary)]"><Edit2 size={12} /></button><button onClick={() => setConfirmDelete(s.id)} className="p-1 text-[var(--text-muted)] hover:text-red-400"><Trash2 size={12} /></button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -135,6 +136,10 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
               </div>
             </div>
           </div>
+        )}
+        {confirmDelete && (
+          <ConfirmDialog title="删除干系人" message="确定删除此干系人吗？"
+            danger onConfirm={() => handleDelete(confirmDelete)} onCancel={() => setConfirmDelete(null)} />
         )}
       </div>
     </div>

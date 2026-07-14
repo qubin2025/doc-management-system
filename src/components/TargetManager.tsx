@@ -1,3 +1,4 @@
+import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Target, ChevronRight, ChevronDown, Edit2, Trash2, Home, ClipboardCheck, ArrowRight } from 'lucide-react';
 import type { ProjectObjective, GuideChapter } from '../types';
@@ -23,6 +24,7 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
   const [showAddModal, setShowAddModal] = useState(false);
   const [editTarget, setEditTarget] = useState<ProjectObjective | null>(null);
   const [parentForAdd, setParentForAdd] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   // 加载数据
@@ -284,6 +286,7 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
                   onToggle={toggleExpand}
                   onEdit={(obj) => { setEditTarget(obj); setParentForAdd(null); setShowAddModal(true); }}
                   onDelete={handleDelete}
+                  onRequestDelete={setConfirmDeleteId}
                   onAddChild={(parentId) => { setParentForAdd(parentId); setEditTarget(null); setShowAddModal(true); }}
                   getWorkItemName={getWorkItemName}
                   renderProgressRing={renderProgressRing}
@@ -294,6 +297,13 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
           )}
         </div>
       </div>
+
+      {/* 删除确认弹窗 */}
+      {confirmDeleteId && (
+        <ConfirmDialog title="删除目标" message="确定删除此目标及其所有子目标吗？此操作不可撤销。"
+          danger onConfirm={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+          onCancel={() => setConfirmDeleteId(null)} />
+      )}
 
       {/* 新增/编辑弹窗 */}
       {showAddModal && (
@@ -333,6 +343,7 @@ interface TargetNodeProps {
   onToggle: (id: string) => void;
   onEdit: (obj: ProjectObjective) => void;
   onDelete: (id: string) => void;
+  onRequestDelete: (id: string) => void;
   onAddChild: (parentId: string) => void;
   getWorkItemName: (id: string) => string;
   renderProgressRing: (progress: number, size?: number) => React.ReactNode;
@@ -341,7 +352,7 @@ interface TargetNodeProps {
 
 const TargetNode: React.FC<TargetNodeProps> = ({
   node, allObjectives, guideChapters, expanded, onToggle, onEdit, onDelete,
-  onAddChild, getWorkItemName, renderProgressRing, depth,
+  onRequestDelete, onAddChild, getWorkItemName, renderProgressRing, depth,
 }) => {
   const children = allObjectives.filter(o => o.parentId === node.id);
   const hasChildren = children.length > 0;
@@ -427,7 +438,7 @@ const TargetNode: React.FC<TargetNodeProps> = ({
             className="p-1 hover:bg-[var(--bg-hover)] rounded transition" title="编辑">
             <Edit2 size={14} />
           </button>
-          <button onClick={() => { if (confirm(`确定删除目标"${node.title}"及其所有子目标?`)) onDelete(node.id); }}
+          <button onClick={() => onRequestDelete(node.id)}
             className="p-1 hover:bg-red-900/50 hover:text-red-400 rounded transition" title="删除">
             <Trash2 size={14} />
           </button>
@@ -447,6 +458,7 @@ const TargetNode: React.FC<TargetNodeProps> = ({
               onToggle={onToggle}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRequestDelete={onRequestDelete}
               onAddChild={onAddChild}
               getWorkItemName={getWorkItemName}
               renderProgressRing={renderProgressRing}
