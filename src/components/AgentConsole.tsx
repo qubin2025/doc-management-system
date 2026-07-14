@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, Sparkles } from 'lucide-react';
 import { engineeringAgent, type AgentTask, type AgentStep, type AgentContext } from '../data/agentFramework';
 
 interface AgentConsoleProps {
   projectName: string;
   onBack: () => void;
 }
+
+/** 预设提示词条 — 按工具能力分类 */
+const PROMPT_CHIPS = [
+  { label: '📊 项目健康检查', query: '对项目进行全面的健康检查，包括KPI计算、工作项扫描、表单检测，并生成综合报告', category: 'compute' },
+  { label: '🔍 过期工作项扫描', query: '扫描项目所有工作项，找出已过期或即将过期的项，列出责任人', category: 'compute' },
+  { label: '📋 缺失表单检测', query: '扫描项目的所有附表，列出空白的表单清单和建议填写顺序', category: 'compute' },
+  { label: '📊 KPI指标计算', query: '计算项目当前的CPI/SPI/完整度/质量分四大KPI指标', category: 'compute' },
+  { label: '🧠 知识库检索', query: '在项目知识库中检索施工标准规范条款，了解最新要求', category: 'knowledge' },
+  { label: '📡 RAG文档检索', query: '使用RAG增强检索，查找项目中与质量管理相关的文档和方案', category: 'knowledge' },
+  { label: '📝 工作项分析', query: '分析项目的施工准备工作项完成情况，给出进度优化建议', category: 'query' },
+  { label: '🏥 系统健康检查', query: '检查系统所有AI模型和知识服务的可用性状态', category: 'system' },
+];
 
 const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
   const [goal, setGoal] = useState('');
@@ -14,8 +26,11 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
   const [error, setError] = useState('');
   const [confirmAction, setConfirmAction] = useState<{ action: string; params: Record<string, unknown>; resolve: (v: boolean) => void } | null>(null);
 
-  const handleStart = async () => {
-    if (!goal.trim() || running) return;
+  const handleStart = async (promptQuery?: string) => {
+    const q = promptQuery || goal;
+    if (!q.trim() || running) return;
+    if (!promptQuery) setGoal(q);
+    else setGoal(promptQuery);
     setRunning(true);
     setError('');
 
@@ -43,7 +58,7 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
     };
 
     try {
-      const plan = await engineeringAgent.plan(goal.trim(), ctx);
+      const plan = await engineeringAgent.plan(q.trim(), ctx);
       setTask(plan);
       const result = await engineeringAgent.execute(plan, ctx);
       setTask(result);
@@ -105,13 +120,42 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
                 <Square size={14} /> 停止
               </button>
             ) : (
-              <button onClick={handleStart} disabled={!goal.trim()}
+              <button onClick={() => handleStart()} disabled={!goal.trim()}
                 className="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white rounded-lg transition flex items-center gap-2">
                 <Play size={14} /> 执行
               </button>
             )}
           </div>
         </div>
+
+        {/* 提示词条 — 点击直接执行 */}
+        {!task && (
+          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-4">
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-purple-400" /> 点击提示词条直接执行
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PROMPT_CHIPS.map((chip, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleStart(chip.query)}
+                  disabled={running}
+                  className="text-left px-3 py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] hover:border-purple-500/30 rounded-lg transition disabled:opacity-50 group"
+                >
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${
+                    chip.category === 'query' ? 'bg-green-400' :
+                    chip.category === 'compute' ? 'bg-sky-400' :
+                    chip.category === 'knowledge' ? 'bg-purple-400' : 'bg-gray-400'
+                  }`} />
+                  <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-purple-400 transition">
+                    {chip.label}
+                  </span>
+                  <span className="block text-[10px] text-[var(--text-muted)] mt-0.5 truncate">{chip.query}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 工具列表 */}
         {!task && (
