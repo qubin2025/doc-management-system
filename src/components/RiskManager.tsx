@@ -24,7 +24,7 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
     } else {
       setRisks(prev => [...prev, { ...form, id: `rk-${Date.now()}`, score } as RiskItem]);
     }
-    setEditing(null); setForm({ probability: 3, impact: 3, status: 'open' }); toast('保存成功','success');
+    setEditing(null); setForm({}); toast('保存成功','success');
   };
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -43,7 +43,7 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
             <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
             <AlertTriangle size={24} className="text-red-400" /><div><h1 className="text-xl font-bold text-[var(--text-primary)]">风险管理</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
           </div>
-          <button onClick={() => { setEditing(null); setForm({ probability: 3, impact: 3, status: 'open' }); }}
+          <button onClick={() => { setEditing(null); setForm({ name: '', probability: 3, impact: 3, status: 'open' }); }}
             className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加风险</button>
         </div>
 
@@ -104,7 +104,7 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
 
         {/* 编辑弹窗 */}
         {(editing || form.name !== undefined) && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => { setEditing(null); setForm({ probability: 3, impact: 3 }); }}>
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => { setEditing(null); setForm({}); }}>
             <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-6 max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">{editing ? '编辑风险' : '添加风险'}</h3>
               <div className="space-y-3">
@@ -118,7 +118,7 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
                 <input value={form.owner || ''} onChange={e => setForm(f => ({ ...f, owner: e.target.value }))} placeholder="负责人" className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
               </div>
               <div className="flex justify-end gap-3 mt-4">
-                <button onClick={() => { setEditing(null); setForm({ probability: 3, impact: 3 }); }} className="px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm">取消</button>
+                <button onClick={() => { setEditing(null); setForm({}); }} className="px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm">取消</button>
                 <button onClick={handleSave} className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg text-sm">保存</button>
               </div>
             </div>
