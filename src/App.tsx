@@ -33,6 +33,9 @@ import PMBOKFramework from './components/PMBOKFramework';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import BaselineManager from './components/BaselineManager';
 import AuditLogViewer from './components/AuditLogViewer';
+import StakeholderManager from './components/StakeholderManager';
+import RiskManager from './components/RiskManager';
+import ResourceManager from './components/ResourceManager';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
 import { appendixAData as buildingData } from './data/appendixA';
@@ -503,6 +506,17 @@ const App: React.FC = () => {
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
     return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
+  // ===== PMBOK空白模块 (Phase 4) =====
+  if (view === 'stakeholder' && currentProject) {
+    return <StakeholderManager projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+  if (view === 'risk' && currentProject) {
+    return <RiskManager projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+  if (view === 'resource' && currentProject) {
+    return <ResourceManager projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 基线管理 (Phase 3) =====
