@@ -174,18 +174,18 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
       {/* 头部 */}
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-gray-800 rounded-lg transition">
+            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition">
               <ArrowLeft size={20} />
             </button>
             <Target size={24} className="text-sky-400" />
             <div>
               <h1 className="text-xl font-bold">目标管理</h1>
-              <p className="text-sm text-gray-500">{projectName}</p>
+              <p className="text-sm text-[var(--text-muted)]">{projectName}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -212,33 +212,33 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
         {/* 统计卡片 */}
         {objectives.length > 0 && (
           <div className="grid grid-cols-5 gap-4 mb-6">
-            <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800">
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)]">
               <div className="flex justify-center mb-2">{renderProgressRing(stats.overallProgress)}</div>
-              <div className="text-xs text-gray-500">总体进度</div>
+              <div className="text-xs text-[var(--text-muted)]">总体进度</div>
             </div>
-            <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800 flex flex-col justify-center">
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)] flex flex-col justify-center">
               <div className="text-2xl font-bold text-white">{stats.total}</div>
-              <div className="text-xs text-gray-500">目标总数</div>
+              <div className="text-xs text-[var(--text-muted)]">目标总数</div>
             </div>
-            <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800 flex flex-col justify-center">
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)] flex flex-col justify-center">
               <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
-              <div className="text-xs text-gray-500">已完成</div>
+              <div className="text-xs text-[var(--text-muted)]">已完成</div>
             </div>
-            <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800 flex flex-col justify-center">
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)] flex flex-col justify-center">
               <div className="text-2xl font-bold text-sky-400">{stats.inProgress}</div>
-              <div className="text-xs text-gray-500">进行中</div>
+              <div className="text-xs text-[var(--text-muted)]">进行中</div>
             </div>
-            <div className="bg-gray-900 rounded-xl p-4 text-center border border-gray-800 flex flex-col justify-center">
-              <div className="text-2xl font-bold text-gray-500">{stats.notStarted}</div>
-              <div className="text-xs text-gray-500">未开始</div>
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 text-center border border-[var(--border-primary)] flex flex-col justify-center">
+              <div className="text-2xl font-bold text-[var(--text-muted)]">{stats.notStarted}</div>
+              <div className="text-xs text-[var(--text-muted)]">未开始</div>
             </div>
           </div>
         )}
 
         {/* WBS树 */}
-        <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
           {objectives.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
+            <div className="p-12 text-center text-[var(--text-muted)]">
               <Target size={48} className="mx-auto mb-4 opacity-30" />
               <p className="text-lg mb-2">还没有目标</p>
               <p className="text-sm mb-4">创建项目的WBS目标分解树，将工作计划转化为可追踪的目标</p>
@@ -248,7 +248,7 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-800">
+            <div className="divide-y divide-[var(--border-primary)]">
               {tree.map(node => (
                 <TargetNode
                   key={node.id}
@@ -331,12 +331,12 @@ const TargetNode: React.FC<TargetNodeProps> = ({
     'work-item': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   };
   const statusColor = {
-    'completed': 'text-green-400', 'in-progress': 'text-sky-400', 'not-started': 'text-gray-500',
+    'completed': 'text-green-400', 'in-progress': 'text-sky-400', 'not-started': 'text-[var(--text-muted)]',
   };
 
   return (
     <div>
-      <div className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-800/50 transition group`}
+      <div className={`flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-hover)]/50 transition group`}
         style={{ paddingLeft: `${16 + depth * 24}px` }}>
         {/* 展开/折叠 */}
         <button onClick={() => onToggle(node.id)}
@@ -359,7 +359,7 @@ const TargetNode: React.FC<TargetNodeProps> = ({
             </span>
           </div>
           {node.description && (
-            <p className="text-xs text-gray-500 truncate mt-0.5">{node.description}</p>
+            <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">{node.description}</p>
           )}
           {/* 关联工作项 */}
           {node.linkedWorkItemIds.length > 0 && (
@@ -389,7 +389,7 @@ const TargetNode: React.FC<TargetNodeProps> = ({
 
         {/* 权重 */}
         {node.weight > 0 && (
-          <span className="text-xs text-gray-500 w-10 text-right">{Math.round(node.weight * 100)}%</span>
+          <span className="text-xs text-[var(--text-muted)] w-10 text-right">{Math.round(node.weight * 100)}%</span>
         )}
 
         {/* 操作按钮 */}

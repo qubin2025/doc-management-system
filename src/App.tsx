@@ -30,6 +30,7 @@ import TailoringEngine from './components/TailoringEngine';
 import AgentConsole from './components/AgentConsole';
 import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
+import ThemeSwitcher from './components/ThemeSwitcher';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
 import { appendixAData as buildingData } from './data/appendixA';
@@ -585,6 +586,7 @@ const App: React.FC = () => {
                   <Shield className="w-4 h-4" /> 管理
                 </button>
               )}
+              <ThemeSwitcher />
               <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                 <LogOut className="w-4 h-4" /> 退出
               </button>

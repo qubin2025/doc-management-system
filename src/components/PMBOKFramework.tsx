@@ -33,19 +33,19 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
   const barColor = (score: number) => score >= 80 ? 'bg-green-400' : score >= 40 ? 'bg-sky-400' : score > 0 ? 'bg-amber-400' : 'bg-gray-700';
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="p-2 hover:bg-gray-800 rounded-lg transition"><ArrowLeft size={20} /></button>
+          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
           <BookOpen size={24} className="text-blue-400" />
-          <div><h1 className="text-xl font-bold">PMBOK 知识领域框架</h1><p className="text-sm text-gray-500">{projectName}</p></div>
+          <div><h1 className="text-xl font-bold">PMBOK 知识领域框架</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
         </div>
 
         {/* Tab切换 */}
         <div className="flex gap-2 mb-6">
           {(['areas', 'domains', 'matrix', 'assessment'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-1.5 text-sm rounded-lg transition ${activeTab === tab ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+              className={`px-4 py-1.5 text-sm rounded-lg transition ${activeTab === tab ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-gray-800 text-[var(--text-secondary)] hover:bg-gray-700'}`}>
               {{ areas: '10大知识领域', domains: '8大绩效域', matrix: '过程组矩阵', assessment: '项目评估' }[tab]}
             </button>
           ))}
@@ -58,21 +58,21 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
               const cov = coverage.find(c => c.areaId === area.id);
               const score = cov?.score || 0;
               return (
-                <div key={area.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-blue-500/30 transition">
+                <div key={area.id} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-5 hover:border-blue-500/30 transition">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className="font-bold">{area.name}</h3>
-                      <p className="text-xs text-gray-500">{area.nameEn}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{area.nameEn}</p>
                     </div>
                     <span className={`text-2xl font-bold ${scoreColor(score)}`}>{score}%</span>
                   </div>
-                  <div className="h-2 bg-gray-800 rounded-full mb-3">
+                  <div className="h-2 bg-[var(--bg-secondary)] rounded-full mb-3">
                     <div className={`h-2 rounded-full ${barColor(score)}`} style={{ width: `${score}%` }} />
                   </div>
-                  <p className="text-xs text-gray-500 mb-3">{area.description}</p>
+                  <p className="text-xs text-[var(--text-muted)] mb-3">{area.description}</p>
                   <div className="flex flex-wrap gap-1">
                     {area.processes.map(p => (
-                      <span key={p.id} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
+                      <span key={p.id} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-[var(--text-secondary)]">
                         {p.id} {p.name}
                       </span>
                     ))}
@@ -87,10 +87,10 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
         {activeTab === 'domains' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {PERFORMANCE_DOMAINS.map(d => (
-              <div key={d.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <div key={d.id} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-5">
                 <h3 className="font-bold mb-1">{d.name}</h3>
-                <p className="text-xs text-gray-500 mb-2">{d.nameEn}</p>
-                <p className="text-sm text-gray-400 mb-3">{d.description}</p>
+                <p className="text-xs text-[var(--text-muted)] mb-2">{d.nameEn}</p>
+                <p className="text-sm text-[var(--text-secondary)] mb-3">{d.description}</p>
                 <div className="flex flex-wrap gap-1">
                   {d.principles.map((p, i) => (
                     <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">{p}</span>
@@ -107,9 +107,9 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left p-2 bg-gray-900 border border-gray-800 text-gray-400">知识领域</th>
+                  <th className="text-left p-2 bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-secondary)]">知识领域</th>
                   {PROCESS_GROUPS.map(g => (
-                    <th key={g.id} className="p-2 bg-gray-900 border border-gray-800 text-center text-gray-400">{g.label}</th>
+                    <th key={g.id} className="p-2 bg-[var(--bg-card)] border border-[var(--border-primary)] text-center text-[var(--text-secondary)]">{g.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -144,41 +144,41 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
         {activeTab === 'assessment' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
                 <div className="text-2xl font-bold text-blue-400">{coverage.filter(c => c.score >= 80).length}</div>
-                <div className="text-[10px] text-gray-500">高覆盖(≥80%)</div>
+                <div className="text-[10px] text-[var(--text-muted)]">高覆盖(≥80%)</div>
               </div>
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
                 <div className="text-2xl font-bold text-sky-400">{coverage.filter(c => c.score >= 40 && c.score < 80).length}</div>
-                <div className="text-[10px] text-gray-500">中覆盖(40-79%)</div>
+                <div className="text-[10px] text-[var(--text-muted)]">中覆盖(40-79%)</div>
               </div>
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
                 <div className="text-2xl font-bold text-amber-400">{coverage.filter(c => c.score > 0 && c.score < 40).length}</div>
-                <div className="text-[10px] text-gray-500">低覆盖(&lt;40%)</div>
+                <div className="text-[10px] text-[var(--text-muted)]">低覆盖(&lt;40%)</div>
               </div>
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
                 <div className="text-2xl font-bold text-gray-600">{coverage.filter(c => c.score === 0).length}</div>
-                <div className="text-[10px] text-gray-500">未覆盖</div>
+                <div className="text-[10px] text-[var(--text-muted)]">未覆盖</div>
               </div>
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-3 text-center">
                 <div className="text-2xl font-bold text-white">{coverage.length > 0 ? Math.round(coverage.reduce((s, c) => s + c.score, 0) / coverage.length) : 0}%</div>
-                <div className="text-[10px] text-gray-500">综合评分</div>
+                <div className="text-[10px] text-[var(--text-muted)]">综合评分</div>
               </div>
             </div>
             {coverage.map(c => {
               const area = KNOWLEDGE_AREAS.find(a => a.id === c.areaId);
               return (
-                <div key={c.areaId} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <div key={c.areaId} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-sm">{area?.name}</span>
                     <span className={`text-sm font-bold ${scoreColor(c.score)}`}>{c.score}%</span>
                   </div>
-                  <div className="h-1.5 bg-gray-800 rounded-full mb-2">
+                  <div className="h-1.5 bg-[var(--bg-secondary)] rounded-full mb-2">
                     <div className={`h-1.5 rounded-full ${barColor(c.score)}`} style={{ width: `${c.score}%` }} />
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     {c.score >= 80 ? <CheckCircle2 size={12} className="text-green-400" /> : <AlertCircle size={12} className="text-amber-400" />}
-                    <span className="text-gray-500">{c.covered}/{c.total} 过程已覆盖</span>
+                    <span className="text-[var(--text-muted)]">{c.covered}/{c.total} 过程已覆盖</span>
                   </div>
                 </div>
               );

@@ -2,7 +2,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import ToastContainer from './components/Toast'
+import { initTheme } from './data/themeEngine'
 import './index.css'
+
+// 初始化主题
+initTheme();
 
 // 全局错误捕获 — 过滤良性错误
 window.addEventListener('error', (e) => {
