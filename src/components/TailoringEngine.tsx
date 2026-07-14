@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ClipboardCheck, ChevronRight, ChevronLeft, Save, RotateCcw, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, ChevronRight, ChevronLeft, Save, RotateCcw, Check, Eye, EyeOff, Target, ArrowRight } from 'lucide-react';
 import {
   ProjectProfile, WorkItemStatus, TailoringResult, TailoringConfig,
   computeTailoringResult, loadTailoringConfig, saveTailoringConfig,
@@ -11,6 +11,8 @@ interface TailoringEngineProps {
   projectName: string;
   onBack: () => void;
   onApply?: (result: TailoringResult) => void;
+  flowMode?: boolean; // 引导流程模式
+  onNext?: (view: string) => void; // 下一步导航
 }
 
 const PROJECT_TYPES = [
@@ -47,7 +49,7 @@ const MANAGEMENT_SCOPES = [
   { value: 'document-management', label: '资料管理' },
 ];
 
-const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, onApply }) => {
+const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, onApply, flowMode, onNext }) => {
   const [step, setStep] = useState<'questionnaire' | 'result'>('questionnaire');
   const [result, setResult] = useState<TailoringResult | null>(null);
   const [manualAdjustments, setManualAdjustments] = useState<Map<string, WorkItemStatus>>(new Map());
@@ -362,8 +364,31 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
               }`}>
               <Save size={14} /> {saved ? '已保存' : '保存配置'}
             </button>
+            {flowMode && saved && onNext && (
+              <button onClick={() => onNext('target-manager')}
+                className="px-4 py-1.5 text-sm bg-sky-500 hover:bg-sky-400 text-white rounded-lg transition flex items-center gap-1 animate-pulse">
+                <Target size={14} /> 下一步：目标管理 <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         </div>
+
+        {/* 引导流程指示器 */}
+        {flowMode && (
+          <div className="flex items-center justify-center gap-3 mb-4 text-xs">
+            <span className="flex items-center gap-1 px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full font-bold border border-purple-500/30">
+              <ClipboardCheck size={12} /> 第1步：模块裁剪
+            </span>
+            <ChevronRight size={14} className="text-[var(--text-muted)]" />
+            <span className="flex items-center gap-1 px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-full border border-[var(--border-secondary)]">
+              <Target size={12} /> 第2步：目标管理
+            </span>
+            <ChevronRight size={14} className="text-[var(--text-muted)]" />
+            <span className="flex items-center gap-1 px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-full border border-[var(--border-secondary)]">
+              第3步：开始工作
+            </span>
+          </div>
+        )}
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-5 gap-4 mb-6">

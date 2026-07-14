@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Target, ChevronRight, ChevronDown, Edit2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Target, ChevronRight, ChevronDown, Edit2, Trash2, Home, ClipboardCheck, ArrowRight } from 'lucide-react';
 import type { ProjectObjective, GuideChapter } from '../types';
 import {
   buildObjectiveTree, recalculateAllProgress,
@@ -13,9 +13,11 @@ interface TargetManagerProps {
   projectName: string;
   guideChapters: GuideChapter[];
   onBack: () => void;
+  flowMode?: boolean;
+  onNext?: (view: string) => void;
 }
 
-const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapters, onBack }) => {
+const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapters, onBack, flowMode, onNext }) => {
   const [objectives, setObjectives] = useState<ProjectObjective[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -206,8 +208,31 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
               className="px-4 py-1.5 text-sm bg-sky-500 hover:bg-sky-400 text-white rounded-lg transition flex items-center gap-1">
               <Plus size={16} /> 新增目标
             </button>
+            {flowMode && objectives.length > 0 && onNext && (
+              <button onClick={() => onNext('homepage')}
+                className="px-4 py-1.5 text-sm bg-green-500 hover:bg-green-400 text-white rounded-lg transition flex items-center gap-1 animate-pulse">
+                <Home size={14} /> 进入工作首页 <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         </div>
+
+        {/* 引导流程指示器 */}
+        {flowMode && (
+          <div className="flex items-center justify-center gap-3 mb-4 text-xs">
+            <span className="flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+              <ClipboardCheck size={12} /> 第1步 √
+            </span>
+            <ChevronRight size={14} className="text-[var(--text-muted)]" />
+            <span className="flex items-center gap-1 px-3 py-1 bg-sky-500/20 text-sky-400 rounded-full font-bold border border-sky-500/30">
+              <Target size={12} /> 第2步：目标管理
+            </span>
+            <ChevronRight size={14} className="text-[var(--text-muted)]" />
+            <span className="flex items-center gap-1 px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-full border border-[var(--border-secondary)]">
+              第3步：开始工作
+            </span>
+          </div>
+        )}
 
         {/* 统计卡片 */}
         {objectives.length > 0 && (

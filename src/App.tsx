@@ -357,6 +357,26 @@ const App: React.FC = () => {
     }
   };
 
+  // 判断新项目引导步骤：裁剪 → 目标 → 首页
+  const getProjectOnboardingStep = (projectName: string): 'tailoring' | 'objectives' | 'homepage' => {
+    try {
+      const tc = localStorage.getItem(`tailoring-config-${projectName}`);
+      const obj = localStorage.getItem(`project-objectives-${projectName}`);
+      if (!tc) return 'tailoring';
+      if (!obj || obj === '[]') return 'objectives';
+      return 'homepage';
+    } catch { return 'tailoring'; }
+  };
+
+  // 根据项目引导步骤跳转
+  const enterProject = (projectName: string) => {
+    setCurrentProject(projectName);
+    const step = getProjectOnboardingStep(projectName);
+    if (step === 'tailoring') setView('tailoring-engine');
+    else if (step === 'objectives') setView('target-manager');
+    else setView('homepage');
+  };
+
   const handleCreateProject = async () => {
     const name = newProjectName.trim();
     if (!name) return;
@@ -370,6 +390,8 @@ const App: React.FC = () => {
     setCurrentProject(name);
     setNewProjectName('');
     setShowProjectDialog(false);
+    // 新项目 → 自动进入裁剪引擎
+    setView('tailoring-engine');
   };
 
   const handleDeleteProject = (projName: string) => {
@@ -460,9 +482,15 @@ const App: React.FC = () => {
     return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
+  // 引导流程：从项目创建或项目选择进入时为true
+  const onboardingFlow = getProjectOnboardingStep(currentProject) !== 'homepage';
+
   // ===== 模块裁剪引擎 (P0-3) =====
   if (view === 'tailoring-engine' && currentProject) {
-    return <TailoringEngine projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <TailoringEngine projectName={currentProject}
+      flowMode={onboardingFlow}
+      onNext={(nextView) => setView(nextView)}
+      onBack={() => setView('project-entry')} />;
   }
 
   // ===== Agent智能体 (P1-1) =====
@@ -482,7 +510,10 @@ const App: React.FC = () => {
 
   // ===== 目标管理 (P0-1) =====
   if (view === 'target-manager' && currentProject) {
-    return <TargetManager projectName={currentProject} guideChapters={guideChapters} onBack={() => setView('homepage')} />;
+    return <TargetManager projectName={currentProject} guideChapters={guideChapters}
+      flowMode={onboardingFlow}
+      onNext={(nextView) => setView(nextView)}
+      onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} />;
   }
 
   // ===== 登录页 =====
@@ -501,8 +532,7 @@ const App: React.FC = () => {
         isAdmin={isAdmin}
         userRole={auth?.user?.role || ''}
         onSelectProject={(name) => {
-          setCurrentProject(name);
-          setView('homepage');
+          enterProject(name);
         }}
         onLogout={handleLogout}
         onCreateProject={() => { setShowProjectDialog(true); }}
