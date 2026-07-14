@@ -23,7 +23,7 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
     } else {
       setStakeholders(prev => [...prev, { ...form, id: `sh-${Date.now()}` } as Stakeholder]);
     }
-    setEditing(null); setForm({}); toast('保存成功','success');
+    setEditing(null); setForm({}); toast('保存成功', 'success');
   };
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -43,7 +43,7 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
             <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
             <Users size={24} className="text-orange-400" /><div><h1 className="text-xl font-bold text-[var(--text-primary)]">干系人管理</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
           </div>
-          <button onClick={() => { setEditing(null); setForm({ power: 'high', interest: 'high' }); }}
+          <button onClick={() => { setEditing(null); setForm({ name: '', power: 'high', interest: 'high' }); }}
             className="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加干系人</button>
         </div>
 
