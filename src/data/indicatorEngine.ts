@@ -20,23 +20,31 @@ export interface IndicatorAlert {
 export function computeIndicators(projectName: string): ProjectIndicators {
   const alerts: IndicatorAlert[] = [];
 
-  // 1. CPI — 成本绩效指数
+  // 1. CPI — 成本绩效指数（真实数据：造价合计数 / 项目概算）
   let cpi = 1.0;
   try {
+    // 获取项目概算
     const projects = JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T695-2025') || '[]')
       .concat(JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T808-2020') || '[]'));
     const proj = projects.find((p: any) => p.name === projectName);
-    if (proj?.details) {
-      const investment = parseFloat((proj.details.investment || '').replace(/[^0-9.]/g, '')) || 0;
-      // 模拟已签合同金额为概算的倍数 (用项目名称hash生成演示数据)
-      const hash = projectName.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 30;
-      const contracted = investment * (0.7 + hash / 100);
-      if (investment > 0 && contracted > 0) {
-        cpi = Math.round((contracted / investment) * 100) / 100;
-      }
-      if (cpi > 1.05) alerts.push({ type: 'cost', level: 'danger', message: `成本超支: CPI=${cpi} (已签${contracted.toFixed(0)}万/概算${investment}万)` });
-      else if (cpi > 0.95) alerts.push({ type: 'cost', level: 'warning', message: `成本接近概算上限: CPI=${cpi}` });
+    const investment = proj?.details?.investment
+      ? parseFloat(proj.details.investment.replace(/[^0-9.]/g, '')) || 0
+      : 0;
+
+    // 获取真实造价数据合计
+    const costItems = JSON.parse(localStorage.getItem('cost-data') || '[]');
+    const contracted = costItems.reduce((sum: number, item: any) => sum + (Number(item.total) || 0), 0);
+
+    if (investment > 0 && contracted > 0) {
+      cpi = Math.round((contracted / investment) * 100) / 100;
+    } else if (investment > 0) {
+      cpi = 0; // 有概算但无造价数据
     }
+    // 无数据时保持默认 1.0
+
+    if (cpi > 1.05) alerts.push({ type: 'cost', level: 'danger', message: `成本超支: CPI=${cpi} (已签${contracted.toFixed(0)}万/概算${investment}万)` });
+    else if (cpi > 0.95) alerts.push({ type: 'cost', level: 'warning', message: `成本接近概算上限: CPI=${cpi}` });
+    else if (investment > 0 && contracted === 0) alerts.push({ type: 'cost', level: 'warning', message: `未录入造价数据，请在造价管理中录入` });
   } catch {}
 
   // 2. SPI — 进度绩效指数 (从4章指南模块汇总)
