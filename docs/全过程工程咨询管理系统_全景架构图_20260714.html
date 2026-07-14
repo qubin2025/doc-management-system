@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 — 全景架构图 & 项目管理流程图</title>
+<style>
+  :root {
+    --l4: #f59e0b; --l4bg: rgba(245,158,11,0.08); --l4border: rgba(245,158,11,0.3);
+    --l3: #a78bfa; --l3bg: rgba(167,139,250,0.08); --l3border: rgba(167,139,250,0.3);
+    --l2: #38bdf8; --l2bg: rgba(56,189,248,0.08); --l2border: rgba(56,189,248,0.3);
+    --l1: #4ade80; --l1bg: rgba(74,222,128,0.08); --l1border: rgba(74,222,128,0.3);
+    --infra: #94a3b8; --infrabg: rgba(148,163,184,0.06); --infraborder: rgba(148,163,184,0.2);
+    --flow: #f472b6; --flowbg: rgba(244,114,182,0.06); --flowborder: rgba(244,114,182,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0a0e1a; color: #e2e8f0; line-height: 1.6; padding: 2rem;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  h1 {
+    text-align: center; font-size: 1.6rem; margin: 2rem 0 0.5rem;
+    background: linear-gradient(135deg, #38bdf8, #a78bfa, #f59e0b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .title-sub { text-align: center; color: #64748b; font-size: 0.8rem; margin-bottom: 1.5rem; }
+
+  /* 架构图层 */
+  .arch-layer {
+    border: 1px solid; border-radius: 16px; padding: 0.8rem 1.2rem; margin: 0.5rem 0; position: relative;
+  }
+  .arch-layer-title {
+    font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .arch-layer-title .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .l4-layer { background: var(--l4bg); border-color: var(--l4border); }
+  .l4-layer .arch-layer-title { color: var(--l4); }
+  .l4-layer .dot { background: var(--l4); }
+
+  .l3-layer { background: var(--l3bg); border-color: var(--l3border); }
+  .l3-layer .arch-layer-title { color: var(--l3); }
+  .l3-layer .dot { background: var(--l3); }
+
+  .l2-layer { background: var(--l2bg); border-color: var(--l2border); }
+  .l2-layer .arch-layer-title { color: var(--l2); }
+  .l2-layer .dot { background: var(--l2); }
+
+  .l1-layer { background: var(--l1bg); border-color: var(--l1border); }
+  .l1-layer .arch-layer-title { color: var(--l1); }
+  .l1-layer .dot { background: var(--l1); }
+
+  .infra-layer { background: var(--infrabg); border-color: var(--infraborder); }
+  .infra-layer .arch-layer-title { color: var(--infra); }
+  .infra-layer .dot { background: var(--infra); }
+
+  .module-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.5rem;
+  }
+  .module-card {
+    background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.72rem;
+  }
+  .module-card .name { font-weight: 700; margin-bottom: 0.15rem; }
+  .module-card .desc { color: #64748b; font-size: 0.65rem; line-height: 1.3; }
+  .module-card .tag {
+    display: inline-block; font-size: 0.55rem; padding: 0.05rem 0.35rem; border-radius: 4px;
+    margin-top: 0.2rem; background: rgba(255,255,255,0.05);
+  }
+
+  /* 数据流箭头 */
+  .flow-arrow {
+    display: flex; align-items: center; justify-content: center; padding: 0.2rem 0;
+    font-size: 0.7rem; color: #475569;
+  }
+  .flow-arrow::before { content: '▲ ▲ ▲'; letter-spacing: 1rem; }
+
+  /* 流程图 */
+  .flow-container { margin: 2rem 0; }
+  .flow-row {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 0.5rem 0; flex-wrap: wrap;
+  }
+  .flow-node {
+    background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 0.6rem 1rem; text-align: center; min-width: 100px; max-width: 180px;
+  }
+  .flow-node .title { font-size: 0.75rem; font-weight: 700; }
+  .flow-node .sub { font-size: 0.6rem; color: #64748b; margin-top: 0.15rem; }
+  .flow-node.start { border-color: var(--l1); border-width: 2px; }
+  .flow-node.end { border-color: var(--l4); border-width: 2px; }
+  .flow-node.decision { border-radius: 24px; border-color: var(--l3); }
+  .flow-node.process { border-color: var(--l2); }
+  .flow-connector {
+    display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+    font-size: 0.55rem; color: #475569;
+  }
+  .flow-connector .line { width: 30px; height: 1px; background: #334155; }
+  .flow-connector .arrow-head { font-size: 0.6rem; }
+  .flow-path-vert { display: flex; flex-direction: column; align-items: center; }
+  .flow-path-vert .vline { width: 1px; height: 20px; background: #334155; }
+
+  /* 数据闭环 */
+  .flywheel {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;
+    margin: 1rem 0; font-size: 0.7rem;
+  }
+  .flywheel-node {
+    background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 50%; width: 90px; height: 90px; display: flex;
+    align-items: center; justify-content: center; text-align: center; font-weight: 700;
+  }
+  .flywheel-arrow { color: #475569; font-size: 1rem; }
+
+  .divider { border: none; border-top: 1px solid #1e293b; margin: 2rem 0; }
+
+  @media (max-width: 768px) {
+    body { padding: 0.5rem; }
+    .module-grid { grid-template-columns: repeat(2, 1fr); }
+    .flow-row { flex-direction: column; }
+  }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    .arch-layer, .module-card, .flow-node { background: #f8fafc; border-color: #cbd5e1; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ==================== 全景架构图 ==================== -->
+<h1>全景系统架构图</h1>
+<p class="title-sub">全过程工程咨询管理系统 v4.1 · 四层架构 · 13路由 · 51组件</p>
+
+<!-- L4 -->
+<div class="arch-layer l4-layer">
+  <div class="arch-layer-title"><span class="dot"></span>L4 · 项目管理层 (PM Application)</div>
+  <div class="module-grid">
+    <div class="module-card"><div class="name">🎯 目标管理</div><div class="desc">WBS四层树 · 进度环 · 工作项联动</div><div class="tag">P0核心</div></div>
+    <div class="module-card"><div class="name">✂️ 模块裁剪</div><div class="desc">特征问卷 · 20条PMBOK规则</div><div class="tag">P0核心</div></div>
+    <div class="module-card"><div class="name">📊 PMBOK框架</div><div class="desc">10领域49过程 · 8绩效域</div><div class="tag">P1</div></div>
+    <div class="module-card"><div class="name">📋 全过程指南</div><div class="desc">4章41子模块 · 200+工作项</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">📈 进度管理</div><div class="desc">甘特图 · CPM网络图</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">💰 成本管理</div><div class="desc">工程量清单 · CPI绩效</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">✅ 质量管理</div><div class="desc">质量评分 · 表单检查</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">📁 资料管理</div><div class="desc">双规程 · 上传/版本</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">👥 干系人管理</div><div class="desc">登记册 · 权力/利益矩阵</div><div class="tag">P4新增</div></div>
+    <div class="module-card"><div class="name">⚠️ 风险管理</div><div class="desc">登记册 · 5×5热力图</div><div class="tag">P4新增</div></div>
+    <div class="module-card"><div class="name">🔧 资源与沟通</div><div class="desc">团队 · RACI矩阵</div><div class="tag">P4新增</div></div>
+    <div class="module-card"><div class="name">📏 基线管理</div><div class="desc">三大基线 · 版本对比</div><div class="tag">P3新增</div></div>
+    <div class="module-card"><div class="name">📊 仪表盘</div><div class="desc">CPI/SPI/完整度/质量分</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">🏢 项目组合</div><div class="desc">多项目KPI · 趋势对比</div><div class="tag">P3新增</div></div>
+  </div>
+</div>
+
+<div class="flow-arrow"></div>
+
+<!-- L3 -->
+<div class="arch-layer l3-layer">
+  <div class="arch-layer-title"><span class="dot"></span>L3 · AI应用层 (Intelligence)</div>
+  <div class="module-grid">
+    <div class="module-card"><div class="name">🤖 Agent智能体</div><div class="desc">ReAct推理 · 11工具 · 确认机制</div><div class="tag">P1核心</div></div>
+    <div class="module-card"><div class="name">⚡ Skill技能</div><div class="desc">7个Skill · 注册表 · 可组合</div><div class="tag">P1核心</div></div>
+    <div class="module-card"><div class="name">🔌 MCP协议</div><div class="desc">双向桥 · 外部工具接入</div><div class="tag">P1核心</div></div>
+    <div class="module-card"><div class="name">🔄 工作流引擎</div><div class="desc">4预设模板 · Skill/Agent串联</div><div class="tag">P2</div></div>
+    <div class="module-card"><div class="name">📝 AI审查(3种)</div><div class="desc">施工/合同/招投标审查</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">✍️ AI方案生成</div><div class="desc">7模板 · 逐章生成 · 校验</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">💬 AI对话</div><div class="desc">7模型 · RAG开关</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">📋 AI表单填写</div><div class="desc">自动填写 · 字段映射</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">🔍 全局搜索</div><div class="desc">Ctrl+K · 6类跨模块检索</div><div class="tag">P5新增</div></div>
+    <div class="module-card"><div class="name">👍 知识反馈</div><div class="desc">评分 · 加权检索</div><div class="tag">P5新增</div></div>
+  </div>
+</div>
+
+<div class="flow-arrow"></div>
+
+<!-- L2 -->
+<div class="arch-layer l2-layer">
+  <div class="arch-layer-title"><span class="dot"></span>L2 · 知识工程层 (Knowledge)</div>
+  <div class="module-grid">
+    <div class="module-card"><div class="name">🧠 知识编排器</div><div class="desc">三级降级链(RAGFlow→LightRAG→本地)</div><div class="tag">P0核心</div></div>
+    <div class="module-card"><div class="name">🕸️ 知识图谱</div><div class="desc">9节点6关系 · Neo4j同步 · 3D可视化</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">📡 KG自动管道</div><div class="desc">事件驱动 · 5秒防抖 · 增量更新</div><div class="tag">P1新增</div></div>
+    <div class="module-card"><div class="name">📊 向量存储</div><div class="desc">768维余弦相似度 · 项目索引</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">🔎 RAG服务</div><div class="desc">文档索引 · 查询增强 · 来源引用</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">✂️ 智能分块</div><div class="desc">段落/句子/Token 3策略</div><div class="tag">v2.5</div></div>
+    <div class="module-card"><div class="name">🌐 LightRAG</div><div class="desc">AI实体抽取·3路混合检索(:8000)</div><div class="tag">外部</div></div>
+    <div class="module-card"><div class="name">📚 RAGFlow</div><div class="desc">企业知识库·ES+MinIO(:9380)</div><div class="tag">外部</div></div>
+    <div class="module-card"><div class="name">🗄️ Neo4j</div><div class="desc">图数据库·Cypher查询(:7687)</div><div class="tag">外部</div></div>
+    <div class="module-card"><div class="name">📄 OCR解析</div><div class="desc">EasyOCR→PaddleOCR→Tesseract(:8001)</div><div class="tag">外部</div></div>
+  </div>
+</div>
+
+<div class="flow-arrow"></div>
+
+<!-- L1 -->
+<div class="arch-layer l1-layer">
+  <div class="arch-layer-title"><span class="dot"></span>L1 · 数据沉淀层 (Data Foundation)</div>
+  <div class="module-grid">
+    <div class="module-card"><div class="name">🗄️ projects</div><div class="desc">项目列表</div></div>
+    <div class="module-card"><div class="name">📁 documents</div><div class="desc">文档/文件存储</div></div>
+    <div class="module-card"><div class="name">👤 users</div><div class="desc">4角色·权限JSON</div></div>
+    <div class="module-card"><div class="name">🔑 sessions</div><div class="desc">JWT会话</div></div>
+    <div class="module-card"><div class="name"><strong>🎯 objectives</strong></div><div class="desc">WBS四层目标树</div><div class="tag">v3.0新增</div></div>
+    <div class="module-card"><div class="name"><strong>📏 baselines</strong></div><div class="desc">三大基线快照</div><div class="tag">v3.0新增</div></div>
+    <div class="module-card"><div class="name"><strong>🧩 artifacts</strong></div><div class="desc">知识加工产物</div><div class="tag">v3.0新增</div></div>
+    <div class="module-card"><div class="name"><strong>📋 audit_log</strong></div><div class="desc">操作审计</div><div class="tag">v3.0新增</div></div>
+    <div class="module-card"><div class="name">💾 localStorage</div><div class="desc">前端离线持久化</div></div>
+    <div class="module-card"><div class="name">🗃️ IndexedDB</div><div class="desc">大文件/流程图</div></div>
+    <div class="module-card"><div class="name">🐘 PostgreSQL</div><div class="desc">多租户(可选)</div><div class="tag">P3适配</div></div>
+  </div>
+</div>
+
+<!-- 基础设施 -->
+<div class="arch-layer infra-layer">
+  <div class="arch-layer-title"><span class="dot"></span>基础设施 & 部署</div>
+  <div class="module-grid">
+    <div class="module-card"><div class="name">🐳 Docker</div><div class="desc">6服务编排</div></div>
+    <div class="module-card"><div class="name">🌐 Nginx</div><div class="desc">HTTPS+反向代理</div></div>
+    <div class="module-card"><div class="name">⚡ PM2</div><div class="desc">进程守护</div></div>
+    <div class="module-card"><div class="name">🤖 CI/CD</div><div class="desc">GitHub Actions</div></div>
+    <div class="module-card"><div class="name">🕐 Cron</div><div class="desc">定时备份</div></div>
+    <div class="module-card"><div class="name">📜 Logrotate</div><div class="desc">日志轮转</div></div>
+    <div class="module-card"><div class="name">🔐 SSL/HTTPS</div><div class="desc">Let's Encrypt</div></div>
+    <div class="module-card"><div class="name">🤖 DeepSeek</div><div class="desc">主力LLM(V3/V4/R1)</div></div>
+    <div class="module-card"><div class="name">🌌 智谱GLM</div><div class="desc">视觉理解</div></div>
+    <div class="module-card"><div class="name">☁️ 通义千问</div><div class="desc">备用LLM+Embedding</div></div>
+    <div class="module-card"><div class="name">🦙 Ollama</div><div class="desc">本地LLM</div></div>
+  </div>
+</div>
+
+<!-- 数据闭环 -->
+<h3 style="text-align:center;margin-top:2rem;color:#a78bfa">数据闭环 (Knowledge Flywheel)</h3>
+<div class="flywheel">
+  <div class="flywheel-node" style="border-color:var(--l4)">项目<br>活动</div>
+  <div class="flywheel-arrow">→</div>
+  <div class="flywheel-node" style="border-color:var(--l1)">数据<br>产生</div>
+  <div class="flywheel-arrow">→</div>
+  <div class="flywheel-node" style="border-color:var(--l2)">知识<br>抽取</div>
+  <div class="flywheel-arrow">→</div>
+  <div class="flywheel-node" style="border-color:var(--l3)">AI<br>学习</div>
+  <div class="flywheel-arrow">→</div>
+  <div class="flywheel-node" style="border-color:var(--l3)">能力<br>增强</div>
+  <div class="flywheel-arrow">→</div>
+  <div class="flywheel-node" style="border-color:var(--l3)">自动<br>执行</div>
+  <div class="flywheel-arrow">→</div>
+  <div class="flywheel-node" style="border-color:var(--l4)">效率<br>提升</div>
+</div>
+<div style="text-align:center;font-size:0.65rem;color:#475569;margin-bottom:2rem">更多项目活动 → 循环加速</div>
+
+<hr class="divider">
+
+<!-- ==================== 项目管理流程图 ==================== -->
+<h1>项目管理流程图</h1>
+<p class="title-sub">全过程工程咨询管理系统 v4.1 · 创建→裁剪→目标→执行→监控→收尾 全生命周期</p>
+
+<!-- 阶段1: 创建 -->
+<div style="margin:1.5rem 0">
+  <h3 style="color:var(--l4);font-size:0.85rem;margin-bottom:0.5rem">阶段一：项目创建与初始化</h3>
+  <div class="flow-row">
+    <div class="flow-node start">
+      <div class="title">🔑 用户登录</div>
+      <div class="sub">admin / 4种角色</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">📋 创建/选择项目</div>
+      <div class="sub">ProjectEntryPage</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node decision">
+      <div class="title">新项目？</div>
+      <div class="sub">getProjectOnboardingStep()</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-path-vert" style="align-items:flex-start">
+      <div style="font-size:0.6rem;color:var(--l4)">是 ↓</div>
+    </div>
+    <div style="width:10px"></div>
+    <div class="flow-path-vert" style="align-items:center">
+      <div style="font-size:0.6rem;color:#64748b">否 ↓ (已有裁剪配置)</div>
+    </div>
+  </div>
+</div>
+
+<!-- 阶段2: 裁剪 -->
+<div style="margin:1.5rem 0">
+  <h3 style="color:var(--l4);font-size:0.85rem;margin-bottom:0.5rem">阶段二：模块裁剪</h3>
+  <div class="flow-row">
+    <div class="flow-node process">
+      <div class="title">✂️ 项目特征问卷</div>
+      <div class="sub">TailoringEngine.tsx<br>类型·规模·复杂度·范围</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">⚙️ PMBOK规则引擎</div>
+      <div class="sub">tailoringEngine.ts<br>20条裁剪规则R01-R20</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">🏷️ 工作项标记</div>
+      <div class="sub">必选/推荐/可选/排除<br>保存至localStorage</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">➡️ 下一步</div>
+      <div class="sub">自动跳转目标管理</div>
+    </div>
+  </div>
+</div>
+
+<!-- 阶段3: 目标 -->
+<div style="margin:1.5rem 0">
+  <h3 style="color:var(--l4);font-size:0.85rem;margin-bottom:0.5rem">阶段三：目标设定</h3>
+  <div class="flow-row">
+    <div class="flow-node process">
+      <div class="title">🎯 创建根目标</div>
+      <div class="sub">TargetManager.tsx<br>项目总目标</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">🌳 WBS分解</div>
+      <div class="sub">4层: root→phase→<br>deliverable→work-item</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">🔗 关联工作项</div>
+      <div class="sub">目标↔GuideChapter<br>linkedWorkItemIds</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">➡️ 进入首页</div>
+      <div class="sub">引导完成</div>
+    </div>
+  </div>
+</div>
+
+<!-- 阶段4: 执行 -->
+<div style="margin:1.5rem 0">
+  <h3 style="color:var(--l3);font-size:0.85rem;margin-bottom:0.5rem">阶段四：项目执行 (核心工作循环)</h3>
+  <div class="flow-row">
+    <div class="flow-node process">
+      <div class="title">📋 工作指南</div>
+      <div class="sub">GuideChapter 4章<br>勾选·完成·附件</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">↔</span></div>
+    <div class="flow-node process">
+      <div class="title">🤖 AI智能体</div>
+      <div class="sub">AgentConsole<br>ReAct推理·11工具</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">↔</span></div>
+    <div class="flow-node process">
+      <div class="title">⚡ 技能面板</div>
+      <div class="sub">7个Skill<br>审查·生成·填写</div>
+    </div>
+  </div>
+  <div class="flow-row" style="margin-top:0.5rem">
+    <div class="flow-node process">
+      <div class="title">👥 干系人管理</div>
+      <div class="sub">登记册·矩阵</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span>←→</div>
+    <div class="flow-node process">
+      <div class="title">⚠️ 风险管理</div>
+      <div class="sub">登记册·5×5热力图</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span>←→</div>
+    <div class="flow-node process">
+      <div class="title">🔧 资源与沟通</div>
+      <div class="sub">团队·RACI</div>
+    </div>
+  </div>
+</div>
+
+<!-- 阶段5: 监控 -->
+<div style="margin:1.5rem 0">
+  <h3 style="color:var(--l2);font-size:0.85rem;margin-bottom:0.5rem">阶段五：监控与反馈</h3>
+  <div class="flow-row">
+    <div class="flow-node process">
+      <div class="title">📊 仪表盘</div>
+      <div class="sub">Dashboard<br>CPI/SPI/完整度/质量</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node decision">
+      <div class="title">有告警？</div>
+      <div class="sub">alerts[]</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">📏 基线管理</div>
+      <div class="sub">BaselineManager<br>快照对比·KPI追踪</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">↔</span></div>
+    <div class="flow-node process">
+      <div class="title">💡 知识图谱</div>
+      <div class="sub">KnowledgeGraph<br>9类节点·自动同步</div>
+    </div>
+  </div>
+  <div class="flow-row" style="margin-top:0.5rem">
+    <div class="flow-node process">
+      <div class="title">👍 知识反馈</div>
+      <div class="sub">AI评分·加权检索<br>闭环优化</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">📋 审计日志</div>
+      <div class="sub">AuditLogViewer<br>操作追溯·合规</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">🏢 项目组合</div>
+      <div class="sub">PortfolioManager<br>多项目对比·趋势</div>
+    </div>
+  </div>
+</div>
+
+<!-- 阶段6: 收尾 -->
+<div style="margin:1.5rem 0">
+  <h3 style="color:var(--l4);font-size:0.85rem;margin-bottom:0.5rem">阶段六：收尾与归档</h3>
+  <div class="flow-row">
+    <div class="flow-node process">
+      <div class="title">✅ 竣工验收</div>
+      <div class="sub">GuideChapter第4章<br>预验收·正式验收</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node process">
+      <div class="title">📁 资料归档</div>
+      <div class="sub">备份/导出<br>土储中心归档</div>
+    </div>
+    <div class="flow-connector"><span class="line"></span><span class="arrow-head">→</span></div>
+    <div class="flow-node end">
+      <div class="title">🎉 项目完成</div>
+      <div class="sub">数据沉淀·知识积累</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- 底部统计 -->
+<div style="text-align:center;font-size:0.7rem;color:#475569;margin-top:2rem">
+  <p>全过程工程咨询管理系统 v4.1 · 51组件 · 28数据模块 · 13路由 · 50+API · 22次提交 · 85%完成度</p>
+  <p style="margin-top:0.3rem">qubin2025/doc-management-system · release/v2.5.0-enterprise-20260708</p>
+</div>
+
+</div>
+</body>
+</html>
