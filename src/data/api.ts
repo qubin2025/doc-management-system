@@ -505,6 +505,25 @@ export async function ragflowChat(datasetIds: string[], query: string) {
   return res.json();
 }
 
+// ========== 数据同步 (持久化修复) ==========
+
+export async function syncProjectData(_projectName: string, payload: { projectName: string; data: Record<string, any[]> }) {
+  const res = await fetch(`${API_BASE}/sync`, {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('同步失败');
+  return res.json();
+}
+
+export async function fetchProjectConfig(projectName: string) {
+  const res = await fetch(`${API_BASE}/sync/${encodeURIComponent(projectName)}`, {
+    headers: headers(),
+  });
+  if (!res.ok) throw new Error('获取配置失败');
+  return res.json();
+}
+
 // ========== 目标管理体系 (P0-1) ==========
 
 export async function fetchObjectives(projectName: string) {

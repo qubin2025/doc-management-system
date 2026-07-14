@@ -41,6 +41,7 @@ import GlobalSearch from './components/GlobalSearch';
 import PortfolioManager from './components/PortfolioManager';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
+import { startSync, markChanged } from './data/syncService';
 import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
 import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType, AuthState, Permissions } from './types';
@@ -265,9 +266,12 @@ const App: React.FC = () => {
       }
       const newInfo = { ...info, version: newVersion };
 
-      // 异步上传到 API
+      // 异步上传到 API（记录失败但不阻塞UI）
       if (apiAvailable) {
-        api.uploadDocument(currentProject, docId, newInfo, standard).catch(() => {});
+        api.uploadDocument(currentProject, docId, newInfo, standard).catch((e) => {
+          console.warn('[Upload] 云端同步失败:', e.message);
+          markChanged(); // 标记待同步
+        });
       }
 
       return {
@@ -379,6 +383,7 @@ const App: React.FC = () => {
   // 根据项目引导步骤跳转
   const enterProject = (projectName: string) => {
     setCurrentProject(projectName);
+    startSync(projectName); // 启动自动同步
     const step = getProjectOnboardingStep(projectName);
     if (step === 'tailoring') setView('tailoring-engine');
     else if (step === 'objectives') setView('target-manager');
