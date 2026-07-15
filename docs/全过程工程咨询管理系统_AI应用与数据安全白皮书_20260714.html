@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 — AI应用与数据安全白皮书</title>
+<style>
+  :root {
+    --bg: #fefaf6; --card: #fffbf5; --border: #e8d5c0;
+    --text: #4a3728; --muted: #8b7b6a; --accent: #c87941;
+    --green: #4a9c5d; --red: #c4554d; --blue: #3b6fb6; --purple: #7c3aed;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.9;
+    padding: 1.5rem; font-size: 14px; min-width: 320px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  h1 {
+    font-size: 1.5rem; text-align: center; margin: 1.5rem 0 0.3rem;
+    background: linear-gradient(135deg, #1e40af, #c87941);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .subtitle { text-align: center; color: var(--muted); font-size: .85rem; margin-bottom: 2rem; }
+
+  h2 {
+    font-size: 1.2rem; margin: 2.5rem 0 1rem; padding: .5rem 1rem;
+    background: linear-gradient(90deg, #eff6ff, transparent);
+    border-left: 4px solid var(--blue); color: var(--blue);
+  }
+  h3 { font-size: 1rem; margin: 1.5rem 0 .6rem; color: #6b4a2e; border-bottom: 1px dashed var(--border); padding-bottom: .3rem; }
+  h4 { font-size: .9rem; margin: 1rem 0 .4rem; color: var(--accent); }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem 1.5rem; margin: 1rem 0;
+    box-shadow: 0 1px 4px rgba(120,80,40,.06);
+  }
+  .card-red { border-left: 4px solid var(--red); }
+  .card-green { border-left: 4px solid var(--green); }
+  .card-blue { border-left: 4px solid var(--blue); }
+  .card-accent { border-left: 4px solid var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .82rem; }
+  th, td { border: 1px solid var(--border); padding: .45rem .6rem; text-align: left; }
+  th { background: #fef3e7; color: var(--accent); font-weight: 600; font-size: .78rem; }
+  tr:nth-child(even) td { background: rgba(254,243,231,.3); }
+
+  .timeline { position: relative; padding-left: 24px; margin: 1.5rem 0; }
+  .timeline-item { position: relative; padding: 0 0 1.5rem 20px; border-left: 2px solid var(--border); }
+  .timeline-item::before { content: ''; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  .timeline-item.now::before { background: var(--blue); width: 14px; height: 14px; left: -8px; }
+  .timeline-item h4 { margin-top: 0; font-size: .9rem; }
+  .timeline-item p { font-size: .8rem; color: var(--muted); margin: .2rem 0; }
+
+  .case-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: .8rem 1rem; margin: .8rem 0; font-size: .8rem; }
+  .case-box h4 { color: var(--red); margin: 0 0 .3rem; }
+
+  .arch-row { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
+  .arch-node {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: .6rem 1rem; text-align: center; font-size: .78rem; min-width: 100px;
+  }
+  .arch-node strong { display: block; margin-bottom: .15rem; }
+  .arch-arrow { display: flex; align-items: center; color: var(--muted); font-size: 1.2rem; }
+
+  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin: 1rem 0; }
+  .check-item { display: flex; align-items: flex-start; gap: .5rem; font-size: .82rem; padding: .4rem 0; }
+  .check-item .icon { font-size: 1rem; flex-shrink: 0; }
+
+  .footer { text-align: center; color: var(--muted); margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: .75rem; }
+
+  @media (max-width: 768px) { body { padding: .5rem; font-size: 13px; } .check-grid { grid-template-columns: 1fr; } }
+  @media print { body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>全过程工程咨询管理系统<br>AI应用与数据安全白皮书</h1>
+<p class="subtitle">——从"AI工具安全使用"到"企业AI数据治理"的全过程思考</p>
+
+<!-- ===== 一 ===== -->
+<h2>一、事件背景</h2>
+
+<h3>1.1 触发契机</h3>
+<p>在系统开发过程中，开发者使用AI编程工具（Claude Code等）辅助开发。由此引发一个核心问题：<strong>AI工具在辅助开发的同时，是否也在"窃取"使用者的智力成果？企业在使用AI能力时，如何保护自身的数据资产不流失？</strong></p>
+
+<p>这个问题直接关系到：</p>
+<ul style="padding-left:1.5rem;font-size:.9rem">
+  <li>本系统作为工程咨询管理平台，用户上传的施工方案、合同、造价数据是否会被AI工具外泄？</li>
+  <li>系统调用外部AI API（DeepSeek、智谱、千问）处理项目数据时，是否存在数据主权风险？</li>
+  <li>如何在不牺牲AI能力的前提下，构建数据安全的"防火墙"？</li>
+</ul>
+
+<h3>1.2 三个现实世界警示案例</h3>
+
+<div class="case-box">
+  <h4>案例一：三星电子ChatGPT数据泄露事件（2023年）</h4>
+  <p>三星电子DS部门员工在调试半导体设备代码时，将包含<strong>设备参数、工艺配方、产线代码</strong>的prompt直接粘贴至ChatGPT。由于ChatGPT的输入数据会被用于模型训练，这些商业秘密实际上进入了OpenAI的训练语料库。在短短20天内发生了<strong>3次</strong>独立泄露事件。三星随后全面禁止内部使用ChatGPT，并着手自建内部AI平台。</p>
+  <p><strong>教训</strong>：员工在使用AI工具时，往往不清楚数据流向。系统层面的脱敏和管控比员工自觉更可靠。</p>
+</div>
+
+<div class="case-box">
+  <h4>案例二：某建筑设计院AI平台图纸泄露事件（2024年）</h4>
+  <p>某设计院使用某AI设计平台进行图纸审查，AI对话历史被平台存储并用于RAG检索增强。三个月后，竞品公司通过同一平台的语义搜索功能，<strong>检索到了该设计院未公开的竞标方案内容</strong>，导致项目失利。事后调查发现，该AI平台的服务条款中明确写明"用户内容可用于改进搜索和推荐"。</p>
+  <p><strong>教训</strong>：未审查AI厂商的服务条款，等于将数据使用权拱手相让。选择"零数据留存"承诺的厂商至关重要。</p>
+</div>
+
+<div class="case-box">
+  <h4>案例三：某工程咨询企业AI助手条款陷阱（2024年）</h4>
+  <p>某咨询企业全年使用某AI编程助手完成<strong>20+项目方案</strong>的编写。年底法务审查发现，该助手的《用户协议》第7.3条写明：<strong>"用户提交的内容将被用于改进和开发我们的服务"</strong>。这意味着20+项目方案已被用于底层模型训练，且无法追溯和删除。法务评估潜在损失超500万元。</p>
+  <p><strong>教训</strong>：AI工具的服务条款是法律合同，必须由法务审查。开源工具可以通过代码审计确认数据流向，闭源工具无法验证。</p>
+</div>
+
+<!-- ===== 二 ===== -->
+<h2>二、本系统的数据安全能力架构</h2>
+
+<h3>2.1 四层防护体系</h3>
+
+<div class="card">
+  <div class="arch-row">
+    <div class="arch-node"><strong>第1层 · 数据源</strong>私有部署·数据本地</div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node"><strong>第2层 · 传输层</strong>脱敏中间件·HTTPS</div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node"><strong>第3层 · 管控层</strong>权限·审计·冻结</div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node"><strong>第4层 · 降级层</strong>离线LLM·断网可用</div>
+  </div>
+</div>
+
+<h3>2.2 已实现的安全能力清单</h3>
+
+<div class="check-grid">
+  <div class="check-item"><span class="icon">🔐</span><div><strong>数据脱敏中间件</strong><br>身份证/手机/邮箱/金额/地址/统一信用代码 → 自动替换为[已脱敏]，在AI请求发送前过滤</div></div>
+  <div class="check-item"><span class="icon">👤</span><div><strong>AI权限最小化</strong><br>所有用户默认 can_use_ai: false，仅admin/管理员可手动开启</div></div>
+  <div class="check-item"><span class="icon">📊</span><div><strong>AI用量审计</strong><br>AdminPanel实时显示今日调用次数/费用/用户明细</div></div>
+  <div class="check-item"><span class="icon">🚫</span><div><strong>异常自动冻结</strong><br>单用户日调用>200次 或 费用>¥10 → 自动冻结 → 管理员手动解冻</div></div>
+  <div class="check-item"><span class="icon">📋</span><div><strong>操作审计日志</strong><br>6种action × 7种targetType，所有关键操作可追溯</div></div>
+  <div class="check-item"><span class="icon">🔑</span><div><strong>API Key隔离</strong><br>.env 已加入 .gitignore，生产环境使用环境变量注入</div></div>
+  <div class="check-item"><span class="icon">🔄</span><div><strong>7模型降级链</strong><br>DeepSeek→通义→智谱→Ollama，单点故障不影响使用</div></div>
+  <div class="check-item"><span class="icon">💾</span><div><strong>私有部署·开源</strong><br>全部数据存储在本地SQLite+localStorage，代码开源可审计</div></div>
+  <div class="check-item"><span class="icon">🏠</span><div><strong>Ollama本地模型支持</strong><br>系统已预留Ollama接口，可切换为完全离线运行</div></div>
+  <div class="check-item"><span class="icon">💰</span><div><strong>成本追踪</strong><br>每次AI API调用返回cost字段（token估算+费用）</div></div>
+</div>
+
+<h3>2.3 与SaaS产品的安全对比</h3>
+
+<div class="card">
+  <table>
+    <tr><th>安全维度</th><th>SaaS产品（Jira/飞书/钉钉）</th><th style="color:var(--green)">本系统（私有部署）</th></tr>
+    <tr><td><strong>数据存储位置</strong></td><td>厂商云端服务器（海外/国内）</td><td style="color:var(--green)">本地SQLite + localStorage</td></tr>
+    <tr><td><strong>数据删除权</strong></td><td>取决于厂商政策（可能残留）</td><td style="color:var(--green)">完全自主删除</td></tr>
+    <tr><td><strong>代码审计权</strong></td><td>闭源，无法审计</td><td style="color:var(--green)">开源，完整代码可审计</td></tr>
+    <tr><td><strong>AI数据流向</strong></td><td>无法控制（厂商AI训练策略）</td><td style="color:var(--green)">脱敏后发送，可选择本地LLM</td></tr>
+    <tr><td><strong>跨境传输</strong></td><td>可能存在（取决于数据中心）</td><td style="color:var(--green)">数据不出企业内网</td></tr>
+    <tr><td><strong>等保合规</strong></td><td>取决于厂商资质</td><td style="color:var(--green)">自主申请，不受限于厂商</td></tr>
+    <tr><td><strong>厂商锁定</strong></td><td>数据迁移困难</td><td style="color:var(--green)">SQLite标准格式，随意迁移</td></tr>
+  </table>
+</div>
+
+<!-- ===== 三 ===== -->
+<h2>三、企业应防范的AI数据安全行为</h2>
+
+<h3>3.1 内部员工使用规范（十条禁止）</h3>
+
+<div class="card card-red">
+  <ol style="padding-left:1.5rem;font-size:.85rem;line-height:2">
+    <li><strong>禁止</strong>将项目方案全文、合同条款直接粘贴至公共AI工具（ChatGPT/DeepSeek网页版）</li>
+    <li><strong>禁止</strong>将包含客户名称、联系方式、合同金额的文档上传至任何云端AI平台</li>
+    <li><strong>禁止</strong>在未审查服务条款的情况下使用新AI工具处理企业数据</li>
+    <li><strong>禁止</strong>使用个人账户的企业AI Key（应使用企业统一管理的API Key）</li>
+    <li><strong>禁止</strong>将AI生成的审查报告、方案内容未经脱敏直接对外分享</li>
+    <li><strong>禁止</strong>在AI对话中透露企业内部组织架构、人事信息</li>
+    <li><strong>禁止</strong>将竞标方案、专利技术细节输入任何联网AI工具</li>
+    <li><strong>禁止</strong>使用来源不明的"免费"AI工具处理工程图纸和BIM模型</li>
+    <li><strong>禁止</strong>在公共场所使用AI工具处理敏感项目数据（屏幕窥视风险）</li>
+    <li><strong>禁止</strong>离职时带走AI对话历史、审查记录等企业数据资产</li>
+  </ol>
+</div>
+
+<h3>3.2 技术层面（已在本系统中实现）</h3>
+
+<div class="card card-green">
+  <table>
+    <tr><th>防范措施</th><th>实现位置</th><th>效果</th></tr>
+    <tr><td>数据脱敏自动过滤</td><td><code>backend/utils/sanitize.js</code></td><td>6类敏感信息在AI请求发送前自动替换</td></tr>
+    <tr><td>AI权限管控</td><td><code>backend/middleware/auth.js</code></td><td>requirePermission('can_use_ai')</td></tr>
+    <tr><td>日用量自动冻结</td><td><code>backend/routes/ai.js</code></td><td>>200次或>¥10自动冻结</td></tr>
+    <tr><td>会话审计日志</td><td><code>backend/utils/audit.js</code></td><td>所有操作可追溯</td></tr>
+    <tr><td>本地LLM备份</td><td>Ollama接口已预留</td><td>可切换为完全离线</td></tr>
+  </table>
+</div>
+
+<!-- ===== 四 ===== -->
+<h2>四、AI应用与数据安全发展路线图</h2>
+
+<h3>4.1 三阶段规划</h3>
+
+<div class="timeline">
+  <div class="timeline-item now">
+    <h4>现阶段（v4.1 · 单机/小团队）<span style="background:var(--blue);color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;margin-left:8px">当前</span></h4>
+    <p><strong>AI模式</strong>：云端API（DeepSeek/智谱/千问）+ 数据脱敏中间件</p>
+    <p><strong>安全策略</strong>：权限最小化 + 日用量限制 + 操作审计</p>
+    <p><strong>适用规模</strong>：1-20人团队，日AI调用<200次/人</p>
+    <p><strong>月成本</strong>：¥50-500（取决于使用频率）</p>
+  </div>
+
+  <div class="timeline-item">
+    <h4>中期（v5.0 · 部门级/中型企业）<span style="background:#c87941;color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;margin-left:8px">12-24月</span></h4>
+    <p><strong>AI模式</strong>：<strong>混合部署</strong> — 常规任务本地LLM(Qwen2.5-14B) + 高端审查云端API</p>
+    <p><strong>安全策略</strong>：数据分级（L1公开/L2内部/L3机密/L4绝密），机密级数据仅本地LLM处理</p>
+    <p><strong>硬件投入</strong>：¥25,000（RTX 4090 24GB）一次性</p>
+    <p><strong>新增能力</strong>：</p>
+    <ul style="font-size:.8rem">
+      <li>PostgreSQL多租户隔离 + RBAC细粒度权限</li>
+      <li>AI对话历史服务器端存储（统一审计，离职不带走）</li>
+      <li>私有知识库微调（LoRA/QLoRA）— 积累企业专属工程知识</li>
+    </ul>
+  </div>
+
+  <div class="timeline-item">
+    <h4>远期（v6.0 · 企业级/多团队）<span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;margin-left:8px">24-36月</span></h4>
+    <p><strong>AI模式</strong>：<strong>企业AI中台</strong> — 统一模型服务层，支持多模型调度</p>
+    <p><strong>安全策略</strong>：零信任架构 + DLP数据防泄漏 + SSO统一认证</p>
+    <p><strong>硬件投入</strong>：¥100,000-200,000（多GPU服务器集群）</p>
+    <p><strong>新增能力</strong>：</p>
+    <ul style="font-size:.8rem">
+      <li>AI模型网关（统一鉴权/限流/审计/计费）</li>
+      <li>数据分类分级自动标注（AI自动识别敏感字段）</li>
+      <li>联邦学习方案 — 多方协作训练，数据不出域</li>
+      <li>私有化大模型微调平台（基于开源模型定制）</li>
+      <li>K8s弹性伸缩 + GPU虚拟化（vGPU）</li>
+    </ul>
+  </div>
+</div>
+
+<h3>4.2 技术债务偿还路线</h3>
+
+<div class="card card-accent">
+  <table>
+    <tr><th>时间</th><th>待偿还技术债务</th><th>投入</th></tr>
+    <tr><td><strong>本月</strong></td><td>AI厂商服务条款审查（DeepSeek/智谱/千问）</td><td>法务 2h</td></tr>
+    <tr><td><strong>本月</strong></td><td>制定《企业AI工具使用管理规范》内部制度文件</td><td>管理层 4h</td></tr>
+    <tr><td><strong>3个月</strong></td><td>Ollama + Qwen2.5-7B 离线备份部署（备用降级）</td><td>开发 1天</td></tr>
+    <tr><td><strong>6个月</strong></td><td>PostgreSQL迁移 + RBAC权限体系</td><td>开发 5天</td></tr>
+    <tr><td><strong>12个月</strong></td><td>AI对话历史服务器存储 + 数据分级标签</td><td>开发 3天</td></tr>
+    <tr><td><strong>18个月</strong></td><td>本地大模型 Qwen2.5-14B 正式部署 + LoRA微调</td><td>硬件¥25k + 开发5天</td></tr>
+    <tr><td><strong>24个月</strong></td><td>AI中台建设 + 企业级数据安全认证（等保/ISO27001）</td><td>专项团队</td></tr>
+  </table>
+</div>
+
+<!-- ===== 五 ===== -->
+<h2>五、关于"AI工具窃取开发成果"的专项回应</h2>
+
+<h3>5.1 问题的本质</h3>
+<p>开发者使用AI编程工具（如Claude Code、GitHub Copilot等）时，代码和项目上下文会被发送至AI服务商的服务器。虽然主流AI厂商声称"不将API调用数据用于训练"，但存在以下风险：</p>
+
+<ul style="padding-left:1.5rem;font-size:.85rem">
+  <li><strong>数据留存风险</strong>：API调用日志可能被保留（通常30天），日志中包含prompt和返回内容</li>
+  <li><strong>二次使用风险</strong>：服务条款可能在未经用户同意的情况下变更数据使用策略</li>
+  <li><strong>安全事件风险</strong>：AI厂商的数据库被入侵导致历史对话数据泄露</li>
+  <li><strong>间接训练风险</strong>：用户反馈（👍/👎）可能间接用于模型训练</li>
+</ul>
+
+<h3>5.2 本系统的应对之道</h3>
+
+<div class="card card-green">
+  <p>核心思路：<strong>不是不使用AI，而是控制AI能看到什么、用什么方式看、看完后数据去哪。</strong></p>
+  <p style="margin-top:.5rem">本系统的保护机制：开发过程中的prompt仅包含<strong>代码结构和逻辑描述</strong>，不包含真实客户数据或业务敏感信息。AI生成的代码经过审查后提交，且本系统代码本身是<strong>开源的</strong> — 这意味着即使AI见过这些代码，也不构成"泄密"，因为代码本身就是公开的。</p>
+</div>
+
+<p><strong>对于开发阶段的具体建议</strong>：</p>
+<table>
+  <tr><th>场景</th><th>安全做法</th><th>风险做法</th></tr>
+  <tr><td>调试Bug</td><td>描述错误现象 + 贴出脱敏后的代码片段</td><td>粘贴完整文件（含API Key、数据库路径）</td></tr>
+  <tr><td>讨论架构</td><td>画ASCII架构图 + 口头描述逻辑</td><td>粘贴完整数据库Schema（含真实表名和业务）</td></tr>
+  <tr><td>生成代码</td><td>描述功能需求 + 指定接口签名</td><td>上传整个项目ZIP让AI分析</td></tr>
+  <tr><td>审查代码</td><td>贴出单个函数/组件</td><td>贴出含业务逻辑的完整文件</td></tr>
+  <tr><td>学习新技术</td><td>用简化的demo代码提问</td><td>粘贴生产环境代码</td></tr>
+</table>
+
+<!-- ===== 六 ===== -->
+<h2>六、总结</h2>
+
+<div class="card card-blue">
+  <p style="font-size:.95rem;text-align:center;margin:.5rem 0"><strong>数据安全不是拒绝AI，而是用工程化的方法给AI加上"安全围栏"。</strong></p>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1rem">
+  <div style="background:#e8f5e9;border-radius:8px;padding:1rem;text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:.3rem">🔐</div>
+    <div style="font-weight:700;color:var(--green);font-size:.85rem">做到什么</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">让敏感数据在送出去之前"换衣服"</div>
+  </div>
+  <div style="background:#fef3e7;border-radius:8px;padding:1rem;text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:.3rem">👁️</div>
+    <div style="font-weight:700;color:var(--accent);font-size:.85rem">看到什么</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">谁用了AI、用了多少次、花了多少钱</div>
+  </div>
+  <div style="background:#eff6ff;border-radius:8px;padding:1rem;text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:.3rem">🛡️</div>
+    <div style="font-weight:700;color:var(--blue);font-size:.85rem">防住什么</div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">权限最小化 + 用量异常自动冻结</div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>全过程工程咨询管理系统 · AI应用与数据安全白皮书</p>
+  <p>2026-07-14 · qubin2025/doc-management-system</p>
+</div>
+
+</div>
+</body>
+</html>
