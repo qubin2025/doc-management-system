@@ -380,7 +380,120 @@
 <div class="warn">注意：脱敏仅移除个人身份信息和企业标识，<strong>不修改</strong>工程业务内容（施工规范条款、技术参数、质量管理要求等），这些是AI分析所必需的输入。在AI分析质量与数据安全之间取得了平衡。</div>
 
 <!-- ===== 七 ===== -->
-<h2>七、总结</h2>
+<h2>七、RAG检索增强生成策略与数据安全</h2>
+
+<h3>7.1 什么是RAG</h3>
+<p>RAG（Retrieval Augmented Generation，检索增强生成）是本系统AI能力的核心技术之一。其核心思路是：<strong>不是让AI"记住"所有知识，而是在需要时从本地知识库中检索相关内容，拼入prompt后交给AI分析</strong>。这样既保持了AI的推理能力，又确保答案基于用户自己的文档。</p>
+
+<div class="card card-blue">
+  <div class="arch-row">
+    <div class="arch-node"><strong>① 文档索引</strong>上传→解析→分块→向量化→存储</div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node"><strong>② 查询向量化</strong>用户问题→Embedding</div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node"><strong>③ 语义检索</strong>余弦相似度→Top-K</div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node"><strong>④ 增强生成</strong>上下文拼接→AI回答</div>
+  </div>
+</div>
+
+<h3>7.2 本系统RAG架构</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:18%">层级</th><th>技术实现</th><th>安全特性</th></tr>
+    <tr>
+      <td><strong>文档解析</strong></td>
+      <td>pdfjs(文字PDF) / mammoth(docx) / xlsx / PaddleOCR(扫描件)</td>
+      <td>解析在浏览器端完成，文件不需上传到外部服务</td>
+    </tr>
+    <tr>
+      <td><strong>智能分块</strong></td>
+      <td><code>autoChunk(text, 1500)</code> — 段落>3→按段落(2000,overlap=200)，否则→按句子(1500,overlap=100)</td>
+      <td>纯前端计算，数据不离开浏览器</td>
+    </tr>
+    <tr>
+      <td><strong>向量化</strong></td>
+      <td>DashScope text-embedding-v1 (768维) — 后端代理优先 → 直连回退</td>
+      <td>仅发送文本片段，非完整文档。已通过<code>sanitizeForAI()</code>脱敏</td>
+    </tr>
+    <tr>
+      <td><strong>向量存储</strong></td>
+      <td>localStorage — 按项目维度隔离，余弦相似度暴力搜索</td>
+      <td style="color:var(--green)">数据完全本地，外部不可访问</td>
+    </tr>
+    <tr>
+      <td><strong>检索增强</strong></td>
+      <td>Top-3检索 → 拼接上下文 → 注入prompt → 发送LLM</td>
+      <td>仅发送检索到的Top-3片段，非完整文档。已脱敏</td>
+    </tr>
+    <tr>
+      <td><strong>多源降级</strong></td>
+      <td>RAGFlow(:9380) → LightRAG(:8000) → 本地向量库</td>
+      <td>本地库为最终兜底，离线可用。外部源不可用时自动降级</td>
+    </tr>
+  </table>
+</div>
+
+<h3>7.3 RAG检索的安全分析</h3>
+
+<div class="card card-red">
+  <h4>潜在风险</h4>
+  <table>
+    <tr><th>风险点</th><th>说明</th><th>已应对</th></tr>
+    <tr>
+      <td><strong>Embedding服务数据留存</strong></td>
+      <td>文本片段发送至DashScope进行向量化，DashScope可能记录请求日志</td>
+      <td>✅ 已通过<code>sanitizeForAI()</code>脱敏。DashScope承诺不将API数据用于训练</td>
+    </tr>
+    <tr>
+      <td><strong>检索结果泄露</strong></td>
+      <td>检索到的文档片段作为context发送给外部LLM</td>
+      <td>✅ <code>api.aiChat()</code>已全局脱敏。仅Top-3片段，非完整文档</td>
+    </tr>
+    <tr>
+      <td><strong>向量库被窃取</strong></td>
+      <td>localStorage中的向量数据可被浏览器插件/XSS读取</td>
+      <td>⚠️ 向量本身不可逆推原文。但metadata含文件名。建议配合CSP头防护</td>
+    </tr>
+    <tr>
+      <td><strong>LightRAG/RAGFlow数据外传</strong></td>
+      <td>如果启用了外部知识引擎，文档会被发送到这些服务</td>
+      <td>✅ 默认不启用。env配置可选。外部服务需独立评估安全</td>
+    </tr>
+  </table>
+</div>
+
+<h3>7.4 与主流RAG方案的安全对比</h3>
+
+<div class="card">
+  <table>
+    <tr><th>维度</th><th>云端RAG（如OpenAI Assistants）</th><th style="color:var(--green)">本系统RAG</th></tr>
+    <tr><td><strong>文档存储位置</strong></td><td>AI厂商云端服务器</td><td style="color:var(--green)">浏览器 localStorage</td></tr>
+    <tr><td><strong>向量化数据流向</strong></td><td>全文发送至厂商</td><td style="color:var(--green)">分块片段+脱敏后发送</td></tr>
+    <tr><td><strong>检索索引</strong></td><td>厂商管理，不可控</td><td style="color:var(--green)">本地管理，完全可控</td></tr>
+    <tr><td><strong>数据删除</strong></td><td>需请求厂商，可能残留</td><td style="color:var(--green)">一键清除 localStorage</td></tr>
+    <tr><td><strong>离线可用</strong></td><td>❌ 依赖网络</td><td style="color:var(--green)">✅ 本地向量库离线可检索</td></tr>
+    <tr><td><strong>检索质量</strong></td><td>高（ANN/HNSW+重排序）</td><td>中（暴力搜索，<1000条足够）</td></tr>
+  </table>
+</div>
+
+<h3>7.5 RAG实际触发位置</h3>
+
+<div class="card">
+  <table>
+    <tr><th>组件</th><th>触发方式</th><th>RAG检索源</th></tr>
+    <tr><td><strong>AI对话页</strong>（RAG开关ON）</td><td>每次发送消息时，先RAG检索再调用LLM</td><td>本地向量库（本项目）</td></tr>
+    <tr><td><strong>施工审查</strong></td><td>审查前先检索标准条款作为参照</td><td>本地向量库</td></tr>
+    <tr><td><strong>知识库页面</strong></td><td>三种模式：全文(Lunr)/语义(向量)/混合(编排器)</td><td>编排器三级链</td></tr>
+    <tr><td><strong>方案生成</strong></td><td>生成时注入知识库检索结果作为上下文</td><td>本地向量库</td></tr>
+  </table>
+</div>
+
+<div class="tip">RAG的设计原则：<strong>数据主权优先</strong>。能本地处理的绝不发往外部，必须发往外部时先脱敏。Embedding和LLM调用已通过本章第六节审计修复，全部路径覆盖脱敏。</div>
+
+<!-- ===== 八 ===== -->
+<h2>八、总结</h2>
 
 <div class="card card-blue">
   <p style="font-size:.95rem;text-align:center;margin:.5rem 0"><strong>数据安全不是拒绝AI，而是用工程化的方法给AI加上"安全围栏"。</strong></p>
