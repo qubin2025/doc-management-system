@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
-import { sanitizeText } from '../utils/sanitize.js';
+import { sanitizeText, summarizePrompt, estimateCost } from '../utils/sanitize.js';
 import { getDb } from '../db.js';
 
 const router = Router();
@@ -176,7 +176,10 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
 
   // Try requested model, fallback to offline if all fail
   tryChat(requestedModel, ctxMsgs, userMsgs)
-    .then(reply => res.json({ reply, model: requestedModel }))
+    .then(reply => {
+      const cost = estimateCost(req.body.messages?.reduce((s, m) => s + (m.content?.length || 0), 0) || 0, requestedModel);
+      res.json({ reply, model: requestedModel, cost });
+    })
     .catch(async e1 => {
       // 如果不是auto且primary失败, 尝试auto
       if (requestedModel !== 'auto') {
