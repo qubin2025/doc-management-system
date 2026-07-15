@@ -4,7 +4,7 @@ import { skillRegistry } from '../data/skillRegistry';
 import { getAllSkillConfigs, loadCustomSkills, saveCustomSkills, type SkillConfig } from '../data/skillConfig';
 import { toast } from './Toast';
 
-interface SkillPanelProps { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
+interface SkillPanelProps { projectName: string; onBack: () => void; onNavigate?: (view: string, params?: Record<string, string>) => void; }
 
 /** 8段式SKILL提示词标准框架 */
 interface SkillPromptTemplate {
@@ -255,7 +255,12 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
 
                 <div className="flex items-center gap-2">
                   {s.location?.view && onNavigate && (
-                    <button onClick={() => onNavigate(s.location.view)}
+                    <button onClick={() => {
+                      const view = s.location.view;
+                      const params: Record<string, string> = {};
+                      if (view === 'guide-chapter') params.chapterId = 'ch1';
+                      onNavigate(view, params);
+                    }}
                       className="flex-1 px-3 py-2 text-xs bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center justify-center gap-1 transition">
                       <ExternalLink size={12} /> 前往使用
                     </button>

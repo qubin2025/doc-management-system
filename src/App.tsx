@@ -513,7 +513,10 @@ const App: React.FC = () => {
 
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
-    return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v) => setView(v)} />;
+    return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
+      if (params?.chapterId) { setGuideChapterId(params.chapterId); }
+      setView(v);
+    }} />;
   }
 
   // ===== 项目组合管理 (P3) =====
