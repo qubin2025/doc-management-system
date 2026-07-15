@@ -1,27 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Zap, ExternalLink, Edit3, Save, Shield, RotateCcw, Eye, Power, PowerOff } from 'lucide-react';
+import { ArrowLeft, Zap, ExternalLink, Edit3, Save, Shield, RotateCcw, Eye, Power, PowerOff, Plus, Trash2 } from 'lucide-react';
 import { skillRegistry } from '../data/skillRegistry';
+import { getAllSkillConfigs, loadCustomSkills, saveCustomSkills, type SkillConfig } from '../data/skillConfig';
 import { toast } from './Toast';
 
 interface SkillPanelProps { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
-
-/** 技能部署位置映射 */
-const SKILL_LOCATION: Record<string, { page: string; view: string; desc: string }> = {
-  'ai_chat': { page: 'AI智能体', view: 'agent-console', desc: '输入目标让Agent自主规划执行多步任务' },
-  'construction-review': { page: '施工方案审查', view: 'construction-review', desc: '上传施工组织设计，AI逐章审查并生成合规报告' },
-  'contract-review': { page: '合同审查', view: 'contract-review', desc: '上传合同文件，AI识别条款风险并给出修改建议' },
-  'bid-review': { page: '招投标文件审查', view: 'bid-review', desc: '上传招投标文件，AI检查9要素合规性' },
-  'plan-generate': { page: '方案生成', view: 'plan-generator', desc: '选择模板和章节，AI逐章生成工程方案' },
-  'ai-fill-form': { page: '工作指南 → 附表清单', view: 'guide-chapter', desc: '在附表清单中点击AI自动填写表单' },
-  'ai-guide-notes': { page: '工作指南 → 添加工作项', view: 'guide-chapter', desc: '添加/编辑工作项时，点击AI生成办理指南' },
-  'ai-breakdown-tasks': { page: '工作指南 → 添加工作项', view: 'guide-chapter', desc: '添加/编辑工作项时，点击AI拆解子任务' },
-};
-
-const SKILL_ICONS: Record<string, string> = {
-  'construction-review': '🔍', 'contract-review': '📄', 'bid-review': '📋',
-  'plan-generate': '✍️', 'ai-fill-form': '📝', 'ai-guide-notes': '📖',
-  'ai-breakdown-tasks': '🔨', 'ai_chat': '💬',
-};
 
 /** 8段式SKILL提示词标准框架 */
 interface SkillPromptTemplate {
@@ -104,13 +87,43 @@ const LABELS: Record<keyof SkillPromptTemplate, string> = {
 };
 
 const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate }) => {
-  const skills = skillRegistry.list();
+  const skillConfigs = getAllSkillConfigs();
   const [filterCategory, setFilterCategory] = useState<string>('');
 
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     try { const auth = JSON.parse(localStorage.getItem('doc-system-auth') || '{}'); setIsAdmin(auth?.user?.role === 'admin'); } catch {}
   }, []);
+
+  // 自定义技能管理
+  const [customSkills, setCustomSkills] = useState<SkillConfig[]>(loadCustomSkills);
+  const [showAddSkill, setShowAddSkill] = useState(false);
+  const [newSkillForm, setNewSkillForm] = useState<Partial<SkillConfig>>({ category: 'analysis', icon: '⚡' });
+
+  const addCustomSkill = () => {
+    if (!newSkillForm.name || !newSkillForm.id) { toast('名称和ID必填', 'warning'); return; }
+    const skill: SkillConfig = {
+      id: newSkillForm.id,
+      name: newSkillForm.name,
+      description: newSkillForm.description || '',
+      category: newSkillForm.category || 'analysis',
+      location: { page: newSkillForm.location?.page || '自定义', view: newSkillForm.location?.view || '', desc: newSkillForm.location?.desc || '' },
+      icon: newSkillForm.icon || '⚡',
+    };
+    const updated = [...customSkills, skill];
+    setCustomSkills(updated);
+    saveCustomSkills(updated);
+    setShowAddSkill(false);
+    setNewSkillForm({ category: 'analysis', icon: '⚡' });
+    toast('技能已添加', 'success');
+  };
+
+  const removeCustomSkill = (id: string) => {
+    const updated = customSkills.filter(s => s.id !== id);
+    setCustomSkills(updated);
+    saveCustomSkills(updated);
+    toast('已移除', 'success');
+  };
 
   // 技能启用状态
   const [enabledSkills, setEnabledSkills] = useState<Set<string>>(() => {
@@ -171,20 +184,28 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
     { id: 'guide', label: '指南' }, { id: 'analysis', label: '分析' },
   ];
 
-  const filtered = filterCategory ? skills.filter(s => s.category === filterCategory) : skills;
+  const filtered = filterCategory ? skillConfigs.filter(s => s.category === filterCategory) : skillConfigs;
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
-          <Zap size={24} className="text-amber-400" />
-          <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)]">
-              {isAdmin ? 'AI技能配置中台' : '技能面板'}
-            </h1>
-            <p className="text-sm text-[var(--text-muted)]">{projectName} — {skills.length} 个系统SKILL已部署</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
+            <Zap size={24} className="text-amber-400" />
+            <div>
+              <h1 className="text-xl font-bold text-[var(--text-primary)]">
+                {isAdmin ? 'AI技能配置中台' : '技能面板'}
+              </h1>
+              <p className="text-sm text-[var(--text-muted)]">{projectName} — {skillConfigs.length} 个系统SKILL已部署</p>
+            </div>
           </div>
+          {isAdmin && (
+            <button onClick={() => setShowAddSkill(true)}
+              className="px-3 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center gap-1">
+              <Plus size={14} /> 添加技能
+            </button>
+          )}
         </div>
 
         {/* 分类筛选 */}
@@ -202,18 +223,19 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
         {/* 技能展示卡片 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map(s => {
-            const loc = SKILL_LOCATION[s.id];
-            const isEnabled = enabledSkills.has(s.id) || enabledSkills.size === 0; // 默认全部启用
+            const isEnabled = enabledSkills.has(s.id) || enabledSkills.size === 0;
+            const isCustom = customSkills.some(c => c.id === s.id);
             return (
               <div key={s.id} className={`bg-[var(--bg-card)] border rounded-xl p-5 transition ${isEnabled ? 'border-[var(--border-primary)] hover:border-amber-500/30' : 'border-[var(--border-primary)] opacity-60'}`}>
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-lg flex-shrink-0">
-                    {SKILL_ICONS[s.id] || '⚡'}
+                    {s.icon || '⚡'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-sm text-[var(--text-primary)]">{s.name}</h3>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">{s.category}</span>
+                      {isCustom && <span className="text-[10px] px-1 py-0.5 rounded bg-purple-500/10 text-purple-400">自定义</span>}
                       {isAdmin && (
                         <button onClick={() => toggleSkill(s.id)} className="text-[10px]" title={isEnabled ? '禁用' : '启用'}>
                           {isEnabled ? <Power size={12} className="text-green-400" /> : <PowerOff size={12} className="text-red-400" />}
@@ -227,22 +249,30 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
                 {/* 部署位置 */}
                 <div className="bg-[var(--bg-secondary)] rounded-lg p-3 mb-3">
                   <span className="text-[10px] text-[var(--text-muted)]">📍 部署位置</span>
-                  <p className="text-xs text-[var(--text-primary)] font-medium">{loc?.page || '系统各处'}</p>
-                  <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{loc?.desc || s.description}</p>
+                  <p className="text-xs text-[var(--text-primary)] font-medium">{s.location?.page || '系统各处'}</p>
+                  <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{s.location?.desc || s.description}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {loc?.view && onNavigate && (
-                    <button onClick={() => onNavigate(loc.view)}
+                  {s.location?.view && onNavigate && (
+                    <button onClick={() => onNavigate(s.location.view)}
                       className="flex-1 px-3 py-2 text-xs bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center justify-center gap-1 transition">
                       <ExternalLink size={12} /> 前往使用
                     </button>
                   )}
                   {isAdmin && (
-                    <button onClick={() => openEditor(s.id, s.name)}
-                      className="px-3 py-2 text-xs border border-[var(--border-secondary)] hover:border-amber-500/30 rounded-lg text-[var(--text-secondary)] flex items-center gap-1 transition">
-                      <Edit3 size={11} /> 配置
-                    </button>
+                    <>
+                      <button onClick={() => openEditor(s.id, s.name)}
+                        className="px-3 py-2 text-xs border border-[var(--border-secondary)] hover:border-amber-500/30 rounded-lg text-[var(--text-secondary)] flex items-center gap-1 transition">
+                        <Edit3 size={11} /> 配置
+                      </button>
+                      {isCustom && (
+                        <button onClick={() => removeCustomSkill(s.id)}
+                          className="px-2 py-2 text-xs text-red-400 hover:text-red-500 transition" title="删除自定义技能">
+                          <Trash2 size={11} />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -307,6 +337,44 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
                   <button onClick={() => setShowEditor(false)} className="px-4 py-2 text-sm border border-[var(--border-primary)] rounded-lg text-[var(--text-primary)]">取消</button>
                   <button onClick={saveTemplate} className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center gap-1"><Save size={14} /> 保存并生效</button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 添加自定义技能弹窗（管理员） */}
+        {showAddSkill && isAdmin && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setShowAddSkill(false)}>
+            <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
+                <h3 className="font-bold text-sm text-[var(--text-primary)]">添加自定义技能</h3>
+                <span className="text-[10px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded">配置化</span>
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <input value={newSkillForm.id || ''} onChange={e => setNewSkillForm(f => ({ ...f, id: e.target.value }))}
+                    placeholder="Skill ID *" className="col-span-2 bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm" />
+                  <input value={newSkillForm.icon || ''} onChange={e => setNewSkillForm(f => ({ ...f, icon: e.target.value }))}
+                    placeholder="图标" className="bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm text-center" />
+                </div>
+                <input value={newSkillForm.name || ''} onChange={e => setNewSkillForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="技能名称 *" className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm" />
+                <input value={newSkillForm.description || ''} onChange={e => setNewSkillForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="描述" className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm" />
+                <select value={newSkillForm.category || 'analysis'} onChange={e => setNewSkillForm(f => ({ ...f, category: e.target.value as any }))}
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm">
+                  <option value="review">审查</option><option value="generate">生成</option><option value="fill">填写</option><option value="guide">指南</option><option value="analysis">分析</option>
+                </select>
+                <input value={newSkillForm.location?.page || ''} onChange={e => setNewSkillForm(f => ({ ...f, location: { ...f.location, page: e.target.value, view: f.location?.view || '', desc: f.location?.desc || '' } }))}
+                  placeholder="所在页面" className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm" />
+                <input value={newSkillForm.location?.view || ''} onChange={e => setNewSkillForm(f => ({ ...f, location: { ...f.location, view: e.target.value, page: f.location?.page || '', desc: f.location?.desc || '' } }))}
+                  placeholder="View路由（可选）" className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm" />
+                <input value={newSkillForm.location?.desc || ''} onChange={e => setNewSkillForm(f => ({ ...f, location: { ...f.location, desc: e.target.value, page: f.location?.page || '', view: f.location?.view || '' } }))}
+                  placeholder="使用说明" className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded px-3 py-2 text-sm" />
+              </div>
+              <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] rounded-b-xl">
+                <button onClick={() => setShowAddSkill(false)} className="px-4 py-2 text-sm border border-[var(--border-primary)] rounded-lg text-[var(--text-primary)]">取消</button>
+                <button onClick={addCustomSkill} className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center gap-1"><Plus size={14} /> 添加</button>
               </div>
             </div>
           </div>
