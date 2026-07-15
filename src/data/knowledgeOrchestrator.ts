@@ -264,8 +264,8 @@ export class KnowledgeOrchestrator {
       if (!qEmbedding || qEmbedding.length === 0) return [];
 
       const results = projectName
-        ? vectorStore.search(qEmbedding, projectName, topK)
-        : vectorStore.searchAll(qEmbedding, topK);
+        ? await vectorStore.searchAsync(qEmbedding, projectName, topK)
+        : await vectorStore.searchAllAsync(qEmbedding, topK);
 
       return results.map((r: any, i: number) => ({
         id: r.id || `local-${i}`,

@@ -189,5 +189,115 @@ export class LocalVectorStore {
   }
 }
 
-// 全局单例
-export const vectorStore = new LocalVectorStore();
+// ===== IndexedDB 异步层（容量治理+LRU+备份） =====
+import * as idb from './indexedDBStore';
+
+let idbAvailable = false;
+let migrated = false;
+
+/** 检查IndexedDB是否可用，自动迁移 */
+async function ensureIDB(): Promise<boolean> {
+  if (idbAvailable) return true;
+  try {
+    await idb.estimateSize(); // probe IndexedDB
+    idbAvailable = true;
+    if (!migrated) await migrateFromLocalStorage();
+    return true;
+  } catch {
+    idbAvailable = false;
+    return false;
+  }
+}
+
+/** 一次性从localStorage迁移到IndexedDB */
+async function migrateFromLocalStorage(): Promise<void> {
+  const store = new LocalVectorStore();
+  const allDocs = store.getAllDocs();
+  if (allDocs.length === 0) { migrated = true; return; }
+  let count = 0;
+  for (const doc of allDocs) {
+    try { await idb.addDocument(doc, doc.metadata?.projectName || 'default'); count++; } catch {}
+  }
+  console.log(`[VectorStore] Migrated ${count}/${allDocs.length} docs from localStorage to IndexedDB`);
+  migrated = true;
+}
+
+/** IndexedDB异步版本的向量存储（包装现有接口） */
+export const vectorStore = {
+  // ===== 现有同步方法（localStorage，向后兼容） =====
+  _store: new LocalVectorStore(),
+  add(doc: VectorDoc): number { return this._store.add(doc); },
+  addDocument(text: string, embedding: number[], metadata: VectorDoc['metadata']): number {
+    const result = this._store.addDocument(text, embedding, metadata);
+    // 异步写入IndexedDB
+    ensureIDB().then(ok => {
+      if (ok) {
+        const id = `v-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+        idb.addDocument({ id, text, embedding, metadata: metadata as any }, (metadata as any)?.projectName || 'default').catch(() => {});
+      }
+    });
+    return result;
+  },
+  search(queryEmbedding: number[], project: string, topK?: number): any[] {
+    return this._store.search(queryEmbedding, project, topK);
+  },
+  searchAll(queryEmbedding: number[], topK?: number): any[] {
+    return this._store.searchAll(queryEmbedding, topK);
+  },
+  stats(project?: string): any { return this._store.stats(project || 'default'); },
+  projects(): string[] { return this._store.projects(); },
+  remove(id: string, project?: string): void { this._store.remove(id, project); },
+  clearProject(project: string): void {
+    this._store.clearProject(project);
+    ensureIDB().then(ok => { if (ok) idb.clearProject(project); });
+  },
+  clearAll(): void {
+    this._store.clearAll();
+    ensureIDB().then(ok => { if (ok) idb.clearAll(); });
+  },
+  getAllDocs(): any[] { return this._store.getAllDocs(); },
+
+  // ===== 新增异步方法（IndexedDB，推荐用于检索） =====
+  async searchAsync(queryEmbedding: number[], project: string, topK = 5) {
+    if (await ensureIDB()) return idb.searchByProject(queryEmbedding, project, topK);
+    return this._store.search(queryEmbedding, project, topK).map((d: any) => ({ ...d, score: 0.5 }));
+  },
+  async searchAllAsync(queryEmbedding: number[], topK = 5) {
+    if (await ensureIDB()) return idb.searchAll(queryEmbedding, topK);
+    return this._store.searchAll(queryEmbedding, topK).map((d: any) => ({ ...d, score: 0.5 }));
+  },
+  async statsAsync(project?: string) {
+    if (await ensureIDB()) return idb.getStoreStats(project);
+    return { count: this._store.stats(project || 'default')?.count || 0, sizeKB: 0, nearQuota: false, lruAge: null };
+  },
+  async clearProjectAsync(project: string) {
+    this._store.clearProject(project);
+    if (await ensureIDB()) await idb.clearProject(project);
+  },
+  async clearAllAsync() {
+    this._store.clearAll();
+    if (await ensureIDB()) await idb.clearAll();
+  },
+  async exportVectors() {
+    if (await ensureIDB()) return idb.exportAllVectors();
+    return { vectors: this._store.getAllDocs(), exportedAt: new Date().toISOString() };
+  },
+  async importVectors(vectors: VectorDoc[]) {
+    if (await ensureIDB()) return idb.importVectors(vectors);
+    for (const v of vectors) this._store.add(v);
+    return vectors.length;
+  },
+  async getCapacityInfo() {
+    if (await ensureIDB()) {
+      const s = await idb.estimateSize();
+      const near = await idb.isNearQuota();
+      return { sizeMB: s, softLimitMB: 200, nearQuota: near, warningThreshold: 0.85 };
+    }
+    return { sizeMB: 0, softLimitMB: 200, nearQuota: false, warningThreshold: 0.85 };
+  },
+};
+
+export async function migrateToIndexedDB() {
+  await ensureIDB();
+}
+

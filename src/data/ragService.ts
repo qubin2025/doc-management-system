@@ -59,14 +59,13 @@ export async function ragQuery(
   // 1. 查询向量化（使用 query 模式）
   const queryEmbedding = await api.embedText(userMessage, 'query');
 
-  // 2. 检索相关文档
-  const relatedDocs = vectorStore.search(queryEmbedding, projectName, topK);
-  const sources = relatedDocs;
+  // 2. 检索相关文档（优先IndexedDB，回退localStorage）
+  const sources = await vectorStore.searchAsync(queryEmbedding, projectName, topK);
 
   // 3. 构建上下文
   let contextStr = '';
-  if (relatedDocs.length > 0) {
-    contextStr = relatedDocs
+  if (sources.length > 0) {
+    contextStr = sources
       .map((d, i) => `[参考资料${i + 1}] 来源: ${d.metadata?.fileName || '未知文档'}\n${d.text}`)
       .join('\n\n---\n\n');
   }
