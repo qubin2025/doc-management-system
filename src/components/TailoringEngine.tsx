@@ -393,22 +393,22 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
         {/* 统计卡片 */}
         <div className="grid grid-cols-5 gap-4 mb-6">
           <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-white">{result.summary.total}</div>
+            <div className="text-2xl font-bold text-[var(--text-primary)]">{result.summary.total}</div>
             <div className="text-xs text-[var(--text-muted)]">总工作项</div>
           </div>
-          <div className="bg-gray-900 border border-red-500/30 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-red-400">{result.summary.required}</div>
+          <div className="bg-[var(--bg-card)] border-l-4 border-l-red-500 border border-[var(--border-primary)] rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-red-500">{result.summary.required}</div>
             <div className="text-xs text-[var(--text-muted)]">必须</div>
           </div>
-          <div className="bg-gray-900 border border-sky-500/30 rounded-xl p-4 text-center">
-            <div className="text-2xl font-bold text-sky-400">{result.summary.recommended}</div>
+          <div className="bg-[var(--bg-card)] border-l-4 border-l-sky-500 border border-[var(--border-primary)] rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-sky-500">{result.summary.recommended}</div>
             <div className="text-xs text-[var(--text-muted)]">推荐</div>
           </div>
-          <div className="bg-gray-900 border border-[var(--border-secondary)] rounded-xl p-4 text-center">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-[var(--text-secondary)]">{result.summary.optional}</div>
             <div className="text-xs text-[var(--text-muted)]">可选</div>
           </div>
-          <div className="bg-gray-900 border border-[var(--border-secondary)]/50 rounded-xl p-4 text-center">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 text-center opacity-60">
             <div className="text-2xl font-bold text-[var(--text-muted)]">{result.summary.excluded}</div>
             <div className="text-xs text-[var(--text-muted)]">排除</div>
           </div>
