@@ -50,7 +50,7 @@ function initSchema(db) {
       password_hash TEXT NOT NULL,
       display_name TEXT DEFAULT '',
       role TEXT NOT NULL DEFAULT 'viewer' CHECK(role IN ('admin','project_manager','construction_unit','viewer')),
-      permissions TEXT DEFAULT '{"can_upload":true,"can_download":true,"can_use_ai":false}',
+      permissions TEXT DEFAULT '{"can_upload":true,"can_download":true,"can_use_ai":false}', -- AI权限默认关闭,管理员审批后开启
       is_active INTEGER DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -178,11 +178,11 @@ function seedUsers(db) {
 
     // 8 个初始用户
     const defaultUsers = [
-      ['user1', '施工负责人', 'project_manager', '{"can_upload":true,"can_download":true,"can_use_ai":true}'],
-      ['user2', '监理工程师', 'project_manager', '{"can_upload":true,"can_download":true,"can_use_ai":true}'],
+      ['user1', '施工负责人', 'project_manager', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
+      ['user2', '监理工程师', 'project_manager', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
       ['user3', '建设单位代表', 'construction_unit', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
       ['user4', '资料员', 'viewer', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
-      ['user5', '项目经理', 'project_manager', '{"can_upload":true,"can_download":true,"can_use_ai":true}'],
+      ['user5', '项目经理', 'project_manager', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
       ['user6', '施工员', 'viewer', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
       ['user7', '造价员', 'viewer', '{"can_upload":false,"can_download":true,"can_use_ai":false}'],
       ['user8', '资料管理员', 'construction_unit', '{"can_upload":true,"can_download":true,"can_use_ai":false}'],
