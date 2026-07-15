@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询AI开发应用文档</title>
+<style>
+  :root { --bg:#fefaf6;--card:#fffbf5;--border:#e8d5c0;--text:#4a3728;--muted:#8b7b6a;--accent:#c87941;--green:#4a9c5d;--red:#c4554d;--blue:#3b6fb6; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.9;padding:1.5rem;font-size:14px}
+  .container{max-width:960px;margin:0 auto}
+  h1{font-size:1.5rem;text-align:center;margin:1.5rem 0 .3rem;background:linear-gradient(135deg,#1e40af,#c87941);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:2rem}
+  h2{font-size:1.2rem;margin:2.5rem 0 1rem;padding:.5rem 1rem;background:linear-gradient(90deg,#eff6ff,transparent);border-left:4px solid var(--blue);color:var(--blue)}
+  h3{font-size:1rem;margin:1.5rem 0 .6rem;color:#6b4a2e;border-bottom:1px dashed var(--border);padding-bottom:.3rem}
+  h4{font-size:.9rem;margin:1rem 0 .4rem;color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0;box-shadow:0 1px 4px rgba(120,80,40,.06)}
+  table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.82rem}
+  th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left}
+  th{background:#fef3e7;color:var(--accent);font-weight:600;font-size:.78rem}
+  tr:nth-child(even) td{background:rgba(254,243,231,.3)}
+  .tag{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.7rem;font-weight:600}
+  .tag-green{background:#e8f5e9;color:var(--green)}.tag-red{background:#fef2f2;color:var(--red)}.tag-blue{background:#eff6ff;color:var(--blue)}.tag-accent{background:#fef3e7;color:var(--accent)}
+  .tip{background:#fefce8;border:1px solid #eab308;border-radius:8px;padding:.7rem 1rem;margin:.8rem 0;font-size:.82rem}
+  .tip::before{content:'💡 ';color:#a16207;font-weight:700}
+  .warn{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.7rem 1rem;margin:.8rem 0;font-size:.82rem}
+  .warn::before{content:'⚠️ ';color:var(--red);font-weight:700}
+  .footer{text-align:center;color:var(--muted);margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:.75rem}
+  .framework-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin:.8rem 0;font-size:.8rem;line-height:1.6}
+  .framework-box h4{color:var(--blue);margin:0 0 .3rem}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>全过程工程咨询AI开发应用文档</h1>
+<p class="subtitle">技能引擎设计 · SKILL配置中台 · 统一提示词体系 · 2026-07-14</p>
+
+<!-- ===== 一 ===== -->
+<h2>一、业务背景与问题发现</h2>
+
+<h3>1.1 问题触发</h3>
+<p>在系统使用过程中，发现<strong>技能面板的使用体验存在显著问题</strong>：</p>
+<ul style="padding-left:1.5rem;font-size:.9rem;line-height:2">
+  <li>技能面板中各项技能的执行UI与技能实际部署位置重复，造成多入口混乱</li>
+  <li>卡片内对各项技能未着重展示AI应用能力，用户不清楚每个技能的实际作用和所在位置</li>
+  <li>提示词修改功能简陋（仅自由文本框），缺少结构化框架和专业性保障</li>
+  <li>缺乏技能的启用/禁用控制、默认模板重置、版本管理等企业级功能</li>
+</ul>
+
+<h3>1.2 核心定论</h3>
+<div class="card">
+  <p>经过分析确认：本系统的技能面板管控的是<strong>系统级 SKILLs（AI技能能力集）</strong>，属于标准大应用 SKILL 提示词体系，而非单场景临时提示词。</p>
+  <p style="margin-top:.5rem"><strong>普通场景Prompt</strong>：单次对话、单次弹窗的临时提示词，仅生效一次。<br>
+  <strong>SKILLs（技能集）Prompt</strong>：系统固化AI能力，对应全过程咨询的固定业务模块，全局生效、可统一配置、可动态修改、持久化存储。</p>
+</div>
+
+<!-- ===== 二 ===== -->
+<h2>二、两轮迭代开发</h2>
+
+<h3>2.1 第一轮：能力展示+位置导航</h3>
+<table>
+  <tr><th>之前</th><th>第一轮改动</th><th>提交</th></tr>
+  <tr>
+    <td>点击技能→参数输入→执行→看结果</td>
+    <td>卡片展示能力+部署位置+「前往使用」跳转到实际页面</td>
+    <td><code>55422bc</code></td>
+  </tr>
+  <tr><td>无提示词管理</td>
+    <td>管理员专属「提示词」按钮修改模板（自由文本）</td>
+    <td>-</td>
+  </tr>
+</table>
+<p>每个技能卡片新增了部署位置映射（SKILL_LOCATION），为8个技能定义了各自所在的页面、view路由和使用说明。</p>
+
+<h3>2.2 第二轮：升级为SKILL配置中台</h3>
+<table>
+  <tr><th>功能</th><th>第一轮</th><th>第二轮（当前）</th></tr>
+  <tr><td>提示词编辑</td><td>自由文本框</td><td><span class="tag tag-green">8段式结构化框架</span></td></tr>
+  <tr><td>模板管理</td><td>无</td><td><span class="tag tag-green">默认模板一键重置</span></td></tr>
+  <tr><td>版本控制</td><td>无</td><td><span class="tag tag-green">修改历史记录（最多20条）</span></td></tr>
+  <tr><td>预览功能</td><td>无</td><td><span class="tag tag-green">编辑/预览模式切换</span></td></tr>
+  <tr><td>技能开关</td><td>无</td><td><span class="tag tag-green">启用/禁用按钮（管理员）</span></td></tr>
+  <tr><td>页面定位</td><td>技能面板</td><td><span class="tag tag-green">AI技能配置中台（管理员视角）</span></td></tr>
+</table>
+
+<!-- ===== 三 ===== -->
+<h2>三、8段式SKILL提示词标准框架</h2>
+
+<p>所有AI技能统一采用以下8段式结构化模板，确保系统AI输出风格统一、专业合规：</p>
+
+<div class="framework-box">
+  <h4>1. 角色定位（固定身份，所有技能通用基底）</h4>
+  <p>定义AI作为全过程工程咨询资深专家的身份，精通工程立项、监理、造价、招投标、项目管控、资料归档、行业规范等全流程业务。</p>
+</div>
+
+<div class="framework-box">
+  <h4>2. 场景约束（动态适配当前技能）</h4>
+  <p>每个技能独立定义服务场景，所有输出必须贴合该业务场景，不跨领域作答。8个技能各自有专属场景描述。</p>
+</div>
+
+<div class="framework-box">
+  <h4>3. 行业合规强制规则（工程系统核心）</h4>
+  <p>所有内容必须符合现行工程建设国家标准和行业规范；输出严谨客观专业；涉及工程数据、流程、条款必须有据可依；区分「标准化规范」「个性化建议」「风险提示」三类信息。</p>
+</div>
+
+<div class="framework-box">
+  <h4>4. 向量知识库检索规则（适配本地RAG架构）</h4>
+  <p>优先匹配前端IndexedDB本地知识库向量数据；本地无匹配时明确告知用户「当前知识库无对应资料」；回答绑定文档来源、规范条目、项目场景标签。</p>
+</div>
+
+<div class="framework-box">
+  <h4>5. 输出格式规范（统一系统UI展示）</h4>
+  <p>结构清晰分段展示，重点结论前置；工程类内容分点分条目分模块；禁止大段无断点文字；关键数据、规范、风险点高亮突出。</p>
+</div>
+
+<div class="framework-box">
+  <h4>6. 禁止规则（风控兜底）</h4>
+  <p>严禁输出违反工程规范的内容；严禁编造工程规范、政策文件、项目数据；不回答与工程咨询无关的问题；涉密项目遵循脱敏规则。</p>
+</div>
+
+<div class="framework-box">
+  <h4>7. 交互语气与服务定位</h4>
+  <p>以专业工程咨询师口吻作答，严谨稳重通俗易懂，兼顾专业性和实用性，可为项目落地提供可执行建议。</p>
+</div>
+
+<div class="framework-box">
+  <h4>8. 个性化扩展字段（各技能差异化配置）</h4>
+  <p>根据当前AI技能专项能力补充专属规则，如：文案生成侧重格式标准化、答疑侧重精准纠错、方案优化侧重风险排查。</p>
+</div>
+
+<!-- ===== 四 ===== -->
+<h2>四、技术实现</h2>
+
+<h3>4.1 数据结构</h3>
+<p>提示词模板以结构化JSON对象存储（<code>SkillPromptTemplate</code>接口），包含8个段落字段。每个技能独立存储于localStorage，键名为 <code>skill-template-{skillId}</code>。</p>
+
+<h3>4.2 版本历史</h3>
+<p>每次保存时自动记录修改时间和内容，存储于 <code>skill-template-history-{skillId}</code>，最多保留20条历史记录。</p>
+
+<h3>4.3 即时生效</h3>
+<p>修改保存后前端即时读取最新配置，无需重启服务。各技能读取配置时优先取localStorage中的自定义版本，为空时加载系统默认模板。</p>
+
+<h3>4.4 权限分层</h3>
+<table>
+  <tr><th>角色</th><th>权限</th></tr>
+  <tr><td><strong>管理员</strong></td><td>修改8段全部内容、启用/禁用技能、重置默认模板、查看版本历史</td></tr>
+  <tr><td><strong>普通用户</strong></td><td>查看技能信息、「前往使用」跳转到实际功能页面</td></tr>
+</table>
+
+<h3>4.5 涉及文件</h3>
+<div class="card">
+  <table>
+    <tr><th>文件</th><th>改动</th></tr>
+    <tr><td><code>src/components/SkillPanel.tsx</code></td><td>完全重写：8段编辑器+启用开关+版本历史+预览+重置</td></tr>
+    <tr><td><code>src/App.tsx</code></td><td>传递 onNavigate prop（上一轮已完成）</td></tr>
+  </table>
+</div>
+
+<!-- ===== 五 ===== -->
+<h2>五、8个系统SKILL与业务场景映射</h2>
+
+<div class="card">
+  <table>
+    <tr><th>Skill ID</th><th>名称</th><th>业务场景</th><th>部署位置</th></tr>
+    <tr><td><code>ai_chat</code></td><td>通用AI对话</td><td>全过程工程咨询通用AI助手</td><td>AI智能体</td></tr>
+    <tr><td><code>construction-review</code></td><td>施工方案审查</td><td>施工组织设计/专项方案审查</td><td>施工方案审查</td></tr>
+    <tr><td><code>contract-review</code></td><td>合同审查</td><td>工程合同条款风险审查</td><td>合同审查</td></tr>
+    <tr><td><code>bid-review</code></td><td>招投标审查</td><td>招投标文件合规性检查</td><td>招投标文件审查</td></tr>
+    <tr><td><code>plan-generate</code></td><td>方案生成</td><td>工程方案智能生成</td><td>方案生成</td></tr>
+    <tr><td><code>ai-fill-form</code></td><td>AI表单填写</td><td>工程附表智能填写</td><td>工作指南→附表清单</td></tr>
+    <tr><td><code>ai-guide-notes</code></td><td>办理指南</td><td>工作办理指南生成</td><td>工作指南→添加工作项</td></tr>
+    <tr><td><code>ai-breakdown-tasks</code></td><td>拆解子任务</td><td>工作项智能拆解</td><td>工作指南→添加工作项</td></tr>
+  </table>
+</div>
+
+<div class="warn">部署后注意事项：管理员首次登录需逐技能检查默认8段模板是否适配业务需求，必要时进行个性化调整。普通用户不受影响，仅可使用「前往使用」按钮跳转。</div>
+
+<!-- ===== 六 ===== -->
+<h2>六、SKILL配置中台价值总结</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h4 style="color:var(--green);margin-top:0">✅ 定义精准</h4>
+    <p style="font-size:.82rem">明确当前面板为系统标准SKILLs提示词管理中台，区别于普通临时对话提示词</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h4 style="color:var(--green);margin-top:0">✅ 统一标准</h4>
+    <p style="font-size:.82rem">8段式框架统一全过程工程咨询AI输出标准，解决多场景AI输出风格混乱、专业性不足的问题</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h4 style="color:var(--green);margin-top:0">✅ 低维护成本</h4>
+    <p style="font-size:.82rem">可视化弹窗修改，无需改代码、无需重启服务，管理员可自主配置</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h4 style="color:var(--green);margin-top:0">✅ 企业级严谨</h4>
+    <p style="font-size:.82rem">版本溯源、权限管控、默认模板兜底、重置恢复，满足工程系统合规要求</p>
+  </div>
+</div>
+
+<div class="footer">
+  <p>全过程工程咨询AI开发应用文档 · 2026-07-14</p>
+  <p>qubin2025/doc-management-system · release/v2.5.0-enterprise-20260708</p>
+</div>
+
+</div>
+</body>
+</html>

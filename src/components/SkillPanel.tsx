@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Zap, ExternalLink, Edit3, Save, Shield } from 'lucide-react';
+import { ArrowLeft, Zap, ExternalLink, Edit3, Save, Shield, RotateCcw, Eye, Power, PowerOff } from 'lucide-react';
 import { skillRegistry } from '../data/skillRegistry';
 import { toast } from './Toast';
 
-interface SkillPanelProps {
-  projectName: string;
-  onBack: () => void;
-  onNavigate?: (view: string) => void;
-}
+interface SkillPanelProps { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
 
 /** 技能部署位置映射 */
 const SKILL_LOCATION: Record<string, { page: string; view: string; desc: string }> = {
-  'ai_chat':             { page: 'AI智能体', view: 'agent-console', desc: '输入目标让Agent自主规划执行多步任务' },
+  'ai_chat': { page: 'AI智能体', view: 'agent-console', desc: '输入目标让Agent自主规划执行多步任务' },
   'construction-review': { page: '施工方案审查', view: 'construction-review', desc: '上传施工组织设计，AI逐章审查并生成合规报告' },
-  'contract-review':     { page: '合同审查', view: 'contract-review', desc: '上传合同文件，AI识别条款风险并给出修改建议' },
-  'bid-review':          { page: '招投标文件审查', view: 'bid-review', desc: '上传招投标文件，AI检查9要素合规性' },
-  'plan-generate':       { page: '方案生成', view: 'plan-generator', desc: '选择模板和章节，AI逐章生成工程方案' },
-  'ai-fill-form':        { page: '工作指南 → 附表清单', view: 'guide-chapter', desc: '在工作指南的附表清单中，点击AI自动填写表单' },
-  'ai-guide-notes':      { page: '工作指南 → 添加工作项', view: 'guide-chapter', desc: '添加/编辑工作项时，点击AI生成办理指南' },
-  'ai-breakdown-tasks':  { page: '工作指南 → 添加工作项', view: 'guide-chapter', desc: '添加/编辑工作项时，点击AI拆解子任务' },
+  'contract-review': { page: '合同审查', view: 'contract-review', desc: '上传合同文件，AI识别条款风险并给出修改建议' },
+  'bid-review': { page: '招投标文件审查', view: 'bid-review', desc: '上传招投标文件，AI检查9要素合规性' },
+  'plan-generate': { page: '方案生成', view: 'plan-generator', desc: '选择模板和章节，AI逐章生成工程方案' },
+  'ai-fill-form': { page: '工作指南 → 附表清单', view: 'guide-chapter', desc: '在附表清单中点击AI自动填写表单' },
+  'ai-guide-notes': { page: '工作指南 → 添加工作项', view: 'guide-chapter', desc: '添加/编辑工作项时，点击AI生成办理指南' },
+  'ai-breakdown-tasks': { page: '工作指南 → 添加工作项', view: 'guide-chapter', desc: '添加/编辑工作项时，点击AI拆解子任务' },
 };
 
 const SKILL_ICONS: Record<string, string> = {
@@ -27,37 +23,146 @@ const SKILL_ICONS: Record<string, string> = {
   'ai-breakdown-tasks': '🔨', 'ai_chat': '💬',
 };
 
+/** 8段式SKILL提示词标准框架 */
+interface SkillPromptTemplate {
+  role: string;           // 1. 角色定位
+  scene: string;          // 2. 场景约束
+  compliance: string;     // 3. 行业合规强制规则
+  ragRules: string;       // 4. 向量知识库检索规则
+  outputFormat: string;   // 5. 输出格式规范
+  prohibitions: string;   // 6. 禁止规则
+  tone: string;           // 7. 交互语气与服务定位
+  custom: string;         // 8. 个性化扩展字段
+}
+
+/** 为每个技能生成默认8段式模板 */
+function getDefaultTemplate(skillName: string, skillId: string): SkillPromptTemplate {
+  const sceneMap: Record<string, string> = {
+    'ai_chat': '全过程工程咨询通用AI助手，覆盖项目管理、技术咨询、规范检索等全流程业务',
+    'construction-review': '施工组织设计/专项施工方案审查，逐章节进行合规性、完整性、安全性评估',
+    'contract-review': '工程合同条款风险审查，识别法律风险、商务风险、履约风险',
+    'bid-review': '招投标文件合规性检查，覆盖9大核心要素的完整性校验',
+    'plan-generate': '工程方案智能生成，根据模板和参数输出标准化工程文档',
+    'ai-fill-form': '工程附表智能填写，根据项目上下文自动填充表单字段',
+    'ai-guide-notes': '工作办理指南生成，基于附件和流程信息输出标准化办事指引',
+    'ai-breakdown-tasks': '工作项智能拆解，根据流程图或描述生成详细子任务清单',
+  };
+
+  return {
+    role: '你是一名深耕全过程工程咨询的资深专家，精通工程立项、监理、造价、招投标、项目管控、资料归档、行业规范等全流程业务，熟悉国家及地方工程建设标准、咨询服务范式与项目管理流程。',
+    scene: `本次服务场景为：${sceneMap[skillId] || skillName}。所有输出必须贴合该业务场景，不跨领域作答。`,
+    compliance: `1. 所有内容必须符合现行工程建设国家标准、行业规范、全过程咨询服务准则；
+2. 输出内容严谨、客观、专业，杜绝口语化、模糊化、主观臆断性结论；
+3. 涉及工程数据、流程、条款必须有据可依，无依据内容严禁编造；
+4. 针对咨询类输出，需区分「标准化规范内容」「项目个性化建议」「风险提示」三类信息。`,
+    ragRules: `1. 优先匹配本地知识库向量数据，再结合通用行业知识作答；
+2. 本地检索无匹配内容时，需明确告知用户「当前知识库无对应资料，以下为通用行业参考」，禁止静默编造；
+3. 回答需绑定文档来源、规范条目、项目场景标签，贴合用户上传的工程资料内容。`,
+    outputFormat: `1. 结构清晰，分段分层展示，重点结论前置；
+2. 工程类内容分点、分条目、分模块输出，适配咨询业务阅读习惯；
+3. 禁止大段无断点文字，关键数据、规范、风险点需要高亮突出。`,
+    prohibitions: `1. 严禁输出违反工程规范、行业准则、项目管理逻辑的内容；
+2. 严禁编造工程规范、政策文件、项目数据；
+3. 不回答与工程咨询、项目管理无关的无关问题；
+4. 涉密项目资料相关内容，严格遵循脱敏展示规则。`,
+    tone: '以专业工程咨询师的口吻作答，严谨稳重、通俗易懂，兼顾专业性和实用性，可为项目落地提供可执行建议，不做空泛理论阐述。',
+    custom: '根据当前AI技能专项能力补充专属规则。',
+  };
+}
+
+/** 合并所有段落为完整Prompt */
+function assemblePrompt(t: SkillPromptTemplate): string {
+  return `【角色定位】
+${t.role}
+
+【场景约束】
+${t.scene}
+
+【行业合规强制规则】
+${t.compliance}
+
+【向量知识库检索规则】
+${t.ragRules}
+
+【输出格式规范】
+${t.outputFormat}
+
+【禁止规则】
+${t.prohibitions}
+
+【交互语气与服务定位】
+${t.tone}
+
+【个性化扩展字段】
+${t.custom}`;
+}
+
+const LABELS: Record<keyof SkillPromptTemplate, string> = {
+  role: '1. 角色定位', scene: '2. 场景约束', compliance: '3. 行业合规强制规则',
+  ragRules: '4. 向量知识库检索规则', outputFormat: '5. 输出格式规范',
+  prohibitions: '6. 禁止规则', tone: '7. 交互语气与服务定位', custom: '8. 个性化扩展字段',
+};
+
 const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate }) => {
   const skills = skillRegistry.list();
   const [filterCategory, setFilterCategory] = useState<string>('');
 
-  // 管理员检测
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
-    try {
-      const auth = JSON.parse(localStorage.getItem('doc-system-auth') || '{}');
-      setIsAdmin(auth?.user?.role === 'admin');
-    } catch {}
+    try { const auth = JSON.parse(localStorage.getItem('doc-system-auth') || '{}'); setIsAdmin(auth?.user?.role === 'admin'); } catch {}
   }, []);
 
-  // 提示词模板管理
-  const [showPromptEditor, setShowPromptEditor] = useState(false);
-  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
-  const [promptText, setPromptText] = useState('');
+  // 技能启用状态
+  const [enabledSkills, setEnabledSkills] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('skill-enabled') || '[]')); } catch { return new Set<string>(); }
+  });
 
-  const openPromptEditor = (skillId: string, skillName: string) => {
-    setEditingSkillId(skillId);
-    const key = `skill-prompt-${skillId}`;
-    const saved = localStorage.getItem(key);
-    setPromptText(saved || `请根据以下内容执行"${skillName}"任务：\n\n{context}\n\n要求：专业、详细、符合工程规范。`);
-    setShowPromptEditor(true);
+  const toggleSkill = (id: string) => {
+    setEnabledSkills(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      localStorage.setItem('skill-enabled', JSON.stringify([...next]));
+      return next;
+    });
   };
 
-  const savePrompt = () => {
+  // 结构化编辑器
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
+  const [template, setTemplate] = useState<SkillPromptTemplate>(getDefaultTemplate('', ''));
+  const [activeField, setActiveField] = useState<keyof SkillPromptTemplate>('role');
+  const [previewMode, setPreviewMode] = useState(false);
+
+  const openEditor = (skillId: string, skillName: string) => {
+    setEditingSkillId(skillId);
+    const key = `skill-template-${skillId}`;
+    const saved = localStorage.getItem(key);
+    setTemplate(saved ? JSON.parse(saved) : getDefaultTemplate(skillName, skillId));
+    setActiveField('role');
+    setPreviewMode(false);
+    setShowEditor(true);
+  };
+
+  const resetToDefault = () => {
     if (!editingSkillId) return;
-    localStorage.setItem(`skill-prompt-${editingSkillId}`, promptText);
+    const name = skillRegistry.get(editingSkillId)?.name || '';
+    setTemplate(getDefaultTemplate(name, editingSkillId));
+    toast('已恢复默认模板', 'success');
+  };
+
+  const saveTemplate = () => {
+    if (!editingSkillId) return;
+    const key = `skill-template-${editingSkillId}`;
+    // 版本历史
+    const historyKey = `skill-template-history-${editingSkillId}`;
+    const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    history.unshift({ time: new Date().toISOString(), by: 'admin', content: template });
+    if (history.length > 20) history.pop();
+    localStorage.setItem(historyKey, JSON.stringify(history));
+
+    localStorage.setItem(key, JSON.stringify(template));
     toast('提示词已保存', 'success');
-    setShowPromptEditor(false);
+    setShowEditor(false);
   };
 
   const categories = [
@@ -75,8 +180,10 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
           <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
           <Zap size={24} className="text-amber-400" />
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)]">技能面板</h1>
-            <p className="text-sm text-[var(--text-muted)]">{projectName} — {skills.length} 个AI技能已部署</p>
+            <h1 className="text-xl font-bold text-[var(--text-primary)]">
+              {isAdmin ? 'AI技能配置中台' : '技能面板'}
+            </h1>
+            <p className="text-sm text-[var(--text-muted)]">{projectName} — {skills.length} 个系统SKILL已部署</p>
           </div>
         </div>
 
@@ -96,16 +203,22 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map(s => {
             const loc = SKILL_LOCATION[s.id];
+            const isEnabled = enabledSkills.has(s.id) || enabledSkills.size === 0; // 默认全部启用
             return (
-              <div key={s.id} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-5 hover:border-amber-500/30 transition">
+              <div key={s.id} className={`bg-[var(--bg-card)] border rounded-xl p-5 transition ${isEnabled ? 'border-[var(--border-primary)] hover:border-amber-500/30' : 'border-[var(--border-primary)] opacity-60'}`}>
                 <div className="flex items-start gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-lg flex-shrink-0">
                     {SKILL_ICONS[s.id] || '⚡'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-sm text-[var(--text-primary)]">{s.name}</h3>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 flex-shrink-0">{s.category}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">{s.category}</span>
+                      {isAdmin && (
+                        <button onClick={() => toggleSkill(s.id)} className="text-[10px]" title={isEnabled ? '禁用' : '启用'}>
+                          {isEnabled ? <Power size={12} className="text-green-400" /> : <PowerOff size={12} className="text-red-400" />}
+                        </button>
+                      )}
                     </div>
                     <p className="text-xs text-[var(--text-muted)] mt-1">{s.description}</p>
                   </div>
@@ -113,14 +226,11 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
 
                 {/* 部署位置 */}
                 <div className="bg-[var(--bg-secondary)] rounded-lg p-3 mb-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-[10px] text-[var(--text-muted)]">📍 部署位置</span>
-                  </div>
+                  <span className="text-[10px] text-[var(--text-muted)]">📍 部署位置</span>
                   <p className="text-xs text-[var(--text-primary)] font-medium">{loc?.page || '系统各处'}</p>
                   <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{loc?.desc || s.description}</p>
                 </div>
 
-                {/* 操作按钮 */}
                 <div className="flex items-center gap-2">
                   {loc?.view && onNavigate && (
                     <button onClick={() => onNavigate(loc.view)}
@@ -129,10 +239,9 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
                     </button>
                   )}
                   {isAdmin && (
-                    <button onClick={() => openPromptEditor(s.id, s.name)}
-                      className="px-3 py-2 text-xs border border-[var(--border-secondary)] hover:border-amber-500/30 rounded-lg text-[var(--text-secondary)] flex items-center gap-1 transition"
-                      title="修改提示词模板（管理员）">
-                      <Edit3 size={11} /> 提示词
+                    <button onClick={() => openEditor(s.id, s.name)}
+                      className="px-3 py-2 text-xs border border-[var(--border-secondary)] hover:border-amber-500/30 rounded-lg text-[var(--text-secondary)] flex items-center gap-1 transition">
+                      <Edit3 size={11} /> 配置
                     </button>
                   )}
                 </div>
@@ -141,28 +250,63 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
           })}
         </div>
 
-        {/* 提示词编辑弹窗（管理员） */}
-        {showPromptEditor && isAdmin && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setShowPromptEditor(false)}>
-            <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* 8段式结构化编辑弹窗（管理员） */}
+        {showEditor && isAdmin && editingSkillId && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setShowEditor(false)}>
+            <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              {/* 头部 */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)] shrink-0">
                 <div className="flex items-center gap-2">
                   <Shield size={16} className="text-amber-400" />
-                  <h3 className="font-bold text-sm text-[var(--text-primary)]">修改提示词模板</h3>
+                  <div>
+                    <h3 className="font-bold text-sm text-[var(--text-primary)]">SKILL配置：{skillRegistry.get(editingSkillId)?.name}</h3>
+                    <p className="text-[10px] text-[var(--text-muted)]">8段式结构化提示词 · 仅管理员</p>
+                  </div>
                 </div>
-                <span className="text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded">仅管理员</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={resetToDefault} className="px-2.5 py-1.5 text-[10px] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded flex items-center gap-1 transition" title="恢复为系统默认模板"><RotateCcw size={11} /> 重置</button>
+                  <button onClick={() => setPreviewMode(!previewMode)} className={`px-2.5 py-1.5 text-[10px] rounded flex items-center gap-1 transition ${previewMode ? 'bg-amber-500/20 text-amber-400' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'}`}><Eye size={11} /> {previewMode ? '编辑' : '预览'}</button>
+                  <span className="text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded">管理员</span>
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-5">
-                <p className="text-xs text-[var(--text-muted)] mb-3">
-                  修改 <strong className="text-amber-400">{skillRegistry.get(editingSkillId || '')?.name}</strong> 的提示词模板。
-                  使用 <code className="bg-[var(--bg-secondary)] px-1 rounded">{'{context}'}</code> 作为上下文占位符。
-                </p>
-                <textarea value={promptText} onChange={e => setPromptText(e.target.value)}
-                  rows={10} className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm resize-none" />
+
+              <div className="flex-1 overflow-hidden flex">
+                {/* 左侧：段落标签 */}
+                {!previewMode && (
+                  <div className="w-40 border-r border-[var(--border-primary)] overflow-y-auto shrink-0 bg-[var(--bg-secondary)]">
+                    {(Object.keys(LABELS) as (keyof SkillPromptTemplate)[]).map((field) => (
+                      <button key={field} onClick={() => setActiveField(field)}
+                        className={`w-full text-left px-3 py-2.5 text-xs border-b border-[var(--border-primary)] transition ${
+                          activeField === field ? 'bg-amber-500/10 text-amber-400 font-medium border-l-2 border-l-amber-500' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                        }`}>
+                        {LABELS[field]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 右侧：编辑/预览区 */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  {previewMode ? (
+                    <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap font-sans leading-relaxed">{assemblePrompt(template)}</pre>
+                  ) : (
+                    <div>
+                      <label className="text-[11px] font-medium text-amber-400 mb-1.5 block">{LABELS[activeField]}</label>
+                      <textarea value={template[activeField]} onChange={e => setTemplate(t => ({ ...t, [activeField]: e.target.value }))}
+                        rows={activeField === 'role' || activeField === 'tone' ? 3 : activeField === 'compliance' || activeField === 'prohibitions' || activeField === 'ragRules' ? 6 : 4}
+                        className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-xs resize-none leading-relaxed" />
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] shrink-0 rounded-b-xl">
-                <button onClick={() => setShowPromptEditor(false)} className="px-4 py-2 text-sm bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg text-[var(--text-primary)]">取消</button>
-                <button onClick={savePrompt} className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center gap-1"><Save size={14} /> 保存</button>
+
+              {/* 底部按钮 */}
+              <div className="flex justify-between items-center px-5 py-3 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] shrink-0 rounded-b-xl">
+                <span className="text-[10px] text-[var(--text-muted)]">{activeField && LABELS[activeField]} · 共8段 · 保存后即时生效</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowEditor(false)} className="px-4 py-2 text-sm border border-[var(--border-primary)] rounded-lg text-[var(--text-primary)]">取消</button>
+                  <button onClick={saveTemplate} className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center gap-1"><Save size={14} /> 保存并生效</button>
+                </div>
               </div>
             </div>
           </div>
