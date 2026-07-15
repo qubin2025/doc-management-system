@@ -284,7 +284,103 @@
 </table>
 
 <!-- ===== 六 ===== -->
-<h2>六、总结</h2>
+<h2>六、AI层数据脱敏专项审计（2026-07-14）</h2>
+
+<h3>6.1 审计发现</h3>
+<p>通过对系统AI应用层全路径代码审查，发现以下数据泄露风险：</p>
+
+<div class="card card-red">
+  <table>
+    <tr><th style="width:18%">AI调用路径</th><th style="width:15%">脱敏状态</th><th style="width:12%">风险等级</th><th>具体问题</th></tr>
+    <tr>
+      <td><strong>AI审查</strong>（施工/合同/招投标）</td>
+      <td style="color:var(--red)">❌ 未脱敏</td>
+      <td><span style="background:#fef2f2;color:var(--red);padding:2px 8px;border-radius:4px;font-size:.7rem">高风险</span></td>
+      <td>文件原文直接发送至外部AI API。ConstructionReview.tsx第121行将<code>fileContent</code>原样拼入prompt，未经任何脱敏处理</td>
+    </tr>
+    <tr>
+      <td><strong>AI方案生成</strong></td>
+      <td style="color:var(--red)">❌ 未脱敏</td>
+      <td><span style="background:#fef2f2;color:var(--red);padding:2px 8px;border-radius:4px;font-size:.7rem">高风险</span></td>
+      <td>项目参数（面积/规模/投资额/管线）直接作为prompt发送</td>
+    </tr>
+    <tr>
+      <td><strong>RAG检索增强</strong></td>
+      <td style="color:var(--red)">❌ 未脱敏</td>
+      <td><span style="background:#fef2f2;color:var(--red);padding:2px 8px;border-radius:4px;font-size:.7rem">高风险</span></td>
+      <td>文档分块内容作为context直发</td>
+    </tr>
+    <tr>
+      <td><strong>AI直连fallback</strong></td>
+      <td style="color:var(--red)">❌ 未脱敏</td>
+      <td><span style="background:#fef2f2;color:var(--red);padding:2px 8px;border-radius:4px;font-size:.7rem">高风险</span></td>
+      <td>后端不可用时<code>api.aiChat()</code>绕过后端脱敏中间件直连DeepSeek</td>
+    </tr>
+    <tr>
+      <td><strong>AI表单填写</strong></td>
+      <td style="color:var(--red)">❌ 未脱敏</td>
+      <td><span style="background:#fefce8;color:#a16207;padding:2px 8px;border-radius:4px;font-size:.7rem">中风险</span></td>
+      <td>项目详情（名称/面积/投资额/概况/AI报告）直接拼入prompt</td>
+    </tr>
+    <tr>
+      <td><strong>AI对话</strong>（后端代理）</td>
+      <td style="color:var(--green)">✅ 已脱敏</td>
+      <td><span style="background:#e8f5e9;color:var(--green);padding:2px 8px;border-radius:4px;font-size:.7rem">低风险</span></td>
+      <td>通过<code>sanitizeText()</code>处理，6类敏感信息已过滤</td>
+    </tr>
+  </table>
+</div>
+
+<h3>6.2 修复措施</h3>
+
+<div class="card card-green">
+  <p><strong>修复策略</strong>：在前端统一API层（<code>src/data/api.ts</code>）新增 <code>sanitizeForAI()</code> 脱敏函数，覆盖所有AI调用路径。后端脱敏为第一道防线，前端脱敏为兜底防线。</p>
+
+  <table>
+    <tr><th>修复项</th><th>修复方式</th><th>效果</th></tr>
+    <tr>
+      <td><code>aiChat()</code> 所有消息</td>
+      <td>发送前 <code>sanitizeForAI()</code> 处理每条消息的content和context</td>
+      <td style="color:var(--green)">✅ 全覆盖</td>
+    </tr>
+    <tr>
+      <td><code>aiChat()</code> 直连fallback</td>
+      <td>直连DeepSeek时使用 <code>sanitizedMessages</code></td>
+      <td style="color:var(--green)">✅ 已堵漏</td>
+    </tr>
+    <tr>
+      <td><code>aiChat()</code> 视觉模型</td>
+      <td>视觉模型路由使用 <code>sanitizedMessages</code></td>
+      <td style="color:var(--green)">✅ 已堵漏</td>
+    </tr>
+    <tr>
+      <td><code>aiFillForm()</code></td>
+      <td>项目详情中所有字段单独 <code>sanitizeForAI()</code></td>
+      <td style="color:var(--green)">✅ 已堵漏</td>
+    </tr>
+  </table>
+
+  <p style="margin-top:.8rem"><strong>脱敏覆盖的8类敏感信息</strong>：身份证号、手机号、邮箱、固定电话、金额（含万/亿/元单位）、地址（城市+路/街/号/楼）、统一社会信用代码、中文人名模式</p>
+</div>
+
+<h3>6.3 修复后风险评估</h3>
+
+<div class="card card-blue">
+  <table>
+    <tr><th>AI路径</th><th>修复前</th><th>修复后</th></tr>
+    <tr><td>AI审查（施工/合同/招投标）</td><td style="color:var(--red)">❌ 高风险</td><td style="color:var(--green)">✅ 低风险（前端+后端双重脱敏）</td></tr>
+    <tr><td>AI方案生成</td><td style="color:var(--red)">❌ 高风险</td><td style="color:var(--green)">✅ 低风险</td></tr>
+    <tr><td>RAG检索增强</td><td style="color:var(--red)">❌ 高风险</td><td style="color:var(--green)">✅ 低风险</td></tr>
+    <tr><td>AI直连fallback</td><td style="color:var(--red)">❌ 高风险</td><td style="color:var(--green)">✅ 低风险（前端兜底脱敏）</td></tr>
+    <tr><td>AI表单填写</td><td style="color:var(--red)">❌ 中风险</td><td style="color:var(--green)">✅ 低风险</td></tr>
+    <tr><td>AI对话</td><td style="color:var(--green)">✅ 低风险</td><td style="color:var(--green)">✅ 低风险（无变化）</td></tr>
+  </table>
+</div>
+
+<div class="warn">注意：脱敏仅移除个人身份信息和企业标识，<strong>不修改</strong>工程业务内容（施工规范条款、技术参数、质量管理要求等），这些是AI分析所必需的输入。在AI分析质量与数据安全之间取得了平衡。</div>
+
+<!-- ===== 七 ===== -->
+<h2>七、总结</h2>
 
 <div class="card card-blue">
   <p style="font-size:.95rem;text-align:center;margin:.5rem 0"><strong>数据安全不是拒绝AI，而是用工程化的方法给AI加上"安全围栏"。</strong></p>
