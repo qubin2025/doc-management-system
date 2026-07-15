@@ -189,19 +189,36 @@ export async function visionChat(imageBase64: string, prompt: string, model = 'a
   return d.reply || '';
 }
 
+/** 前端脱敏 — 与后端sanitize.js一致，确保直连API时也脱敏 */
+function sanitizeForAI(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\b\d{17}[\dXx]\b/g, '[身份证号已脱敏]')
+    .replace(/\b1[3-9]\d{9}\b/g, '[手机号已脱敏]')
+    .replace(/\b[\w.-]+@[\w.-]+\.\w{2,}\b/g, '[邮箱已脱敏]')
+    .replace(/\b(?:\d{3}-\d{8}|\d{4}-\d{7,8}|\d{4}-\d{3}-\d{3})\b/g, '[固定电话已脱敏]')
+    .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:万|亿|元|USD|CNY)\b/g, '[金额已脱敏]')
+    .replace(/(?:北京市?|上海市?|广东省?|深圳市?|广州市?|成都市?|杭州市?)\S{0,20}(?:路|街|道|巷|号|楼|室|层|座|单元|栋|幢)\S{0,10}/g, '[地址已脱敏]')
+    .replace(/\b[0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10}\b/g, '[统一信用代码已脱敏]');
+}
+
 export async function aiChat(
   messages: { role: string; content: string }[],
   context?: string,
   opts?: { projectName?: string; standard?: string; model?: string; images?: string[] }
 ): Promise<string> {
   const images = opts?.images || [];
+  // 脱敏所有消息内容
+  const sanitizedMessages = messages.map(m => ({ ...m, content: sanitizeForAI(m.content) }));
+  const sanitizedContext = sanitizeForAI(context || '');
+
   // 有图片时跳过代理直连视觉模型（后端代理不支持多模态）
   if (images.length === 0) {
     try {
       const res = await fetch(`${API_BASE}/ai/chat`, {
         method: 'POST', body: JSON.stringify({
-          messages,
-          context: context || '',
+          messages: sanitizedMessages,
+          context: sanitizedContext,
           projectName: opts?.projectName || '',
           standard: opts?.standard || '',
           model: opts?.model || 'auto',
@@ -216,38 +233,36 @@ export async function aiChat(
 
   // 构建系统提示
   const systemPrompt = opts?.projectName
-    ? `你是全过程工程咨询管理系统AI。当前项目：${opts.projectName}。${opts?.standard ? `规程：${opts.standard}。` : ''}`
+    ? `你是全过程工程咨询管理系统AI。当前项目：${sanitizeForAI(opts.projectName)}。${opts?.standard ? `规程：${opts.standard}。` : ''}`
     : '你是一个智能对话助手。';
 
-  // 检测是否需要视觉模型（文本标记或显式传入images）
-  const needVision = messages.some(m => m.content.includes('[图片:') || m.content.includes('图像识别'))
+  // 检测是否需要视觉模型
+  const needVision = sanitizedMessages.some(m => m.content.includes('[图片:') || m.content.includes('图像识别'))
     || (opts?.images && opts.images.length > 0);
   const userModel = opts?.model || 'auto';
 
   if (needVision && userModel !== 'deepseek-v4-pro' && userModel !== 'deepseek-v4-flash') {
-    // 视觉模型路由：统一使用 callVisionModel(内建buildVisionMessages嵌入图片)
     if (userModel === 'glm-4v' || userModel === 'glm-4v') {
-      try { return await callVisionModel(messages, systemPrompt, 'glm-4v', images); } catch {}
-      try { return await callVisionModel(messages, systemPrompt, 'qwen-vl-max', images); } catch {}
-      return '视觉模型调用失败，请检查 API Key 或网络连接。';
+      try { return await callVisionModel(sanitizedMessages, systemPrompt, 'glm-4v', images); } catch {}
+      try { return await callVisionModel(sanitizedMessages, systemPrompt, 'qwen-vl-max', images); } catch {}
+      return '视觉模型调用失败';
     }
     if (userModel === 'qwen-vl-max') {
-      try { return await callVisionModel(messages, systemPrompt, 'qwen-vl-max', images); } catch {}
-      try { return await callVisionModel(messages, systemPrompt, 'glm-4v', images); } catch {}
-      return '视觉模型调用失败，请检查 API Key 或网络连接。';
+      try { return await callVisionModel(sanitizedMessages, systemPrompt, 'qwen-vl-max', images); } catch {}
+      try { return await callVisionModel(sanitizedMessages, systemPrompt, 'glm-4v', images); } catch {}
+      return '视觉模型调用失败';
     }
-    // 自动路由
-    try { return await callVisionModel(messages, systemPrompt, 'glm-4v', images); } catch {}
-    try { return await callVisionModel(messages, systemPrompt, 'qwen-vl-max', images); } catch {}
-    return '图片已收到，但视觉模型均不可用。请检查API Key配置。';
+    try { return await callVisionModel(sanitizedMessages, systemPrompt, 'glm-4v', images); } catch {}
+    try { return await callVisionModel(sanitizedMessages, systemPrompt, 'qwen-vl-max', images); } catch {}
+    return '视觉模型均不可用。';
   }
 
-  // 纯文本：DeepSeek（60秒超时）
+  // 纯文本：DeepSeek（60秒超时）— 使用脱敏后的消息
   const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
   const baseUrl = import.meta.env.VITE_DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1';
   const model = import.meta.env.VITE_DEEPSEEK_MODEL || 'deepseek-chat';
   if (!apiKey) throw new Error('请配置 DeepSeek API Key');
-  const chatMessages = [{ role: 'system', content: systemPrompt }, ...messages.map(m => ({ role: m.role, content: m.content }))];
+  const chatMessages = [{ role: 'system', content: systemPrompt }, ...sanitizedMessages.map(m => ({ role: m.role, content: m.content }))];
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60000);
   try {
@@ -278,12 +293,12 @@ export async function aiFillForm(
 ): Promise<string> {
   const fieldList = fields.map(f => `- ${f.label} (${f.type}${f.required ? ', 必填' : ''})${f.options ? ` [可选值: ${f.options.join('/')}]` : ''}`).join('\n');
   const projectInfo = projectContext?.name
-    ? `项目名称: ${projectContext.name}
-建筑面积: ${projectContext.details?.area || '未提供'}
-建设规模: ${projectContext.details?.scale || '未提供'}
-投资额: ${projectContext.details?.investment || '未提供'}
-项目概况: ${projectContext.details?.overview || '未提供'}
-${projectContext.details?.aiReport ? `\n【审核分析数据】\n${projectContext.details.aiReport}` : ''}`
+    ? `项目名称: ${sanitizeForAI(projectContext.name)}
+建筑面积: ${sanitizeForAI(projectContext.details?.area || '未提供')}
+建设规模: ${sanitizeForAI(projectContext.details?.scale || '未提供')}
+投资额: ${sanitizeForAI(projectContext.details?.investment || '未提供')}
+项目概况: ${sanitizeForAI(projectContext.details?.overview || '未提供')}
+${projectContext.details?.aiReport ? `\n【审核分析数据】\n${sanitizeForAI(projectContext.details.aiReport)}` : ''}`
     : '无项目上下文';
 
   const templateSection = formatTemplate
