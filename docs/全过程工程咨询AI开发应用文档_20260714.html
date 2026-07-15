@@ -177,7 +177,70 @@
 <div class="warn">部署后注意事项：管理员首次登录需逐技能检查默认8段模板是否适配业务需求，必要时进行个性化调整。普通用户不受影响，仅可使用「前往使用」按钮跳转。</div>
 
 <!-- ===== 六 ===== -->
-<h2>六、SKILL配置中台价值总结</h2>
+<h2>六、技能配置化：新增技能无需改代码</h2>
+
+<h3>6.1 问题提出</h3>
+<p>随着系统发展，新的AI能力不断加入（如新增"工程合规审查"、"造价数据分析"等技能）。原有架构下，每新增一个技能需要：</p>
+<ul style="padding-left:1.5rem;font-size:.9rem">
+  <li>在 <code>skillRegistry.ts</code> 中编写注册代码</li>
+  <li>在 <code>SkillPanel.tsx</code> 的 SKILL_LOCATION 映射表中添加条目</li>
+  <li>在 <code>SkillPanel.tsx</code> 的 SKILL_ICONS 表中添加图标</li>
+</ul>
+<p>这种方式<strong>强依赖开发人员改代码</strong>，无法由管理员自主配置，不符合企业级中台的定位。</p>
+
+<h3>6.2 解决方案：配置化技能管理</h3>
+
+<p>新增 <code>src/data/skillConfig.ts</code> 技能配置中心，实现三层配置体系：</p>
+
+<div class="card">
+  <table>
+    <tr><th style="width:20%">层级</th><th>实现</th><th>说明</th></tr>
+    <tr>
+      <td><strong>预设层</strong></td>
+      <td><code>PRESET_SKILL_CONFIGS</code></td>
+      <td>8个系统内置技能，代码层面定义，不可删除</td>
+    </tr>
+    <tr>
+      <td><strong>自定义层</strong></td>
+      <td><code>loadCustomSkills()</code> / <code>saveCustomSkills()</code></td>
+      <td>管理员通过UI添加，localStorage持久化</td>
+    </tr>
+    <tr>
+      <td><strong>运行时层</strong></td>
+      <td><code>getAllSkillConfigs()</code></td>
+      <td>预设+自定义合并，SkillPanel动态读取</td>
+    </tr>
+  </table>
+</div>
+
+<h3>6.3 新增技能配置界面</h3>
+<table>
+  <tr><th>字段</th><th>说明</th><th>必填</th></tr>
+  <tr><td><strong>Skill ID</strong></td><td>唯一标识（如 custom-compliance-check）</td><td>✅</td></tr>
+  <tr><td><strong>技能名称</strong></td><td>显示名称</td><td>✅</td></tr>
+  <tr><td><strong>描述</strong></td><td>功能说明</td><td>-</td></tr>
+  <tr><td><strong>分类</strong></td><td>审查/生成/填写/指南/分析</td><td>✅</td></tr>
+  <tr><td><strong>图标</strong></td><td>Emoji图标</td><td>-</td></tr>
+  <tr><td><strong>所在页面</strong></td><td>部署位置描述</td><td>-</td></tr>
+  <tr><td><strong>View路由</strong></td><td>跳转目标（可选）</td><td>-</td></tr>
+  <tr><td><strong>使用说明</strong></td><td>详细使用指引</td><td>-</td></tr>
+</table>
+
+<h3>6.4 配置化能力总览</h3>
+<table>
+  <tr><th>能力</th><th>实现方式</th><th>状态</th></tr>
+  <tr><td>新增技能（管理员页面操作）</td><td>SkillPanel「添加技能」弹窗</td><td style="color:var(--green)">✅</td></tr>
+  <tr><td>删除自定义技能</td><td>卡片上「删除」按钮</td><td style="color:var(--green)">✅</td></tr>
+  <tr><td>8段提示词模板</td><td>getDefaultTemplate()自动生成</td><td style="color:var(--green)">✅</td></tr>
+  <tr><td>启用/禁用开关</td><td>管理员独立控制</td><td style="color:var(--green)">✅</td></tr>
+  <tr><td>卡片展示+部署位置+导航</td><td>SkillConfig.location驱动</td><td style="color:var(--green)">✅</td></tr>
+  <tr><td>预设8技能保护</td><td>代码层PRESET_SKILL_CONFIGS不可删除</td><td style="color:var(--green)">✅</td></tr>
+</table>
+
+<div class="tip">新增技能流程：管理员登录 → AI技能配置中台 → 点击「添加技能」→ 填写8个字段 → 保存 → 即时生效。无需任何代码修改。</div>
+
+<!-- ===== 七 ===== -->
+<h2>七、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
