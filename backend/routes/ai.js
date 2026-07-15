@@ -10,7 +10,28 @@ const rateMap = new Map();
 const RATE_LIMIT = 60;
 const RATE_WINDOW = 60000;
 
-function checkRate(userId) {
+// 日用量统计 + 异常检测
+const dailyUsage = new Map();
+const DAILY_LIMIT = 200;
+const DAILY_COST_LIMIT = 10;
+
+function checkDaily(userId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const record = dailyUsage.get(userId);
+  if (!record || record.date !== today) {
+    dailyUsage.set(userId, { date: today, count: 0, cost: 0, frozen: false });
+    return true;
+  }
+  if (record.frozen) return false;
+  if (record.count >= DAILY_LIMIT || record.cost >= DAILY_COST_LIMIT) {
+    record.frozen = true;
+    console.warn(`[AI安全] 用户${userId}超过日用量上限(调用${record.count}次/费用¥${record.cost.toFixed(2)}),已冻结`);
+    return false;
+  }
+  return true;
+}
+
+function checkPerMinute(userId) {
   const now = Date.now();
   const record = rateMap.get(userId);
   if (!record || now - record.windowStart > RATE_WINDOW) {
@@ -20,6 +41,11 @@ function checkRate(userId) {
   if (record.count >= RATE_LIMIT) return false;
   record.count++;
   return true;
+}
+
+function checkRate(userId) {
+  if (!checkDaily(userId)) return false;
+  return checkPerMinute(userId);
 }
 
 function buildProjectContext(projectName, standard) {
@@ -177,7 +203,9 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
   // Try requested model, fallback to offline if all fail
   tryChat(requestedModel, ctxMsgs, userMsgs)
     .then(reply => {
-      const cost = estimateCost(req.body.messages?.reduce((s, m) => s + (m.content?.length || 0), 0) || 0, requestedModel);
+      const promptLen = req.body.messages?.reduce((s, m) => s + (m.content?.length || 0), 0) || 0;
+      trackUsage(req.user?.username || 'unknown', promptLen, requestedModel);
+      const cost = estimateCost(promptLen, requestedModel);
       res.json({ reply, model: requestedModel, cost });
     })
     .catch(async e1 => {
@@ -244,5 +272,46 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
   }
   throw new Error('所有模型均不可用');
 }
+
+// ===== 用量追踪工具 =====
+function trackUsage(userId, promptLen, model) {
+  const today = new Date().toISOString().slice(0, 10);
+  const record = dailyUsage.get(userId);
+  if (!record || record.date !== today) {
+    dailyUsage.set(userId, { date: today, count: 1, cost: +(promptLen / 3000 * 0.003).toFixed(4), frozen: false });
+    return;
+  }
+  record.count++;
+  record.cost += +(promptLen / 3000 * 0.002).toFixed(4);
+}
+
+// ===== AI用量统计 + 异常告警端点 =====
+
+// GET 管理员查看AI用量
+router.get('/stats', requireAuth, (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: '仅管理员' });
+  const today = new Date().toISOString().slice(0, 10);
+  const stats = [];
+  dailyUsage.forEach((v, k) => {
+    if (v.date === today) stats.push({ userId: k, ...v });
+  });
+  res.json({
+    today,
+    totalCalls: stats.reduce((s, u) => s + u.count, 0),
+    totalCost: +stats.reduce((s, u) => s + u.cost, 0).toFixed(2),
+    users: stats.sort((a, b) => b.count - a.count),
+    frozenUsers: stats.filter(u => u.frozen).map(u => u.userId),
+    limit: { dailyCalls: DAILY_LIMIT, dailyCost: DAILY_COST_LIMIT },
+  });
+});
+
+// POST 管理员解冻用户
+router.post('/unfreeze', requireAuth, (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: '仅管理员' });
+  const { userId } = req.body;
+  const record = dailyUsage.get(userId);
+  if (record) { record.frozen = false; record.count = 0; record.cost = 0; }
+  res.json({ success: true });
+});
 
 export default router;

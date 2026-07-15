@@ -17,8 +17,31 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ username: '', password: '', displayName: '', role: 'viewer', permissions: { can_upload: true, can_download: true, can_use_ai: false } });
   const [stats, setStats] = useState({ projects: 0, documents: 0, users: 0, activeUsers: 0, health: {} as any, uptime: 0, memory: 0 });
+  const [aiStats, setAiStats] = useState<any>(null);
 
-  useEffect(() => { loadUsers(); fetchStats(); }, []);
+  const fetchAiStats = async () => {
+    try {
+      const base = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+      const res = await fetch(base.replace('/api', '/api/ai/stats'), {
+        headers: { 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token || ''}` },
+      });
+      if (res.ok) setAiStats(await res.json());
+    } catch {}
+  };
+
+  const handleUnfreeze = async (userId: string) => {
+    try {
+      const base = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+      await fetch(base.replace('/api', '/api/ai/unfreeze'), {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token || ''}` },
+        body: JSON.stringify({ userId }),
+      });
+      fetchAiStats();
+      toast('已解冻', 'success');
+    } catch { toast('解冻失败', 'error'); }
+  };
+
+  useEffect(() => { loadUsers(); fetchStats(); fetchAiStats(); }, []);
 
   const fetchStats = async () => {
     try {
@@ -112,6 +135,65 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* AI用量审计面板 */}
+        <div className="bg-white rounded-xl border p-5 mb-6">
+          <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+            🤖 AI调用审计
+            <button onClick={fetchAiStats} className="text-xs text-blue-500 hover:text-blue-700 ml-auto">刷新</button>
+          </h3>
+          {aiStats ? (
+            <div>
+              <div className="grid grid-cols-4 gap-3 mb-4">
+                <div className="text-center bg-gray-50 rounded-lg p-3">
+                  <div className="text-xl font-bold text-blue-600">{aiStats.totalCalls}</div>
+                  <div className="text-[10px] text-gray-500">今日调用次数</div>
+                </div>
+                <div className="text-center bg-gray-50 rounded-lg p-3">
+                  <div className="text-xl font-bold text-amber-600">¥{aiStats.totalCost}</div>
+                  <div className="text-[10px] text-gray-500">今日估算费用</div>
+                </div>
+                <div className="text-center bg-gray-50 rounded-lg p-3">
+                  <div className="text-xl font-bold text-red-600">{aiStats.frozenUsers?.length || 0}</div>
+                  <div className="text-[10px] text-gray-500">冻结用户</div>
+                </div>
+                <div className="text-center bg-gray-50 rounded-lg p-3">
+                  <div className="text-xl font-bold text-gray-600">{aiStats.users?.length || 0}</div>
+                  <div className="text-[10px] text-gray-500">活跃用户</div>
+                </div>
+              </div>
+              {aiStats.users?.length > 0 && (
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-gray-50"><th className="px-3 py-1.5 text-left">用户</th><th className="px-3 py-1.5 text-center">调用次数</th><th className="px-3 py-1.5 text-center">费用(¥)</th><th className="px-3 py-1.5 text-center">状态</th><th className="px-3 py-1.5 text-center">操作</th></tr></thead>
+                  <tbody>
+                    {aiStats.users.map((u: any) => (
+                      <tr key={u.userId} className="border-t">
+                        <td className="px-3 py-1.5">{u.userId}</td>
+                        <td className="px-3 py-1.5 text-center">{u.count}
+                          {u.count >= 200 && <span className="text-red-500 text-[10px] ml-1">⚠️</span>}
+                        </td>
+                        <td className="px-3 py-1.5 text-center">¥{u.cost?.toFixed(2) || '0.00'}</td>
+                        <td className="px-3 py-1.5 text-center">
+                          {u.frozen ? <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">已冻结</span>
+                            : <span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded">正常</span>}
+                        </td>
+                        <td className="px-3 py-1.5 text-center">
+                          {u.frozen && <button onClick={() => handleUnfreeze(u.userId)}
+                            className="text-[10px] text-blue-500 hover:underline">解冻</button>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <p className="text-[10px] text-gray-400 mt-2">
+                日调用上限: {aiStats.limit?.dailyCalls || 200}次/人 · 日费用上限: ¥{aiStats.limit?.dailyCost || 10}/人 · 超限自动冻结
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 text-center py-4">加载中...</p>
+          )}
         </div>
 
         {loading ? (
