@@ -694,6 +694,76 @@
 
 <div class="tip">本节分析框架和分级优化建议参考自<strong>豆包AI（字节跳动旗下）</strong>技术分析文档《全过程工程咨询系统存储瓶颈解决方案：从localStorage迁移到IndexedDB的约束与优化》（2026年7月），已结合实际系统架构进行适配补充。</div>
 
+<h3>8.7 实施结果（2026-07-14）</h3>
+
+<p>5项改动已全部实施并提交至代码仓库。以下为实际交付内容：</p>
+
+<div class="card card-green">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:22%">改动项</th><th style="width:25%">实现文件</th><th style="width:33%">关键能力</th><th style="width:15%">状态</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>IndexedDB迁移</strong></td>
+      <td><code>src/data/indexedDBStore.ts</code>（新增315行）</td>
+      <td>完整CRUD + 项目索引 + 异步操作 + 余弦相似度检索</td>
+      <td style="color:var(--green)">✅ 已完成</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>LRU淘汰 + 软上限</strong></td>
+      <td><code>indexedDBStore.ts</code> 内建</td>
+      <td><code>evictLRU(50)</code> — 配额使用率>85%时自动清理最久未访问的50条记录</td>
+      <td style="color:var(--green)">✅ 已完成</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>项目级数据清理</strong></td>
+      <td><code>clearProject(project)</code></td>
+      <td>按项目名批量清除所有向量数据，支持IndexedDB索引高效定位</td>
+      <td style="color:var(--green)">✅ 已完成</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>容量监控 + 阈值预警</strong></td>
+      <td><code>estimateSize()</code> / <code>isNearQuota()</code></td>
+      <td>实时容量检测 + 85%阈值预警 + <code>getCapacityInfo()</code> 统一接口</td>
+      <td style="color:var(--green)">✅ 已完成</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>知识库导出 / 导入</strong></td>
+      <td><code>exportAllVectors()</code> / <code>importVectors()</code></td>
+      <td>JSON格式完整备份向量+chunk文本+元数据，支持跨设备恢复</td>
+      <td style="color:var(--green)">✅ 已完成</td>
+    </tr>
+  </table>
+</div>
+
+<h4>架构变更</h4>
+
+<div class="card card-blue">
+  <table>
+    <tr><th>阶段</th><th>存储引擎</th><th>容量</th><th>检索方式</th></tr>
+    <tr><td><strong>实施前</strong></td><td>localStorage</td><td>5MB硬上限（≈800条chunk）</td><td>同步暴力搜索</td></tr>
+    <tr><td style="color:var(--green)"><strong>实施后（当前）</strong></td><td style="color:var(--green)">localStorage（兼容）+ IndexedDB（主力）</td><td style="color:var(--green)">250MB+ 软上限（≈40,000条chunk）</td><td style="color:var(--green)">异步检索 + 自动迁移</td></tr>
+    <tr><td><strong>中期目标</strong></td><td>IndexedDB（热数据）+ 后端向量库（归档）</td><td>前端250MB + 后端无限</td><td>异步 + 云端同步</td></tr>
+  </table>
+</div>
+
+<h4>影响的模块</h4>
+
+<div class="card">
+  <table>
+    <tr><th>模块</th><th>改动</th><th>效果</th></tr>
+    <tr><td><code>vectorStore.ts</code></td><td>新增 async 方法层（searchAsync/searchAllAsync/statsAsync 等 8 个 API）</td><td>保持向后兼容，自动检测 IndexedDB 可用性并切换</td></tr>
+    <tr><td><code>ragService.ts</code></td><td>检索调用从 <code>search()</code> 改为 <code>searchAsync()</code></td><td>RAG查询优先使用IndexedDB，失败回退localStorage</td></tr>
+    <tr><td><code>knowledgeOrchestrator.ts</code></td><td>检索调用从 <code>search()/searchAll()</code> 改为异步版本</td><td>编排器三级降级链全部支持IndexedDB后端</td></tr>
+    <tr><td>自动迁移</td><td>首次启动时自动将 localStorage 现有向量数据迁移至 IndexedDB</td><td>用户无感知，存量数据零丢失</td></tr>
+  </table>
+</div>
+
+<div class="tip">部署上线前的阻塞性缺陷（localStorage 5MB容量限制）已通过 IndexedDB 迁移方案解决。其余三个瓶颈（检索算法、Embedding领域化、向量维度）非阻断性，可在后续版本中迭代优化。</div>
+
 <!-- ===== 九 ===== -->
 <h2>九、总结</h2>
 
