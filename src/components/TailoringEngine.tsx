@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ClipboardCheck, ChevronRight, ChevronLeft, Save, RotateCcw, Check, Eye, EyeOff, Target, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, ChevronRight, ChevronLeft, Save, RotateCcw, Check, Eye, EyeOff, Target, ArrowRight, ExternalLink } from 'lucide-react';
 import {
   ProjectProfile, WorkItemStatus, TailoringResult, TailoringConfig,
   computeTailoringResult, loadTailoringConfig, saveTailoringConfig,
@@ -13,6 +13,7 @@ interface TailoringEngineProps {
   onApply?: (result: TailoringResult) => void;
   flowMode?: boolean; // 引导流程模式
   onNext?: (view: string) => void; // 下一步导航
+  onNavigate?: (view: string, params?: Record<string, string>) => void; // 跳转到其他页面
 }
 
 const PROJECT_TYPES = [
@@ -49,7 +50,7 @@ const MANAGEMENT_SCOPES = [
   { value: 'document-management', label: '资料管理' },
 ];
 
-const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, onApply, flowMode, onNext }) => {
+const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, onApply, flowMode, onNext, onNavigate }) => {
   const [step, setStep] = useState<'questionnaire' | 'result'>('questionnaire');
   const [result, setResult] = useState<TailoringResult | null>(null);
   const [manualAdjustments, setManualAdjustments] = useState<Map<string, WorkItemStatus>>(new Map());
@@ -415,7 +416,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
         </div>
 
         {/* 章节切换 */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           {chapters.map(ch => (
             <button key={ch.id} onClick={() => setActiveChapter(ch.id)}
               className={`px-4 py-1.5 text-sm rounded-lg transition ${
@@ -426,6 +427,13 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
               第{ch.number}章 {ch.title}
             </button>
           ))}
+          {onNavigate && (
+            <button onClick={() => onNavigate('guide-chapter', { chapterId: activeChapter })}
+              className="px-3 py-1.5 text-xs bg-purple-500 hover:bg-purple-400 text-white rounded-lg flex items-center gap-1 transition ml-2"
+              title="跳转到工作指南查看裁剪标记效果">
+              <ExternalLink size={12} /> 查看效果
+            </button>
+          )}
         </div>
 
         {/* 工作项列表 */}

@@ -503,6 +503,7 @@ const App: React.FC = () => {
     return <TailoringEngine projectName={currentProject}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
+      onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
       onBack={() => setView('project-entry')} />;
   }
 
