@@ -351,7 +351,47 @@
 <div class="warn">后续V2（执行轨迹可视化）和V3（多智能体协同）按文档路线图另排迭代，本次V1为基础版本。</div>
 
 <!-- ===== 八 ===== -->
-<h2>八、SKILL配置中台价值总结</h2>
+<h2>八、PMBOK框架与模块裁剪协同 + 裁剪结果可视化</h2>
+
+<h3>8.1 两个卡片的功能定位</h3>
+<table>
+  <tr><th style="width:18%">卡片</th><th style="width:12%">角色</th><th>功能</th><th>输出</th></tr>
+  <tr>
+    <td><strong>PMBOK知识领域框架</strong></td>
+    <td>📖 理论基础</td>
+    <td>展示10大知识领域49个过程、8大绩效域、过程组矩阵；读取工作项完成状态计算覆盖率</td>
+    <td>覆盖率评分（0-100%）</td>
+  </tr>
+  <tr>
+    <td><strong>模块裁剪引擎</strong></td>
+    <td>✂️ 应用工具</td>
+    <td>项目特征问卷→20条PMBOK规则→标记工作项为必选/推荐/可选/排除</td>
+    <td>工作项状态标记</td>
+  </tr>
+</table>
+
+<h3>8.2 协同机制</h3>
+<p>PMBOK框架是"教科书"，模块裁剪是"应用"：</p>
+<ul style="padding-left:1.5rem;font-size:.9rem;line-height:2">
+  <li>每条裁剪规则引用PMBOK章节（如 R01 → "PMBOK 4.1 制定项目章程"），通过 <code>pmbokRef</code> 字段关联</li>
+  <li>裁剪结果应用到GuideChapter后，用户执行工作项并勾选完成</li>
+  <li>PMBOK框架的"项目评估"Tab读取工作项完成状态，计算各知识领域覆盖率</li>
+  <li>形成闭环：PMBOK指导裁剪 → 裁剪标记工作项 → 执行完成 → PMBOK评估覆盖率</li>
+</ul>
+
+<h3>8.3 裁剪结果可视化增强 — 「查看效果」按钮</h3>
+<table>
+  <tr><th>问题</th><th>修复</th><th>提交</th></tr>
+  <tr>
+    <td>裁剪结果页面无法直观看到GuideChapter中的标记效果</td>
+    <td>结果视图章节标签旁新增「查看效果」按钮，点击跳转到对应章节的GuideChapter</td>
+    <td><code>a839477</code></td>
+  </tr>
+</table>
+<p>实现方式：TailoringEngine新增 <code>onNavigate</code> prop，支持携带 <code>chapterId</code> 参数跳转。App.tsx接收后设置 <code>guideChapterId</code> 并切换view。</p>
+
+<!-- ===== 九 ===== -->
+<h2>九、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
