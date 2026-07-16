@@ -1,24 +1,31 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, Sparkles, Copy, Download, FileText, FileDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, Copy, Download, FileText, FileDown, Edit3, Save, RotateCcw } from 'lucide-react';
 import { engineeringAgent, type AgentTask, type AgentStep, type AgentContext } from '../data/agentFramework';
 import { toast } from './Toast';
 
-interface AgentConsoleProps {
-  projectName: string;
-  onBack: () => void;
+interface AgentConsoleProps { projectName: string; onBack: () => void; }
+
+/** 分组快捷指令 — V1：分类+复杂度+回填输入 */
+interface PromptChip {
+  label: string; query: string; group: string; complexity: '🟢' | '🟡' | '🔴';
+  tools?: string; estimatedTime?: string;
 }
 
-/** 预设提示词条 — 按工具能力分类 */
-const PROMPT_CHIPS = [
-  { label: '📊 项目健康检查', query: '对项目进行全面的健康检查，包括KPI计算、工作项扫描、表单检测，并生成综合报告', category: 'compute' },
-  { label: '🔍 过期工作项扫描', query: '扫描项目所有工作项，找出已过期或即将过期的项，列出责任人', category: 'compute' },
-  { label: '📋 缺失表单检测', query: '扫描项目的所有附表，列出空白的表单清单和建议填写顺序', category: 'compute' },
-  { label: '📊 KPI指标计算', query: '计算项目当前的CPI/SPI/完整度/质量分四大KPI指标', category: 'compute' },
-  { label: '🧠 知识库检索', query: '在项目知识库中检索施工标准规范条款，了解最新要求', category: 'knowledge' },
-  { label: '📡 RAG文档检索', query: '使用RAG增强检索，查找项目中与质量管理相关的文档和方案', category: 'knowledge' },
-  { label: '📝 工作项分析', query: '分析项目的施工准备工作项完成情况，给出进度优化建议', category: 'query' },
-  { label: '🏥 系统健康检查', query: '检查系统所有AI模型和知识服务的可用性状态', category: 'system' },
+const PROMPT_CHIPS: PromptChip[] = [
+  { label: '项目健康检查', query: '对项目进行全面的健康检查，包括KPI计算、工作项扫描、表单检测，并生成综合报告', group: '📊 项目进度管控', complexity: '🔴', tools: 'compute_kpi·scan_workitems·scan_forms', estimatedTime: '~30秒' },
+  { label: '过期工作项扫描', query: '扫描项目所有工作项，找出已过期或即将过期的项，列出责任人', group: '📊 项目进度管控', complexity: '🟡', tools: 'scan_workitems', estimatedTime: '~10秒' },
+  { label: 'KPI指标计算', query: '计算项目当前的CPI/SPI/完整度/质量分四大KPI指标', group: '📊 项目进度管控', complexity: '🟢', tools: 'compute_kpi', estimatedTime: '~5秒' },
+  { label: '工作项分析', query: '分析项目的施工准备工作项完成情况，给出进度优化建议', group: '📊 项目进度管控', complexity: '🟡', tools: 'scan_workitems·ai_chat', estimatedTime: '~15秒' },
+
+  { label: '缺失表单检测', query: '扫描项目的所有附表，列出空白的表单清单和建议填写顺序', group: '📋 资料表单管理', complexity: '🟡', tools: 'scan_forms', estimatedTime: '~10秒' },
+
+  { label: '知识库检索', query: '在项目知识库中检索施工标准规范条款，了解最新要求', group: '📚 文档知识检索', complexity: '🟢', tools: 'knowledge_search', estimatedTime: '~8秒' },
+  { label: 'RAG文档检索', query: '使用RAG增强检索，查找项目中与质量管理相关的文档和方案', group: '📚 文档知识检索', complexity: '🟡', tools: 'rag_search·knowledge_search', estimatedTime: '~15秒' },
+
+  { label: '系统健康检查', query: '检查系统所有AI模型和知识服务的可用性状态', group: '⚙️ 系统运维诊断', complexity: '🟢', tools: 'health_check', estimatedTime: '~5秒' },
 ];
+
+const COMPLEXITY_LABEL: Record<string, string> = { '🟢': '简单·单工具', '🟡': '中等·多步骤', '🔴': '复杂·自主规划' };
 
 const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
   const [goal, setGoal] = useState('');
@@ -26,365 +33,239 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
   const [confirmAction, setConfirmAction] = useState<{ action: string; params: Record<string, unknown>; resolve: (v: boolean) => void } | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['📊 项目进度管控']));
 
-  const getReportText = () => task?.result || '';
+  // 管理员检测
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => { try { const a = JSON.parse(localStorage.getItem('doc-system-auth')||'{}'); setIsAdmin(a?.user?.role==='admin'); } catch {} }, []);
 
-  // 复制报告
-  const handleCopyReport = () => {
-    const text = getReportText();
-    if (!text) { toast('无报告内容', 'warning'); return; }
-    navigator.clipboard.writeText(text).then(() => toast('已复制到剪贴板', 'success')).catch(() => toast('复制失败', 'error'));
+  // Agent专属提示词编辑器
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
+  const [agentPrompt, setAgentPrompt] = useState(() => localStorage.getItem('agent-system-prompt') || '');
+  const defaultPrompt = '你是全过程工程咨询管理系统的AI智能体。请根据用户目标自主规划执行步骤，使用可用工具完成任务。每次执行前先分析目标，制定多步计划，逐步执行并观察结果。';
+
+  const saveAgentPrompt = () => {
+    localStorage.setItem('agent-system-prompt', agentPrompt);
+    toast('Agent提示词已保存', 'success');
+    setShowPromptEditor(false);
   };
 
-  // 构建Word文档（Word兼容HTML，支持章节/段落/加粗格式）
-  const buildWordDoc = () => {
-    const text = getReportText();
-    const title = task?.goal || 'Agent执行报告';
-    const lines = text.split('\n');
-    let body = '';
-    for (let line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) { body += '<br>'; continue; }
-
-      // 一级标题：一、二、三、...
-      if (/^[一二三四五六七八九十]、/.test(trimmed)) {
-        body += `<h2 style="font-size:16pt;color:#1e40af;font-weight:bold;margin:18px 0 10px;border-bottom:1px solid #e2e8f0;padding-bottom:4px">${escapeWord(trimmed)}</h2>`;
-      }
-      // 二级标题：(一)(二) 或 1. 2.
-      else if (/^[（(][一二三四五六七八九十]+[)）]|^\d+[\.、]/.test(trimmed)) {
-        body += `<h3 style="font-size:13pt;color:#334155;font-weight:bold;margin:12px 0 8px">${escapeWord(trimmed)}</h3>`;
-      }
-      // 步骤行
-      else if (trimmed.startsWith('步骤')) {
-        body += `<p style="margin:8px 0;font-size:12pt;font-weight:bold;color:#1e40af">${escapeWord(trimmed)}</p>`;
-      }
-      // 【重点】内容加粗
-      else if (trimmed.includes('【')) {
-        body += `<p style="margin:6px 0;font-size:12pt;line-height:1.8">${escapeWord(trimmed).replace(/【(.+?)】/g, '<b style="color:#dc2626">【$1】</b>')}</p>`;
-      }
-      // · 列表项
-      else if (trimmed.startsWith('·')) {
-        body += `<p style="margin:3px 0 3px 20px;font-size:12pt">${escapeWord(trimmed)}</p>`;
-      }
-      // 普通段落
-      else {
-        body += `<p style="margin:6px 0;font-size:12pt;line-height:1.8;text-indent:2em">${escapeWord(trimmed)}</p>`;
-      }
-    }
-    return `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
-<head><meta charset="UTF-8">
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
-<style>@page{size:A4;margin:2cm}@media print{body{width:21cm}}</style>
-</head>
-<body style="font-family:'宋体',SimSun,serif;margin:40px 60px;color:#1e293b">
-  <h1 style="text-align:center;font-size:20pt;color:#1e40af;font-weight:bold;border-bottom:2px solid #1e40af;padding-bottom:10px;margin-bottom:5px">${escapeWord(title)}</h1>
-  <p style="text-align:center;color:#64748b;font-size:10pt;margin-bottom:24px">全过程工程咨询管理系统 · Agent执行报告 · ${new Date().toLocaleString('zh-CN')}</p>
-  ${body}
-  <hr style="margin-top:30px;border:1px solid #e2e8f0">
-  <p style="text-align:center;color:#94a3b8;font-size:9pt">全过程工程咨询管理系统 · 自动生成</p>
-</body></html>`;
-  };
-
-  const escapeWord = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  // 下载HTML
-  const handleDownloadHtml = () => {
-    const text = getReportText();
-    if (!text) return;
-    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>Agent报告</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:2;color:#1e293b}
-pre{white-space:pre-wrap;background:#f8fafc;padding:20px;border-radius:8px;font-size:14px}</style></head><body>
-<h1 style="color:#1e40af;border-bottom:2px solid #e2e8f0;padding-bottom:8px">${escapeWord(task?.goal||'执行报告')}</h1>
-<p style="color:#64748b">${new Date().toLocaleString('zh-CN')}</p>
-<pre>${escapeWord(text)}</pre></body></html>`;
-    downloadBlob(new Blob(['\uFEFF'+html],{type:'text/html;charset=utf-8'}), `Agent报告_${new Date().toISOString().slice(0,10)}.html`);
-  };
-
-  // 下载Word
-  const handleDownloadWord = () => {
-    const doc = buildWordDoc();
-    downloadBlob(new Blob(['\uFEFF'+doc],{type:'application/msword;charset=utf-8'}), `Agent报告_${new Date().toISOString().slice(0,10)}.doc`);
-  };
-
-  // 下载PDF (浏览器打印当前报告区域)
-  const handleDownloadPdf = () => {
-    window.print();
-  };
-
-  const downloadBlob = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
+  const toggleGroup = (g: string) => {
+    setExpandedGroups(prev => { const n = new Set(prev); n.has(g) ? n.delete(g) : n.add(g); return n; });
   };
 
   const handleStart = async (promptQuery?: string) => {
     const q = promptQuery || goal;
     if (!q.trim() || running) return;
-    if (!promptQuery) setGoal(q);
-    else setGoal(promptQuery);
-    setRunning(true);
-    setError('');
+    if (promptQuery) setGoal(promptQuery);
+    else if (!goal.trim()) return;
+    setRunning(true); setError('');
 
-    const ctx: AgentContext = {
-      projectName,
-      userId: 'admin',
-      conversationId: `conv-${Date.now()}`,
-      history: [],
-      memory: new Map(),
-    };
-
-    engineeringAgent.onStepComplete = (step) => {
-      setTask(prev => {
-        if (!prev) return prev;
-        const steps = [...prev.steps];
-        steps[step.stepIndex] = step;
-        return { ...prev, steps, currentStep: step.stepIndex + 1 };
-      });
-    };
-
-    engineeringAgent.onConfirm = async (action, params) => {
-      return new Promise(resolve => {
-        setConfirmAction({ action, params, resolve });
-      });
-    };
+    const ctx: AgentContext = { projectName, userId: 'admin', conversationId: `conv-${Date.now()}`, history: [], memory: new Map() };
+    engineeringAgent.onStepComplete = (step) => { setTask(prev => { if (!prev) return prev; const steps = [...prev.steps]; steps[step.stepIndex] = step; return { ...prev, steps, currentStep: step.stepIndex + 1 }; }); };
+    engineeringAgent.onConfirm = async (action, params) => new Promise(resolve => { setConfirmAction({ action, params, resolve }); });
 
     try {
       const plan = await engineeringAgent.plan(q.trim(), ctx);
       setTask(plan);
       const result = await engineeringAgent.execute(plan, ctx);
       setTask(result);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setRunning(false);
-      engineeringAgent.onStepComplete = undefined;
-      engineeringAgent.onConfirm = undefined;
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setRunning(false); engineeringAgent.onStepComplete = undefined; engineeringAgent.onConfirm = undefined; }
   };
 
-  const handleStop = () => {
-    if (task) {
-      task.status = 'cancelled';
-      setTask({ ...task });
-    }
-    setRunning(false);
+  const handleChipClick = (chip: PromptChip) => {
+    setGoal(chip.query);
+    toast(`已填入：${chip.label} (${COMPLEXITY_LABEL[chip.complexity]})`, 'info');
   };
 
   const statusIcon = (status: AgentStep['status']) => {
-    switch (status) {
-      case 'completed': return <CheckCircle2 size={16} className="text-green-400" />;
-      case 'failed': return <XCircle size={16} className="text-red-400" />;
-      case 'executing': return <RefreshCw size={16} className="text-sky-400 animate-spin" />;
-      case 'thinking': return <Clock size={16} className="text-amber-400" />;
-      default: return <Clock size={16} className="text-[var(--text-muted)]" />;
-    }
+    switch (status) { case 'completed': return <CheckCircle2 size={16} className="text-green-400" />; case 'failed': return <XCircle size={16} className="text-red-400" />; case 'executing': return <RefreshCw size={16} className="text-sky-400 animate-spin" />; case 'thinking': return <Clock size={16} className="text-amber-400" />; default: return <Clock size={16} className="text-gray-600" />; }
   };
 
+  // 下载功能
+  const getReportText = () => task?.result || '';
+  const handleCopyReport = () => { navigator.clipboard.writeText(getReportText()).then(() => toast('已复制', 'success')).catch(() => toast('复制失败', 'error')); };
+  const handleDownloadWord = () => {
+    const text = getReportText(); if (!text) return;
+    const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="UTF-8"></head><body style="font-family:SimSun;margin:40px"><h1>${task?.goal||'Agent报告'}</h1><pre>${text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre></body></html>`;
+    const b = new Blob(['\uFEFF'+html],{type:'application/msword'}); const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`Agent报告_${new Date().toISOString().slice(0,10)}.doc`; a.click();
+  };
+  const handleDownloadHtml = () => {
+    const text = getReportText(); if (!text) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Agent报告</title><style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:2}pre{white-space:pre-wrap;background:#f8fafc;padding:20px;border-radius:8px}</style></head><body><h1>${task?.goal||'执行报告'}</h1><p>${new Date().toLocaleString('zh-CN')}</p><pre>${text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre></body></html>`;
+    const b = new Blob(['\uFEFF'+html],{type:'text/html'}); const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`Agent报告_${new Date().toISOString().slice(0,10)}.html`; a.click();
+  };
+  const handleDownloadPdf = () => window.print();
+
+  // 分组统计
+  const groups = [...new Set(PROMPT_CHIPS.map(c => c.group))];
+
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
+    <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-4xl mx-auto">
         {/* 头部 */}
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition">
-            <ArrowLeft size={20} />
-          </button>
+          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
           <Bot size={24} className="text-purple-400" />
-          <div>
-            <h1 className="text-xl font-bold">AI 智能体</h1>
-            <p className="text-sm text-[var(--text-muted)]">{projectName} — Agent自主规划执行</p>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-[var(--text-primary)]">AI 智能体</h1>
+            <p className="text-sm text-[var(--text-muted)]">{projectName} · 工程项目智能体 · 自主拆解任务、自动分析项目数据</p>
           </div>
+          {isAdmin && (
+            <button onClick={() => setShowPromptEditor(true)}
+              className="px-3 py-1.5 text-xs border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-lg flex items-center gap-1">
+              <Edit3 size={12} /> Agent提示词
+            </button>
+          )}
         </div>
 
         {/* 输入区 */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-6">
-          <label className="text-sm text-[var(--text-secondary)] mb-2 block">你想让AI做什么？</label>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-4">
+          <label className="text-sm text-[var(--text-muted)] mb-2 block">下达项目任务指令，AI智能体将自主拆解、执行并输出报告</label>
           <div className="flex gap-3">
-            <input
-              type="text" value={goal} onChange={e => setGoal(e.target.value)}
+            <input type="text" value={goal} onChange={e => setGoal(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleStart()}
               placeholder="例：对项目进行健康检查 / 审查施工方案 / 生成周报..."
               disabled={running}
-              className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 focus:outline-none disabled:opacity-50"
-            />
+              className="flex-1 bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded-lg px-4 py-2.5 text-sm focus:border-purple-500 focus:outline-none disabled:opacity-50" />
             {running ? (
-              <button onClick={handleStop} className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition flex items-center gap-2">
-                <Square size={14} /> 停止
-              </button>
+              <button onClick={() => { if (task) task.status = 'cancelled'; setTask(task ? { ...task } : null); setRunning(false); }}
+                className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition flex items-center gap-2"><Square size={14} /> 停止</button>
             ) : (
               <button onClick={() => handleStart()} disabled={!goal.trim()}
-                className="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white rounded-lg transition flex items-center gap-2">
-                <Play size={14} /> 执行
-              </button>
+                className="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white rounded-lg transition flex items-center gap-2"><Play size={14} /> 执行</button>
             )}
           </div>
+          {running && <p className="text-xs text-purple-400 mt-2 flex items-center gap-1"><RefreshCw size={12} className="animate-spin" /> Agent 正在自主规划并执行任务…</p>}
         </div>
 
-        {/* 提示词条 — 点击直接执行 */}
+        {/* 快捷指令卡片区 — 分组 */}
         {!task && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-4">
-            <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-purple-400" /> 点击提示词条直接执行
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {PROMPT_CHIPS.map((chip, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleStart(chip.query)}
-                  disabled={running}
-                  className="text-left px-3 py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] hover:border-purple-500/30 rounded-lg transition disabled:opacity-50 group"
-                >
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${
-                    chip.category === 'query' ? 'bg-green-400' :
-                    chip.category === 'compute' ? 'bg-sky-400' :
-                    chip.category === 'knowledge' ? 'bg-purple-400' : 'bg-gray-400'
-                  }`} />
-                  <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-purple-400 transition">
-                    {chip.label}
-                  </span>
-                  <span className="block text-[10px] text-[var(--text-muted)] mt-0.5 truncate">{chip.query}</span>
-                </button>
-              ))}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-[var(--text-primary)]">常用任务模板 <span className="text-[var(--text-muted)] text-xs ml-1">（点击填充指令，修改后执行）</span></h3>
+              <span className="text-[10px] text-[var(--text-muted)]">{PROMPT_CHIPS.length} 条可用</span>
             </div>
-          </div>
-        )}
-
-        {/* 工具列表 */}
-        {!task && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-6">
-            <h3 className="text-sm font-medium mb-3">可用工具 ({engineeringAgent.listTools().length})</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {engineeringAgent.listTools().map(t => (
-                <div key={t.name} className="px-3 py-2 bg-[var(--bg-secondary)] rounded-lg text-xs">
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${
-                    t.category === 'query' ? 'bg-green-400' :
-                    t.category === 'compute' ? 'bg-sky-400' :
-                    t.category === 'mutate' ? 'bg-amber-400' :
-                    t.category === 'knowledge' ? 'bg-purple-400' : 'bg-gray-400'
-                  }`} />
-                  <span className="text-[var(--text-secondary)]">{t.name}</span>
-                  <div className="text-[var(--text-muted)] mt-0.5 truncate">{t.description}</div>
+            {groups.map(group => {
+              const chips = PROMPT_CHIPS.filter(c => c.group === group);
+              const isExpanded = expandedGroups.has(group);
+              return (
+                <div key={group} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden">
+                  <button onClick={() => toggleGroup(group)}
+                    className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-[var(--bg-hover)] transition text-left">
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{group}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[10px] text-[var(--text-muted)]">{chips.length}条</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">{isExpanded ? '▲' : '▼'}</span>
+                    </span>
+                  </button>
+                  {isExpanded && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 border-t border-[var(--border-primary)]">
+                      {chips.map((chip, i) => (
+                        <button key={i} onClick={() => handleChipClick(chip)} disabled={running}
+                          className="text-left px-3 py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] hover:border-purple-500/30 rounded-lg transition disabled:opacity-50 group">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs" title={COMPLEXITY_LABEL[chip.complexity]}>{chip.complexity}</span>
+                            <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-purple-400 transition">{chip.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)]">
+                            {chip.tools && <span className="bg-purple-500/5 px-1 rounded">{chip.tools}</span>}
+                            {chip.estimatedTime && <span>{chip.estimatedTime}</span>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
 
         {/* 执行步骤 */}
         {task && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden mb-4">
+            <div className="px-4 py-3 border-b border-[var(--border-primary)] flex items-center justify-between bg-purple-500/5">
               <div>
-                <span className="text-sm font-medium">任务: {task.goal}</span>
-                <span className={`ml-2 px-1.5 py-0.5 text-[10px] rounded ${
-                  task.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                  task.status === 'failed' ? 'bg-red-500/20 text-red-400' :
-                  task.status === 'cancelled' ? 'bg-gray-500/20 text-[var(--text-secondary)]' :
-                  'bg-sky-500/20 text-sky-400'
-                }`}>
-                  {task.status === 'completed' ? '完成' : task.status === 'failed' ? '失败' : task.status === 'cancelled' ? '已取消' : '执行中'}
+                <span className="text-sm font-medium text-[var(--text-primary)]">任务: {task.goal}</span>
+                <span className={`ml-2 px-1.5 py-0.5 text-[10px] rounded ${task.status==='completed'?'bg-green-500/20 text-green-400':task.status==='failed'?'bg-red-500/20 text-red-400':task.status==='cancelled'?'bg-gray-500/20 text-[var(--text-secondary)]':'bg-sky-500/20 text-sky-400'}`}>
+                  {task.status==='completed'?'完成':task.status==='failed'?'失败':task.status==='cancelled'?'已取消':'执行中'}
                 </span>
               </div>
-              <span className="text-xs text-[var(--text-muted)]">{task.steps.filter(s => s.status === 'completed').length}/{task.steps.length} 步</span>
+              <span className="text-xs text-[var(--text-muted)]">{task.steps.filter(s=>s.status==='completed').length}/{task.steps.length} 步</span>
             </div>
-
             <div className="divide-y divide-[var(--border-primary)]">
               {task.steps.map((step, i) => (
-                <div key={i} className={`px-4 py-3 ${i === task.currentStep && running ? 'bg-purple-500/5' : ''}`}>
+                <div key={i} className={`px-4 py-3 ${i===task.currentStep&&running?'bg-purple-500/5':''}`}>
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">{statusIcon(step.status)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-[var(--text-muted)]">步骤 {i + 1}</span>
-                        {step.actionName && (
-                          <span className="text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded text-[var(--text-secondary)]">
-                            {step.actionName}
-                          </span>
-                        )}
-                        <span className={`text-[10px] font-medium ${
-                          step.status === 'pending' ? 'text-[var(--text-muted)]' :
-                          step.status === 'executing' ? 'text-sky-400' :
-                          step.status === 'completed' ? 'text-green-400' :
-                          'text-red-400'
-                        }`}>
-                          {step.status}
-                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">步骤 {i+1}</span>
+                        {step.actionName && <span className="text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded text-[var(--text-secondary)]">{step.actionName}</span>}
+                        <span className={`text-[10px] font-medium ${step.status==='completed'?'text-green-400':step.status==='executing'?'text-sky-400':step.status==='failed'?'text-red-400':'text-[var(--text-muted)]'}`}>{step.status}</span>
                       </div>
                       <p className="text-sm text-[var(--text-secondary)]">{step.thought}</p>
-                      {step.observation && (
-                        <div className="mt-2 p-2 bg-[var(--bg-secondary)] rounded text-xs text-[var(--text-secondary)] max-h-24 overflow-y-auto">
-                          {step.observation}
-                        </div>
-                      )}
+                      {step.observation && <div className="mt-2 p-2 bg-[var(--bg-secondary)] rounded text-xs text-[var(--text-muted)] max-h-24 overflow-y-auto">{step.observation}</div>}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* 结果摘要 — Word兼容文字输出 */}
+            {/* 结果摘要 */}
             {task.result && (
               <div className="border-t border-[var(--border-primary)]">
                 <div className="flex items-center justify-between px-5 py-3 bg-green-500/5 border-b border-[var(--border-primary)]">
+                  <div className="flex items-center gap-2"><CheckCircle2 size={18} className="text-green-400" /><span className="text-sm font-bold text-[var(--text-primary)]">执行报告</span></div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={22} className="text-green-400" />
-                    <span className="text-base font-bold text-[var(--text-primary)]">执行报告</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleCopyReport} className="px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg flex items-center gap-1.5 transition font-medium" title="复制文本">
-                      <Copy size={20} /> 复制
-                    </button>
-                    <button onClick={handleDownloadWord} className="px-4 py-2 text-sm bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg flex items-center gap-1.5 transition font-medium" title="下载Word文档">
-                      <FileText size={20} /> Word
-                    </button>
-                    <button onClick={handleDownloadPdf} className="px-4 py-2 text-sm bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg flex items-center gap-1.5 transition font-medium" title="打印为PDF">
-                      <FileDown size={20} /> PDF
-                    </button>
-                    <button onClick={handleDownloadHtml} className="px-4 py-2 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg flex items-center gap-1.5 transition font-medium" title="下载HTML">
-                      <Download size={20} /> HTML
-                    </button>
+                    <button onClick={handleCopyReport} className="px-3 py-1.5 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg flex items-center gap-1 font-medium"><Copy size={14} /> 复制</button>
+                    <button onClick={handleDownloadWord} className="px-3 py-1.5 text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg flex items-center gap-1 font-medium"><FileText size={14} /> Word</button>
+                    <button onClick={handleDownloadPdf} className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg flex items-center gap-1 font-medium"><FileDown size={14} /> PDF</button>
+                    <button onClick={handleDownloadHtml} className="px-3 py-1.5 text-xs bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg flex items-center gap-1 font-medium"><Download size={14} /> HTML</button>
                   </div>
                 </div>
-                <div className="p-5 bg-white">
-                  <pre className="text-sm text-gray-800 whitespace-pre-wrap font-sans leading-relaxed" style={{fontFamily:'-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif'}}>{task.result}</pre>
-                </div>
+                <pre className="p-5 text-sm text-[var(--text-primary)] whitespace-pre-wrap font-sans leading-relaxed bg-white max-h-[60vh] overflow-y-auto">{task.result}</pre>
               </div>
             )}
           </div>
         )}
 
-        {/* 错误 */}
-        {error && (
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2">
-            <AlertTriangle size={16} className="text-red-400" />
-            <span className="text-sm text-red-400">{error}</span>
-          </div>
-        )}
+        {error && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2"><XCircle size={16} className="text-red-400" /><span className="text-sm text-red-400">{error}</span></div>}
       </div>
 
-      {/* 确认对话框 */}
+      {/* 确认弹窗 */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-[var(--border-secondary)] rounded-xl p-6 max-w-sm w-full mx-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-6 max-w-sm w-full mx-4">
             <Bot size={24} className="text-purple-400 mb-3" />
-            <h3 className="text-lg font-bold mb-2">确认操作</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-1">
-              Agent 想要执行: <span className="text-purple-400">{confirmAction.action}</span>
-            </p>
-            {Object.keys(confirmAction.params).length > 0 && (
-              <pre className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] p-2 rounded mt-2 mb-3 max-h-32 overflow-y-auto">
-                {JSON.stringify(confirmAction.params, null, 2)}
-              </pre>
-            )}
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">确认操作</h3>
+            <p className="text-sm text-[var(--text-muted)]">Agent 想要执行: <span className="text-purple-400">{confirmAction.action}</span></p>
             <div className="flex gap-3 mt-4">
-              <button onClick={() => { confirmAction.resolve(false); setConfirmAction(null); }}
-                className="flex-1 px-4 py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg text-sm transition">
-                取消
-              </button>
-              <button onClick={() => { confirmAction.resolve(true); setConfirmAction(null); }}
-                className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-lg text-sm transition">
-                确认执行
-              </button>
+              <button onClick={() => { confirmAction.resolve(false); setConfirmAction(null); }} className="flex-1 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm text-[var(--text-primary)]">取消</button>
+              <button onClick={() => { confirmAction.resolve(true); setConfirmAction(null); }} className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-lg text-sm">确认执行</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent提示词编辑器 */}
+      {showPromptEditor && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setShowPromptEditor(false)}>
+          <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
+              <h3 className="font-bold text-sm text-[var(--text-primary)]">Agent系统提示词（管理员）</h3>
+              <button onClick={() => { setAgentPrompt(defaultPrompt); toast('已恢复默认', 'success'); }} className="text-[10px] text-purple-400 hover:text-purple-500 flex items-center gap-1"><RotateCcw size={11} /> 恢复默认</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <p className="text-xs text-[var(--text-muted)] mb-3">此提示词作为Agent规划时的系统指令，影响所有任务的执行策略。建议保留默认核心逻辑，仅调整输出风格和优先级。</p>
+              <textarea value={agentPrompt || defaultPrompt} onChange={e => setAgentPrompt(e.target.value)}
+                rows={10} className="w-full bg-[var(--bg-input)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm resize-none" />
+            </div>
+            <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] shrink-0 rounded-b-xl">
+              <button onClick={() => setShowPromptEditor(false)} className="px-4 py-2 text-sm border border-[var(--border-primary)] rounded-lg text-[var(--text-primary)]">取消</button>
+              <button onClick={saveAgentPrompt} className="px-4 py-2 text-sm bg-purple-500 hover:bg-purple-400 text-white rounded-lg flex items-center gap-1"><Save size={14} /> 保存</button>
             </div>
           </div>
         </div>

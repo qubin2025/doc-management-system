@@ -19,12 +19,6 @@ export interface SkillConfig {
 /** 系统预设技能配置（代码层面） */
 export const PRESET_SKILL_CONFIGS: SkillConfig[] = [
   {
-    id: 'ai_chat', name: '通用AI对话', category: 'analysis',
-    description: '调用AI模型进行分析、总结、问答等通用任务',
-    location: { page: 'AI智能体', view: 'agent-console', desc: '输入目标让Agent自主规划执行多步任务' },
-    icon: '💬',
-  },
-  {
     id: 'construction-review', name: '施工方案审查', category: 'review',
     description: '对施工组织设计进行AI逐章审查，输出合规性报告',
     location: { page: '施工方案审查', view: 'construction-review', desc: '上传施工组织设计，AI逐章审查并生成合规报告' },
