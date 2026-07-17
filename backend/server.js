@@ -18,6 +18,7 @@ import baselinesRouter from './routes/baselines.js';
 import auditRouter from './routes/audit.js';
 import exportRouter from './routes/export.js';
 import syncRouter from './routes/sync.js';
+import mobileRouter from './routes/mobile.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -70,6 +71,7 @@ app.use('/api/baselines', baselinesRouter);
 app.use('/api/audit', auditRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/sync', syncRouter);
+app.use('/api/mobile', mobileRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
