@@ -594,7 +594,134 @@
 <div class="tip">数据管理API: GET /api/data/:project/:type(读) · POST /api/data/:project/:type(写,需角色权限)</div>
 
 <!-- ===== 十三 ===== -->
-<h2>十三、SKILL配置中台价值总结</h2>
+<h2>十三、路演准备 — 检查清单与预判问答</h2>
+
+<h3>13.1 路演前技术检查清单</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:35%">检查项</th><th style="width:35%">操作</th><th style="width:25%">确认标准</th></tr>
+    <tr><td>1</td><td>全部服务启动</td><td>双击 <code>start-all.bat</code></td><td>4个终端窗口均正常</td></tr>
+    <tr><td>2</td><td>前端可访问</td><td>浏览器打开 :5300</td><td>三色主题+登录页正常</td></tr>
+    <tr><td>3</td><td>admin登录</td><td>admin/admin123</td><td>进入项目选择页</td></tr>
+    <tr><td>4</td><td>项目就绪</td><td>确认有测试项目含数据</td><td>工作项/目标/干系人/风险有真实数据</td></tr>
+    <tr><td>5</td><td>模型连通</td><td>首页→模型→全部测试</td><td>DeepSeek显示✓连通正常</td></tr>
+    <tr><td>6</td><td>API Key有效</td><td>检查 <code>backend/.env</code></td><td>DEEPSEEK_API_KEY非占位符</td></tr>
+    <tr><td>7</td><td>数据持久化</td><td>重启后端→刷新前端</td><td>项目/文档/目标数据仍在</td></tr>
+    <tr><td>8</td><td>三色主题</td><td>切换☀️🌅🌙</td><td>各组页面无白屏/文字不可见</td></tr>
+    <tr><td>9</td><td>Agent执行</td><td>AI智能体→点击"项目健康检查"→执行</td><td>3步顺利完成+报告可下载</td></tr>
+    <tr><td>10</td><td>网络离线</td><td>关闭:3000端口→操作前端</td><td>弹窗提示连接失败,非白屏</td></tr>
+  </table>
+</div>
+
+<h3>13.2 路演中领导最可能问的15个问题与应答</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:30%">领导可能问</th><th style="width:65%">建议应答</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>这个系统和我们现在的OA/ERP有什么区别？</strong></td>
+      <td>OA管审批流程，ERP管财务资源。我们管的是<strong>项目目标</strong>——从目标分解到工作执行到成果验收的完整闭环，是OA和ERP之间的空白地带。最大的区别是<strong>AI自主规划</strong>——你输入一句话目标，系统自动拆解多步任务并执行。</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>数据安全吗？项目资料会不会泄露？</strong></td>
+      <td>三重保障：①全部数据存储在<strong>本地服务器</strong>，不经过云端；②发送给AI的数据经过<strong>8类脱敏</strong>（身份证/手机/金额/地址自动替换）；③系统<strong>开源可审计</strong>，不存在后门。比SaaS工具安全一个数量级。</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>AI是怎么工作的？会不会瞎说？</strong></td>
+      <td>现场演示：打开AI智能体→点击"项目健康检查"→展示Agent自主规划3步→展示报告。强调：①Agent不会瞎说，每一步都有明确工具调用（计算KPI/扫描工作项/检索知识库）；②所有输出都基于项目<strong>真实数据</strong>。</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>团队要学多久才能上手？</strong></td>
+      <td>系统有<strong>四步引导流程</strong>：创建项目→模块裁剪→目标管理→开始工作。第一次使用跟着走一遍，15分钟就能上手。管理员需要额外了解用户管理和权限配置，约30分钟。</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>能和我们现有的系统对接吗？</strong></td>
+      <td>系统支持<strong>MCP协议</strong>（Model Context Protocol），可以通过标准接口对接外部系统。数据导入/导出支持JSON和Excel。深度对接需要评估具体系统的API能力。</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>部署需要什么条件？要买什么服务器？</strong></td>
+      <td>最小部署仅需一台普通PC（Node.js+SQLite）。20人以内团队8G内存足够。如需AI离线运行或50人以上团队，建议加一块RTX 4090显卡（约¥1.5万）和PostgreSQL数据库。</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>软件要多少钱？怎么收费？</strong></td>
+      <td>软件本身<strong>开源免费</strong>，无许可费用。成本仅两部分：①部署服务器（一次性，¥0-2万）；②AI API调用费（按量，月均¥50-500/团队）。对比Jira 20人年费约¥1.3万，我们年成本是其1/10。</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><strong>手机端能用吗？工地上没电脑怎么办？</strong></td>
+      <td>手机端配套应用<strong>正在开发中</strong>（后端API已就绪）。当前可通过手机浏览器访问，已做响应式适配。核心功能（查看任务/上报问题/水印拍照）在手机端可用。</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td><strong>AI审查施工方案准吗？能替代专家审查吗？</strong></td>
+      <td>AI审查是<strong>辅助工具</strong>，不是替代专家。它能快速扫描合规性问题（规范引用、章节完整性、常见缺陷），将专家从重复性检查中解放出来，聚焦复杂判断。准确率取决于AI模型能力，当前DeepSeek-V3在工程规范识别上表现良好。</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td><strong>如果AI服务宕机了怎么办？</strong></td>
+      <td>系统有<strong>7模型降级链</strong>：DeepSeek→通义千问→智谱GLM→本地Ollama。一个模型挂了自动切换下一个。即使全部外部AI不可用，系统仍可正常运行（文档管理/工作指南/进度跟踪不受影响），只是AI审查/生成功能暂时离线。</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td><strong>能导出报表吗？领导要看周报怎么办？</strong></td>
+      <td>三个方式：①Agent执行"生成周报"自动汇总本周工作项+KPI+问题→Word/PDF下载；②仪表盘数据可截图或打印（Ctrl+P→存PDF）；③数据导出支持JSON格式完整备份。</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td><strong>不同项目类型（建筑/市政）怎么区分？</strong></td>
+      <td>系统内置<strong>模块裁剪引擎</strong>：新项目创建后填写问卷（类型/规模/复杂度），系统自动推荐必选/推荐/可选模块。建筑项目和市政项目的工作指南完全不同（分别对应DB11/T695和DB11/T808规程）。</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td><strong>人员离职了，他的工作数据会不会丢？</strong></td>
+      <td>不会。数据存储在<strong>服务器数据库</strong>中，按项目维度管理，不绑定个人账户。人员离职后管理员可禁用其账户，其创建的工作项/文档/表单数据全部保留。系统自动每60秒同步一次前端数据到后端。</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td><strong>你们团队几个人？后续维护谁来负责？</strong></td>
+      <td>系统代码<strong>完全开源</strong>，不依赖特定开发团队。任何有React/Node.js经验的开发人员都可以维护。文档体系完整（CLAUDE.md+开发日志+操作说明书+AI白皮书），交接成本低。</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td><strong>和飞书/钉钉/Jira比，为什么要选这个？</strong></td>
+      <td><strong>三个不可替代的优势</strong>：①AI自主规划（一句话多步执行，竞品无）；②工程行业垂直（DB11规程+全过程200工作项，竞品需数月配置）；③数据主权（私有部署+开源，满足等保合规）。如果这三个点对你们不重要，选飞书/钉钉更合适。</td>
+    </tr>
+  </table>
+</div>
+
+<h3>13.3 路演演示建议路径</h3>
+<div class="card">
+  <ol style="padding-left:1.5rem;font-size:.85rem;line-height:2.2">
+    <li><strong>开门见山</strong>（1分钟）：这是全过程工程咨询管理系统，一句话概括——"目标驱动的AI智能项目管理平台"</li>
+    <li><strong>核心亮点</strong>（3分钟）：演示Agent输入"项目健康检查"→3步自动执行→生成报告→下载Word</li>
+    <li><strong>行业深度</strong>（2分钟）：展示裁剪引擎→问卷→必选/推荐标记→跳转工作指南看标记效果</li>
+    <li><strong>安全兜底</strong>（1分钟）：展示三色主题+数据脱敏+权限管控+审计日志</li>
+    <li><strong>开放提问</strong>（5分钟）：按13.2表格预判问题作答</li>
+    <li><strong>收尾</strong>（1分钟）：总结三句话——目标驱动/AI智能/数据安全</li>
+  </ol>
+  <p style="margin-top:.5rem;font-size:.8rem;color:var(--muted)">总时长控制在12-15分钟，以演示为主、讲解为辅。</p>
+</div>
+
+<h3>13.4 路演中绝对不演示/不提的内容</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+  <ol style="padding-left:1.5rem;font-size:.85rem;line-height:2">
+    <li><strong>不演示知识图谱3D页</strong> — 数据量少时展示效果弱，且暗色适配尚未完全</li>
+    <li><strong>不主动提AI工具开发争议</strong> — 如被问到，以"系统代码开源可审计"回应</li>
+    <li><strong>不提当前还在开发中的功能</strong> — 只说"已支持"和"规划中"</li>
+    <li><strong>不说具体人数和排期</strong> — 只说"根据需求可灵活调整"</li>
+    <li><strong>不展示浏览器控制台</strong> — 避免Network错误/console.warn干扰</li>
+  </ol>
+</div>
+
+<!-- ===== 十四 ===== -->
+<h2>十四、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
