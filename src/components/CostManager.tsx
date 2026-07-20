@@ -89,18 +89,18 @@ const CostManager: React.FC<Props> = ({ onBack }) => {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Calculator className="w-5 h-5 text-cyan-500" />添加造价条目</h3>
             <div className="space-y-3">
-              <div><label className="block text-xs text-gray-500 mb-1">类别</label><select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-              <div><label className="block text-xs text-gray-500 mb-1">项目名称</label><input value={form.item} onChange={e => setForm(p => ({ ...p, item: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
+              <div><label className="block text-xs text-gray-500 mb-1">类别</label><select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white">{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div><label className="block text-xs text-gray-500 mb-1">项目名称</label><input type="text" value={form.item} onChange={e => setForm(p => ({ ...p, item: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
               <div className="grid grid-cols-3 gap-2">
-                <div><label className="block text-xs text-gray-500 mb-1">单位</label><input value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-                <div><label className="block text-xs text-gray-500 mb-1">数量</label><input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: parseFloat(e.target.value) || 0 }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-                <div><label className="block text-xs text-gray-500 mb-1">单价(元)</label><input type="number" value={form.unitPrice} onChange={e => setForm(p => ({ ...p, unitPrice: parseFloat(e.target.value) || 0 }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
+                <div><label className="block text-xs text-gray-500 mb-1">单位</label><input type="text" value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
+                <div><label className="block text-xs text-gray-500 mb-1">数量</label><input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: parseFloat(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
+                <div><label className="block text-xs text-gray-500 mb-1">单价(元)</label><input type="number" value={form.unitPrice} onChange={e => setForm(p => ({ ...p, unitPrice: parseFloat(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
               </div>
-              <div><label className="block text-xs text-gray-500 mb-1">日期</label><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-              <div className="bg-gray-50 rounded-lg p-3 text-sm font-bold">合计: {Math.round(form.quantity * form.unitPrice * 100) / 100} 元</div>
+              <div><label className="block text-xs text-gray-500 mb-1">日期</label><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
+              <div className="bg-gray-50 rounded-lg p-3 text-sm font-bold text-gray-800">合计: {Math.round(form.quantity * form.unitPrice * 100) / 100} 元</div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowAdd(false)} className="px-4 py-1.5 border rounded-lg text-sm">取消</button>
+              <button onClick={() => setShowAdd(false)} className="px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700">取消</button>
               <button onClick={add} className="px-4 py-1.5 bg-cyan-500 text-white rounded-lg text-sm">添加</button>
             </div>
           </div>
