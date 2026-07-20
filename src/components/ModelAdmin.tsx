@@ -13,13 +13,17 @@ const ModelAdmin: React.FC<Props> = ({ onClose }) => {
   const fetchModels = async () => {
     setLoading(true);
     try {
-      const t = localStorage.getItem('doc-system-token') || '';
+      const t = localStorage.getItem('doc-system-token') || localStorage.getItem('doc-system-auth') ? JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token : '';
       const r = await fetch('/api/ai/models', { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` } });
       if (r.ok) {
         const d = await r.json();
         setModels(d.models || []);
+      } else if (r.status === 401) {
+        toast('请先登录后再测试', 'error');
       }
-    } catch { toast('获取模型列表失败', 'error'); }
+    } catch (e: any) {
+      toast('获取模型列表失败: ' + (e.message || '后端未启动'), 'error');
+    }
     setLoading(false);
   };
 
@@ -29,19 +33,23 @@ const ModelAdmin: React.FC<Props> = ({ onClose }) => {
     setTesting(p => ({ ...p, [modelId]: true }));
     const start = Date.now();
     try {
-      const t = localStorage.getItem('doc-system-token') || '';
+      const auth = localStorage.getItem('doc-system-auth');
+      const t = auth ? JSON.parse(auth)?.token : (localStorage.getItem('doc-system-token') || '');
+      if (!t) { toast('未登录，请先登录', 'error'); setTesting(p => ({ ...p, [modelId]: false })); return; }
       const r = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
         body: JSON.stringify({ messages: [{ role: 'user', content: '回复OK' }], model: modelId }),
       });
       const latency = Date.now() - start;
+      const statusCode = r.status;
       setModels(prev => prev.map(m => m.id === modelId ? { ...m, tested: true, latency, status: r.ok ? 'online' : 'offline' } : m));
       if (r.ok) toast(`${modelId} 连通正常 (${latency}ms)`, 'success');
-      else toast(`${modelId} 返回错误`, 'error');
-    } catch {
+      else if (statusCode === 401) toast(`${modelId} 认证失败，请重新登录`, 'error');
+      else toast(`${modelId} 返回错误 (HTTP ${statusCode})`, 'error');
+    } catch (e: any) {
       setModels(prev => prev.map(m => m.id === modelId ? { ...m, tested: true, status: 'offline' } : m));
-      toast(`${modelId} 连接失败`, 'error');
+      toast(`${modelId} 连接失败: ${e.message || '后端未启动或网络不通'}`, 'error');
     }
     setTesting(p => ({ ...p, [modelId]: false }));
   };
