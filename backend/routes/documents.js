@@ -135,7 +135,7 @@ router.post('/upload', requirePermission('can_upload'), (req, res) => {
 });
 
 // 下载文档（获取文件数据）
-router.get('/download/:id', requireAuth, (req, res) => {
+router.get('/download/:id', requireAuth, requirePermission('can_download'), (req, res) => {
   const db = getDb();
   const doc = db.prepare('SELECT file_name, file_data, file_path FROM documents WHERE id = ?').get(req.params.id);
 
