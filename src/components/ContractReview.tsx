@@ -274,7 +274,7 @@ ${fileContent}`;
             {/* 输出文件夹 */}
             <div className="px-3 py-2 border-b bg-gray-50 shrink-0">
               <label className="text-xs text-gray-500 flex items-center gap-1 mb-1"><FolderOpen className="w-3 h-3"/>输出文件夹(本地)</label>
-              <input value={outputFolder} onChange={e => { setOutputFolder(e.target.value); localStorage.setItem('contract-output-folder', e.target.value); }} placeholder="如: D:\报告\合同审查" className="w-full px-2 py-1 text-xs border rounded"/>
+              <input value={outputFolder} onChange={e => { setOutputFolder(e.target.value); localStorage.setItem('contract-output-folder', e.target.value); }} placeholder="如: D:\报告\合同审查" className="w-full px-2 py-1 text-xs border border-gray-300 rounded"/>
             </div>
             <div className="flex-1 overflow-hidden hover:overflow-y-auto">
               {history.length === 0 ? (
@@ -311,7 +311,7 @@ ${fileContent}`;
             <div className="flex items-center gap-2">
               <div><h1 className="text-sm font-bold text-gray-800">合同审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 关键条款提取 · 风险识别</p></div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
-              <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-xs bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
+              <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
             </div>
           </div>
           <div className="flex items-center gap-1">

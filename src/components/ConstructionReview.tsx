@@ -296,7 +296,7 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
         {showHistory && (
           <div className="h-full flex flex-col">
             <div className="px-3 py-3 border-b flex items-center justify-between shrink-0"><h3 className="text-xs font-semibold text-gray-700">历史审查</h3><button onClick={() => setShowHistory(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button></div>
-            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('constr-output-dir',e.target.value)}} placeholder="如: D:\报告\施工审查" className="w-full px-2 py-1 text-xs border rounded"/></div>
+            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('constr-output-dir',e.target.value)}} placeholder="如: D:\报告\施工审查" className="w-full px-2 py-1 text-xs border border-gray-300 rounded"/></div>
             <div className="flex-1 overflow-hidden hover:overflow-y-auto">
               {reviewHistory.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">暂无记录</p> : reviewHistory.map(r => (
                 <div key={r.id} className="px-3 py-2 border-b border-gray-50 cursor-pointer hover:bg-amber-50" onClick={() => { setResults(r.results); setReport(r.report); }}>
@@ -320,7 +320,7 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
               <span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/>
               <span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span>
             </div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-xs bg-white font-medium text-gray-600">
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600">
               <option value="auto">自动</option>
               {availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}
             </select>

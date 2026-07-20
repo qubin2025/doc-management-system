@@ -338,7 +338,7 @@ const AiChatPage: React.FC<{
             <div className="relative">
               <button onClick={() => setShowTemplateMenu(!showTemplateMenu)} className="flex items-center gap-1 px-2 py-1 text-sm text-gray-500 hover:bg-gray-50 rounded-lg">模板: {template} <ChevronDown className="w-3 h-3" /></button>
               {showTemplateMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-30 p-1 min-w-[160px]">
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-30 p-1 min-w-[160px]">
                   {Object.keys(templates).map(t => (
                     <div key={t} className={`flex items-center group ${template === t ? 'bg-blue-50' : ''}`}>
                       <button onClick={() => { setTemplate(t); setShowTemplateMenu(false); }}
@@ -483,7 +483,7 @@ const AiChatPage: React.FC<{
                         <Sparkles className="w-3 h-3" />{model==='自动选择'?'自动':model.split('-').pop()}
                       </button>
                       {showModelMenu && (
-                        <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border rounded-xl shadow-xl z-30 p-1">
+                        <div className="absolute bottom-full right-0 mb-2 w-44 bg-white border border-gray-300 rounded-xl shadow-xl z-30 p-1">
                           {MODELS.map(m => (
                             <button key={m} onClick={() => { setModel(m); localStorage.setItem('ai-model', m); setShowModelMenu(false); }}
                               className={`block w-full text-left px-3 py-1.5 text-sm rounded-lg ${model===m?'bg-blue-50 text-blue-600':'text-gray-600 hover:bg-gray-50'}`}>{m}</button>
@@ -533,7 +533,7 @@ const AiChatPage: React.FC<{
             <h3 className="text-lg font-bold text-gray-800 mb-2">编辑模板: {editingTemplate}</h3>
             <p className="text-xs text-gray-500 mb-3">修改模板提示词，AI将按此框架生成内容。留空则不限制输出格式。</p>
             <textarea value={editTemplateContent} onChange={e => setEditTemplateContent(e.target.value)}
-              className="w-full h-48 border rounded-lg p-3 text-sm font-mono resize-none outline-none" />
+              className="w-full h-48 border border-gray-300 rounded-lg p-3 text-sm font-mono resize-none outline-none" />
             <div className="flex items-center gap-2 mt-4">
               <button onClick={() => {
                 const updated = { ...templates, [editingTemplate]: editTemplateContent };
