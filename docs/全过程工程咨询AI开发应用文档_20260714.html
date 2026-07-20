@@ -569,7 +569,32 @@
 </table>
 
 <!-- ===== 十二 ===== -->
-<h2>十二、SKILL配置中台价值总结</h2>
+<h2>十二、权限体系补全 — 下载控制+数据管理</h2>
+
+<h3>12.1 问题发现</h3>
+<p>审计发现系统权限存在漏洞：<code>can_download</code>权限虽已定义但未在下载路由中生效（仅<code>requireAuth</code>），干系人/风险/资源等模块数据存储在localStorage，无后端权限控制。</p>
+
+<h3>12.2 修复措施</h3>
+<table>
+  <tr><th>修复项</th><th>文件</th><th>改动</th></tr>
+  <tr><td>下载权限生效</td><td><code>routes/documents.js</code></td><td>download端点增加<code>requirePermission('can_download')</code></td></tr>
+  <tr><td>数据管理路由</td><td><code>routes/data.js</code>(新增)</td><td>干系人/风险/资源统一后端存储+权限控制</td></tr>
+  <tr><td>路由注册</td><td><code>server.js</code></td><td><code>/api/data</code>挂载</td></tr>
+</table>
+
+<h3>12.3 四种角色最终权限矩阵</h3>
+<table>
+  <tr><th>操作</th><th>admin</th><th>project_manager</th><th>construction_unit</th><th>viewer</th></tr>
+  <tr><td>下载文档</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅(can_download)</td><td style="color:var(--green)">✅(can_download)</td><td style="color:var(--red)">❌</td></tr>
+  <tr><td>查看干系人/风险/资源</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td></tr>
+  <tr><td>编辑干系人/风险/资源</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td></tr>
+  <tr><td>删除干系人/风险/资源</td><td style="color:var(--green)">✅</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td><td style="color:var(--red)">❌</td></tr>
+</table>
+
+<div class="tip">数据管理API: GET /api/data/:project/:type(读) · POST /api/data/:project/:type(写,需角色权限)</div>
+
+<!-- ===== 十三 ===== -->
+<h2>十三、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
