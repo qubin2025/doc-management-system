@@ -205,7 +205,42 @@ Agent智能体 — ReAct推理循环 (规划→观察→推理→执行→恢复
 | `kgPipeline` | kgPipeline.ts | KG自动构建管道 |
 | `vectorStore` | vectorStore.ts | 本地向量存储 |
 
-## 八、开发保障机制
+## 八、全局能力 — 三色主题系统
+
+### 架构
+```
+themeEngine.ts (状态管理)
+    ↓
+index.css (30+CSS变量 × 3套主题)
+    ↓
+ThemeSwitcher.tsx (UI切换器)
+    ↓
+Tailwind darkMode: 'class' (暗色自动适配)
+```
+
+### 核心文件
+
+| 文件 | 用途 |
+|------|------|
+| `src/data/themeEngine.ts` | 主题引擎: getTheme/setTheme/applyTheme/initTheme, localStorage持久化 |
+| `src/index.css` | CSS变量(亮白/暖色/暗色三套), 全局暗色覆盖规则, 输入框/弹窗/表格适配 |
+| `src/components/ThemeSwitcher.tsx` | 三按钮下拉菜单（Sun/Moon/Sunrise），实时切换 |
+
+### 组件适配原则
+1. 新组件使用CSS变量: `bg-[var(--bg-card)]` `text-[var(--text-primary)]`
+2. 旧组件依赖 index.css 全局覆盖规则
+3. **所有input必须**: `type="text" border-gray-300 text-gray-800 bg-white`
+4. 弹窗边框兜底: `.dark .fixed .border:not([class*="border-"])`
+5. 新增组件参考: `memory/reference_theme_system.md`
+
+### 配色方案
+| 主题 | 背景 | 文字 | 强调 | 场景 |
+|------|------|------|------|------|
+| ☀️ 亮白 | #fff | #1f2937 | #3b82f6 蓝 | 白天 |
+| 🌅 暖色 | #fefaf6 | #4a3728 | #c87941 橙 | 护眼 |
+| 🌙 暗色 | #0f172a | #e2e8f0 | #38bdf8 天蓝 | 夜间 |
+
+## 九、开发保障机制
 
 ### 保持方向正确的核心要素
 1. **CLAUDE.md 全局最高原则** — 每次修改前重读，确保对齐
