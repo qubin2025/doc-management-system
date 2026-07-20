@@ -467,7 +467,45 @@
 <div class="tip">三色主题配色方案已存档至项目记忆系统（reference_theme_system.md），作为可复用知识资产供未来开发参考。</div>
 
 <!-- ===== 十 ===== -->
-<h2>十、SKILL配置中台价值总结</h2>
+<h2>十、v4.1收尾阶段 — 暗色扫尾+后端加固+部署准备</h2>
+
+<h3>10.1 暗色适配扫尾（Phase 1）</h3>
+<table>
+  <tr><th>组件</th><th>改动</th><th>提交</th></tr>
+  <tr><td>施工方案审查</td><td>border→border-gray-300</td><td><code>fcb9b5e</code></td></tr>
+  <tr><td>合同审查</td><td>border→border-gray-300</td><td><code>fcb9b5e</code></td></tr>
+  <tr><td>招投标审查</td><td>border→border-gray-300</td><td><code>fcb9b5e</code></td></tr>
+  <tr><td>AI对话页</td><td>border→border-gray-300</td><td><code>fcb9b5e</code></td></tr>
+  <tr><td>知识图谱3D页</td><td>页面UI跟随系统data-theme切换</td><td><code>6cca1b9</code></td></tr>
+</table>
+
+<h3>10.2 后端加固（Phase 2）</h3>
+<table>
+  <tr><th>交付</th><th>文件</th><th>说明</th></tr>
+  <tr><td>API并发压力测试</td><td><code>scripts/concurrency-test.js</code></td><td>8用户×5轮,自动创建/清理,输出延迟+锁冲突统计</td></tr>
+  <tr><td>一键启动脚本</td><td><code>start-all.bat</code></td><td>后端+前端+Python OCR/LightRAG+Docker Neo4j/RAGFlow</td></tr>
+</table>
+
+<h3>10.3 数据持久化方案总结</h3>
+<table>
+  <tr><th>数据类型</th><th>主存储</th><th>重启后</th><th>换浏览器</th><th>解决状态</th></tr>
+  <tr><td>项目/文档/用户</td><td>SQLite</td><td style="color:var(--green)">✅ 保留</td><td style="color:var(--green)">✅ 保留</td><td>已解决</td></tr>
+  <tr><td>工作项/表单/配置</td><td>localStorage→60秒同步SQLite</td><td style="color:var(--green)">✅ 保留</td><td style="color:var(--red)">❌ 丢失</td><td>可从后端GET恢复</td></tr>
+  <tr><td>向量知识库</td><td>IndexedDB</td><td style="color:var(--green)">✅ 保留</td><td style="color:var(--red)">❌ 丢失</td><td>导出/导入备份</td></tr>
+</table>
+<div class="warn">浏览器清缓存仍会导致向量知识库丢失。中期方案为云端向量库同步。</div>
+
+<h3>10.4 最终完成状态</h3>
+<table>
+  <tr><th style="width:12%">类别</th><th>完成项</th><th>待完成项</th></tr>
+  <tr><td><strong>前端</strong></td><td>三色主题全局覆盖（20+组件），AgentConsole升级，SkillPanel中台，入口流程重构</td><td>手机端前端完整开发</td></tr>
+  <tr><td><strong>后端</strong></td><td>14个路由50+API，OAuth架构预留，PG适配层，并发测试脚本</td><td>OAuth实际对接，PG生产验证</td></tr>
+  <tr><td><strong>部署</strong></td><td>HTTPS模板，cron/logrotate配置，一键启动脚本，Docker健康检查</td><td>真实服务器上激活</td></tr>
+  <tr><td><strong>文档</strong></td><td>CLAUDE.md，开发日志，操作说明书，AI白皮书，竞品分析，评估报告，架构图</td><td>-</td></tr>
+</table>
+
+<!-- ===== 十一 ===== -->
+<h2>十一、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
