@@ -104,11 +104,11 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="输入关键词搜索..." className="w-full pl-9 pr-8 py-2 border rounded-lg text-sm" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              placeholder="输入关键词搜索..." className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" />
             {search && <button onClick={handleClear} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><X className="w-4 h-4" /></button>}
           </div>
-          <div className="flex rounded-lg border overflow-hidden text-xs">
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden text-xs">
             {(['fulltext','semantic','hybrid'] as const).map(m => (
               <button key={m} onClick={() => setSearchMode(m)}
                 className={`px-2.5 py-1.5 ${searchMode===m?'bg-blue-500 text-white':'bg-white text-gray-500 hover:bg-gray-50'}`}>
@@ -119,7 +119,7 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
           <button onClick={handleSearch} disabled={loading} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 disabled:opacity-50">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : '搜索'}
           </button>
-          <button onClick={handleShowAll} className="px-3 py-1.5 text-xs border rounded-lg hover:bg-gray-50">全部</button>
+          <button onClick={handleShowAll} className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">全部</button>
         </div>
 
         {/* 分类 */}
