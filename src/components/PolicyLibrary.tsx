@@ -136,7 +136,7 @@ const PolicyLibrary: React.FC<Props> = ({ onBack }) => {
           </aside>
           <main className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-4">
-              <div className="relative flex-1"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索标题/文号/机构..." className="w-full pl-9 pr-8 py-2 border rounded-lg text-sm" />{search && <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><X className="w-4 h-4" /></button>}</div>
+              <div className="relative flex-1"><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索标题/文号/机构..." className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" />{search && <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"><X className="w-4 h-4" /></button>}</div>
               <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm"><option value="全部">全部状态</option><option value="现行有效">✓ 现行有效</option><option value="即将实施">即将实施</option><option value="已废止">已废止</option></select>
             </div>
             <div className="bg-white rounded-xl border">
