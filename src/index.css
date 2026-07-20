@@ -293,6 +293,12 @@ th, td { white-space: nowrap; }
 .dark .bg-green-100 { background-color: rgba(74,222,128,0.15); }
 .dark .bg-red-100 { background-color: rgba(248,113,113,0.15); }
 .dark .bg-amber-100 { background-color: rgba(251,191,36,0.15); }
+.dark .bg-amber-50 { background-color: rgba(251,191,36,0.08); }
+.dark .border-amber-200 { border-color: rgba(251,191,36,0.2); }
+.dark .text-amber-600 { color: #fbbf24; }
+.dark .text-amber-700 { color: #fcd34d; }
+.dark .text-red-700 { color: #fca5a5; }
+.dark .text-green-700 { color: #86efac; }
 
 /* 暗色下全局对话框输入框适配 */
 .dark input[type="text"],

@@ -53,7 +53,7 @@ const SupplierManager: React.FC<Props> = ({ onBack }) => {
         {/* 搜索 */}
         <div className="relative mb-4">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索供应商名称/类别/联系人..." className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索供应商名称/类别/联系人..." className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" />
         </div>
 
         {/* 列表 */}
@@ -94,16 +94,16 @@ const SupplierManager: React.FC<Props> = ({ onBack }) => {
             <h3 className="text-lg font-bold mb-4">添加供应商</h3>
             <div className="space-y-3">
               {[{ label: '名称', key: 'name' }, { label: '类别', key: 'category' }, { label: '联系人', key: 'contact' }, { label: '电话', key: 'phone' }, { label: '备注', key: 'remark' }].map(f => (
-                <div key={f.key}><label className="block text-xs text-gray-500 mb-1">{f.label}</label><input value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
+                <div key={f.key}><label className="block text-xs text-gray-500 mb-1">{f.label}</label><input type="text" value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
               ))}
               <div><label className="block text-xs text-gray-500 mb-1">评分</label>
-                <select value={form.rating} onChange={e => setForm(p => ({ ...p, rating: parseInt(e.target.value) }))} className="w-full px-3 py-2 border rounded-lg text-sm">
+                <select value={form.rating} onChange={e => setForm(p => ({ ...p, rating: parseInt(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white">
                   {[1,2,3,4,5].map(r => <option key={r} value={r}>{'⭐'.repeat(r)}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowAdd(false)} className="px-4 py-1.5 border rounded-lg text-sm">取消</button>
+              <button onClick={() => setShowAdd(false)} className="px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700">取消</button>
               <button onClick={add} className="px-4 py-1.5 bg-orange-500 text-white rounded-lg text-sm">添加</button>
             </div>
           </div>
