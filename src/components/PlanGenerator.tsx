@@ -201,7 +201,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
         {showHistory && (
           <div className="h-full flex flex-col">
             <div className="px-3 py-3 border-b flex items-center justify-between shrink-0"><h3 className="text-xs font-semibold text-gray-700">方案历史</h3><button onClick={() => setShowHistory(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button></div>
-            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('plan-output-dir',e.target.value)}} placeholder="如: D:\方案" className="w-full px-2 py-1 text-xs border rounded"/></div>
+            <div className="px-3 py-2 border-b bg-gray-50 shrink-0"><label className="text-xs text-gray-500 mb-1 block">输出文件夹(本地)</label><input value={outputDir} onChange={e=>{setOutputDir(e.target.value);localStorage.setItem('plan-output-dir',e.target.value)}} placeholder="如: D:\方案" className="w-full px-2 py-1 text-xs border border-gray-300 rounded"/></div>
             <div className="flex-1 overflow-hidden hover:overflow-y-auto">
               {planHistory.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">暂无记录</p> : planHistory.map(r => (
                 <div key={r.id} className="px-3 py-2 border-b border-gray-50 cursor-pointer hover:bg-green-50" onClick={() => { setPlanType(r.planType); setChapters(r.chapters); }}>
@@ -227,7 +227,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                 {aiStatus === 'online' ? 'AI在线' : aiStatus === 'offline' ? '离线模式' : '检测中'}
               </span>
             </div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border rounded-full text-xs bg-white font-medium text-gray-600">
+            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600">
               <option value="auto">自动</option>
               {availableModels.map(m => <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>)}
             </select>
@@ -252,18 +252,18 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
             <div className="space-y-4">
               {/* 方案类型 */}
               <div><label className="block text-xs font-medium text-gray-600 mb-1">方案类型</label>
-                <select value={planType} onChange={e => setPlanType(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">{PLAN_TEMPLATES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+                <select value={planType} onChange={e => setPlanType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">{PLAN_TEMPLATES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
 
               {/* 字数要求 */}
               <div className="bg-gray-50 rounded-lg p-3">
                 <label className="block text-xs font-medium text-gray-600 mb-2">每章字数范围</label>
                 <div className="flex items-center gap-3">
                   <div className="flex-1"><span className="text-xs text-gray-500">最少</span>
-                    <select value={wordCount.min} onChange={e => setWordCount(p => ({ ...p, min: Number(e.target.value) }))} className="w-full px-2 py-1.5 border rounded text-xs mt-0.5">
+                    <select value={wordCount.min} onChange={e => setWordCount(p => ({ ...p, min: Number(e.target.value) }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mt-0.5">
                       {[100, 200, 300, 500, 800].map(v => <option key={v} value={v}>{v}字</option>)}</select></div>
                   <span className="text-gray-400 pt-4">—</span>
                   <div className="flex-1"><span className="text-xs text-gray-500">最多</span>
-                    <select value={wordCount.max} onChange={e => setWordCount(p => ({ ...p, max: Number(e.target.value) }))} className="w-full px-2 py-1.5 border rounded text-xs mt-0.5">
+                    <select value={wordCount.max} onChange={e => setWordCount(p => ({ ...p, max: Number(e.target.value) }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mt-0.5">
                       {[300, 500, 800, 1200, 2000].map(v => <option key={v} value={v}>{v}字</option>)}</select></div>
                 </div>
               </div>
@@ -277,7 +277,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {[{k:'scale',l:'建设规模',ph:'如: 地上20层/地下3层'},{k:'location',l:'建设地点',ph:'如: 北京市朝阳区'},{k:'investment',l:'投资额',ph:'如: 3.2亿元'},{k:'type',l:'结构类型',ph:'如: 框架剪力墙'},{k:'depth',l:'基坑深度',ph:'如: -18m'},{k:'special',l:'特殊要求',ph:'如: 地铁旁'}].map(f => (<div key={f.k}><label className="block text-xs font-medium text-gray-600 mb-1">{f.l}</label><input value={(params as any)[f.k]} onChange={e => setParams(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} className="w-full px-3 py-2 border rounded-lg text-xs"/></div>))}
+                  {[{k:'scale',l:'建设规模',ph:'如: 地上20层/地下3层'},{k:'location',l:'建设地点',ph:'如: 北京市朝阳区'},{k:'investment',l:'投资额',ph:'如: 3.2亿元'},{k:'type',l:'结构类型',ph:'如: 框架剪力墙'},{k:'depth',l:'基坑深度',ph:'如: -18m'},{k:'special',l:'特殊要求',ph:'如: 地铁旁'}].map(f => (<div key={f.k}><label className="block text-xs font-medium text-gray-600 mb-1">{f.l}</label><input value={(params as any)[f.k]} onChange={e => setParams(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs"/></div>))}
                 </div>
                 {/* 项目概况文档上传 */}
                 <div className="bg-gray-50 rounded-lg p-3">
@@ -349,7 +349,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                 <div key={i} className={`bg-white rounded-xl border p-4 ${ch.loading?'animate-pulse':''} ${ch.auto&&ch.content?'border-l-4 border-l-green-500':''}`}>
                   <div className="flex items-center justify-between mb-2"><h3 className="font-semibold text-sm flex items-center gap-1.5">{ch.name}{ch.auto&&ch.content&&<span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">自动</span>}</h3>{ch.loading&&<Loader className="w-4 h-4 text-green-500 animate-spin"/>}</div>
                   {ch.loading?<div className="space-y-2"><div className="h-3 bg-gray-200 rounded w-full"/><div className="h-3 bg-gray-200 rounded w-3/4"/></div>
-                  :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border rounded-lg p-3 resize-y outline-none font-mono"/>}
+                  :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border border-gray-300 rounded-lg p-3 resize-y outline-none font-mono"/>}
                 </div>
               ))}
             </div>
