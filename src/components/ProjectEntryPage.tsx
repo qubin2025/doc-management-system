@@ -133,8 +133,6 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
       {/* 顶部导航 — 毛玻璃悬浮+背景图 */}
       <header className={`sticky top-0 z-30 ${t.hdr}`}
         style={{ backgroundImage: 'url(/project-header-bg.png)', backgroundSize: 'cover', backgroundPosition: 'top', filter: 'brightness(0.9)' }}>
-        <div className={`absolute inset-0 z-0 ${light ? 'bg-white/65' : 'bg-blue-950/65'}`} />
-        <div className="relative z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 ${t.logoBg} flex items-center justify-center rounded-lg ${t.logoShadow}`}>
@@ -163,7 +161,6 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               <LogOut className="w-4 h-4" /> 退出
             </button>
           </div>
-        </div>
         </div>
       </header>
 
@@ -286,10 +283,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
       </div>
 
       {/* AI 对话框 — 底端深蓝渐变毛玻璃+背景图 */}
-      <div className={`backdrop-blur-xl py-4 border-t relative ${t.aiBar}`}
+      <div className={`backdrop-blur-xl py-4 border-t ${t.aiBar}`}
         style={{ backgroundImage: 'url(/project-header-bg.png)', backgroundSize: 'cover', backgroundPosition: 'bottom', filter: 'brightness(0.9)' }}>
-        <div className={`absolute inset-0 z-0 ${light ? 'bg-white/65' : 'bg-blue-950/65'}`} />
-        <div className="relative z-10">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -364,8 +359,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             </button>
           </div>
         </div>
-        </div>{/* 关闭 relative z-10 包装层 */}
-      </div>{/* 关闭 AI bar 外层 */}
+      </div>{/* 关闭 AI bar */}
 
       {/* ========== 项目编辑弹窗 ========== */}
       {showEditModal && editTarget && (
