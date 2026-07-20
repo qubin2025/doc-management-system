@@ -289,6 +289,29 @@ th, td { white-space: nowrap; }
 .dark .border-blue-200 { border-color: rgba(59,130,246,0.2); }
 .dark .border-blue-300 { border-color: rgba(59,130,246,0.3); }
 
+/* 暗色下全局对话框输入框适配 */
+.dark input[type="text"],
+.dark input[type="password"],
+.dark input[type="url"],
+.dark input[type="number"],
+.dark input[type="search"],
+.dark textarea,
+.dark select {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
+}
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #38bdf8;
+  outline: none;
+}
+
 /* 暗色下表格行hover — 深色金黄高亮 */
 .dark .hover\:bg-gray-50:hover { background-color: #1e293b; color: #c8960c; }
 .dark .hover\:bg-gray-50:hover * { color: #c8960c !important; }
