@@ -721,7 +721,60 @@
 </div>
 
 <!-- ===== 十四 ===== -->
-<h2>十四、SKILL配置中台价值总结</h2>
+<h2>十四、AI数据治理与数字资产保护</h2>
+
+<h3>14.1 问题提出</h3>
+<p>系统深度集成AI能力后，核心关切变为：公司/建设方的数据资产是否会被大模型公司用于训练？是否存在AI盲点被利用窃取数据的风险？如何构建公司的数字资产壁垒？</p>
+
+<h3>14.2 三大核心风险</h3>
+<table>
+  <tr><th>风险</th><th>描述</th><th>本系统已有防护</th></tr>
+  <tr><td><strong>A. 大模型公司获取数据训练</strong></td><td>施工方案/合同/造价数据通过AI API发送至外部</td><td>✅ 8类脱敏+AI权限控制+私有部署</td></tr>
+  <tr><td><strong>B. AI盲点被利用提取数据</strong></td><td>提示注入/越狱/多轮对话诱导AI泄露</td><td>⚠️ 前端脱敏仅PII，未实施注入检测</td></tr>
+  <tr><td><strong>C. 内部无意识泄露</strong></td><td>员工将敏感文档粘贴至AI窗口</td><td>⚠️ 无敏感内容实时告警</td></tr>
+</table>
+
+<h3>14.3 路演前建议</h3>
+<div class="card" style="border-left:4px solid var(--accent)">
+  <p><strong>策略：方案先行，快速演示，不做完整开发。</strong></p>
+  <p style="margin-top:.5rem;font-size:.9rem">完整方案文档（AI数据治理与数字资产保护方案）已编制完毕，包含5大部分全部内容。路演中如领导问及数据安全问题，以方案文档为依据回答，同时展示系统中<strong>已有的</strong>防护能力（脱敏演示、权限管控、审计日志）。</p>
+  <p style="margin-top:.5rem;font-size:.9rem;color:var(--accent)">关键话术："数据安全方案已完整编制，短期3项技术防护可在一周内上线。这是我们区别于所有SaaS竞品的核心壁垒。"</p>
+</div>
+
+<h3>14.4 方案五大部分的演示优先级</h3>
+<table>
+  <tr><th>部分</th><th>路演前开发？</th><th>演示方式</th></tr>
+  <tr>
+    <td><strong>一、风险识别</strong></td>
+    <td style="color:var(--green)">不需要</td>
+    <td>口头讲解三风险场景，已充分</td>
+  </tr>
+  <tr>
+    <td><strong>二、技术防护规划</strong></td>
+    <td style="color:var(--accent)">可选（1天可做）</td>
+    <td>展示<strong>已有</strong>8类脱敏能力 + 说明短期3项一周可上线</td>
+  </tr>
+  <tr>
+    <td><strong>三、公司制度规划</strong></td>
+    <td style="color:var(--green)">不需要</td>
+    <td>方案文档已编制，可打印呈阅</td>
+  </tr>
+  <tr>
+    <td><strong>四、AI盲点防护</strong></td>
+    <td style="color:var(--accent)">可选（0.5天可做）</td>
+    <td>展示prompt注入拦截效果（做一个demo拦截提示）</td>
+  </tr>
+  <tr>
+    <td><strong>五、数字资产壁垒</strong></td>
+    <td style="color:var(--green)">不需要</td>
+    <td>口头讲解5条壁垒构建路径，方案已编制</td>
+  </tr>
+</table>
+
+<div class="tip">完整方案文档已输出: <code>全过程工程咨询管理系统_AI数据治理与数字资产保护方案_20260714.html</code>（桌面和docs目录）</div>
+
+<!-- ===== 十五 ===== -->
+<h2>十五、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
