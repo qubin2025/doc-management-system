@@ -687,7 +687,7 @@ const App: React.FC = () => {
               { id: 'ch4', icon: <CheckCircle2 className="w-6 h-6 text-indigo-600" />, number: 4, title: '竣工验收及移交', desc: '竣工预验收、正式验收、备案归档、工程移交、竣工结算、保修管理' },
             ].map((m) => (
               <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
-                className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-200 group cursor-pointer">
+                className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-gray-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-300 group cursor-pointer">
                 <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-base font-bold text-gray-800">第{m.number}章 {m.title}</h3>
@@ -1007,7 +1007,7 @@ const App: React.FC = () => {
               const info = STANDARD_INFO[std];
               return (
                 <button key={std} onClick={() => handleSwitchStandard(std)}
-                  className="bg-white rounded-xl shadow-lg p-8 text-left hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border-2 border-transparent hover:border-blue-400 group">
+                  className="bg-white rounded-xl shadow-lg p-8 text-left hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border-2 border-gray-200 hover:border-blue-400 group">
                   <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${info.headerBg} bg-opacity-10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <div className={info.color === 'blue' ? 'text-blue-600' : 'text-teal-600'}>{info.icon}</div>
                   </div>
