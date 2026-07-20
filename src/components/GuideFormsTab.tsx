@@ -64,7 +64,7 @@ const GuideFormsTab: React.FC<GuideFormsTabProps> = ({
             <div className="flex-1 overflow-y-auto p-5">
               <textarea value={formEditContent} onChange={e => onFormEditContentChange(e.target.value)}
                 placeholder="在此编辑表单内容，支持 Markdown 格式..."
-                rows={20} className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-none outline-none" />
+                rows={20} className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 bg-white resize-none outline-none" />
             </div>
             <div className="px-5 py-4 border-t bg-gray-50 flex justify-between items-center shrink-0 rounded-b-2xl">
               <button onClick={onAiFillForm} disabled={aiFillLoading}
