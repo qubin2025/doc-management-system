@@ -198,6 +198,42 @@ th, td { white-space: nowrap; }
 .dark .hover\:bg-blue-50:hover { background-color: rgba(59,130,246,0.15); }
 .dark .hover\:text-blue-600:hover { color: #60a5fa; }
 
+/* 暗色下所有功能卡片渐变背景统一为深色卡片 */
+.dark .bg-gradient-to-br { background-image: none !important; background-color: #1e293b !important; }
+.dark .bg-gradient-to-br.from-indigo-50,
+.dark .bg-gradient-to-br.from-amber-50,
+.dark .bg-gradient-to-br.from-blue-50,
+.dark .bg-gradient-to-br.from-purple-50,
+.dark .bg-gradient-to-br.from-sky-50,
+.dark .bg-gradient-to-br.from-violet-50,
+.dark .bg-gradient-to-br.from-teal-50,
+.dark .bg-gradient-to-br.from-red-50,
+.dark .bg-gradient-to-br.from-orange-50,
+.dark .bg-gradient-to-br.from-rose-50,
+.dark .bg-gradient-to-br.from-cyan-50,
+.dark .bg-gradient-to-br.from-yellow-50,
+.dark .bg-gradient-to-br.from-gray-50 { background-color: #1e293b; }
+
+/* 暗色下彩色边框统一降暗 */
+.dark .border-indigo-200, .dark .border-amber-200, .dark .border-blue-200,
+.dark .border-purple-200, .dark .border-sky-200, .dark .border-violet-200,
+.dark .border-teal-200, .dark .border-red-200, .dark .border-orange-200,
+.dark .border-rose-200, .dark .border-cyan-200, .dark .border-yellow-200 { border-color: #334155; }
+
+.dark .border-indigo-300, .dark .border-amber-300, .dark .border-blue-300,
+.dark .border-purple-300, .dark .border-sky-300, .dark .border-violet-300,
+.dark .border-teal-300, .dark .border-red-300, .dark .border-orange-300,
+.dark .border-rose-300, .dark .border-cyan-300, .dark .border-yellow-300 { border-color: #475569; }
+
+/* 暗色下hover边框保持40%透明度亮色 */
+.dark .hover\:border-gray-200:hover { border-color: rgba(255,255,255,0.2) !important; }
+.dark .hover\:border-indigo-200:hover, .dark .hover\:border-purple-200:hover,
+.dark .hover\:border-blue-200:hover, .dark .hover\:border-sky-200:hover,
+.dark .hover\:border-amber-200:hover, .dark .hover\:border-teal-200:hover,
+.dark .hover\:border-orange-200:hover, .dark .hover\:border-red-200:hover,
+.dark .hover\:border-violet-200:hover, .dark .hover\:border-cyan-200:hover,
+.dark .hover\:border-yellow-200:hover, .dark .hover\:border-rose-200:hover { border-color: rgba(255,255,255,0.25) !important; }
+
 /* 暖色主题下首页适配 */
 [data-theme="warm"] .bg-white { background-color: #fffbf5; }
 [data-theme="warm"] .bg-gray-50 { background-color: #fef6ee; }
