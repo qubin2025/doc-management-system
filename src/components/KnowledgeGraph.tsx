@@ -249,7 +249,9 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [apiAvailable, setApiAvailable] = useState<boolean | null>(null);
   const [theme, setTheme] = useState<string>('space');
-  const lightTheme = theme === 'moonlight';
+  // 3D场景主题独立，页面UI跟随系统三色主题
+  const isSystemLight = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') !== 'dark';
+  const lightTheme = theme === 'moonlight' || isSystemLight;
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
