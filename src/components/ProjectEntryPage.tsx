@@ -78,6 +78,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   const t = {
     bg: light ? 'bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200' : 'bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950',
     hdr: light ? 'bg-white/90 backdrop-blur-md border-b border-gray-300 shadow-sm' : 'bg-white/10 backdrop-blur-xl border-b border-white/10 shadow-lg',
+    hdrBg: 'bg-[url(/project-header-bg.png)] bg-cover bg-center',
+    hdrOverlay: light ? 'bg-white/65' : 'bg-blue-950/65',
     logoBg: light ? 'bg-blue-600' : 'bg-blue-600',
     logoShadow: light ? '' : 'shadow-lg shadow-blue-600/30',
     h1Text: light ? 'text-gray-800' : 'text-white',
@@ -99,6 +101,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
     emptyTitle: light ? 'text-gray-600' : 'text-blue-200',
     emptyDesc: light ? 'text-gray-400' : 'text-blue-300/50',
     aiBar: light ? 'bg-gradient-to-r from-blue-100 via-slate-200 to-blue-100' : 'bg-white/5 backdrop-blur-xl border-t border-white/10',
+    aiBarBg: 'bg-[url(/project-header-bg.png)] bg-cover bg-center',
+    aiBarOverlay: light ? 'bg-white/65' : 'bg-blue-950/65',
     aiLabel: light ? 'text-blue-700 font-semibold' : 'text-blue-300',
     aiIcon: light ? 'text-sky-500' : 'text-blue-400',
     aiInput: light ? 'bg-white border-transparent text-gray-800 focus:border-blue-400/50' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10',
@@ -126,8 +130,11 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
   return (
     <div className={`min-h-screen flex flex-col ${t.bg}`}>
-      {/* 顶部导航 — 毛玻璃悬浮 */}
-      <header className={`sticky top-0 z-30 ${t.hdr}`}>
+      {/* 顶部导航 — 毛玻璃悬浮+背景图 */}
+      <header className={`sticky top-0 z-30 ${t.hdr}`}
+        style={{ backgroundImage: 'url(/project-header-bg.png)', backgroundSize: 'cover', backgroundPosition: 'top', filter: 'brightness(0.9)' }}>
+        <div className={`absolute inset-0 z-0 ${light ? 'bg-white/65' : 'bg-blue-950/65'}`} />
+        <div className="relative z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 ${t.logoBg} flex items-center justify-center rounded-lg ${t.logoShadow}`}>
@@ -156,6 +163,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               <LogOut className="w-4 h-4" /> 退出
             </button>
           </div>
+        </div>
         </div>
       </header>
 
@@ -277,8 +285,11 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
         )}
       </div>
 
-      {/* AI 对话框 — 底端深蓝渐变毛玻璃 */}
-      <div className={`backdrop-blur-xl py-4 border-t ${t.aiBar}`}>
+      {/* AI 对话框 — 底端深蓝渐变毛玻璃+背景图 */}
+      <div className={`backdrop-blur-xl py-4 border-t relative ${t.aiBar}`}
+        style={{ backgroundImage: 'url(/project-header-bg.png)', backgroundSize: 'cover', backgroundPosition: 'bottom', filter: 'brightness(0.9)' }}>
+        <div className={`absolute inset-0 z-0 ${light ? 'bg-white/65' : 'bg-blue-950/65'}`} />
+        <div className="relative z-10">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -353,7 +364,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             </button>
           </div>
         </div>
-      </div>
+        </div>{/* 关闭 relative z-10 包装层 */}
+      </div>{/* 关闭 AI bar 外层 */}
 
       {/* ========== 项目编辑弹窗 ========== */}
       {showEditModal && editTarget && (
