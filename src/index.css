@@ -257,6 +257,27 @@ th, td { white-space: nowrap; }
 .dark .hover\:bg-red-50:hover { background-color: rgba(248,113,113,0.15); }
 .dark .hover\:text-red-600:hover { color: #f87171; }
 
+/* 暗色下ModelAdmin模型测试对话框全量适配 */
+.dark .bg-amber-50 { background-color: rgba(251,191,36,0.08); }
+.dark .border-amber-200 { border-color: rgba(251,191,36,0.2); }
+.dark .text-amber-800 { color: #fbbf24; }
+.dark .text-amber-700 { color: #fcd34d; }
+.dark .text-amber-600 { color: #fcd34d; }
+.dark .bg-amber-100 { background-color: rgba(251,191,36,0.15); }
+.dark .bg-green-50\/50 { background-color: rgba(74,222,128,0.06); }
+.dark .border-green-100 { border-color: rgba(74,222,128,0.15); }
+.dark .bg-red-50\/50 { background-color: rgba(248,113,113,0.06); }
+.dark .border-red-100 { border-color: rgba(248,113,113,0.15); }
+.dark .bg-gray-50 { background-color: #0f172a; }
+.dark .bg-blue-50\/50,
+.dark .bg-blue-50 { background-color: rgba(59,130,246,0.08); }
+.dark .bg-green-500\/20 { background-color: rgba(34,197,94,0.2); }
+.dark .bg-red-500\/20 { background-color: rgba(239,68,68,0.2); }
+.dark .bg-gray-500\/20 { background-color: rgba(148,163,184,0.15); }
+.dark .border-blue-100 { border-color: rgba(59,130,246,0.15); }
+.dark .bg-gradient-to-r.from-blue-50 { background-image: none; background-color: #1e293b; }
+.dark .hover\:bg-white:hover { background-color: #334155 !important; }
+
 /* 暗色下表格行hover — 深色金黄高亮 */
 .dark .hover\:bg-gray-50:hover { background-color: #1e293b; color: #c8960c; }
 .dark .hover\:bg-gray-50:hover * { color: #c8960c !important; }
