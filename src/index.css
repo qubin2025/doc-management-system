@@ -305,6 +305,9 @@ th, td { white-space: nowrap; }
 .dark .bg-cyan-50 { background-color: rgba(6,182,212,0.08); }
 .dark .border-cyan-200 { border-color: rgba(6,182,212,0.2); }
 .dark .text-cyan-600 { color: #22d3ee; }
+.dark .border-purple-200 { border-color: rgba(167,139,250,0.2); }
+.dark .text-purple-900 { color: #c4b5fd; }
+.dark .bg-gradient-to-r.from-purple-50 { background-image: none; background-color: rgba(167,139,250,0.06); }
 
 /* 暗色下全局对话框输入框适配 */
 .dark input[type="text"],
