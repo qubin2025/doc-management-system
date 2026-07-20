@@ -42,38 +42,37 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
     <td>1</td><td><strong>移动端适配深化</strong></td><td><span class="tag tag-green">中</span></td><td>3-5天</td>
     <td>当前仅有响应式CSS基础覆盖，缺少触摸优化、手势交互、移动端组件库</td>
   </tr>
-  <tr>
-    <td>2</td><td><strong>施工/合同/招投标审查页面暗色适配</strong></td><td><span class="tag tag-accent">低</span></td><td>1-2天</td>
-    <td>v2.5审查组件未纳入本轮暗色适配</td>
+  <tr style="background:rgba(74,156,93,.06)">
+    <td>2</td><td><s>施工/合同/招投标审查页面暗色适配</s></td><td><span class="tag tag-green">✅ 已完成</span></td><td>-</td><td>2026-07-14 提交 <code>fcb9b5e</code></td>
   </tr>
-  <tr>
-    <td>3</td><td><strong>AI对话页面暗色适配</strong></td><td><span class="tag tag-accent">低</span></td><td>1天</td>
-    <td>AiChatPage/AiChat组件</td>
+  <tr style="background:rgba(74,156,93,.06)">
+    <td>3</td><td><s>AI对话页面暗色适配</s></td><td><span class="tag tag-green">✅ 已完成</span></td><td>-</td><td>2026-07-14 提交 <code>fcb9b5e</code></td>
   </tr>
-  <tr>
-    <td>4</td><td><strong>知识图谱3D页面暗色适配</strong></td><td><span class="tag tag-accent">低</span></td><td>1天</td>
-    <td>Three.js场景需要独立暗色方案</td>
+  <tr style="background:rgba(74,156,93,.06)">
+    <td>4</td><td><s>知识图谱3D页面暗色适配</s></td><td><span class="tag tag-green">✅ 已完成</span></td><td>-</td><td>2026-07-14 提交 <code>6cca1b9</code></td>
   </tr>
 </table>
 
 <h3>1.2 后端待完成</h3>
 <table>
   <tr><th style="width:5%">#</th><th>任务</th><th style="width:15%">优先级</th><th style="width:12%">工作量</th><th>说明</th></tr>
-  <tr>
-    <td>5</td><td><strong>API并发压力测试</strong></td><td><span class="tag tag-red">高</span></td><td>1天</td>
-    <td>SQLite单写锁瓶颈在5+并发用户时可能暴露</td>
+  <tr style="background:rgba(74,156,93,.06)">
+    <td>5</td><td><s>API并发压力测试</s></td><td><span class="tag tag-green">✅ 已完成</span></td><td>-</td><td>脚本 <code>scripts/concurrency-test.js</code> 已交付</td>
+  </tr>
+  <tr style="background:rgba(74,156,93,.06)">
+    <td>6</td><td><s>权限体系补全</s></td><td><span class="tag tag-green">✅ 已完成</span></td><td>-</td><td>can_download生效+干系人/风险/资源数据路由+权限中间件</td>
+  </tr>
+  <tr style="background:rgba(74,156,93,.06)">
+    <td>7</td><td><s>模型测试诊断</s></td><td><span class="tag tag-green">✅ 已完成</span></td><td>-</td><td>Token容错+详细错误提示+路演保障清单</td>
   </tr>
   <tr>
-    <td>6</td><td><strong>文件上传断点续传</strong></td><td><span class="tag tag-green">中</span></td><td>2天</td>
-    <td>大文件(50MB)上传无进度条和断点续传</td>
+    <td>8</td><td><strong>文件上传断点续传</strong></td><td><span class="tag tag-green">中</span></td><td>2天</td><td>大文件(50MB)上传无进度条和断点续传</td>
   </tr>
   <tr>
-    <td>7</td><td><strong>OAuth/SSO实际对接测试</strong></td><td><span class="tag tag-green">中</span></td><td>2天</td>
-    <td>架构已预留但未实际对接企业SSO</td>
+    <td>9</td><td><strong>OAuth/SSO实际对接测试</strong></td><td><span class="tag tag-green">中</span></td><td>2天</td><td>架构已预留但未实际对接企业SSO</td>
   </tr>
   <tr>
-    <td>8</td><td><strong>PostgreSQL生产迁移验证</strong></td><td><span class="tag tag-green">中</span></td><td>3天</td>
-    <td>适配层代码已完成但未在生产环境验证</td>
+    <td>10</td><td><strong>PostgreSQL生产迁移验证</strong></td><td><span class="tag tag-green">中</span></td><td>3天</td><td>适配层代码已完成但未在生产环境验证</td>
   </tr>
 </table>
 
@@ -157,10 +156,10 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
 
 <h3>3.2 综合完成度</h3>
 <div class="card" style="text-align:center">
-  <div style="font-size:3rem;font-weight:900;color:var(--accent)">81%</div>
+  <div style="font-size:3rem;font-weight:900;color:var(--accent)">84%</div>
   <div style="font-size:.9rem;color:var(--muted)">综合开发目标完成度</div>
-  <div class="progress" style="margin-top:.8rem"><div class="progress-fill" style="width:81%;background:var(--accent)"></div></div>
-  <p style="margin-top:.5rem;font-size:.85rem;color:var(--muted)">代码层面约85%（可部署上线）· 真实环境验证约15%（需服务器/证书/数据）</p>
+  <div class="progress" style="margin-top:.8rem"><div class="progress-fill" style="width:84%;background:var(--accent)"></div></div>
+  <p style="margin-top:.5rem;font-size:.85rem;color:var(--muted)">代码层面约88%（较上次+3%）· 真实环境验证约12%（需服务器/证书/数据）</p>
 </div>
 
 <!-- ===== 四 ===== -->
@@ -350,7 +349,35 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
 
 <hr class="divider">
 
-<h2>六、总结</h2>
+<h2>六、2026-07-14 本日开发交付</h2>
+
+<table>
+  <tr><th>类别</th><th>交付项</th><th>提交</th><th>影响</th></tr>
+  <tr>
+    <td rowspan="4"><strong>暗色适配</strong></td>
+    <td>审查3页+AI对话页暗色</td><td><code>fcb9b5e</code></td><td>暗色覆盖率达98%</td>
+  </tr>
+  <tr><td>知识图谱3D页暗色</td><td><code>6cca1b9</code></td><td>跟随系统data-theme切换</td></tr>
+  <tr><td>上传对话框暗色</td><td><code>f1bfdd7</code></td><td>8类CSS变量覆盖</td></tr>
+  <tr><td>全局input暗色兜底</td><td><code>81df4de</code></td><td>无颜色border自动降暗</td></tr>
+  <tr>
+    <td rowspan="3"><strong>权限安全</strong></td>
+    <td>can_download权限生效</td><td><code>5b7ec3a</code></td><td>下载需can_download权限</td></tr>
+  <tr><td>干系人/风险/资源数据路由</td><td><code>5b7ec3a</code></td><td>GET(登录)/POST(角色)权限控制</td></tr>
+  <tr><td>模型测试Token诊断</td><td><code>69334dd</code></td><td>双key回退+详细错误提示</td></tr>
+  <tr>
+    <td rowspan="4"><strong>工具与文档</strong></td>
+    <td>一键启动脚本</td><td><code>6cca1b9</code></td><td>start-all.bat全部服务</td></tr>
+  <tr><td>API并发测试脚本</td><td><code>7637774</code></td><td>8用户×5轮压力测试</td></tr>
+  <tr><td>AI数据治理方案</td><td><code>577b9e9</code></td><td>5部分完整方案</td></tr>
+  <tr><td>路演准备清单+15问答</td><td><code>5b8d7d3</code></td><td>10检查+15问答+13分钟路径</td></tr>
+</table>
+
+<div style="text-align:center;margin:1.5rem 0">
+  <p style="font-size:1.1rem;font-weight:700;color:var(--accent)">本日交付: 12项·10次提交·完成度81%→84%</p>
+</div>
+
+<h2>七、总结</h2>
 <div class="card" style="text-align:center;border-left:4px solid var(--blue)">
   <p style="font-size:1.1rem;margin:.5rem 0"><strong>开发目标完成度：81%</strong></p>
   <p style="font-size:.85rem;color:var(--muted)">5个核心成功因素全部满足 · 可部署上线 · 竞争力加权得分80/100</p>
