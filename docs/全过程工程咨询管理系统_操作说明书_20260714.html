@@ -66,6 +66,7 @@
     <a href="#s16">十六、管理员功能</a><br>
     <a href="#s17">十七、快捷键速查</a><br>
     <a href="#s18">十八、常见问题</a><br>
+    <a href="#s19">十九、移动端水印相机（手机版）</a><br>
   </div>
 </div>
 
@@ -449,6 +450,55 @@
   <h4>Q: 支持哪些浏览器？</h4>
   <p>A: Chrome 90+、Edge 90+、Firefox 88+、Safari 15+。</p>
 </div>
+
+<!-- ===== 十九 ===== -->
+<h2 id="s19">十九、移动端水印相机（手机版）</h2>
+<p>移动端配套应用第一版，聚焦<strong>工程现场水印拍照</strong>：拍照/选图后自动叠加时间、项目、GPS坐标、位置描述、拍摄人等水印信息，一键上传到对应项目，与电脑端共用同一账号体系。</p>
+
+<div class="card">
+  <h3>访问方式</h3>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">手机浏览器打开</div><div class="desc">访问 <kbd>https://&lt;服务器地址&gt;/mobile.html</kbd>（与电脑端同一域名，路径为 /mobile.html）</div></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">添加到主屏幕（可选）</div><div class="desc">支持 PWA：浏览器菜单选择「添加到主屏幕」，即可像原生 App 一样从桌面图标「工程水印相机」启动</div></div></div>
+</div>
+
+<div class="card">
+  <h3>拍照上传流程</h3>
+  <svg viewBox="0 0 720 90" style="width:100%;max-width:720px;display:block;margin:.5rem auto">
+    <defs><marker id="m-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#38bdf8"/></marker></defs>
+    <g font-size="13" font-family="sans-serif" text-anchor="middle">
+      <rect x="8"   y="22" width="110" height="46" rx="10" fill="rgba(56,189,248,.12)" stroke="#38bdf8"/><text x="63"  y="42" fill="#38bdf8">登录</text><text x="63"  y="60" fill="#94a3b8" font-size="10">同电脑端账号</text>
+      <rect x="158" y="22" width="110" height="46" rx="10" fill="rgba(167,139,250,.12)" stroke="#a78bfa"/><text x="213" y="42" fill="#a78bfa">选择项目</text><text x="213" y="60" fill="#94a3b8" font-size="10">照片归档到项目</text>
+      <rect x="308" y="22" width="110" height="46" rx="10" fill="rgba(74,222,128,.12)" stroke="#4ade80"/><text x="363" y="42" fill="#4ade80">拍照/相册</text><text x="363" y="60" fill="#94a3b8" font-size="10">调起后置相机</text>
+      <rect x="458" y="22" width="110" height="46" rx="10" fill="rgba(250,204,21,.12)" stroke="#facc15"/><text x="513" y="42" fill="#facc15">水印合成</text><text x="513" y="60" fill="#94a3b8" font-size="10">本机Canvas生成</text>
+      <rect x="608" y="22" width="104" height="46" rx="10" fill="rgba(251,146,60,.12)" stroke="#fb923c"/><text x="660" y="42" fill="#fb923c">上传</text><text x="660" y="60" fill="#94a3b8" font-size="10">预览确认后上传</text>
+      <line x1="118" y1="45" x2="152" y2="45" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#m-arrow)"/>
+      <line x1="268" y1="45" x2="302" y2="45" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#m-arrow)"/>
+      <line x1="418" y1="45" x2="452" y2="45" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#m-arrow)"/>
+      <line x1="568" y1="45" x2="602" y2="45" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#m-arrow)"/>
+    </g>
+  </svg>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">进入相机页</div><div class="desc">选择项目后自动进入水印相机，页面顶部显示当前项目与水印模板，进入时自动获取 GPS 定位</div></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">补充位置描述（可选）</div><div class="desc">在「位置描述」输入框填写具体部位，如「3号楼基坑东侧」，将与 GPS 坐标一同写入水印</div></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><div class="title">拍照或选择相册照片</div><div class="desc">「拍 照」按钮直接调起后置相机；「相册」按钮从手机相册选择已有照片</div></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><div class="title">预览水印效果</div><div class="desc">照片自动叠加底部水印信息栏并显示预览，不满意可点「重拍」</div></div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-content"><div class="title">上传照片</div><div class="desc">点「上传照片」提交到服务器，页面下方「上传记录」实时显示成功/失败状态，失败原因会标红提示</div></div></div>
+</div>
+
+<div class="card">
+  <h3>水印模板</h3>
+  <p>点相机页右上角 <strong>⚙ 设置</strong> 图标进入模板管理：</p>
+  <table>
+    <tr><th>配置项</th><th>说明</th></tr>
+    <tr><td>字段开关</td><td>拍摄时间 / 项目名称 / 经纬度坐标 / 位置描述 / 拍摄人，逐项可开关</td></tr>
+    <tr><td>自定义文字</td><td>附加一行固定文字，如公司名称、监理单位等</td></tr>
+    <tr><td>主题配色</td><td>深色 / 蓝色 / 橙色三种水印信息栏底色</td></tr>
+    <tr><td>多模板</td><td>可创建多个模板（如「日常巡检」「隐蔽验收」），一键切换</td></tr>
+    <tr><td>云端同步</td><td>模板实时保存在本机；「同步到云端」可多设备共享，「☁ 拉取」按名称去重合并（本地优先）</td></tr>
+  </table>
+</div>
+
+<div class="tip">水印照片长边自动压缩至 2560px 并以 JPEG 导出，兼顾清晰度、上传速度与手机内存占用；上传成功的照片记录在服务器 <kbd>mobile_photos</kbd> 表并写入审计日志。</div>
+<div class="warn">GPS 定位需要 <strong>HTTPS</strong> 访问（浏览器安全限制）。若通过 HTTP 或局域网 IP 访问，定位自动降级——可手动填写位置描述，时间/项目/拍摄人水印不受影响。生产部署请使用 <kbd>deploy/nginx-ssl.conf</kbd>。</div>
 
 <div class="footer">
   <p>全过程工程咨询管理系统 · 操作说明书 v4.1</p>
