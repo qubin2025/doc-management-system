@@ -505,7 +505,71 @@
 </table>
 
 <!-- ===== 十一 ===== -->
-<h2>十一、SKILL配置中台价值总结</h2>
+<h2>十一、模型测试诊断与路演保障</h2>
+
+<h3>11.1 模型测试按钮问题根因</h3>
+<table>
+  <tr><th>原因</th><th>发生场景</th><th>修复</th></tr>
+  <tr><td><strong>Token读取错误</strong></td><td><code>localStorage</code> key不匹配(doc-system-token vs doc-system-auth)</td><td>兼容双key回退 + toast"请先登录"</td></tr>
+  <tr><td><strong>后端未启动</strong></td><td>3000端口未监听</td><td>toast"后端未启动或网络不通"</td></tr>
+  <tr><td><strong>API Key未配置</strong></td><td><code>.env</code>缺少DeepSeek Key</td><td>toast"返回错误(HTTP xxx)"</td></tr>
+</table>
+
+<h3>11.2 路演前检查清单（必须全部通过）</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+  <table>
+    <tr><th style="width:8%">步骤</th><th>操作</th><th style="width:25%">确认标准</th><th style="width:8%">状态</th></tr>
+    <tr>
+      <td style="text-align:center;font-weight:900">1</td>
+      <td>双击 <code>start-all.bat</code> 启动全部服务</td>
+      <td>四个终端窗口均显示启动成功</td>
+      <td style="text-align:center">⬜</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;font-weight:900">2</td>
+      <td>浏览器打开 <code>http://localhost:5300</code></td>
+      <td>登录页正常显示，三色主题正常</td>
+      <td style="text-align:center">⬜</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;font-weight:900">3</td>
+      <td>登录 <code>admin / admin123</code></td>
+      <td>进入项目选择页，看到已有项目列表</td>
+      <td style="text-align:center">⬜</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;font-weight:900">4</td>
+      <td>首页 → 点击「模型」按钮</td>
+      <td>模型列表正常加载，显示7个模型状态</td>
+      <td style="text-align:center">⬜</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;font-weight:900">5</td>
+      <td>点击「全部测试」</td>
+      <td>DeepSeek-V3显示 <strong>✓ 连通正常 (xxms)</strong></td>
+      <td style="text-align:center">⬜</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;font-weight:900">6</td>
+      <td>确认 <code>backend/.env</code> 中 Key 已配置</td>
+      <td><code>DEEPSEEK_API_KEY=sk-xxx</code> 非占位符</td>
+      <td style="text-align:center">⬜</td>
+    </tr>
+  </table>
+  <p style="margin-top:.8rem;font-weight:700;color:var(--red)">六步全部通过后方可开始路演演示。</p>
+</div>
+
+<h3>11.3 常见故障快速修复</h3>
+<table>
+  <tr><th>现象</th><th>可能原因</th><th>快速修复</th></tr>
+  <tr><td>模型列表为空</td><td>后端未启动或登录过期</td><td>检查3000端口 → 重新登录</td></tr>
+  <tr><td>全部模型显示"离线"</td><td><code>.env</code> 未配置 Key</td><td>编辑 <code>backend/.env</code> → 重启后端</td></tr>
+  <tr><td>按钮点击无反应</td><td>Token 未读取到</td><td>重新登录 → 再试</td></tr>
+  <tr><td>DeepSeek离线但通义在线</td><td>DeepSeek Key 失效</td><td>检查Key余额 → 切换模型</td></tr>
+</table>
+
+<!-- ===== 十二 ===== -->
+<h2>十二、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
