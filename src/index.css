@@ -289,6 +289,11 @@ th, td { white-space: nowrap; }
 .dark .border-blue-200 { border-color: rgba(59,130,246,0.2); }
 .dark .border-blue-300 { border-color: rgba(59,130,246,0.3); }
 
+/* 暗色下供应商/造价等页面状态标签适配 */
+.dark .bg-green-100 { background-color: rgba(74,222,128,0.15); }
+.dark .bg-red-100 { background-color: rgba(248,113,113,0.15); }
+.dark .bg-amber-100 { background-color: rgba(251,191,36,0.15); }
+
 /* 暗色下全局对话框输入框适配 */
 .dark input[type="text"],
 .dark input[type="password"],
