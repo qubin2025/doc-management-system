@@ -328,6 +328,9 @@ th, td { white-space: nowrap; }
   border-color: #38bdf8;
   outline: none;
 }
+/* 暗色下弹窗/对话框中未指定颜色的border自动变暗 */
+.dark .fixed .border:not([class*="border-"]) { border-color: #475569; }
+.dark button.border:not([class*="border-"]) { border-color: #475569; }
 
 /* 暗色下表格行hover — 深色金黄高亮 */
 .dark .hover\:bg-gray-50:hover { background-color: #1e293b; color: #c8960c; }
