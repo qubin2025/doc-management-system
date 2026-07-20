@@ -273,17 +273,17 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       {showAdd && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" onClick={() => setShowAdd(false)}>
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Plus className="w-5 h-5 text-blue-500" />添加用户</h3>
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-800"><Plus className="w-5 h-5 text-blue-500" />添加用户</h3>
             <div className="space-y-3">
-              <div><label className="block text-xs text-gray-500 mb-1">用户名 *</label><input value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-              <div><label className="block text-xs text-gray-500 mb-1">密码 *</label><input type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-              <div><label className="block text-xs text-gray-500 mb-1">显示名称</label><input value={form.displayName} onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
-              <div><label className="block text-xs text-gray-500 mb-1">角色</label><select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm">{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+              <div><label className="block text-xs text-gray-500 mb-1">用户名 *</label><input value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
+              <div><label className="block text-xs text-gray-500 mb-1">密码 *</label><input type="password" value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
+              <div><label className="block text-xs text-gray-500 mb-1">显示名称</label><input value={form.displayName} onChange={e => setForm(p => ({ ...p, displayName: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white" /></div>
+              <div><label className="block text-xs text-gray-500 mb-1">角色</label><select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 bg-white">{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">权限</label>
                 <div className="flex gap-3">
                   {PERM_KEYS.map(k => (
-                    <label key={k} className="flex items-center gap-1 text-xs">
+                    <label key={k} className="flex items-center gap-1 text-xs text-gray-700">
                       <input type="checkbox" checked={(form.permissions as any)[k]} onChange={e => setForm(p => ({ ...p, permissions: { ...p.permissions, [k]: e.target.checked } }))} />
                       {k.replace('can_', '')}
                     </label>
@@ -292,7 +292,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowAdd(false)} className="px-4 py-2 border rounded-lg text-sm">取消</button>
+              <button onClick={() => setShowAdd(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700">取消</button>
               <button onClick={handleCreate} className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">创建</button>
             </div>
           </div>
