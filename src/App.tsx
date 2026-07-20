@@ -690,7 +690,7 @@ const App: React.FC = () => {
                 className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-transparent hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-200 group cursor-pointer">
                 <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-base font-bold text-gray-800 group-hover:text-gray-900">第{m.number}章 {m.title}</h3>
+                  <h3 className="text-base font-bold text-gray-800">第{m.number}章 {m.title}</h3>
                   <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-700 font-medium">已上线</span>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
