@@ -39,7 +39,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, showECat
               value={filters.searchKeyword}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="搜索资料名称、表格编号..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 bg-blue-50/30 placeholder:text-blue-400 placeholder:font-medium"
             />
           </div>
         </div>
