@@ -633,7 +633,7 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           {/* 项目状态提醒条 — 全宽醒目 */}
-          <div className={`text-center py-1.5 text-xs font-bold ${currentProject ? 'bg-green-500 text-white' : 'bg-amber-400 text-white'}`}>
+          <div className={`text-center py-1.5 text-xs font-bold ${currentProject ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}`}>
             {currentProject ? `当前项目：${currentProject}` : '全局模式 — 未进入具体项目，AI将回答全局信息'}
           </div>
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
