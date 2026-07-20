@@ -77,7 +77,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   // 主题样式
   const t = {
     bg: light ? 'bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 m-0 p-0' : 'bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 m-0 p-0',
-    hdr: light ? 'bg-white/90 backdrop-blur-md' : 'bg-white/10 backdrop-blur-xl',
+    hdr: light ? 'backdrop-blur-md' : 'backdrop-blur-xl',
     hdrBg: 'bg-[url(/project-header-bg.png)] bg-cover bg-center',
     hdrOverlay: light ? 'bg-white/65' : 'bg-blue-950/65',
     logoBg: light ? 'bg-blue-600' : 'bg-blue-600',
