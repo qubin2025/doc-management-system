@@ -391,7 +391,83 @@
 <p>实现方式：TailoringEngine新增 <code>onNavigate</code> prop，支持携带 <code>chapterId</code> 参数跳转。App.tsx接收后设置 <code>guideChapterId</code> 并切换view。</p>
 
 <!-- ===== 九 ===== -->
-<h2>九、SKILL配置中台价值总结</h2>
+<h2>九、三色主题配色方案体系</h2>
+
+<h3>9.1 方案概述</h3>
+<div class="card">
+  <table>
+    <tr><th>主题</th><th>适用场景</th><th>主背景</th><th>主文字</th><th>强调色</th></tr>
+    <tr><td>☀️ <strong>亮白</strong></td><td>白天办公，高对比度</td><td>#ffffff</td><td>#1f2937</td><td>#3b82f6 蓝色</td></tr>
+    <tr><td>🌅 <strong>暖色</strong></td><td>长时间使用，护眼舒适</td><td>#fefaf6</td><td>#4a3728</td><td>#c87941 橙色</td></tr>
+    <tr><td>🌙 <strong>暗色</strong></td><td>夜间/低光，专业风格</td><td>#0f172a</td><td>#e2e8f0</td><td>#38bdf8 天蓝</td></tr>
+  </table>
+</div>
+
+<h3>9.2 技术架构（四层）</h3>
+<table>
+  <tr><th style="width:15%">层级</th><th>实现</th><th>文件</th></tr>
+  <tr><td><strong>CSS变量层</strong></td><td>30+语义化颜色变量 (--bg-primary/--text-primary/--border-primary等), 三套主题各一套值</td><td><code>src/index.css</code></td></tr>
+  <tr><td><strong>主题引擎</strong></td><td>getTheme/setTheme/applyTheme/initTheme, localStorage持久化, data-theme属性+dark class双切换</td><td><code>src/data/themeEngine.ts</code></td></tr>
+  <tr><td><strong>切换UI</strong></td><td>三按钮下拉菜单（Sun/Moon/Sunrise图标）, 实时切换自动保存</td><td><code>src/components/ThemeSwitcher.tsx</code></td></tr>
+  <tr><td><strong>Tailwind配置</strong></td><td>darkMode: 'class'策略</td><td><code>tailwind.config.js</code></td></tr>
+</table>
+
+<h3>9.3 全局暗色覆盖规则体系</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:18%">规则类别</th><th>覆盖内容</th><th>示例</th></tr>
+    <tr><td><strong>基础适配</strong></td><td>bg-white/bg-gray-50→深色, text-gray-800/700/600→浅色, border-gray-200/300→暗色</td><td>.dark .bg-white → #1e293b</td></tr>
+    <tr><td><strong>卡片渐变</strong></td><td>所有bg-gradient-to-br→纯深色底, border-*-200/300→暗色边框</td><td>覆盖12种颜色渐变</td></tr>
+    <tr><td><strong>输入框全局</strong></td><td>input[type=text/password/url/number/search], textarea, select → 暗色背景+浅色文字+灰色边框, focus→蓝色</td><td>.dark input[type="text"] → bg#1e293b</td></tr>
+    <tr><td><strong>弹窗边框兜底</strong></td><td>未指定颜色的border自动变暗</td><td>.dark .fixed .border:not([class*="border-"])</td></tr>
+    <tr><td><strong>表格行hover</strong></td><td>深色金黄字体+微亮金色底色</td><td>color: #c8960c</td></tr>
+    <tr><td><strong>状态标签</strong></td><td>bg-green/red/amber/cyan/purple-100/50→暗色半透明, text-*-700→亮色</td><td>.dark .bg-green-100 → rgba(74,222,128,0.15)</td></tr>
+  </table>
+</div>
+
+<h3>9.4 组件适配原则</h3>
+<ul style="padding-left:1.5rem;font-size:.9rem;line-height:2">
+  <li><strong>P0/P1新组件</strong>：使用CSS变量 <code>bg-[var(--bg-xxx)]</code> <code>text-[var(--text-xxx)]</code></li>
+  <li><strong>v2.5旧组件</strong>：依赖index.css全局覆盖规则</li>
+  <li><strong>所有input/textarea/select</strong>：必须显式声明 <code>type="text" border-gray-300 text-gray-800 bg-white</code></li>
+  <li><strong>弹窗</strong>：依赖全局 <code>.dark .fixed .border</code> 兜底规则</li>
+</ul>
+
+<h3>9.5 新增组件检查清单</h3>
+<div class="card">
+  <ol style="padding-left:1.5rem;font-size:.85rem;line-height:2">
+    <li>所有input有 <code>type="text"</code> + <code>border-gray-300</code> + <code>text-gray-800</code> + <code>bg-white</code></li>
+    <li>无 <code>bg-gray-800</code>/<code>bg-gray-900</code> 硬编码（改用CSS变量）</li>
+    <li>渐变背景有暗色覆盖</li>
+    <li>彩色边框(border-blue/purple/green-*)有暗色覆盖</li>
+    <li>状态标签(bg-green/red/amber-100)有暗色覆盖</li>
+  </ol>
+</div>
+
+<h3>9.6 本轮暗色适配统计</h3>
+<table>
+  <tr><th>组件</th><th>提交</th><th>改动类型</th></tr>
+  <tr><td>指南模块卡片</td><td><code>84efaaf</code></td><td>移除hover文字变色</td></tr>
+  <tr><td>功能模块全部卡片</td><td><code>669b3e9</code></td><td>12色渐变+边框暗色覆盖</td></tr>
+  <tr><td>资料管理页面</td><td><code>8d7d3f7</code></td><td>DocumentTable/FilterBar全量适配</td></tr>
+  <tr><td>表格行hover</td><td><code>832cdf0</code></td><td>深色金黄字体</td></tr>
+  <tr><td>搜索框配色</td><td><code>301f80e</code> <code>550fac2</code></td><td>蓝灰底色+深蓝提示</td></tr>
+  <tr><td>项目状态栏</td><td><code>7bbf13a</code></td><td>绿/琥珀→蓝</td></tr>
+  <tr><td>项目选择页背景</td><td><code>25adad9</code> <code>f669036</code> <code>b8e8e6a</code> <code>08f9cb1</code></td><td>顶栏/底栏背景图+去白框</td></tr>
+  <tr><td>模型测试对话框</td><td><code>b95260b</code></td><td>全量暗色适配</td></tr>
+  <tr><td>管理面板卡片</td><td><code>9df5d4d</code> <code>69a44a2</code></td><td>统计卡片配色统一</td></tr>
+  <tr><td>添加用户对话框</td><td><code>131fc82</code></td><td>输入框显式颜色</td></tr>
+  <tr><td>全局输入框</td><td><code>e4cafa7</code> <code>81df4de</code></td><td>input/textarea/select+弹窗border兜底</td></tr>
+  <tr><td>供应商/造价页面</td><td><code>f68fd94</code> <code>2a4c23b</code> <code>01b419f</code></td><td>搜索+对话框+卡片+标签</td></tr>
+  <tr><td>知识库/政策库/制度库</td><td><code>165156f</code> <code>47b61bd</code> <code>0c5c770</code></td><td>搜索框+编辑对话框</td></tr>
+  <tr><td>分析中心/方案生成</td><td><code>928b346</code> <code>c208421</code></td><td>AI建议区+项目参数</td></tr>
+  <tr><td>指南附表编辑</td><td><code>b40c765</code></td><td>textarea暗色适配</td></tr>
+</table>
+
+<div class="tip">三色主题配色方案已存档至项目记忆系统（reference_theme_system.md），作为可复用知识资产供未来开发参考。</div>
+
+<!-- ===== 十 ===== -->
+<h2>十、SKILL配置中台价值总结</h2>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0">
   <div class="card" style="border-left:4px solid var(--green)">
