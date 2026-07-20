@@ -278,6 +278,14 @@ th, td { white-space: nowrap; }
 .dark .bg-gradient-to-r.from-blue-50 { background-image: none; background-color: #1e293b; }
 .dark .hover\:bg-white:hover { background-color: #334155 !important; }
 
+/* 暗色下管理员面板统计卡片适配 */
+.dark .bg-purple-50 { background-color: rgba(167,139,250,0.1); }
+.dark .border-purple-200 { border-color: rgba(167,139,250,0.2); }
+.dark .text-purple-600 { color: #c4b5fd; }
+.dark .bg-blue-50 { background-color: rgba(59,130,246,0.1); }
+.dark .border-blue-200 { border-color: rgba(59,130,246,0.2); }
+.dark .border-blue-300 { border-color: rgba(59,130,246,0.3); }
+
 /* 暗色下表格行hover — 深色金黄高亮 */
 .dark .hover\:bg-gray-50:hover { background-color: #1e293b; color: #c8960c; }
 .dark .hover\:bg-gray-50:hover * { color: #c8960c !important; }
