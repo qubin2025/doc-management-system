@@ -277,7 +277,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {[{k:'scale',l:'建设规模',ph:'如: 地上20层/地下3层'},{k:'location',l:'建设地点',ph:'如: 北京市朝阳区'},{k:'investment',l:'投资额',ph:'如: 3.2亿元'},{k:'type',l:'结构类型',ph:'如: 框架剪力墙'},{k:'depth',l:'基坑深度',ph:'如: -18m'},{k:'special',l:'特殊要求',ph:'如: 地铁旁'}].map(f => (<div key={f.k}><label className="block text-xs font-medium text-gray-600 mb-1">{f.l}</label><input value={(params as any)[f.k]} onChange={e => setParams(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs"/></div>))}
+                  {[{k:'scale',l:'建设规模',ph:'如: 地上20层/地下3层'},{k:'location',l:'建设地点',ph:'如: 北京市朝阳区'},{k:'investment',l:'投资额',ph:'如: 3.2亿元'},{k:'type',l:'结构类型',ph:'如: 框架剪力墙'},{k:'depth',l:'基坑深度',ph:'如: -18m'},{k:'special',l:'特殊要求',ph:'如: 地铁旁'}].map(f => (<div key={f.k}><label className="block text-xs font-medium text-gray-600 mb-1">{f.l}</label><input type="text" value={(params as any)[f.k]} onChange={e => setParams(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-gray-800 bg-white"/></div>))}
                 </div>
                 {/* 项目概况文档上传 */}
                 <div className="bg-gray-50 rounded-lg p-3">
@@ -349,7 +349,7 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
                 <div key={i} className={`bg-white rounded-xl border p-4 ${ch.loading?'animate-pulse':''} ${ch.auto&&ch.content?'border-l-4 border-l-green-500':''}`}>
                   <div className="flex items-center justify-between mb-2"><h3 className="font-semibold text-sm flex items-center gap-1.5">{ch.name}{ch.auto&&ch.content&&<span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">自动</span>}</h3>{ch.loading&&<Loader className="w-4 h-4 text-green-500 animate-spin"/>}</div>
                   {ch.loading?<div className="space-y-2"><div className="h-3 bg-gray-200 rounded w-full"/><div className="h-3 bg-gray-200 rounded w-3/4"/></div>
-                  :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border border-gray-300 rounded-lg p-3 resize-y outline-none font-mono"/>}
+                  :<textarea value={ch.content} onChange={e=>updateChapter(i,e.target.value)} className="w-full min-h-[180px] text-xs leading-relaxed border border-gray-300 rounded-lg p-3 resize-y outline-none font-mono text-gray-800 bg-white"/>}
                 </div>
               ))}
             </div>
