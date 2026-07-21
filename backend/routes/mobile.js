@@ -189,7 +189,80 @@ router.post('/watermark/generate', requireAuth, (req, res) => {
   });
 });
 
-// ===== 5. 定位信息获取 =====
+// ===== 5. 照片列表查询 =====
+router.get('/photo/list', requireAuth, (req, res) => {
+  const db = getDb();
+  const { projectId } = req.query;
+  let rows;
+  if (projectId) {
+    rows = db.prepare(
+      `SELECT mp.*, p.name as project_name FROM mobile_photos mp
+       JOIN projects p ON mp.project_id = p.id
+       WHERE mp.project_id = ? ORDER BY mp.created_at DESC LIMIT 200`
+    ).all(Number(projectId));
+  } else {
+    rows = db.prepare(
+      `SELECT mp.*, p.name as project_name FROM mobile_photos mp
+       JOIN projects p ON mp.project_id = p.id
+       ORDER BY mp.created_at DESC LIMIT 200`
+    ).all();
+  }
+  res.json(rows.map(r => ({
+    id: r.id,
+    projectId: r.project_id,
+    projectName: r.project_name,
+    filePath: r.file_path,
+    watermarkData: safeJson(r.watermark_data),
+    location: r.location,
+    latitude: r.latitude,
+    longitude: r.longitude,
+    poi: r.poi,
+    address: r.address,
+    uploadedBy: r.uploaded_by,
+    createdAt: r.created_at,
+  })));
+});
+
+function safeJson(s) {
+  try { return JSON.parse(s); } catch { return {}; }
+}
+
+// 路径安全检查
+function isPathSafe(targetPath, baseDir) {
+  const resolved = path.resolve(targetPath);
+  const base = path.resolve(baseDir);
+  return resolved.startsWith(base);
+}
+
+// ===== 6. 照片文件获取 =====
+router.get('/photo/file/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const photo = db.prepare('SELECT file_path FROM mobile_photos WHERE id = ?').get(req.params.id);
+  if (!photo) return res.status(404).json({ error: '照片不存在' });
+
+  // 避免路径拼接重复：DB 可能存了 files/ 前缀（与 FILES_ROOT 重叠）或 / 开头
+  // 统一清洗为从 FILES_ROOT 出发的相对路径
+  let rel = (photo.file_path || '').replace(/\\/g, '/');
+  // 去掉可能的 files/ 前缀（与 FILES_ROOT 结尾重复）
+  if (/^files[\/\\]/.test(rel)) rel = rel.replace(/^files[\/\\]/, '');
+  rel = rel.replace(/^\/+/, '');
+  if (!rel) return res.status(404).json({ error: '无效的文件路径' });
+  const fullPath = path.resolve(FILES_ROOT, rel);
+  if (fullPath && isPathSafe(fullPath, FILES_ROOT)) {
+    try {
+      const buf = fs.readFileSync(fullPath);
+      const ext = path.extname(fullPath).toLowerCase();
+      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      return res.json({
+        fileName: path.basename(fullPath),
+        fileData: `data:${mime};base64,${buf.toString('base64')}`,
+      });
+    } catch {}
+  }
+  res.status(404).json({ error: '照片文件不可用' });
+});
+
+// ===== 7. 定位信息获取 =====
 router.get('/location/get', requireAuth, (req, res) => {
   const { lat, lng } = req.query;
   if (!lat || !lng) return res.status(400).json({ error: '缺少经纬度参数' });

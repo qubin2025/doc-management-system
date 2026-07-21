@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target, Bot, Zap, Users, AlertTriangle, Briefcase, History } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target, Bot, Zap, Users, AlertTriangle, Briefcase, History, Camera } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -37,6 +37,7 @@ import StakeholderManager from './components/StakeholderManager';
 import RiskManager from './components/RiskManager';
 import ResourceManager from './components/ResourceManager';
 import WorkflowBuilder from './components/WorkflowBuilder';
+import MobilePhotoViewer from './components/MobilePhotoViewer';
 import GlobalSearch from './components/GlobalSearch';
 import PortfolioManager from './components/PortfolioManager';
 import { guideChapters } from './data/guideModules';
@@ -564,6 +565,11 @@ const App: React.FC = () => {
       onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} />;
   }
 
+  // ===== 手机水印照片 =====
+  if (view === 'mobile-photos' && currentProject) {
+    return <MobilePhotoViewer projectName={currentProject} onBack={() => setView('homepage')} />;
+  }
+
   // ===== 登录页 =====
   if (view === 'login') {
     return <LoginPage onLogin={handleLogin} />;
@@ -786,6 +792,18 @@ const App: React.FC = () => {
                 <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">土储中心归档移交资料规程，86项分类归档管理，上传自动填充</p>
+            </button>
+            {/* 手机水印照片 — NEW */}
+            <button onClick={() => setView('mobile-photos')}
+              className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl shadow-sm p-5 text-left border-2 border-cyan-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-cyan-500 text-white font-bold">NEW</div>
+              <div className="w-11 h-11 rounded-lg bg-cyan-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Camera className="w-6 h-6 text-cyan-600" />
+              </div>
+              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">手机水印照片</h3>
+                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-cyan-100 text-cyan-700 font-medium">手机端</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">工程现场手机拍照上传，含GPS/时间/项目/拍摄人水印，自动与电脑端同步</p>
             </button>
             {/* 项目仪表盘 - 已上线 */}
             <button onClick={() => setView('dashboard')}

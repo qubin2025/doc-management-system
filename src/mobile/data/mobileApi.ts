@@ -66,6 +66,35 @@ export async function saveTemplateCloud(template: WatermarkTemplate): Promise<vo
   }
 }
 
+/** 查询手机照片列表 */
+export interface MobilePhotoItem {
+  id: number;
+  projectId: number;
+  projectName: string;
+  filePath: string;
+  watermarkData: Record<string, unknown>;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  poi: string;
+  address: string;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+export async function listMobilePhotos(projectId?: number): Promise<MobilePhotoItem[]> {
+  const params = projectId ? `?projectId=${projectId}` : '';
+  const res = await fetch(`${API_BASE}/mobile/photo/list${params}`, { headers: jsonHeaders() });
+  if (!res.ok) throw new Error('获取照片列表失败');
+  return await res.json();
+}
+
+export async function getMobilePhotoFile(id: number): Promise<{ fileName: string; fileData: string }> {
+  const res = await fetch(`${API_BASE}/mobile/photo/file/${id}`, { headers: jsonHeaders() });
+  if (!res.ok) throw new Error('获取照片文件失败');
+  return await res.json();
+}
+
 /** 拉取云端模板列表，解析 template_data 为 WatermarkTemplate（解析失败的条目跳过） */
 export async function listTemplatesCloud(): Promise<WatermarkTemplate[]> {
   const res = await fetch(`${API_BASE}/mobile/template/list`, { headers: jsonHeaders() });
