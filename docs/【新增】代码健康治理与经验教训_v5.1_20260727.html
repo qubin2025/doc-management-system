@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>【新增】代码健康治理与经验教训 — v5.1 2026-07-27</title>
+<style>
+:root{--bg:#fefaf6;--card:#fffbf5;--border:#e8d5c0;--text:#4a3728;--muted:#8b7b6a;--accent:#c87941;--green:#4a9c5d;--red:#c4554d;--blue:#3b6fb6;--purple:#7c3aed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.9;padding:1.5rem;font-size:14px}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:1.5rem;text-align:center;margin:1.5rem 0 .3rem;background:linear-gradient(135deg,#c4554d,#c87941,#4a9c5d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:2rem}
+h2{font-size:1.2rem;margin:2.5rem 0 1rem;padding:.5rem 1rem;background:linear-gradient(90deg,#fef3e7,transparent);border-left:4px solid var(--accent);color:var(--accent)}
+h3{font-size:1rem;margin:1.5rem 0 .6rem;color:#6b4a2e;border-bottom:1px dashed var(--border);padding-bottom:.3rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0;box-shadow:0 1px 4px rgba(120,80,40,.06)}
+.card-red{border-left:4px solid var(--red)}.card-green{border-left:4px solid var(--green)}.card-blue{border-left:4px solid var(--blue)}.card-purple{border-left:4px solid var(--purple)}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.82rem}
+th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left}
+th{background:#fef3e7;color:var(--accent);font-weight:600;font-size:.78rem}
+tr:nth-child(even) td{background:rgba(254,243,231,.3)}
+.tag{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.tag-green{background:#e8f5e9;color:var(--green)}.tag-red{background:#fef2f2;color:var(--red)}.tag-blue{background:#eff6ff;color:var(--blue)}.tag-accent{background:#fef3e7;color:var(--accent)}.tag-purple{background:#f3e8ff;color:var(--purple)}
+.prompt-card{background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid var(--blue);border-radius:8px;padding:.8rem 1rem;margin:.5rem 0}
+.footer{text-align:center;color:var(--muted);margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:.75rem}
+.badge-new{background:var(--green);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:3px;margin-left:.5rem}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>代码健康治理与开发经验教训</h1>
+<p class="subtitle">v4.1 → v5.1 屎山治理全过程记录 · 防屎山方案 · 经验教训 · 下一步待解决问题<br>2026-07-27 · <span class="badge-new">新增</span></p>
+
+<!-- ===== 一 ===== -->
+<h2>一、屎山形成与治理全过程</h2>
+
+<h3>1.1 屎山形成期（v4.1 → v4.4）</h3>
+<div class="card card-red">
+  <p style="font-size:.9rem;color:var(--muted);line-height:2">
+    2026年7月14日至21日，项目从v4.1快速迭代到v4.4。期间新增<strong>12个组件、6个数据模块、8个API端点</strong>，代码量从~26,000行膨胀到~34,000行。
+    核心问题在于：<strong>每次新增功能都直接往 App.tsx 追加 if-else 路由</strong>，导致该文件从~1100行增长到1373行。
+    同时，多个后端路由文件超过500行门禁（kg.js 579行、ai.js 536行），功能混杂在一个文件中。
+  </p>
+</div>
+
+<h3>1.2 屎山爆发事件（2026-07-24）</h3>
+<div class="card card-red">
+  <p style="font-weight:700;color:var(--red);margin-bottom:.5rem">⚠ DesktopDailyReport.tsx 文件损毁事件</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    为接入 PromptConfigDialog 组件（仅需3行代码），因反复使用 <code>sed</code> 和 <code>node -e</code> 进行碎片化行内修改，导致文件 JSX 结构损毁：丢失KV组件、产生重复闭合标签、函数作用域错乱。<strong>累计消耗2+小时无效排错</strong>。
+    根本原因：自动化脚本不理解JSX层级结构，碎片化补丁逐步腐化文件结构。
+  </p>
+</div>
+
+<h3>1.3 屎山识别诊断（2026-07-25）</h3>
+<div class="card card-blue">
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    综合评估代码健康度得分 <strong>5.6/10</strong>，识别出四大红线文件：
+  </p>
+  <table>
+    <tr><th>文件</th><th>行数</th><th>门禁</th><th>超限比</th><th>核心问题</th></tr>
+    <tr><td>App.tsx</td><td>1,373</td><td>250</td><td>+449%</td><td>39个视图 if-else 链，每次加功能必膨胀</td></tr>
+    <tr><td>GuideChapter.tsx</td><td>1,341</td><td>250</td><td>+436%</td><td>~350行SVG遗留死代码</td></tr>
+    <tr><td>kg.js</td><td>579</td><td>350</td><td>+65%</td><td>基础CRUD与GraphRAG混在一起</td></tr>
+    <tr><td>ai.js</td><td>536</td><td>350</td><td>+53%</td><td>7模型代理+用量统计+管理端点混杂</td></tr>
+  </table>
+</div>
+
+<h3>1.4 屎山治理成果（v5.1 还债止血）</h3>
+<div class="card card-green">
+  <table>
+    <tr><th>文件</th><th>治理前</th><th>治理后</th><th>减幅</th><th>方案</th></tr>
+    <tr>
+      <td>App.tsx</td><td>1,373行</td><td><strong>934行</strong></td><td>-32%</td>
+      <td>抽出 HomePage (219行) + StandardSelectPage (70行) 两个独立组件</td>
+    </tr>
+    <tr>
+      <td>GuideChapter.tsx</td><td>1,341行</td><td><strong>698行</strong></td><td>-48%</td>
+      <td>SVG死代码已在6月提交中清理；7月拆分为主组件+3子组件</td>
+    </tr>
+    <tr>
+      <td>kg.js</td><td>579行</td><td><strong>125行</strong></td><td>-78%</td>
+      <td>GraphRAG 5端点抽出为 kg_graphrag.js (399行)，共享 initDriver()</td>
+    </tr>
+    <tr>
+      <td>ai.js</td><td>536行</td><td><strong>451行</strong></td><td>-16%</td>
+      <td>Admin 4端点抽出为 ai_admin.js (95行)，dailyUsage 导出共享</td>
+    </tr>
+  </table>
+  <p style="margin-top:.8rem;font-size:.85rem;color:var(--muted)">
+    <strong>关键设计决策：</strong> ai.js 的核心链（chat→GraphRAG→限流→模型降级）形成强耦合调用链，硬拆会破坏内聚性，因此仅抽离与chat无关的管理端点。这与kg.js的拆分策略不同（kg.js的GraphRAG端点完全独立，可直接抽离）。
+  </p>
+</div>
+
+<!-- ===== 二 ===== -->
+<h2>二、防屎山开发准则 v2.0</h2>
+
+<h3>2.1 硬门禁（强制执行）</h3>
+<table>
+  <tr><th>#</th><th>规则</th><th>违规后果</th></tr>
+  <tr><td>1</td><td>新增文件 ≤ 250行（从300行收紧）</td><td>不予合入</td></tr>
+  <tr><td>2</td><td>禁止新增 any 类型</td><td>不予合入</td></tr>
+  <tr><td>3</td><td>跨3层传参必须用 Context（禁止 prop drilling）</td><td>不予合入</td></tr>
+  <tr><td>4</td><td>仅用 Write/Edit 修改 TSX，禁止 sed/node-e</td><td>立即回退</td></tr>
+  <tr><td>5</td><td>新组件必须有测试文件</td><td>不予合入</td></tr>
+  <tr><td>6</td><td><strong>禁止向 App.tsx 追加 if-else 路由</strong>（新增🔥）</td><td>立即回退</td></tr>
+  <tr><td>7</td><td><strong>同文件修改 >3次即整体重写</strong>（新增🔥）</td><td>停止修补</td></tr>
+</table>
+
+<h3>2.2 页面固定结构规范</h3>
+<div class="card card-blue">
+  <p style="font-family:monospace;font-size:.82rem;line-height:2">
+    导入区 → 类型定义区 → 状态定义区 → 业务方法区 → 纯JSX渲染区 → 导出区
+  </p>
+  <p style="font-size:.8rem;color:var(--muted)">不允许打乱层级穿插代码。新页面严格遵循，老页面重构时统一规整。</p>
+</div>
+
+<h3>2.3 迭代卡点止损机制</h3>
+<div class="card card-red">
+  <pre style="font-family:monospace;font-size:.78rem;color:var(--red);line-height:2">
+if (TSC 错误数 > 3)     → 停止修补 → Write 完整重建
+if (同一文件已修改 >3次) → 停止修补 → Write 完整重建
+if (sed/node-e 修改后编译失败) → 立即回退 → 手动开发
+if (JSX 结构解析异常)   → 立即止损 → 切换手动标准化开发
+if (老旧破损文件)        → 永久禁用自动化注入 → 仅手动规范开发</pre>
+</div>
+
+<h3>2.4 新增功能审批清单</h3>
+<div class="card card-green">
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    ✓ 是否可复用现有组件/模块？<br>
+    ✓ 是否必须新建文件？（≤250行）<br>
+    ✓ 是否避免了向 App.tsx 追加路由？<br>
+    ✓ 是否避免了 prop drilling >3层？<br>
+    ✓ 是否有对应测试文件？<br>
+    ✓ 是否更新了 CLAUDE.md 和操作说明书？
+  </p>
+</div>
+
+<!-- ===== 三 ===== -->
+<h2>三、开发过程经验教训</h2>
+
+<h3>3.1 技术教训</h3>
+
+<div class="card card-red">
+  <p style="font-weight:700;color:var(--red)">教训一：sed/node-e 是 TSX 文件的毒药</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    <strong>场景：</strong> DesktopDailyReport.tsx 接入 PromptConfigDialog，仅需3行代码。<br>
+    <strong>错误做法：</strong> 用 sed 行内替换 + node -e 注入代码，多次碎片化修改。<br>
+    <strong>结果：</strong> Bash转义与JS语法叠加错误率极高，2+小时无效排错。<br>
+    <strong>正确做法：</strong> 直接使用 Write 工具完整重写文件，确保结构规整。
+  </p>
+</div>
+
+<div class="card card-red">
+  <p style="font-weight:700;color:var(--red)">教训二：内联 JSX 是路由膨胀的根源</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    <strong>场景：</strong> App.tsx 的 homepage 视图以427行内联 JSX 嵌入 if-else 链中。<br>
+    <strong>后果：</strong> 每次新增功能卡片，直接往 App.tsx 追加代码。<br>
+    <strong>解决方案：</strong> 抽出为独立 HomePage.tsx 组件，用数据驱动的卡片配置替代硬编码。
+  </p>
+</div>
+
+<div class="card card-accent">
+  <p style="font-weight:700;color:var(--accent)">教训三：bash/curl 传输中文数据需验证编码</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    <strong>场景：</strong> 通过 bash curl 向 Neo4j 写入含中文的测试数据。<br>
+    <strong>问题：</strong> shell 编码问题导致中文字符变为 \uFFFD 替换字符。<br>
+    <strong>解决方案：</strong> 用 Node.js 脚本直接调用 neo4j-driver 写入，避免 shell 编码层。
+  </p>
+</div>
+
+<div class="card card-accent">
+  <p style="font-weight:700;color:var(--accent)">教训四：Git checkout 是双刃剑</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    <strong>场景：</strong> 运行 git checkout -- src/ 回退文件，丢失了v4.4全部新增代码。<br>
+    <strong>后果：</strong> 62个TSC错误，需手动恢复 api.ts、mobileApi.ts 等文件的所有类型和函数。<br>
+    <strong>教训：</strong> checkout 前确认改动已提交；使用 git stash 代替 checkout 撤销。
+  </p>
+</div>
+
+<h3>3.2 架构教训</h3>
+
+<div class="card card-purple">
+  <p style="font-weight:700;color:var(--purple)">教训五：单例模式是状态管理的瓶颈</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    项目中 engineeringAgent、skillRegistry、mcpRegistry、orchestrator 均为全局单例。
+    这在单页面场景下工作正常，但缺少 Context 导致30+组件通过 prop drilling 共享 currentProject。
+    <strong>长期方案：</strong> 引入 React Context 统一跨组件状态管理。
+  </p>
+</div>
+
+<div class="card card-purple">
+  <p style="font-weight:700;color:var(--purple)">教训六：字符串视图路由不可类型安全</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    39个视图通过 <code>setView('string')</code> 切换，无编译时检查。
+    拼写错误（如 'dashboard' vs 'dashbord'）直到运行时才暴露。
+    <strong>长期方案：</strong> 路由配置对象 + 联合类型约束，编译时捕获错误。
+  </p>
+</div>
+
+<div class="card card-purple">
+  <p style="font-weight:700;color:var(--purple)">教训七：拆分策略需因文件制宜</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    kg.js 的 GraphRAG 端点完全独立 → 可直接抽离文件（579→125行）。<br>
+    ai.js 的 chat→GraphRAG→限流→降级形成强耦合链 → 仅抽离管理端点（536→451行）。<br>
+    <strong>原则：</strong> 不为了"干净"而破坏内聚性；优先抽离与核心调用链无关的部分。
+  </p>
+</div>
+
+<h3>3.3 流程教训</h3>
+
+<div class="card card-blue">
+  <p style="font-weight:700;color:var(--blue)">教训八：文档与实际规模脱节是隐患</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    CLAUDE.md 报告38组件/22模块，实际为62组件/34模块。文档与代码的偏差导致门禁规则失效。
+    <strong>解决：</strong> 每个迭代结束强制更新 CLAUDE.md 统计数据。
+  </p>
+</div>
+
+<div class="card card-blue">
+  <p style="font-weight:700;color:var(--blue)">教训九：功能膨胀比代码膨胀更危险</p>
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">
+    v4.4开发中需求从"手机端日报"扩展到8个领域30+需求项，导致一次性新增~6500行代码。
+    <strong>原则：</strong> 每个迭代聚焦3-5个核心需求，其余进入 backlog。
+  </p>
+</div>
+
+<!-- ===== 四 ===== -->
+<h2>四、下一步开发部署待解决问题</h2>
+
+<h3>4.1 高优先级 — 架构加固</h3>
+<table>
+  <tr><th>问题</th><th>影响</th><th>建议方案</th></tr>
+  <tr>
+    <td>ProjectContext 缺失</td>
+    <td>30+组件通过 prop drilling 共享 currentProject，新增组件需手动传参</td>
+    <td>创建 ProjectContext，从 App.tsx 顶层 Provider 注入</td>
+  </tr>
+  <tr>
+    <td>路由无类型安全</td>
+    <td>39个视图字符串匹配，拼写错误运行时才暴露</td>
+    <td>路由配置对象 + ViewName 联合类型 + React.lazy 懒加载</td>
+  </tr>
+  <tr>
+    <td>main bundle ~2MB</td>
+    <td>60+组件全量打包，首屏加载慢</td>
+    <td>React.lazy + Suspense，按视图拆分 chunk</td>
+  </tr>
+  <tr>
+    <td>HomePage.tsx 219行有拆分空间</td>
+    <td>功能卡片数据驱动已做，但仍可拆 Header/GuideModules/FeatureGrid 子组件</td>
+    <td>Phase 2 渐进拆分</td>
+  </tr>
+</table>
+
+<h3>4.2 中优先级 — 测试覆盖</h3>
+<table>
+  <tr><th>问题</th><th>影响</th><th>建议方案</th></tr>
+  <tr>
+    <td>0个组件测试文件</td>
+    <td>UI 重构无安全网，回归全靠手工验证</td>
+    <td>优先覆盖 Dashboard/HomePage/AgentConsole 3个核心组件</td>
+  </tr>
+  <tr>
+    <td>0个后端测试文件</td>
+    <td>API 变更无自动化保障</td>
+    <td>优先覆盖 auth/ai/kg 核心路由</td>
+  </tr>
+  <tr>
+    <td>0个 E2E 测试</td>
+    <td>端到端流程无自动化验证</td>
+    <td>Playwright/Cypress 覆盖登录→项目→日报核心流程</td>
+  </tr>
+</table>
+
+<h3>4.3 中优先级 — 可选服务激活</h3>
+<table>
+  <tr><th>问题</th><th>影响</th><th>建议方案</th></tr>
+  <tr>
+    <td>LightRAG 服务未启动</td>
+    <td>知识编排器缺少语义检索层，降级到本地向量库</td>
+    <td>启动 Python lightrag-server，验证与知识编排器集成</td>
+  </tr>
+  <tr>
+    <td>PaddleOCR 服务未启动</td>
+    <td>文档 OCR 解析能力缺失</td>
+    <td>启动 Python paddleocr-server，集成上传自动解析流程</td>
+  </tr>
+  <tr>
+    <td>通义千问 API 账户异常</td>
+    <td>7模型中1个不可用（自动降级不影响功能）</td>
+    <td>续费或移除，优先使用 DeepSeek+GLM-4+Ollama 三层保障</td>
+  </tr>
+</table>
+
+<h3>4.4 低优先级 — 部署与运维</h3>
+<table>
+  <tr><th>问题</th><th>影响</th><th>建议方案</th></tr>
+  <tr>
+    <td>无 CI/CD</td>
+    <td>每次提交需手动 TSC+build+测试</td>
+    <td>GitHub Actions: tsc → vitest → vite build → docker build</td>
+  </tr>
+  <tr>
+    <td>无生产部署方案</td>
+    <td>当前仅开发环境，无法对外提供服务</td>
+    <td>Nginx反向代理 + PM2进程守护 + HTTPS证书</td>
+  </tr>
+  <tr>
+    <td>无监控告警</td>
+    <td>服务异常无自动通知</td>
+    <td>Prometheus + Grafana 基础监控</td>
+  </tr>
+  <tr>
+    <td>数据库无备份策略</td>
+    <td>SQLite 单文件，无自动备份</td>
+    <td>Cron 定时备份 + 异地存储</td>
+  </tr>
+</table>
+
+<h3>4.5 知识图谱数据补充</h3>
+<table>
+  <tr><th>问题</th><th>影响</th><th>建议方案</th></tr>
+  <tr>
+    <td>仅16个测试节点</td>
+    <td>GraphRAG 检索覆盖面有限</td>
+    <td>导入 appendixA.ts 213条法规条款为图谱节点</td>
+  </tr>
+  <tr>
+    <td>法规条款未结构化</td>
+    <td>审查增强仅依赖节点标签匹配</td>
+    <td>将 GB50300/GB50204 等标准的条款文本分条入库</td>
+  </tr>
+</table>
+
+<!-- ===== 五 ===== -->
+<h2>五、防屎山制度保障</h2>
+
+<table>
+  <tr><th>制度</th><th>频率</th><th>负责</th></tr>
+  <tr><td>代码健康度评估</td><td>每个迭代末</td><td>自动 wc -l + TSC 统计</td></tr>
+  <tr><td>CLAUDE.md 同步更新</td><td>每次功能交付</td><td>开发者自查</td></tr>
+  <tr><td>门禁红线审查</td><td>每次提交前</td><td>npx tsc --noEmit + wc -l 检查</td></tr>
+  <tr><td>文件超限预警</td><td>持续</td><td>新建文件时自动检查行数</td></tr>
+  <tr><td>文档同步审计</td><td>每迭代末</td><td>对比 CLAUDE.md 与实际文件数</td></tr>
+</table>
+
+<div class="footer">
+  <p>中航建科 · 工程咨询管理平台 — 代码健康治理与经验教训</p>
+  <p>2026-07-27 · <span class="badge-new">新增</span> · 配合 CLAUDE.md 九.一/九.二 章节阅读</p>
+  <p>相关文档：<a href="#" style="color:var(--blue)">开发总结与下一步方向_20260714.html</a> · <a href="#" style="color:var(--blue)">DEVELOPMENT_PLAN_v5.1.md</a></p>
+</div>
+
+</div>
+</body>
+</html>

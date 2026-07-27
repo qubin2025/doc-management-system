@@ -34,7 +34,59 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
 <div class="container">
 
 <h1>全过程工程咨询管理系统<br>开发总结与下一步方向</h1>
-<p class="subtitle">提示词方法论 · 目标对齐复盘 · AI前沿方向 · 新质生产力路线 · 2026-07-14</p>
+<p class="subtitle">提示词方法论 · 目标对齐复盘 · AI前沿方向 · 新质生产力路线 · 2026-07-14 · 更新至2026-07-25</p>
+
+<!-- ===== 零 ===== -->
+<h2>零、系统设计哲学与核心理念</h2>
+
+<h3>0.1 根本认知：建设工程项目是单一的、一次性的、不可复制的</h3>
+<div class="card" style="border-left:4px solid var(--blue)">
+  <p style="font-size:.9rem;color:var(--muted);line-height:2">本系统的设计出发点是承认一个被传统工程管理软件长期忽视的事实：<strong>每一个建设项目都是独一无二的。</strong> 它的场地条件、气候环境、团队构成、分包组织、材料供应、甲方要求……所有这些因素组合在一起，构成了一个不可复制的整体。试图用一个"标准化模板"去套用所有项目，就像用一把刻度尺去丈量海洋——你能得到数字，但永远无法理解海洋。</p>
+</div>
+
+<h3>0.2 传统数据方法为何失败</h3>
+<div class="card">
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">传统工程管理软件遵循"先有指标体系，再采集数据"的路径。它们预设了"成本偏差率"、"进度偏差率"、"质量合格率"等有限指标，然后要求项目去适应这些指标。这种做法有三个致命缺陷：</p>
+  <ol style="margin-left:1.5rem;font-size:.85rem;color:var(--muted);line-height:2">
+    <li><strong>信息损失</strong>：项目复杂性的99%被丢弃，只保留了几个百分比数字</li>
+    <li><strong>无法描述独特性</strong>：每个项目的独特之处（为什么这个分包商效率高？为什么那天下雨导致延误？）在标准化过程中消失</li>
+    <li><strong>对标陷阱</strong>：与"类似项目"的比较看似科学，实则忽略了项目的本质差异，给出的"建议"往往不痛不痒</li>
+  </ol>
+</div>
+
+<h3>0.3 本系统的数据哲学</h3>
+<div class="card" style="border-left:4px solid var(--green)">
+  <h4>核心原则：全量数据收集 &gt; 标准化指标提取</h4>
+  <p style="font-size:.9rem;color:var(--muted);line-height:2">我们深受《大数据时代》的启发，采纳其三个核心洞见：<strong>① 拥抱全量数据而非抽样；② 接受数据的混杂性而非追求精确；③ 关注相关关系而非只追问因果。</strong></p>
+  <p style="font-size:.9rem;color:var(--muted);line-height:2;margin-top:.5rem">在这个时代，AI大模型提供了近乎无限的全方位向量化数据分析能力。我们不再需要人为预设"重要的指标"——我们只需<strong>完整地收集项目的全部数据</strong>，然后让AI去发现数据之间的关系、趋势和模式。这意味着：</p>
+  <ul style="margin-left:1.5rem;font-size:.85rem;color:var(--muted);line-height:2">
+    <li>日报的每一个字段都被保存，不是摘要</li>
+    <li>安全检查的每一次记录都被关联，不是统计</li>
+    <li>每一个协调问题的来龙去脉都被追溯，不是打勾</li>
+    <li>每一台机械、每一批材料、每一个人员变化都被记录，不是忽略</li>
+  </ul>
+  <p style="font-size:.9rem;color:var(--accent);font-weight:700;margin-top:.8rem">数据不为归档而生，数据为理解而生。</p>
+</div>
+
+<h3>0.4 六个工程设计原则</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th>原则</th><th>说明</th></tr>
+    <tr><td>1</td><td><strong>全量收存</strong></td><td>不预设重要性筛选，收集项目全生命周期产生的全部数据。日报8板块全字段入库，施工照片原图保存，原始DOCX双份存档。</td></tr>
+    <tr><td>2</td><td><strong>拒绝裁剪</strong></td><td>不为了"标准化"而丢弃任何数据。每个项目的独特细节都是其DNA的组成部分。结构化数据库保留完整JSON字段，原始文档保留一字不改。</td></tr>
+    <tr><td>3</td><td><strong>AI驱动关联</strong></td><td>利用AI大模型的向量化分析能力，从全量数据中自动发现关系、趋势和模式。DeepSeek日报解析、Recharts趋势图表、知识图谱25类节点全要素关联。</td></tr>
+    <tr><td>4</td><td><strong>项目即样本</strong></td><td>每个完成的项目都是一个完整的、可供后续项目参考的真实样本。项目经验库自动提取模式，跨项目对比分析基于完整数据而非有限指标。</td></tr>
+    <tr><td>5</td><td><strong>以PMBOK为纲</strong></td><td>以《项目管理指南》的准则和行动要素为骨架，系统化地组织和归纳数据。5大过程组×10大知识领域为框架，确保数据的系统性。</td></tr>
+    <tr><td>6</td><td><strong>可见即可信</strong></td><td>不满足于报表数字，追求数据的完整性和可视化，让项目的全貌一望便知。3D知识图谱、Dashboard实时图表、日报全8板块展开视图。</td></tr>
+  </table>
+</div>
+
+<h3>0.5 系统的终极目标</h3>
+<div class="card" style="text-align:center;border-left:4px solid var(--accent)">
+  <p style="font-size:1.05rem;margin:.5rem 0"><strong>为全过程工程咨询、项目管理、工程管理提供活生生的样本和可借鉴模型。</strong></p>
+  <p style="font-size:.85rem;color:var(--muted)">它们是完整的、丰满的，一望便知的——无论是美的还是丑陋的。通过本系统，可见的是以此作为下一个项目的指路者。</p>
+  <p style="font-size:.9rem;margin-top:.8rem;color:var(--accent);font-weight:700">数据不为归档而生，数据为下一个项目而生。</p>
+</div>
 
 <!-- ===== 一 ===== -->
 <h2>一、有效开发提示词方法论总结</h2>
@@ -91,6 +143,11 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
   <div class="a"><strong>模式：阶段性复盘 → 价值量化。</strong> 每个阶段结束要求全面复盘，将技术工作转化为可量化的业务价值。这是面向领导汇报的必备能力。</div>
 </div>
 
+<div class="prompt-card">
+  <div class="q">11. "v4.3+v4.4的功能验证是否与v4.5的开发完成与否有联系？如果完成4.5的开发对之前版本的验证无影响，就先继续开发"</div>
+  <div class="a"><strong>模式：阶段性依赖判断 → 并行决策。</strong> 多版本迭代中，先判断各阶段之间的耦合关系——是独立并行的还是顺序依赖的。独立则先完成全部开发再统一验证，避免"开发→验证→开发→验证"的串行低效。判断方法：列出两个阶段各自改动的文件/模块/接口，逐项比对，无交集即独立。这是工程管理中的<strong>关键路径识别</strong>在AI辅助开发中的直接应用。</div>
+</div>
+
 <h3>1.2 交互模式总结</h3>
 <div class="card">
   <table>
@@ -102,6 +159,7 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
     <tr><td><strong>体验驱动型</strong></td><td>从用户视角指出不合理之处</td><td>功能→好用→顺手</td></tr>
     <tr><td><strong>目标约束型</strong></td><td>"确保目标不打折扣"、"可落地"</td><td>方案不过于理想化</td></tr>
     <tr><td><strong>阶段复盘型</strong></td><td>要求总结、量化、对比</td><td>积累知识资产，可追溯</td></tr>
+    <tr><td><strong>依赖判断型</strong></td><td>先判断阶段间耦合再决定串行/并行</td><td>关键路径识别，避免伪依赖导致低效</td></tr>
   </table>
 </div>
 
@@ -280,8 +338,676 @@ tr:nth-child(even) td{background:rgba(254,243,231,.3)}
   <p style="font-size:.9rem;margin-top:.8rem;color:var(--accent);font-weight:700">新质生产力 = 数据要素 × AI能力 × 行业知识</p>
 </div>
 
+<!-- ===== 本轮开发记录 (2026-07-21 ~ 2026-07-22) ===== -->
+<h2>十一、v4.2 迭代开发记录（2026-07-21 ~ 2026-07-22）</h2>
+
+<h3>11.1 AI 模型配置修复</h3>
+<div class="card">
+  <p><strong>问题：</strong>大模型配置中心全部测试按钮无反应，所有模型显示离线</p>
+  <table>
+    <tr><th>根因</th><th>说明</th></tr>
+    <tr><td>dotenv 路径错位</td><td>server.js 使用 <kbd>import 'dotenv/config'</kbd> 从 CWD 加载 .env，但服务器从项目根目录启动，读到的 .env 仅含 VITE_* 前端变量，缺少 DEEPSEEK_API_KEY 等后端变量。实际 API Key 存放在 backend/.env</td></tr>
+    <tr><td>ES模块提升</td><td>ai.js 在模块初始化时读取 process.env.DEEPSEEK_API_KEY，早于 dotenv.config() 执行，导致 MODELS 配置的 key 均为 undefined</td></tr>
+  </table>
+  <p><strong>修复：</strong></p>
+  <ul style="margin-left:1.5rem;font-size:.85rem;color:var(--muted)">
+    <li>server.js: 改用显式路径 <kbd>dotenv.config({ path: resolve(__dirname, '.env') })</kbd> 确保加载 backend/.env</li>
+    <li>ai.js: MODELS 从 const 改为 <kbd>function getModels()</kbd> 延迟求值，确保 process.env 已填充</li>
+    <li>中间件 auth.js: requireAuth SQL 查询补充 display_name 字段，getMe() 返回 displayName</li>
+  </ul>
+  <p style="margin-top:.8rem"><span class="tag tag-green">结果</span> DeepSeek/V4/R1 + 通义千问 + 智谱GLM 共5个云端模型全部在线</p>
+</div>
+
+<h3>11.2 全部测试按钮交互修复</h3>
+<div class="card">
+  <p><strong>问题：</strong>testAll() 只测试 status === 'online' | 'optional' 的模型，全部离线时循环体不执行，按钮无任何反馈</p>
+  <p><strong>修复（ModelAdmin.tsx）：</strong></p>
+  <ul style="margin-left:1.5rem;font-size:.85rem;color:var(--muted)">
+    <li>测试范围扩大至非 offline 模型</li>
+    <li>全部离线时 toast 提示「请先配置 API Key」</li>
+    <li>增加 testingAll 状态：测试中显示旋转图标 + 禁用按钮防重复点击</li>
+    <li>起止有 toast 反馈</li>
+  </ul>
+</div>
+
+<h3>11.3 移动端 PWA 封装</h3>
+<div class="card">
+  <table>
+    <tr><th>交付物</th><th>文件</th></tr>
+    <tr><td>iOS 适配</td><td>mobile.html: apple-touch-icon ×2、apple-mobile-web-app-capable、沉浸式状态栏 black-translucent、apple-mobile-web-app-title</td></tr>
+    <tr><td>安装引导组件</td><td>src/mobile/components/InstallBanner.tsx（新建）: 三态自适应 — 微信/QQ内置浏览器提示切换浏览器、iOS Safari 分享按钮指引、Android Chrome 菜单指引、底部悬浮安装入口</td></tr>
+    <tr><td>Manifest 增强</td><td>vite.config.ts: 补充 name 品牌全称、orientation: portrait、categories、description</td></tr>
+    <tr><td>生产部署</td><td>backend/server.js: 生产模式自动托管 dist/ 静态文件，/mobile → mobile.html 路由</td></tr>
+    <tr><td>关键发现</td><td>beforeinstallprompt 事件仅 HTTPS/localhost 触发，HTTP 局域网部署必须用自定义 UI 引导；微信/QQ 内置浏览器不支持 PWA，需提示用户用系统浏览器打开</td></tr>
+  </table>
+</div>
+
+<h3>11.4 移动端登录兼容性验证</h3>
+<div class="card">
+  <table>
+    <tr><th>验证项</th><th>结果</th></tr>
+    <tr><td>认证API</td><td>MobileLogin → login() → POST /api/auth/login，共用桌面端 api.ts，同一 token 体系（localStorage key: doc-system-token）</td></tr>
+    <tr><td>会话恢复</td><td>getMe() → GET /api/auth/me，启动时自动恢复用户状态</td></tr>
+    <tr><td>移动端API</td><td>/api/mobile/notice/check、/api/mobile/photo/list 等移动专属端点均通过 requireAuth 中间件验证</td></tr>
+    <tr><td>修复</td><td>requireAuth SQL 补充 display_name 字段，getMe() 响应补全 displayName，确保 UserInfo 类型完整</td></tr>
+  </table>
+</div>
+
+<h3>11.5 UI 视觉增强</h3>
+<div class="card">
+  <table>
+    <tr><th>项目</th><th>变更</th><th>涉及文件数</th></tr>
+    <tr><td>顶栏底色加深</td><td>bg-slate-100/60 → bg-slate-200/70 → bg-slate-300/70</td><td>16个页面文件</td></tr>
+    <tr><td>副标题色号</td><td>text-gray-400 → text-gray-600 / text-gray-500 → text-gray-700，暗色模式同步</td><td>13个文件</td></tr>
+  </table>
+</div>
+
+<h3>11.6 系统模块全景统计</h3>
+<div class="card">
+  <p>全系统经路由分析确认共 <strong>31个</strong> 有效项目管理模块，分为八大类：指南工作(4) + AI智能化(5) + AI审查生成(4) + 项目管理核心(7) + 资料知识(6) + 供应商造价(2) + 手机端(1) + 高级工具(2)</p>
+</div>
+
+<!-- ====== 十二、v4.3→v4.5 开发计划（2026-07-22制定） ====== -->
+<h2>十二、v4.3 → v4.5 开发计划（2026-07-22）</h2>
+
+<!-- 当前状态总览 -->
+<h3>12.1 当前完成度评估</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:18%">维度</th><th style="width:10%">完成度</th><th>说明</th></tr>
+    <tr><td><strong>AI 模型配置</strong></td><td style="color:var(--green);font-weight:700">100%</td><td>5云端模型在线（DeepSeek V3/V4/R1 + 通义千问 + 智谱GLM），testAll 交互已修复，全部测试按钮可正常使用</td></tr>
+    <tr><td><strong>移动端 PWA</strong></td><td style="color:var(--accent);font-weight:700">80%</td><td>登录 + 拍照 + 水印合成 + 上传已可用，InstallBanner 引导已集成，生产部署就绪（http://192.168.13.187:3000/mobile）；缺问题上报、离线缓存</td></tr>
+    <tr><td><strong>手机端能力</strong></td><td style="color:var(--accent);font-weight:700">60%</td><td>相机/相册/上传 pipeline 已通；预警中心（notice/check）和安全巡检仅框架级，Dashboard/照片浏览可用</td></tr>
+    <tr><td><strong>知识体系</strong></td><td style="color:var(--accent);font-weight:700">70%</td><td>知识库（全文检索+语义搜索）+ 知识图谱（Neo4j + 关系可视化）已建；缺 GraphRAG 语义关联升级、项目经验库</td></tr>
+    <tr><td><strong>价值度量</strong></td><td style="color:var(--red);font-weight:700">30%</td><td>目标 WBS 四层树 + 进度自动计算已实现；缺关键价值指标绑定、价值实现度自动评估</td></tr>
+    <tr><td><strong>本地 AI</strong></td><td style="color:var(--red);font-weight:700">0%</td><td>Ollama 本地模型未部署，离线 AI 能力缺失</td></tr>
+  </table>
+</div>
+
+<!-- 第一阶段 -->
+<h3>12.2 第一阶段：v4.3 — 补齐核心缺口（本周）</h3>
+
+<div class="card" style="border-left:4px solid var(--red)">
+  <h4 style="margin-top:0">任务 1：手机端问题上报 <span class="tag tag-red">P0</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>2天</p>
+  <p style="font-size:.85rem">基于现有 SafetyCheck 框架扩展：现场问题拍照 + 文字描述 + 紧急程度分级（一般/紧急/严重） + 指派处理人 + 状态跟踪（已上报→处理中→已解决→关闭）</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>移动端完整问题上报闭环，问题数据写入后端并与项目关联</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red)">
+  <h4 style="margin-top:0">任务 2：手机端预警中心 <span class="tag tag-red">P0</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>1天</p>
+  <p style="font-size:.85rem">Dashboard 预警列表（/api/mobile/notice/check 已有数据源）可点击进入详情页；预警数据与问题上报流程打通，过期目标/风险自动生成预警卡片</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>预警 → 问题上报联动，形成现场管理闭环</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4 style="margin-top:0">任务 3：AI 输出质量评分系统 <span class="tag tag-accent">P1</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>1天</p>
+  <p style="font-size:.85rem">AI 审查报告 / 方案生成 / 对话结果增加 👍👎 评分按钮 + 可选文字反馈；评分数据写入 audit_log 表，管理员面板新增「AI 质量统计」视图</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>AI 质量数据开始系统化累积，为后续 LLM 微调提供训练数据基础</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4 style="margin-top:0">任务 4：Ollama 本地模型部署引导 <span class="tag tag-accent">P1</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>0.5天</p>
+  <p style="font-size:.85rem">server.js 启动时增加 Ollama 端口 11434 探测 → 已安装则自动拉取 qwen2.5:7b → 注册为可选模型；未安装则输出安装引导（ollama.com 下载 + 拉取命令）；模型配置中心显示本地模型状态及安装指引</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>一键部署本地 AI，数据不出企业，离线场景可用</p>
+</div>
+
+<!-- 第二阶段 -->
+<h3>12.3 第二阶段：v4.4 — 能力深化（2-3周）</h3>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4 style="margin-top:0">任务 5：项目经验库 MVP <span class="tag tag-accent">P1</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>3天</p>
+  <p style="font-size:.85rem">从已完成项目的工作项完成模式 + AI 审查结果分布 + 问题记录中自动提取高频模式；Agent 在新项目中主动引用相关历史经验（"类似项目曾出现..."）；经验库前端页面支持关键词检索</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>公司独有的工程经验知识库，形成不可复制的数据壁垒</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4 style="margin-top:0">任务 6：价值度量链 <span class="tag tag-accent">P1</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>2天</p>
+  <p style="font-size:.85rem">目标管理增强：每个目标支持绑定 1-N 个可量化价值指标（成本节约额/工期缩短天数/质量达标率/安全零事故天数）；Agent 根据关联工作项的完成数据自动计算价值达成度；Dashboard 新增「价值看板」卡片</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>从「管进度」升级为「管价值」，PMBOK 第7版绩效域对齐</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4 style="margin-top:0">任务 7：手机端离线缓存 <span class="tag tag-blue">P2</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>2天</p>
+  <p style="font-size:.85rem">Service Worker 缓存策略增强：拍照时若网络断开，照片暂存 IndexedDB；恢复网络后自动上传队列中的照片；上传状态本地持久化，刷新不丢失</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>工地无网络环境（地下室/隧道）拍照不中断</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4 style="margin-top:0">任务 8：移动端照片浏览增强 <span class="tag tag-blue">P2</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>1天</p>
+  <p style="font-size:.85rem">MobilePhotoGallery 增加：按日期范围筛选 + 按水印项目筛选 + 缩略图瀑布流网格 + 批量选择下载 + 大图预览左右滑动</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>完整的现场照片管理体验</p>
+</div>
+
+<!-- 第三阶段 -->
+<h3>12.4 第三阶段：v4.5 — 技术升级（1-2个月）</h3>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4 style="margin-top:0">任务 9：GraphRAG 知识图谱升级 <span class="tag tag-blue">P2</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>2周</p>
+  <p style="font-size:.85rem">Neo4j 知识图谱升级为 GraphRAG：规范条款之间建立语义关联边（引用/补充/冲突/上下位），AI 审查时可沿图遍历相关规范条款，生成「规范关联审查报告」。目标：规范审查准确率从 70% 提升至 90%+</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>行业领先的规范智能关联引擎</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4 style="margin-top:0">任务 10：多 Agent 协同 <span class="tag tag-blue">P2</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>1周</p>
+  <p style="font-size:.85rem">AgentConsole 支持 3 Agent 并行协作：规划 Agent（WBS分解/进度编排）+ 审查 Agent（施工/合同/招投标）+ 分析 Agent（KPI/风险/趋势）。统一任务分配器根据意图自动路由到对应 Agent，结果合并展示</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>虚拟项目团队雏形，Agent 分工协作替代单一对话模式</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4 style="margin-top:0">任务 11：企业级 Docker 一键部署 <span class="tag tag-blue">P2</span></h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>工作量：</strong>1周</p>
+  <p style="font-size:.85rem">完善 docker-compose.yml：Express 后端 + React 前端（Nginx 静态托管）+ Ollama 本地模型 + Neo4j 图数据库 + RAGFlow 知识库 + PaddleOCR 文档解析。增加健康检查、数据卷持久化、环境变量模板</p>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>产出：</strong>一条 docker compose up 命令完成全部部署，支持私有化交付</p>
+</div>
+
+<!-- 优先级说明 -->
+<h3>12.5 优先级体系</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:10%">级别</th><th style="width:15%">标识</th><th>含义</th><th style="width:25%">决策依据</th></tr>
+    <tr>
+      <td><strong>P0</strong></td>
+      <td><span class="tag tag-red">阻塞性</span></td>
+      <td>不做则对应模块不可用，必须优先完成</td>
+      <td>手机端问题上报 / 预警中心 — 移动端核心能力缺失</td>
+    </tr>
+    <tr>
+      <td><strong>P1</strong></td>
+      <td><span class="tag tag-accent">关键性</span></td>
+      <td>直接影响 AI 可用性和数据资产积累</td>
+      <td>AI 评分系统（数据飞轮基础）/ Ollama 本地部署（离线能力）/ 经验库（数据壁垒）/ 价值度量链（PMBOK 7对齐）</td>
+    </tr>
+    <tr>
+      <td><strong>P2</strong></td>
+      <td><span class="tag tag-blue">增强性</span></td>
+      <td>锦上添花，提升体验和技术壁垒</td>
+      <td>离线缓存（工地特殊场景）/ 照片浏览增强 / GraphRAG / 多Agent / Docker</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 路线图总览 -->
+<h3>12.6 开发路线图总览</h3>
+<div class="card">
+  <svg viewBox="0 0 880 280" style="width:100%;max-width:880px;display:block;margin:.5rem auto" font-family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif">
+    <defs>
+      <linearGradient id="g-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c4554d"/><stop offset="100%" stop-color="#e57373"/></linearGradient>
+      <linearGradient id="g-orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c87941"/><stop offset="100%" stop-color="#f4a460"/></linearGradient>
+      <linearGradient id="g-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b6fb6"/><stop offset="100%" stop-color="#64b5f6"/></linearGradient>
+      <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#4a3728" flood-opacity="0.1"/></filter>
+    </defs>
+
+    <!-- 时间轴 -->
+    <line x1="60" y1="50" x2="820" y2="50" stroke="#e8d5c0" stroke-width="3"/>
+    <circle cx="60" cy="50" r="6" fill="#c4554d"/>
+    <circle cx="400" cy="50" r="6" fill="#c87941"/>
+    <circle cx="820" cy="50" r="6" fill="#3b6fb6"/>
+
+    <text x="68" y="38" font-size="14" font-weight="700" fill="#c4554d">现在 v4.2</text>
+    <text x="380" y="38" font-size="14" font-weight="700" fill="#c87941">v4.4（2-3周）</text>
+    <text x="805" y="38" font-size="14" font-weight="700" fill="#3b6fb6">v4.5（1-2月）</text>
+
+    <!-- v4.3 -->
+    <rect x="30" y="70" width="195" height="195" rx="12" fill="#fffbf5" stroke="#c4554d" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="30" y="70" width="195" height="36" rx="12" fill="url(#g-red)"/>
+    <rect x="30" y="94" width="195" height="12" fill="url(#g-red)"/>
+    <text x="127" y="93" font-size="15" font-weight="700" fill="white" text-anchor="middle">v4.3 本周</text>
+    <text x="127" y="120" font-size="12" font-weight="700" fill="#8b4513" text-anchor="middle">补齐核心缺口</text>
+    <text x="44" y="142" font-size="11" fill="#4a3728">● 问题上报 P0</text>
+    <text x="44" y="164" font-size="11" fill="#4a3728">● 预警中心 P0</text>
+    <text x="44" y="186" font-size="11" fill="#4a3728">● AI评分系统 P1</text>
+    <text x="44" y="208" font-size="11" fill="#4a3728">● Ollama引导 P1</text>
+    <text x="44" y="236" font-size="10" fill="#8b7b6a">预计工作量：4.5天</text>
+
+    <!-- v4.4 -->
+    <rect x="265" y="70" width="195" height="195" rx="12" fill="#fffbf5" stroke="#c87941" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="265" y="70" width="195" height="36" rx="12" fill="url(#g-orange)"/>
+    <rect x="265" y="94" width="195" height="12" fill="url(#g-orange)"/>
+    <text x="362" y="93" font-size="15" font-weight="700" fill="white" text-anchor="middle">v4.4 2-3周</text>
+    <text x="362" y="120" font-size="12" font-weight="700" fill="#8b4513" text-anchor="middle">能力深化</text>
+    <text x="279" y="142" font-size="11" fill="#4a3728">● 项目经验库 P1</text>
+    <text x="279" y="164" font-size="11" fill="#4a3728">● 价值度量链 P1</text>
+    <text x="279" y="186" font-size="11" fill="#4a3728">● 离线缓存 P2</text>
+    <text x="279" y="208" font-size="11" fill="#4a3728">● 照片浏览增强 P2</text>
+    <text x="279" y="236" font-size="10" fill="#8b7b6a">预计工作量：8天</text>
+
+    <!-- v4.5 -->
+    <rect x="500" y="70" width="195" height="195" rx="12" fill="#fffbf5" stroke="#3b6fb6" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="500" y="70" width="195" height="36" rx="12" fill="url(#g-blue)"/>
+    <rect x="500" y="94" width="195" height="12" fill="url(#g-blue)"/>
+    <text x="597" y="93" font-size="15" font-weight="700" fill="white" text-anchor="middle">v4.5 1-2月</text>
+    <text x="597" y="120" font-size="12" font-weight="700" fill="#8b4513" text-anchor="middle">技术升级</text>
+    <text x="514" y="142" font-size="11" fill="#4a3728">● GraphRAG P2</text>
+    <text x="514" y="164" font-size="11" fill="#4a3728">● 多Agent协同 P2</text>
+    <text x="514" y="186" font-size="11" fill="#4a3728">● Docker部署 P2</text>
+    <text x="514" y="208" font-size="11" fill="#4a3728"></text>
+    <text x="514" y="236" font-size="10" fill="#8b7b6a">预计工作量：4周</text>
+
+    <!-- 连接箭头 -->
+    <text x="230" y="168" font-size="22" fill="#c87941">→</text>
+    <text x="465" y="168" font-size="22" fill="#3b6fb6">→</text>
+
+    <!-- 底部标签 -->
+    <rect x="740" y="85" width="125" height="165" rx="10" fill="#fef3e7" stroke="#e8d5c0"/>
+    <text x="802" y="108" font-size="12" font-weight="700" fill="#c87941" text-anchor="middle">目标完成度</text>
+    <text x="802" y="136" font-size="18" font-weight="700" fill="#c4554d" text-anchor="middle">→ 84% →</text>
+    <text x="802" y="158" font-size="18" font-weight="700" fill="#c87941" text-anchor="middle">→ 92% →</text>
+    <text x="802" y="180" font-size="18" font-weight="700" fill="#3b6fb6" text-anchor="middle">→ 98%</text>
+    <text x="802" y="206" font-size="10" fill="#8b7b6a" text-anchor="middle">AI能力 + 移动端</text>
+    <text x="802" y="222" font-size="10" fill="#8b7b6a" text-anchor="middle">+ 知识壁垒</text>
+    <text x="802" y="238" font-size="10" fill="#8b7b6a" text-anchor="middle">+ 生产部署</text>
+  </svg>
+</div>
+
+<!-- ====== 十二、知识图谱架构与构建原则 ====== -->
+<h2>十二、知识图谱架构与构建原则（2026-07-23）</h2>
+
+<h3>12.1 构建背景</h3>
+<div class="card">
+  <p>系统知识图谱经历了从<strong>局部覆盖（13类节点）</strong>到<strong>全面覆盖（25类节点）</strong>的演进过程。v4.2 版本仅覆盖指南工作模块和基础文档，v4.3 版本扩充至覆盖全部 31 个模块中有持久化数据的 25 个模块。</p>
+  <p style="margin-top:.5rem"><strong>技术栈</strong>：react-force-graph-3d（Three.js 3D渲染） + localStorage 数据源 + Neo4j 同步 + 5种主题光效</p>
+</div>
+
+<h3>12.2 五大构建原则</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:12%">原则</th><th>核心思想</th><th style="width:40%">实现方式</th></tr>
+    <tr><td><strong>① 数据驱动</strong></td><td>只对实际存储数据的模块建图</td><td>遍历 localStorage 中所有业务键，有数据则生成节点，无数据则跳过</td></tr>
+    <tr><td><strong>② 项目锚定</strong></td><td>所有节点必须通过边关联到项目根节点</td><td>每个非项目节点至少有一条边指向项目节点（belongs-to / references / assigned-to）</td></tr>
+    <tr><td><strong>③ 关系优先</strong></td><td>每个节点类型必须有至少一种有意义的边类型</td><td>6种边类型：belongs-to（归属）/ references（引用）/ assigned-to（指派）/ produces（产出）/ precedes（前驱）/ reviews（审查）</td></tr>
+    <tr><td><strong>④ 全量覆盖</strong></td><td>所有产生数据持久化的模块均应在图谱中有对应</td><td>31个模块中有 localStorage 数据的 25 个已入图；6个纯API模块待异步接入</td></tr>
+    <tr><td><strong>⑤ 可查询</strong></td><td>图谱应能回答项目管理关键问题</td><td>支持节点搜索、属性查看、父链追溯、点击跳转关联节点</td></tr>
+  </table>
+</div>
+
+<h3>12.3 节点类型全景（25类）</h3>
+<div class="card">
+  <h4>基础业务层（5类）</h4>
+  <table>
+    <tr><th>类型</th><th>数据源</th><th>边关系</th></tr>
+    <tr><td>project 项目</td><td>doc-mgmt-projects-DB11/T695-2025, T808-2020</td><td>根节点，所有其他节点锚定于此</td></tr>
+    <tr><td>chapter 章节 / sub-module 子模块 / work-item 工作项</td><td>guide-chapter-ch{1-4}-modules, done</td><td>层级归属链：工作项→子模块→章节→项目</td></tr>
+    <tr><td>form 表单</td><td>form-content-ch{1-4}-*</td><td>→ 章节 belongs-to</td></tr>
+  </table>
+  <h4 style="margin-top:1rem">资料与知识层（6类）</h4>
+  <table>
+    <tr><th>类型</th><th>数据源</th><th>边关系</th></tr>
+    <tr><td>document 文档资料</td><td>上传记录 / 政策库 / 制度库 / 土储归档 / 计划文件</td><td>→ 项目 belongs-to</td></tr>
+    <tr><td>kb-document 知识库</td><td>knowledge-base-documents</td><td>→ 项目 references, → 章节 references</td></tr>
+    <tr><td>supplier 供应商</td><td>supplier-data</td><td>→ 项目 references</td></tr>
+    <tr><td>cost 造价</td><td>项目投资属性</td><td>→ 项目 belongs-to</td></tr>
+    <tr><td>person 人员</td><td>表单创建者 / 注册用户</td><td>← 风险 / RACI 的 assigned-to 目标</td></tr>
+    <tr><td>stakeholder 干系人</td><td>stakeholder-{project}</td><td>→ 项目 assigned-to</td></tr>
+  </table>
+  <h4 style="margin-top:1rem">项目管理核心层（4类）</h4>
+  <table>
+    <tr><th>类型</th><th>数据源</th><th>边关系</th></tr>
+    <tr><td>objective 目标</td><td>project-objectives-{name}</td><td>→ 项目 belongs-to, → 父目标 precedes</td></tr>
+    <tr><td>risk-item 风险</td><td>risk-{project}</td><td>→ 项目 references, → 负责人 assigned-to</td></tr>
+    <tr><td>raci-item RACI矩阵</td><td>raci-{project}</td><td>→ 项目 references, → 责任人 assigned-to</td></tr>
+    <tr><td>baseline 基线</td><td>project-baselines-*</td><td>→ 项目 references</td></tr>
+  </table>
+  <h4 style="margin-top:1rem">AI 智能化层（5类）</h4>
+  <table>
+    <tr><th>类型</th><th>数据源</th><th>边关系</th></tr>
+    <tr><td>review-report 审查报告</td><td>construction/contract/bid-review-history</td><td>→ 项目 references</td></tr>
+    <tr><td>plan-generated AI方案</td><td>plan-generator-history</td><td>→ 项目 produces</td></tr>
+    <tr><td>ai-session AI对话</td><td>ai-sessions</td><td>→ 项目 references</td></tr>
+    <tr><td>skill 技能配置</td><td>skill-enabled</td><td>→ 项目 references</td></tr>
+    <tr><td>workflow 工作流</td><td>custom-workflows</td><td>→ 项目 precedes</td></tr>
+  </table>
+  <h4 style="margin-top:1rem">移动端（1类）</h4>
+  <table>
+    <tr><th>类型</th><th>数据源</th><th>边关系</th></tr>
+    <tr><td>mobile-photo 手机水印</td><td>mobile-watermark-templates</td><td>→ 项目 produces</td></tr>
+  </table>
+</div>
+
+<h3>12.4 系统模块图谱覆盖率</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:10%">类别</th><th>总模块数</th><th>已入图</th><th>覆盖率</th></tr>
+    <tr><td>指南工作模块</td><td>4</td><td>4</td><td style="color:var(--green)">100%</td></tr>
+    <tr><td>AI 智能化</td><td>5</td><td>5</td><td style="color:var(--green)">100%</td></tr>
+    <tr><td>AI 审查与生成</td><td>4</td><td>4</td><td style="color:var(--green)">100%</td></tr>
+    <tr><td>项目管理核心</td><td>7</td><td>5</td><td style="color:var(--accent)">71%（基线/仪表盘API待接入）</td></tr>
+    <tr><td>资料与知识</td><td>6</td><td>5</td><td style="color:var(--green)">83%（知识图谱UI配置不计入）</td></tr>
+    <tr><td>供应商与造价</td><td>2</td><td>2</td><td style="color:var(--green)">100%</td></tr>
+    <tr><td>手机端</td><td>1</td><td>1</td><td style="color:var(--green)">100%</td></tr>
+    <tr><td>高级工具</td><td>2</td><td>1</td><td style="color:var(--accent)">50%（审计日志API待接入）</td></tr>
+    <tr style="font-weight:700"><td>合计</td><td>31</td><td>27</td><td style="color:var(--green)">87%</td></tr>
+  </table>
+  <p style="margin-top:.8rem;font-size:.85rem;color:var(--muted)">剩余 4 个模块（基线管理/仪表盘KPI/审计日志/现场问题）使用后端 API 存储数据，需异步加载支持。当前 v4.3 版本通过 localStorage 数据源已覆盖 87% 的模块。</p>
+</div>
+
+
+<!-- ====== 十三、项目日报全量数据存储方案选型 ====== -->
+<h2>十三、项目日报全量数据存储方案选型（2026-07-24）</h2>
+
+<h3>13.1 背景与需求</h3>
+<div class="card">
+  <p>基于曙光郑州先进计算研究所建设项目日报数据（人员、机械、材料、施工进度、危大工程、协调问题、天气工况、施工工序等全维度信息），结合项目看板可视化、计划复盘、进度分析、资源趋势研判的核心场景，数据存储方案需满足四大核心要求：</p>
+  <table>
+    <tr><th style="width:15%">需求</th><th>说明</th></tr>
+    <tr><td><strong>① 全量留存</strong></td><td>完整保存日报原始所有字段，无数据丢失，兼容冗余表格数据、施工照片、工序记录、进度百分比、人员机械台账等复杂内容</td></tr>
+    <tr><td><strong>② 适配可视化</strong></td><td>可直接为 Recharts 图表提供结构化数据源，支撑人员趋势、施工强度、进度偏差、天气-进度关联等图表渲染</td></tr>
+    <tr><td><strong>③ 时序可追溯</strong></td><td>按日期归档每日数据，支持历史数据回溯、周期趋势对比、周/月进度复盘</td></tr>
+    <tr><td><strong>④ 私有化安全</strong></td><td>适配项目内网部署、本地存档，无外网依赖，匹配工程涉密/私有化交付要求，支持电子+纸质文档同步留存</td></tr>
+  </table>
+</div>
+
+<h3>13.2 四套方案详细对比</h3>
+
+<div class="card">
+  <table>
+    <tr><th style="width:12%">对比维度</th><th style="width:22%">方案A：SQLite+专用硬盘</th><th style="width:22%">方案B：PostgreSQL+MinIO</th><th style="width:22%">方案C：MongoDB+GridFS</th><th style="width:22%">方案D：云SaaS（简道云/明道云）</th></tr>
+    <tr>
+      <td><strong>全量留存</strong></td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ 结构化+原始文档双存</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ 企业级完整</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐ 文档存GridFS</td>
+      <td style="color:var(--red)">⭐⭐⭐ 受限于SaaS字段限制</td>
+    </tr>
+    <tr>
+      <td><strong>可视化适配</strong></td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ 原生SQL→Recharts</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ SQL查询强</td>
+      <td style="color:var(--accent)">⭐⭐⭐ 聚合管道复杂</td>
+      <td style="color:var(--accent)">⭐⭐⭐ API受限</td>
+    </tr>
+    <tr>
+      <td><strong>时序追溯</strong></td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ SQL日期索引</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ 企业级时序</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐ 日期聚合</td>
+      <td style="color:var(--accent)">⭐⭐⭐ 历史数据分级收费</td>
+    </tr>
+    <tr>
+      <td><strong>私有化安全</strong></td>
+      <td style="color:var(--green)">⭐⭐⭐⭐⭐ 本地零依赖</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐ 需Docker部署</td>
+      <td style="color:var(--green)">⭐⭐⭐⭐ 需MongoDB部署</td>
+      <td style="color:var(--red)">⭐ 数据在第三方</td>
+    </tr>
+    <tr>
+      <td><strong>部署成本</strong></td>
+      <td style="color:var(--green)">极低（零服务）</td>
+      <td style="color:var(--accent)">中（需运维）</td>
+      <td style="color:var(--accent)">中（需运维）</td>
+      <td style="color:var(--red)">月费/年费</td>
+    </tr>
+    <tr>
+      <td><strong>开发对接</strong></td>
+      <td style="color:var(--green)">即开即用（已有表）</td>
+      <td style="color:var(--accent)">需改造</td>
+      <td style="color:var(--accent)">需学习曲线</td>
+      <td style="color:var(--accent)">需对接API</td>
+    </tr>
+    <tr>
+      <td><strong>离线可用</strong></td>
+      <td style="color:var(--green)">✅ 完全离线</td>
+      <td>⚠️ 需Docker</td>
+      <td>⚠️ 需Docker</td>
+      <td style="color:var(--red)">❌ 必须联网</td>
+    </tr>
+    <tr>
+      <td><strong>扩展性</strong></td>
+      <td style="color:var(--accent)">中（单机200GB+）</td>
+      <td style="color:var(--green)">高（集群）</td>
+      <td style="color:var(--green)">高（分片）</td>
+      <td style="color:var(--red)">低（厂商限制）</td>
+    </tr>
+    <tr>
+      <td><strong>与项目匹配度</strong></td>
+      <td style="color:var(--green);font-weight:700">⭐⭐⭐⭐⭐</td>
+      <td style="color:var(--accent)">⭐⭐⭐</td>
+      <td>⭐⭐</td>
+      <td style="color:var(--red)">⭐</td>
+    </tr>
+  </table>
+</div>
+
+<h3>13.3 各方案详析</h3>
+
+<div class="card" style="border-left:4px solid var(--green)">
+  <h4>方案A：SQLite + 专用硬盘（推荐）</h4>
+  <p style="font-size:.85rem;color:var(--muted)"><strong>架构：</strong>daily_reports 表（结构化数据源）→ Recharts 图表 + /daily-uploads/ 目录（原始文档归档）→ 审计追溯</p>
+  <ul style="margin-left:1.5rem;font-size:.85rem;color:var(--muted)">
+    <li>零新增依赖，即刻可用（系统已有 daily_reports 表 + daily-uploads/ 目录）</li>
+    <li>完美满足「数据主权」最高原则</li>
+    <li>匹配单项目几十MB数据量级（日均~5KB，10年≈18MB）</li>
+    <li>90%已就绪，仅需补齐子表拆分</li>
+  </ul>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4>方案B：PostgreSQL + MinIO（企业级）</h4>
+  <p style="font-size:.85rem;color:var(--muted)">适合团队&gt;10人、多项目并发、需多端同步场景。当前项目为单机部署，过度设计。新增Docker运维负担，违反「少即是多」原则。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4>方案C：MongoDB + GridFS（NoSQL）</h4>
+  <p style="font-size:.85rem;color:var(--muted)">文档型数据库适合非结构化数据，但 Recharts 需要结构化 SQL 查询。引入新的技术栈增加运维成本，聚合管道学习曲线陡峭。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red)">
+  <h4>方案D：云SaaS（简道云/明道云）</h4>
+  <p style="font-size:.85rem;color:var(--muted)">直接违反「数据主权」最高原则，数据存储在第三方服务器。不可接受。</p>
+</div>
+
+<h3>13.4 最终推荐：方案A</h3>
+<div class="card" style="border-left:4px solid var(--green)">
+  <table>
+    <tr><th style="width:15%">决策因素</th><th>说明</th></tr>
+    <tr><td><strong>90%已就绪</strong></td><td>daily_reports 表已含8板块字段，daily-uploads/ 已存原始文件，无需从零建设</td></tr>
+    <tr><td><strong>零新增成本</strong></td><td>无需安装新软件、购买服务、学习新工具</td></tr>
+    <tr><td><strong>完全离线</strong></td><td>数据完全在本地，满足涉密/私有化交付要求</td></tr>
+    <tr><td><strong>即改即用</strong></td><td>仅需补齐5张子表（拆分大JSON为独立表），历史数据批量导入</td></tr>
+    <tr><td><strong>完美匹配</strong></td><td>SQLite → Recharts 直接查询渲染，无需中间层</td></tr>
+  </table>
+  <p style="margin-top:.8rem;font-size:.9rem;color:var(--accent);font-weight:700">结论：采用「SQLite结构化数据库（看板数据分析）+ 项目专用硬盘原始文档归档（全量兜底）」双存储架构。</p>
+</div>
+
+<h3>13.5 配套数据表结构设计</h3>
+<div class="card">
+  <p style="font-size:.85rem;margin-bottom:.5rem">基于现有日报全量字段，设计五表分离、关联绑定标准化结构，适配SQLite/MySQL，完全兼容Recharts时序图表：</p>
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:20%">表名</th><th>用途</th><th>核心字段</th></tr>
+    <tr><td>1</td><td><strong>daily_reports</strong>（主表）</td><td>每日基础工况，为所有图表提供时间基准</td><td>日期、天气、预警、编制人、审核人</td></tr>
+    <tr><td>2</td><td><strong>daily_workers</strong>（人员表）</td><td>人效分析数据源</td><td>日期、管理人员、作业人员、特种人数、分包单位</td></tr>
+    <tr><td>3</td><td><strong>daily_machinery</strong>（机械表）</td><td>机械资源趋势数据源</td><td>日期、设备名称、规格型号、数量、台班</td></tr>
+    <tr><td>4</td><td><strong>daily_progress</strong>（进度表）</td><td>进度分析核心数据源</td><td>日期、施工区域、工序、人数、完成率、进度偏差、分包单位</td></tr>
+    <tr><td>5</td><td><strong>daily_risks</strong>（安全表）</td><td>风险分析数据源</td><td>日期、危大工程名、验收状态、隐患、协调问题、影响天数</td></tr>
+  </table>
+  <p style="margin-top:.5rem;font-size:.8rem;color:var(--muted)">数据关联规则：所有子表通过「日期」唯一关联主表，实现单日数据全维度调取、周期数据聚合统计。</p>
+</div>
+
+<h3>13.6 实施计划</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th>任务</th><th>内容</th><th style="width:10%">工作量</th></tr>
+    <tr><td>1</td><td><strong>子表拆分</strong></td><td>将 daily_reports 中的 JSON 字段拆分为 5 张独立子表，建立日期外键关联</td><td>0.5天</td></tr>
+    <tr><td>2</td><td><strong>批量导入</strong></td><td>编写数据迁移脚本，支持历史日报批量导入（从原始DOCX批量解析入库）</td><td>0.5天</td></tr>
+    <tr><td>3</td><td><strong>图表对接</strong></td><td>Dashboard 图表面板对接新表结构，实现多维度趋势分析</td><td>0.5天</td></tr>
+  </table>
+</div>
+
+
+<!-- ====== 十四、代码修改红线与经验教训（2026-07-24） ====== -->
+<h2>十四、代码修改红线与经验教训（2026-07-24）</h2>
+
+<h3>14.1 事件背景</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+  <p style="font-size:.9rem;color:var(--muted);line-height:2">2026年7月24日迭代开发中，<strong>DesktopDailyReport.tsx</strong> 因反复使用 <kbd>sed -i</kbd>、<kbd>node -e</kbd> 等 Shell 脚本进行碎片化行内修改，导致文件 JSX 结构彻底损毁——KV 组件丢失、重复闭合标签、函数作用域错乱，累计消耗 2+ 小时无效排错。PromptConfigDialog 组件本身（240行完整代码）无需任何修改，但在接入时因目标文件损毁，自动化注入全部失败。</p>
+  <p style="font-size:.9rem;color:var(--accent);font-weight:700;margin-top:.5rem">核心教训：不是 AI 能力不足，而是用错了工具。sed 不理解 JSX 层级结构，node -e 在 bash 转义层与 JS 语法层叠加后出错率极高。正确的做法是一开始就用 Write 工具完整重写文件。</p>
+</div>
+
+<h3>14.2 三大红线（绝对禁止）</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:25%">红线</th><th>说明</th><th>根因</th></tr>
+    <tr><td><strong>🚫 禁止 sed 修改 TSX/JSX</strong></td><td>不允许用 sed -i 对 .tsx 文件做行内替换</td><td>sed 不理解 JSX 标签嵌套结构，容易破坏闭合、作用域</td></tr>
+    <tr><td><strong>🚫 禁止 node -e 行内注入</strong></td><td>不允许用 inline Node.js 脚本向组件文件注入代码</td><td>Bash 转义 + JavaScript 语法叠加，出错率 > 80%</td></tr>
+    <tr><td><strong>🚫 禁止碎片化补丁</strong></td><td>不允许对同一文件多次零散修改</td><td>多次碎片补丁导致结构腐化，形成「屎山」</td></tr>
+  </table>
+</div>
+
+<h3>14.3 替代方案（必须遵守）</h3>
+<div class="card">
+  <table>
+    <tr><th>场景</th><th>正确做法</th><th>工具</th></tr>
+    <tr><td>修改 &gt;5 行</td><td>完整重写文件，确保结构规整</td><td><strong>Write</strong> 工具</td></tr>
+    <tr><td>修改 1-3 行</td><td>精确匹配替换，确保 old_string 唯一</td><td><strong>Edit</strong> 工具</td></tr>
+    <tr><td>新增功能</td><td>创建独立组件，避免侵入已有复杂页面</td><td>新建 .tsx 文件</td></tr>
+    <tr><td>TSC 错误 &gt;3 个</td><td>立即停止修补，Write 完整重建</td><td>止损回退</td></tr>
+    <tr><td>同一文件已修改 &gt;3 次</td><td>停止修补，Write 完整重建</td><td>防止结构腐化</td></tr>
+  </table>
+</div>
+
+<h3>14.4 迭代卡点止损流程图</h3>
+<div class="card">
+  <svg viewBox="0 0 720 160" style="width:100%;max-width:720px;display:block;margin:1rem auto">
+    <defs><marker id="arr14" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#c4554d"/></marker></defs>
+    <rect x="10" y="10" width="160" height="60" rx="10" fill="rgba(59,111,182,.1)" stroke="#3b6fb6"/><text x="90" y="42" font-size="13" fill="#3b6fb6" text-anchor="middle">开始修改</text><text x="90" y="58" font-size="10" fill="#8b7b6a" text-anchor="middle">Write 或 Edit 工具</text>
+    <line x1="170" y1="40" x2="205" y2="40" stroke="#3b6fb6" stroke-width="2" marker-end="url(#arr14)"/>
+    <rect x="210" y="10" width="160" height="60" rx="10" fill="rgba(200,121,65,.1)" stroke="#c87941"/><text x="290" y="42" font-size="13" fill="#c87941" text-anchor="middle">npx tsc --noEmit</text><text x="290" y="58" font-size="10" fill="#8b7b6a" text-anchor="middle">编译检查</text>
+    <line x1="370" y1="40" x2="405" y2="40" stroke="#c87941" stroke-width="2" marker-end="url(#arr14)"/>
+    <!-- Decision diamond -->
+    <polygon points="600,30 660,50 600,70 540,50" fill="rgba(74,156,93,.1)" stroke="#4a9c5d"/><text x="600" y="52" font-size="11" fill="#4a9c5d" text-anchor="middle">通过?</text>
+    <line x1="410" y1="40" x2="535" y2="40" stroke="#c87941" stroke-width="2"/>
+    <text x="470" y="30" font-size="10" fill="#c87941" text-anchor="middle">错误≤2</text>
+    <!-- Yes -->
+    <text x="660" y="40" font-size="12" fill="#4a9c5d" font-weight="700">✅完成</text>
+    <!-- No - back to start -->
+    <rect x="410" y="90" width="160" height="50" rx="10" fill="rgba(196,85,77,.1)" stroke="#c4554d"/><text x="490" y="118" font-size="13" fill="#c4554d" text-anchor="middle">❌ 错误>3 或修改>3次</text><text x="490" y="134" font-size="10" fill="#8b7b6a" text-anchor="middle">Write 完整重建</text>
+    <line x1="600" y1="50" x2="520" y2="115" stroke="#c4554d" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="560" y="85" font-size="9" fill="#c4554d" text-anchor="middle">失败</text>
+  </svg>
+  <p style="font-size:.82rem;color:var(--blue);text-align:center;margin-top:.5rem;font-weight:700">规则：sed / node -e 绝对不能用于 TSX 文件修改</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--green)">
+  <h4>本次事件数据总结</h4>
+  <table>
+    <tr><th>指标</th><th>数��</th></tr>
+    <tr><td>PromptConfigDialog 开发耗时</td><td>约 15 分钟（一次性正确完成）</td></tr>
+    <tr><td>DesktopDailyReport 接入耗时</td><td>约 120 分钟（sed/node-e 反复修补）</td></tr>
+    <tr><td>补救方案耗时</td><td>约 3 分钟（Write 工具完整重写）</td></tr>
+    <tr><td>浪费工时</td><td>约 117 分钟（可避免）</td></tr>
+    <tr style="font-weight:700"><td>教训</td><td>Write 工具 3 分钟完成的事，不要用 sed 花 2 小时</td></tr>
+  </table>
+</div>
+
+<h3>14.5 落地手册引用</h3>
+<div class="card" style="border-left:4px solid var(--blue)">
+  <p style="font-size:.85rem;color:var(--muted);line-height:2">本开发原则依据 <strong>《迭代任务最终终端执行操作指令（完整落地手册）.docx》</strong> 制定，该文档提供了完整的分步终端执行指令，包括：</p>
+  <ul style="margin-left:1.5rem;font-size:.85rem;color:var(--muted);line-height:2">
+    <li><strong>第一步：终止自动化异常流程</strong> — 停止对破损文件的自动化注入、语法修复、自动补全</li>
+    <li><strong>第二步：全速落地核心交付</strong> — 优先完成无卡点任务，保障看板/数据结构化/可视化按期交付</li>
+    <li><strong>第三步：P0-18 待定收口</strong> — 仅保留手动3行标准化接入方案，后续统一收口</li>
+    <li><strong>第四步：落地代码规范</strong> — 老旧文件禁用自动化、固定页面结构、异常止损、禁止碎片补丁</li>
+  </ul>
+  <p style="font-size:.82rem;color:var(--accent);margin-top:.5rem;font-weight:700">执行结果：4项核心任务全部完成，无新增代码冗余、无编译报错、PromptConfigDialog组件完整保留。</p>
+</div>
+
+
+<!-- ====== 十五、代码健康度评估与改进计划（2026-07-25） ====== -->
+<h2>十五、代码健康度评估与改进计划（2026-07-25）</h2>
+
+<h3>15.1 综合评估结果</h3>
+<div class="card" style="border-left:4px solid var(--accent)">
+  <p style="font-size:1.05rem;margin:.5rem 0"><strong>综合评分：5.6/10 — 中度技术债务，尚有挽救窗口期</strong></p>
+  <p style="font-size:.85rem;color:var(--muted)">目标：6个迭代内将综合评分提升至≥7.0。核心原则：先堵新增债务，再消化存量债务，不改旧做新，不阻断业务交付。</p>
+</div>
+
+<h3>15.2 九维度评估详情</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:20%">维度</th><th style="width:8%">评分</th><th>核心问题</th></tr>
+    <tr><td><strong>文件规模</strong></td><td style="color:var(--accent)">5/10</td><td>App.tsx 1373行，18个文件&gt;300行</td></tr>
+    <tr><td><strong>代码复用</strong></td><td style="color:var(--red)">4/10</td><td>两套API层、无存储抽象、Tailwind模式重复</td></tr>
+    <tr><td><strong>导入健康</strong></td><td style="color:var(--accent)">6/10</td><td>App.tsx 导入55个模块</td></tr>
+    <tr><td><strong>端分离</strong></td><td style="color:var(--green)">8/10</td><td>移动端独立，共享api.ts有适度耦合</td></tr>
+    <tr><td><strong>状态管理</strong></td><td style="color:var(--red)">4/10</td><td>588处useState，零Context/Reducer，严重prop drilling</td></tr>
+    <tr><td><strong>CSS样式</strong></td><td style="color:var(--green)">7/10</td><td>Tailwind使用良好，暗色模式完善</td></tr>
+    <tr><td><strong>API层</strong></td><td style="color:var(--accent)">6/10</td><td>60+端点，认证不一致，类型重复</td></tr>
+    <tr><td><strong>TypeScript</strong></td><td style="color:var(--green)">7/10</td><td>155类型定义，125处any残留</td></tr>
+    <tr><td><strong>测试覆盖</strong></td><td style="color:var(--red)">3/10</td><td>仅42测试，零组件测试</td></tr>
+  </table>
+</div>
+
+<h3>15.3 外部建议书判读</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:25%">建议书</th><th>核心主张</th><th style="width:20%">判读结论</th></tr>
+    <tr><td><strong>《代码健康度专项执行清单.docx》</strong></td><td>"先堵新增债务，再消化存量债务"，不得单独占用迭代周期，遵循「改旧做新」原则</td><td style="color:var(--green)">采纳</td></tr>
+    <tr><td><strong>《落地手册.docx》</strong></td><td>"老旧破损文件永久禁用自动化注入，仅手工规范开发"</td><td style="color:var(--green)">已采纳 — CLAUDE.md 九.一已纳入</td></tr>
+  </table>
+  <p style="font-size:.9rem;color:var(--accent);font-weight:700;margin-top:.8rem">判定：不做大规模重构。代码健康改进与功能开发并行推进。先建立健康门禁，再增量改旧做新。</p>
+</div>
+
+<h3>15.4 三层执行计划</h3>
+
+<div class="card" style="border-left:4px solid var(--red)">
+  <h4>第一层：红线门禁（立即生效）</h4>
+  <table>
+    <tr><th>规则</th><th>执行方式</th></tr>
+    <tr><td><strong>禁止新文件 &gt;300行</strong></td><td>MR前检查</td></tr>
+    <tr><td><strong>禁止新增 any 类型</strong></td><td>每次 npx tsc --noEmit 检查</td></tr>
+    <tr><td><strong>禁止新模块 prop drilling</strong></td><td>新增共享状态统一使用Context</td></tr>
+    <tr><td><strong>禁止 sed/node-e 修改 TSX</strong></td><td>CLAUDE.md 红线规则</td></tr>
+    <tr><td><strong>新增组件必须有测试</strong></td><td>新建 __tests__/ 并行提交</td></tr>
+  </table>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+  <h4>第二层：随功能开发渐进改进（v5.0 并行）</h4>
+  <table>
+    <tr><th>时机</th><th>改造项</th></tr>
+    <tr><td>开发Ollama部署时</td><td>统一 api.ts + mobileApi.ts 认证逻辑</td></tr>
+    <tr><td>开发GraphRAG时</td><td>拆分 ai.js（373行）为 service层</td></tr>
+    <tr><td>开发多Agent时</td><td>引入 AgentContext 替代 props透传</td></tr>
+    <tr><td>任何触及App.tsx的改动</td><td>拆分出一个子路由模块（每次拆分1个）</td></tr>
+  </table>
+</div>
+
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4>第三层：本轮必做纯还债（~1天）</h4>
+  <table>
+    <tr><th>任务</th><th>工作量</th><th>影响</th></tr>
+    <tr><td>创建 Card / PageHeader 共享组件</td><td>2h</td><td>消除8个文件重复Tailwind</td></tr>
+    <tr><td>App.tsx 第一个子路由拆分</td><td>2h</td><td>减少约100行</td></tr>
+    <tr><td>消除高频模块 any 类型</td><td>3h</td><td>类型安全提升</td></tr>
+  </table>
+</div>
+
+<h3>15.5 执行顺序</h3>
+<div class="card">
+  <p style="text-align:center;font-size:.9rem;line-height:3"><strong style="color:var(--red)">本周（~1天）</strong>：红线门禁 + 第三层还债 → <strong style="color:var(--accent)">下周</strong>：v5.0 功能开发（Ollama/GraphRAG），并行改旧做新 → <strong style="color:var(--blue)">持续</strong>：每次迭代输出代码健康度评估报告</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--green)">
+  <h4>参考文档</h4>
+  <p style="font-size:.85rem;color:var(--muted)">本评估参照：</p>
+  <ul style="margin-left:1.5rem;font-size:.85rem;color:var(--muted)">
+    <li>《前端项目代码健康度提升专项执行清单.docx》— 九维度评估+门禁规则+分期计划</li>
+    <li>《迭代任务最终终端执行操作指令（完整落地手册）.docx》— 代码修改红线+止损机制</li>
+  </ul>
+</div>
+
+
 <div class="footer">
-  <p>全过程工程咨询管理系统 · 开发总结与下一步方向 · 2026-07-14</p>
+  <p>全过程工程咨询管理系统 · 开发总结与下一步方向 · 2026-07-14 · 更新至2026-07-25</p>
   <p>qubin2025/doc-management-system · release/v2.5.0-enterprise-20260708</p>
 </div>
 

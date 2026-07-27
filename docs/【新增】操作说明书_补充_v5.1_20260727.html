@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>【新增】操作说明书补充 — v5.1 系统能力总览 2026-07-27</title>
+<style>
+:root{--bg:#fefaf6;--card:#fffbf5;--border:#e8d5c0;--text:#4a3728;--muted:#8b7b6a;--accent:#c87941;--green:#4a9c5d;--red:#c4554d;--blue:#3b6fb6;--purple:#7c3aed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.9;padding:1.5rem;font-size:14px}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:1.5rem;text-align:center;margin:1.5rem 0 .3rem;background:linear-gradient(135deg,#3b6fb6,#7c3aed,#c87941);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:2rem}
+h2{font-size:1.2rem;margin:2.5rem 0 1rem;padding:.5rem 1rem;background:linear-gradient(90deg,#eff6ff,transparent);border-left:4px solid var(--blue);color:var(--blue)}
+h3{font-size:1rem;margin:1.5rem 0 .6rem;color:#6b4a2e;border-bottom:1px dashed var(--border);padding-bottom:.3rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0;box-shadow:0 1px 4px rgba(120,80,40,.06)}
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.82rem}
+th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left}
+th{background:#eff6ff;color:var(--blue);font-weight:600;font-size:.78rem}
+tr:nth-child(even) td{background:rgba(239,246,255,.3)}
+.tag{display:inline-block;padding:.1rem .45rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.tag-green{background:#e8f5e9;color:var(--green)}.tag-blue{background:#eff6ff;color:var(--blue)}.tag-accent{background:#fef3e7;color:var(--accent)}.tag-purple{background:#f3e8ff;color:var(--purple)}
+.cap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.8rem;margin:1rem 0}
+.cap-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;font-size:.8rem}
+.cap-card h4{font-size:.85rem;margin-bottom:.3rem}
+.cap-card .ver{font-size:.7rem;color:var(--muted)}
+.footer{text-align:center;color:var(--muted);margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:.75rem}
+.badge-new{background:var(--green);color:#fff;font-size:.7rem;padding:.1rem .4rem;border-radius:3px;margin-left:.5rem}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>操作说明书补充 — 系统能力总览</h1>
+<p class="subtitle">覆盖 v4.4 / v5.0 / v5.1 版本新增能力 · 配合主操作说明书阅读<br>2026-07-27 · <span class="badge-new">新增</span></p>
+
+<!-- ===== 一 ===== -->
+<h2>一、系统规模概览（截至 v5.1）</h2>
+
+<table>
+  <tr><th>维度</th><th>数量</th><th>版本</th></tr>
+  <tr><td>前端组件</td><td><strong>64</strong> 个</td><td>v5.1</td></tr>
+  <tr><td>数据模块</td><td><strong>35</strong> 个</td><td>v5.1</td></tr>
+  <tr><td>后端路由文件</td><td><strong>20</strong> 个</td><td>v5.1</td></tr>
+  <tr><td>API 端点</td><td><strong>73+</strong> 个</td><td>v5.1</td></tr>
+  <tr><td>数据库表</td><td><strong>21</strong> 张</td><td>v4.4</td></tr>
+  <tr><td>前端视图</td><td><strong>39</strong> 个</td><td>v5.1</td></tr>
+  <tr><td>AI 模型</td><td><strong>7</strong> 个（6在线）</td><td>v5.0</td></tr>
+  <tr><td>Agent 角色</td><td><strong>5</strong> 个专业Agent</td><td>v5.0</td></tr>
+  <tr><td>知识图谱节点</td><td><strong>16</strong> 法规标准节点</td><td>v5.0</td></tr>
+  <tr><td>Docker 容器</td><td><strong>11</strong> 个运行中</td><td>v5.0</td></tr>
+  <tr><td>测试用例</td><td><strong>42</strong> 个</td><td>v4.4</td></tr>
+</table>
+
+<!-- ===== 二 ===== -->
+<h2>二、四层架构能力清单</h2>
+
+<h3>L4 · 项目管理系统层（39视图 · 64组件 · 50+功能卡片）</h3>
+
+<div class="cap-grid">
+  <div class="cap-card"><h4>📋 指南工作模块</h4><p>4章全过程指南（前期→招标→施工→竣工），draw.io交互式逻辑图，表单关联填写</p><span class="ver">v2.5→v4.4</span></div>
+  <div class="cap-card"><h4>🎯 目标管理</h4><p>OKR/WBS四层分解，目标-工作项联动，SVG进度环，达成度自动计算</p><span class="ver">v3.0 P0</span></div>
+  <div class="cap-card"><h4>✂️ 模块裁剪引擎</h4><p>20条PMBOK裁剪规则，项目特征问卷，工作项状态灵活调整</p><span class="ver">v3.0 P0</span></div>
+  <div class="cap-card"><h4>📊 项目仪表盘</h4><p>CPI/SPI/完整度/质量分四大KPI，异常预警，多项目对比</p><span class="ver">v2.5→v4.4</span></div>
+  <div class="cap-card"><h4>📅 计划管理</h4><p>甘特图，里程碑节点，章节完成度，预计工期</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>📄 工程资料管理</h4><p>DB11/T695-2025 + DB11/T808-2020 双规程，A/B/C/D四类归档</p><span class="ver">v1.0</span></div>
+  <div class="cap-card"><h4>🏢 土储中心归档</h4><p>86项分类归档管理，上传自动填充</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>🏗️ 供应商库</h4><p>供应商信息管理、资质审核、评价星级</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>💰 造价数据</h4><p>工程量清单录入、单位价格、分类汇总</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>📱 手机水印照片</h4><p>GPS/时间/项目/拍摄人水印，自动同步，PWA安装</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>🚨 现场问题管理</h4><p>手机端上报→桌面端跟踪，状态流转闭环</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>📝 项目日报</h4><p>8段曙光模板，天气/人机/安全数据，AI趋势分析，手机端同步</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>📈 进度管理</h4><p>手机端进度快报，计划自动匹配，可视化统计</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>🧪 项目经验库</h4><p>自动提取经验模式，跨项目聚合，AI智能提示</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>👥 干系人管理</h4><p>登记册，权力/利益矩阵，参与策略</p><span class="ver">v3.0</span></div>
+  <div class="cap-card"><h4>⚠️ 风险管理</h4><p>登记册，概率×影响矩阵，应对跟踪</p><span class="ver">v3.0</span></div>
+  <div class="cap-card"><h4>💬 资源与沟通</h4><p>团队管理，RACI矩阵，沟通记录</p><span class="ver">v3.0</span></div>
+  <div class="cap-card"><h4>📐 基线管理</h4><p>三大基线快照，版本对比，KPI追踪</p><span class="ver">v3.0</span></div>
+</div>
+
+<h3>L3 · AI应用层（7模型 · 5 Agent · 7 Skill）</h3>
+
+<div class="cap-grid">
+  <div class="cap-card"><h4>🤖 AI 智能体</h4><p>ReAct推理循环，自主规划执行，11个内置工具，错误恢复</p><span class="ver">v3.0 P1</span></div>
+  <div class="cap-card"><h4>👥 Multi-Agent 协作</h4><p>5个专业Agent（安全/质量/合同/造价/综合），自动匹配路由</p><span class="ver">v5.0 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>⚡ 技能面板</h4><p>7个AI技能：审查(3)/生成/填写/指南/拆解，一键执行</p><span class="ver">v3.0 P1</span></div>
+  <div class="cap-card"><h4>🔍 施工组织设计审查</h4><p>多文件批量，RAG检索+逐章审查+综合报告，GraphRAG增强</p><span class="ver">v2.5→v5.0</span></div>
+  <div class="cap-card"><h4>📋 合同审查</h4><p>条款风险分级，修改建议，谈判策略</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>📑 招投标文件审查</h4><p>合规性审查，评标要素提取</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>✏️ AI方案生成</h4><p>逐章生成施工方案，标准条款自动注入，Word导出</p><span class="ver">v3.0</span></div>
+  <div class="cap-card"><h4>🧠 智能分析</h4><p>AI综合项目分析，风险预警，智能建议</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>🔗 MCP协议</h4><p>Agent↔MCP 双向桥，远程工具集成</p><span class="ver">v3.0 P1</span></div>
+  <div class="cap-card"><h4>🏠 Ollama 本地AI</h4><p>qwen2.5:7b CPU模式，7模型自动降级</p><span class="ver">v5.0 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>🔎 GraphRAG 增强</h4><p>知识图谱图遍历检索，审查自动注入上下文</p><span class="ver">v5.0 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>⚙️ Prompt配置中台</h4><p>8条可编辑规则，自定义规则，暗色模式，raw预览</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+</div>
+
+<h3>L2 · 知识工程层（Neo4j · RAGFlow · 向量库）</h3>
+
+<div class="cap-grid">
+  <div class="cap-card"><h4>🕸️ 知识图谱</h4><p>Neo4j存储，16法规标准节点+42语义边，9个GraphRAG端点</p><span class="ver">v2.5→v5.0</span></div>
+  <div class="cap-card"><h4>📚 RAGFlow 知识库</h4><p>文档自动入库、检索、追溯，Docker部署</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>🔍 知识编排器</h4><p>3级降级检索：RAGFlow→LightRAG→本地向量库</p><span class="ver">v3.0 P0</span></div>
+  <div class="cap-card"><h4>⚡ KG自动构建管道</h4><p>事件驱动+5秒防抖，自动同步到Neo4j</p><span class="ver">v3.0 P1</span></div>
+  <div class="cap-card"><h4>📖 知识库</h4><p>全文检索+语义搜索，文档自动索引，向量化</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>📜 政策库</h4><p>全过程工程咨询政策法规、管理办法</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>📏 制度规范库</h4><p>土储中心制度规范、地方标准、工作规程</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>🔗 语义边富化</h4><p>自动创建 PARENT_OF/SUPPLEMENTS/REFERS_TO 语义边</p><span class="ver">v5.0 <span class="tag tag-green">NEW</span></span></div>
+</div>
+
+<h3>L1 · 数据沉淀层（SQLite 21表 · localStorage · IndexedDB · Neo4j）</h3>
+
+<div class="cap-grid">
+  <div class="cap-card"><h4>🗄️ SQLite 数据库</h4><p>21张表：项目/文档/用户/会话/目标/基线/知识产物/审计/日报/问题/进度/经验...</p><span class="ver">v1.0→v4.4</span></div>
+  <div class="cap-card"><h4>📝 审计日志</h4><p>6种action类型，7种targetType，操作追溯</p><span class="ver">v3.0 P0</span></div>
+  <div class="cap-card"><h4>💾 数据备份</h4><p>备份/导出/导入，JSZip打包</p><span class="ver">v2.5</span></div>
+  <div class="cap-card"><h4>🔄 数据同步</h4><p>前后端数据双向同步，IndexedDB离线存储</p><span class="ver">v4.1</span></div>
+  <div class="cap-card"><h4>📱 离线队列</h4><p>手机端离线拍照，联网自动上传，失败重试</p><span class="ver">v4.4 <span class="tag tag-green">NEW</span></span></div>
+  <div class="cap-card"><h4>🐳 Docker 部署</h4><p>11容器运行中，6服务healthcheck</p><span class="ver">v5.0 <span class="tag tag-green">NEW</span></span></div>
+</div>
+
+<!-- ===== 三 ===== -->
+<h2>三、v4.4 新增功能模块详情</h2>
+
+<h3>3.1 手机端配套应用（H5 + PWA）</h3>
+<div class="card">
+  <table>
+    <tr><th>模块</th><th>功能</th><th>技术</th></tr>
+    <tr><td>水印拍照</td><td>GPS定位+时间戳+项目名称+拍摄人水印，现场照片自动上传</td><td>Geolocation API + Canvas水印</td></tr>
+    <tr><td>项目日报</td><td>8段曙光模板（天气/人机/材料/质量风险/安全/进度/明日计划/备注），AI自动解析</td><td>DeepSeek JSON解析 + rpJSON容错</td></tr>
+    <tr><td>安全检查</td><td>现场安全检查清单，问题拍照上报</td><td>离线队列 + 自动同步</td></tr>
+    <tr><td>照片浏览</td><td>按时间/项目筛选，水印叠加预览</td><td>Grid布局 + 懒加载</td></tr>
+    <tr><td>文件上传</td><td>支持多文件，自动关联项目</td><td>FormData + 进度条</td></tr>
+    <tr><td>进度管理</td><td>进度快报，计划自动匹配，未关联提醒</td><td>mobileApi + 可视化统计</td></tr>
+    <tr><td>PWA安装</td><td>添加到主屏幕，离线可用，自动更新</td><td>Service Worker + manifest</td></tr>
+  </table>
+</div>
+
+<h3>3.2 桌面端新增组件</h3>
+<div class="card">
+  <table>
+    <tr><th>组件</th><th>功能</th></tr>
+    <tr><td>GlobalDashboard</td><td>全局项目看板：KPI统计、项目卡片网格、搜索筛选、多项目对比</td></tr>
+    <tr><td>IssueManager</td><td>现场问题统一管理：状态流转、图片查看、处理跟踪</td></tr>
+    <tr><td>DesktopDailyReport</td><td>日报统一查看：按项目筛选、AI趋势分析、关联问题</td></tr>
+    <tr><td>DesktopProgressView</td><td>进度可视化：计划vs实际对比、完成率统计</td></tr>
+    <tr><td>DashboardChartPanel</td><td>Recharts图表：CPI/SPI趋势、完成度柱状图</td></tr>
+    <tr><td>ExperiencePanel</td><td>经验库面板：跨项目聚合、AI模式提取</td></tr>
+    <tr><td>PromptConfigDialog</td><td>AI提示词配置：8条可编辑规则、raw预览</td></tr>
+    <tr><td>Card / PageHeader</td><td>可复用UI组件：卡片容器、页头模板</td></tr>
+  </table>
+</div>
+
+<!-- ===== 四 ===== -->
+<h2>四、v5.0-v5.1 新增能力详情</h2>
+
+<h3>4.1 v5.0 — AI + 知识图谱升级</h3>
+<div class="card">
+  <table>
+    <tr><th>能力</th><th>说明</th></tr>
+    <tr><td>Ollama 本地AI</td><td>qwen2.5:7b CPU模式运行，配合DeepSeek+GLM-4形成三层保障。7模型自动降级链：deepseek-v4-pro → deepseek-chat → deepseek-r1 → qwen-turbo → glm-4-flash → ollama-qwen → ollama-llama</td></tr>
+    <tr><td>GraphRAG 图检索</td><td>5个新端点：/graphrag/search（关键词BFS检索）、/context（AI上下文生成）、/enrich（语义边自动创建）、/related/:nodeId（节点关联）、/stats（图统计）</td></tr>
+    <tr><td>审查自动增强</td><td>检测审查意图关键词 → 自动从Neo4j拉取关联标准条款 → 注入AI prompt上下文</td></tr>
+    <tr><td>Multi-Agent 协作</td><td>5个专业Agent角色：安全审查员、质量工程师、合同分析员、造价分析师、综合工程Agent。支持手动选择和自动关键词匹配路由</td></tr>
+    <tr><td>Docker 健康检查</td><td>全部6个docker-compose服务添加healthcheck：backend/nginx/neo4j/lightrag/ollama/paddleocr</td></tr>
+    <tr><td>导航修复</td><td>Dashboard新增"项目管理平台"按钮，打通 GlobalDashboard→Dashboard→Homepage 完整链路</td></tr>
+  </table>
+</div>
+
+<h3>4.2 v5.1 — 代码健康治理</h3>
+<div class="card">
+  <table>
+    <tr><th>治理项</th><th>成果</th></tr>
+    <tr><td>App.tsx 组件化</td><td>抽出 HomePage (219行) + StandardSelectPage (70行)，App.tsx 从1373→934行</td></tr>
+    <tr><td>kg.js 拆分</td><td>GraphRAG 端点抽出为 kg_graphrag.js (399行)，kg.js 从579→125行</td></tr>
+    <tr><td>ai.js 拆分</td><td>Admin 端点抽出为 ai_admin.js (95行)，ai.js 从536→451行</td></tr>
+    <tr><td>门禁收紧</td><td>新增文件门禁从300行→250行，新增"禁止追加App.tsx路由"规则</td></tr>
+    <tr><td>文档同步</td><td>CLAUDE.md 更新至v5.1，组件数/模块数/端点数全部刷新</td></tr>
+  </table>
+</div>
+
+<!-- ===== 五 ===== -->
+<h2>五、AI 模型使用指南</h2>
+
+<h3>5.1 模型选择建议</h3>
+<table>
+  <tr><th>模型</th><th>最佳场景</th><th>速度</th><th>成本</th></tr>
+  <tr><td>DeepSeek-V4 Pro</td><td>图片分析、复杂审查、方案生成（主力）</td><td>中</td><td>低</td></tr>
+  <tr><td>DeepSeek-V3</td><td>通用对话、日报解析、表单填写</td><td>快</td><td>低</td></tr>
+  <tr><td>DeepSeek-R1</td><td>深度推理、合同审查、风险分析</td><td>慢</td><td>中</td></tr>
+  <tr><td>智谱 GLM-4</td><td>中文理解、特定领域审查（备用）</td><td>快</td><td>免费额度</td></tr>
+  <tr><td>Ollama qwen2.5:7b</td><td>离线环境、隐私数据（本地兜底）</td><td>慢</td><td>免费</td></tr>
+</table>
+
+<h3>5.2 Multi-Agent 角色选择</h3>
+<table>
+  <tr><th>Agent</th><th>适用任务</th><th>触发关键词</th></tr>
+  <tr><td>安全审查员</td><td>施工安全审查、风险识别</td><td>安全、脚手架、基坑、防护、高处作业…</td></tr>
+  <tr><td>质量工程师</td><td>质量验收、施工方案审查</td><td>质量、验收、混凝土、钢筋、施工方案…</td></tr>
+  <tr><td>合同分析员</td><td>合同审查、风险条款识别</td><td>合同、违约、索赔、付款、变更…</td></tr>
+  <tr><td>造价分析师</td><td>清单审核、成本分析</td><td>造价、清单、招标、投标、工程量…</td></tr>
+  <tr><td>综合工程Agent</td><td>监理管理、资料管理、通用任务</td><td>兜底（无特定关键词时自动匹配）</td></tr>
+</table>
+
+<!-- ===== 六 ===== -->
+<h2>六、导航路径速查</h2>
+
+<div class="card">
+  <pre style="font-family:monospace;font-size:.78rem;line-height:2.2">
+登录 → GlobalDashboard（全局看板）
+  ├── 点击项目卡片 → Dashboard（KPI仪表板）→ [项目管理平台] → HomePage
+  ├── [新建项目] → ProjectEntryPage → 选择项目 → HomePage
+  ├── [AI助手] → AiChatPage
+  └── [手机端] → MobilePhotoViewer
+
+HomePage（项目首页·64功能卡片）
+  ├── 指南工作模块 → GuideChapter（全过程指南4章）
+  ├── AI智能体 → AgentConsole（Multi-Agent 5角色选择）
+  ├── 技能面板 → SkillPanel（7 AI技能）
+  ├── PMBOK框架 → PMBOKFramework（10领域49过程）
+  ├── 目标管理 → TargetManager（WBS树）
+  ├── 模块裁剪 → TailoringEngine（20规则裁剪）
+  ├── 施工审查 → ConstructionReview（GraphRAG增强）
+  ├── 合同审查 → ContractReview
+  ├── 招投标审查 → BidReview
+  ├── AI方案生成 → PlanGenerator
+  ├── 项目日报 → DesktopDailyReport（桌面端统一查看）
+  ├── 现场问题 → IssueManager（状态流转闭环）
+  ├── 进度管理 → DesktopProgressView
+  ├── 项目经验库 → ExperiencePanel
+  ├── ... 等50+功能模块卡片
+  └── [项目看板] → 返回 Dashboard（KPI监控）
+  </pre>
+</div>
+
+<div class="footer">
+  <p>中航建科 · 工程咨询管理平台 — 操作说明书补充</p>
+  <p>2026-07-27 · <span class="badge-new">新增</span> · 配合主操作说明书(2026-07-14)阅读</p>
+</div>
+
+</div>
+</body>
+</html>

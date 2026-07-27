@@ -42,13 +42,14 @@
 <div class="container">
 
 <h1>全过程工程咨询管理系统<br>操作说明书</h1>
-<p class="subtitle">版本 v4.1 · 2026-07-14 · qubin2025/doc-management-system</p>
+<p class="subtitle">版本 v4.4 · 2026-07-24 · qubin2025/doc-management-system</p>
 
 <!-- 目录 -->
 <div class="card">
   <h3 style="margin-top:0">📑 目录</h3>
   <div class="toc">
     <a href="#s1">一、系统概述</a><br>
+    <a href="#s1b">一.附、系统数据哲学与核心理念</a><br>
     <a href="#s2">二、快速入门</a><br>
     <a href="#s3">三、项目创建与引导</a><br>
     <a href="#s4">四、模块裁剪引擎</a><br>
@@ -67,6 +68,11 @@
     <a href="#s17">十七、快捷键速查</a><br>
     <a href="#s18">十八、常见问题</a><br>
     <a href="#s19">十九、移动端水印相机（手机版）</a><br>
+    <a href="#s20">二十、移动端PWA安装指南</a><br>
+    <a href="#s21">二十一、大模型配置中心</a><br>
+    <a href="#s22">二十二、系统模块全景清单</a><br>
+    <a href="#s23">二十三、知识图谱构建原则与关系体系</a><br>
+    <a href="#s24">二十四、项目日报数据存储与管理方案</a><br>
   </div>
 </div>
 
@@ -85,6 +91,75 @@
 </div>
 
 <div class="tip">首次使用建议按引导流程操作：创建项目 → 模块裁剪 → 目标管理 → 进入工作首页。</div>
+
+<!-- ===== 一.附 ===== -->
+<h2 id="s1b">一.附、系统数据哲学与核心理念</h2>
+
+<p>本系统的设计哲学源于一个根本认知：<strong>建设工程项目是单一的、一次性的、不可复制的。</strong> 这个认知决定了我们对待数据的方式与传统的工程管理软件截然不同。</p>
+
+<h3>传统数据思维的局限</h3>
+<div class="card">
+  <p style="font-size:.9rem;color:var(--muted);line-height:2">传统工程管理软件的做法是：先设计一套"干净的、标准的"指标体系，试图用一个统一的模板去衡量每一个项目。比如要求填写"进度偏差率"、"成本偏差率"、"质量合格率"等有限指标，然后与"类似项目"对比，给出"你的进度落后了3.2%"这样的结论。</p>
+  <p style="font-size:.9rem;color:var(--muted);line-height:2;margin-top:.5rem">这种做法的问题在于：<strong>有限的指标根本无法描述一个项目的全貌和独特性。</strong> 当一个项目的复杂性被压缩为几个百分比数字时，它已经被"杀死"了——它不再是那个有着独特的场地条件、独特的团队构成、独特的施工挑战的活生生的工程，而变成了一个可被平均的统计样本。最终，这些数据成为一堆鸡肋——既不能真正指导决策，也无法为下一个项目提供有意义的参考。</p>
+</div>
+
+<h3>本系统的数据哲学</h3>
+<div class="card" style="border-left:4px solid var(--blue)">
+  <h4>核心理念：全量数据收集 &gt; 标准化指标提取</h4>
+  <p style="font-size:.9rem;color:var(--muted);line-height:2">我们不预设"哪些数据是重要的"。我们收集项目生命周期中的<strong>全部数据</strong>——日报的每一个字段、每一张现场照片、每一次安全检查的记录、每一个协调问题的来龙去脉、每一台机械的进出场时间、每一批材料的规格和数量。让数据本身说话，而不是让人为预设的指标体系替数据说话。</p>
+  <p style="font-size:.9rem;color:var(--muted);line-height:2;margin-top:.5rem">这一理念源于《大数据时代》的核心洞见：<strong>在大数据时代，我们不再依赖抽样，而是拥抱全量数据；我们不再追求精确性，而是接受混杂性；我们不再执着于因果关系，而是关注相关关系。</strong> AI大模型近乎无限的全方位向量化分析能力，使我们第一次有可能为每一个项目描绘一个数字化全貌——不是几个冰冷的指标，而是一个完整的、丰满的、一望便知的项目肖像。</p>
+</div>
+
+<h3>六个数据原则</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:18%">原则</th><th>说明</th><th style="width:35%">系统体现</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>全量收存</strong></td>
+      <td>不预设重要性筛选，收集项目全生命周期产生的全部数据</td>
+      <td>日报8板块全字段入库、施工照片原图保存、原始DOCX双份存档（数据库+专用硬盘）</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>拒绝裁剪</strong></td>
+      <td>不为了"标准化"而丢弃任何数据。每个项目的独特细节都是其DNA的一部分</td>
+      <td>结构化数据库保留完整JSON字段，原始文档保留一字不改</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>AI驱动关联</strong></td>
+      <td>利用AI大模型的向量化分析能力，从全量数据中自动发现关系、趋势、模式</td>
+      <td>DeepSeek日报解析、Recharts趋势图表、知识图谱25类节点全要素关联</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>项目即样本</strong></td>
+      <td>每个完成的项目都是一个完整的、可供后续项目参考的真实样本</td>
+      <td>项目经验库自动提取模式、干系人/风险/进度数据全留存、跨项目对比分析</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>以PMBOK为纲</strong></td>
+      <td>以《项目管理指南》的准则和行动要素为骨架，系统化地组织和归纳数据</td>
+      <td>5大过程组×10大知识领域为框架，Objective/Progress/Risk数据按PMBOK结构组织</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>可见即可信</strong></td>
+      <td>不满足于"报表数字"，追求数据的完整性和可视化，让项目的全貌一望便知</td>
+      <td>3D知识图谱、Dashboard实时图表、日报全8板块展开视图、施工照片时间轴</td>
+    </tr>
+  </table>
+</div>
+
+<h3>系统的终极目标</h3>
+<div class="card" style="text-align:center;border-left:4px solid var(--accent)">
+  <p style="font-size:1.05rem;margin:.5rem 0"><strong>为全过程工程咨询、项目管理、工程管理提供活生生的样本和可借鉴模型。</strong></p>
+  <p style="font-size:.85rem;color:var(--muted)">它们是完整的、丰满的，一望便知的——无论是美的还是丑陋的。</p>
+  <p style="font-size:.85rem;color:var(--muted);margin-top:.3rem">通过本系统，可见的是以此作为下一个项目的指路者，而非一堆冰冷的数字报表。</p>
+  <p style="font-size:.9rem;margin-top:.8rem;color:var(--accent);font-weight:700">数据不为归档而生，数据为下一个项目而生。</p>
+</div>
 
 <!-- ===== 二 ===== -->
 <h2 id="s2">二、快速入门</h2>
@@ -457,8 +532,9 @@
 
 <div class="card">
   <h3>访问方式</h3>
-  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">手机浏览器打开</div><div class="desc">访问 <kbd>https://&lt;服务器地址&gt;/mobile.html</kbd>（与电脑端同一域名，路径为 /mobile.html）</div></div></div>
-  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">添加到主屏幕（可选）</div><div class="desc">支持 PWA：浏览器菜单选择「添加到主屏幕」，即可像原生 App 一样从桌面图标「工程水印相机」启动</div></div></div>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">手机浏览器打开（生产模式）</div><div class="desc">访问 <kbd>http://192.168.13.187:3000/mobile</kbd>（本机IP:3000端口），或开发模式 <kbd>http://192.168.13.187:5300/mobile.html</kbd>（5300端口，热更新）</div></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">添加到主屏幕（PWA安装）</div><div class="desc">登录后底部将出现蓝色「安装到桌面」横幅，点击弹出操作指引；安装后从桌面图标「工程水印相机」独立启动，全屏无浏览器边框</div></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><div class="title">登录账号</div><div class="desc">使用与电脑端完全相同的账号密码登录，token 统一存储在浏览器的 doc-system-token 中，会话 24 小时有效</div></div></div>
 </div>
 
 <div class="card">
@@ -500,9 +576,311 @@
 <div class="tip">水印照片长边自动压缩至 2560px 并以 JPEG 导出，兼顾清晰度、上传速度与手机内存占用；上传成功的照片记录在服务器 <kbd>mobile_photos</kbd> 表并写入审计日志。</div>
 <div class="warn">GPS 定位需要 <strong>HTTPS</strong> 访问（浏览器安全限制）。若通过 HTTP 或局域网 IP 访问，定位自动降级——可手动填写位置描述，时间/项目/拍摄人水印不受影响。生产部署请使用 <kbd>deploy/nginx-ssl.conf</kbd>。</div>
 
+<!-- ====== 二十、移动端PWA安装指南 ====== -->
+<h2 id="s20">二十、移动端PWA安装指南</h2>
+<p>移动端支持 <strong>PWA（渐进式Web应用）</strong> 安装，将网页封装为类原生App，支持离线启动、全屏运行、桌面图标。</p>
+
+<div class="card">
+  <h3>自动安装引导</h3>
+  <p>登录后，首页底部自动出现蓝色「安装到桌面 — 一键启动」横幅。点击后根据当前浏览器自动展示针对性指引：</p>
+  <table>
+    <tr><th>浏览器</th><th>操作步骤</th></tr>
+    <tr><td><strong>Chrome (Android)</strong></td><td>点击 ⋮ 菜单 → 安装应用 → 安装</td></tr>
+    <tr><td><strong>Safari (iOS)</strong></td><td>点击底部分享按钮 → 滑动找到「添加到主屏幕」→ 添加</td></tr>
+    <tr><td><strong>微信/QQ内置浏览器</strong></td><td>不支持安装。弹窗提示「复制链接」→ 用系统浏览器或Chrome打开</td></tr>
+    <tr><td><strong>系统自带浏览器</strong></td><td>菜单中找到「添加到主屏幕」或「安装」选项</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>已安装检测</h3>
+  <p>应用通过 <kbd>display-mode: standalone</kbd> 媒体查询自动检测已安装状态。安装后横幅自动消失，不再打扰。</p>
+</div>
+
+<div class="card">
+  <h3>技术架构</h3>
+  <table>
+    <tr><th>组件</th><th>文件</th><th>说明</th></tr>
+    <tr><td>Manifest</td><td>vite.config.ts (VitePWA)</td><td>定义应用名称、图标、启动URL、全屏模式</td></tr>
+    <tr><td>Service Worker</td><td>vite-plugin-pwa 自动生成</td><td>离线缓存 mobile.html + 图标 + JS/CSS资源</td></tr>
+    <tr><td>安装引导</td><td>src/mobile/components/InstallBanner.tsx</td><td>三态安装指引：原生横幅 / 平台引导弹窗 / 浮动按钮</td></tr>
+    <tr><td>iOS适配</td><td>mobile.html</td><td>apple-touch-icon / apple-mobile-web-app-capable / 沉浸式状态栏</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>生产部署命令</h3>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">构建前端</div><div class="desc">在项目根目录执行 <kbd>npx vite build</kbd>，输出到 dist/ 目录</div></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">启动生产模式</div><div class="desc"><kbd>cd backend &amp;&amp; set NODE_ENV=production &amp;&amp; node server.js</kbd>，Express 自动托管 dist/ 静态文件</div></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><div class="title">手机访问</div><div class="desc">浏览器打开 <kbd>http://192.168.13.187:3000/mobile</kbd></div></div></div>
+</div>
+
+<div class="warn">PWA 安装横幅依赖 <kbd>beforeinstallprompt</kbd> 事件，该事件仅在 HTTPS 或 localhost 下自动触发。HTTP 局域网部署下，系统通过自定义 InstallBanner 组件提供手动安装指引，确保所有网络环境均可安装。</div>
+
+
+<!-- ====== 二十一、大模型配置中心 ====== -->
+<h2 id="s21">二十一、大模型配置中心</h2>
+<p>系统支持 <strong>7个大模型</strong>（5云端 + 2本地），通过统一的模型配置中心管理 API Key 和在线状态。</p>
+
+<div class="card">
+  <h3>模型列表</h3>
+  <table>
+    <tr><th>模型ID</th><th>名称</th><th>类型</th><th>API Key 变量</th></tr>
+    <tr><td>deepseek-chat</td><td>DeepSeek-V3</td><td>云端</td><td>DEEPSEEK_API_KEY</td></tr>
+    <tr><td>deepseek-v4-pro</td><td>DeepSeek-V4 Pro</td><td>云端（支持视觉）</td><td>DEEPSEEK_API_KEY</td></tr>
+    <tr><td>deepseek-r1</td><td>DeepSeek-R1</td><td>云端（推理增强）</td><td>DEEPSEEK_API_KEY</td></tr>
+    <tr><td>qwen-turbo</td><td>通义千问（云端）</td><td>云端</td><td>QWEN_API_KEY</td></tr>
+    <tr><td>glm-4-flash</td><td>智谱GLM-4</td><td>云端</td><td>ZHIPU_API_KEY</td></tr>
+    <tr><td>ollama-qwen</td><td>Ollama通义（本地）</td><td>本地</td><td>无需（需安装Ollama）</td></tr>
+    <tr><td>ollama-llama</td><td>Ollama Llama3（本地）</td><td>本地</td><td>无需（需安装Ollama）</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>配置方法</h3>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">编辑 backend/.env</div><div class="desc">将对应 API Key 填入 <kbd>DEEPSEEK_API_KEY=sk-xxx</kbd> <kbd>QWEN_API_KEY=sk-xxx</kbd> <kbd>ZHIPU_API_KEY=xxx</kbd> <kbd>DASHSCOPE_API_KEY=sk-xxx</kbd></div></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">重启后端服务</div><div class="desc">修改 .env 后需重启 Node.js 进程，dotenv 仅在启动时加载</div></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><div class="title">验证配置</div><div class="desc">进入「大模型配置中心」→ 点击「全部测试」，每个模型依次发送测试请求，结果显示在线/离线</div></div></div>
+</div>
+
+<div class="card">
+  <h3>全部测试按钮</h3>
+  <p>点击后依次测试所有非离线模型，测试中有旋转图标和「测试中...」文字提示，完成后弹出「全部测试完成」通知。若所有模型均离线，提示「请先配置 API Key」。</p>
+</div>
+
+<div class="tip">只需配置 <strong>DeepSeek</strong> 一个即可让核心 AI 功能恢复可用。API Key 获取地址：platform.deepseek.com / dashscope.aliyun.com / open.bigmodel.cn</div>
+
+<div class="warn">注意：API Key 应保存在 <kbd>backend/.env</kbd>（后端专用），而 <kbd>.env</kbd>（项目根目录）仅存放 VITE_ 前缀的前端变量。两个文件各司其职，不可混用。若只配置了根目录的 VITE_DEEPSEEK_API_KEY，后端模型将全部显示离线。</div>
+
+
+<!-- ====== 二十二、系统模块全景清单 ====== -->
+<h2 id="s22">二十二、系统模块全景清单</h2>
+<p>本系统共有 <strong>31个</strong> 有效项目管理模块，分为八大类别：</p>
+
+<div class="card">
+  <h3>一、指南工作模块（4个）</h3>
+  <table><tr><th>#</th><th>模块</th><th>入口</th></tr>
+  <tr><td>1</td><td>前期工作</td><td>首页 → 第1章</td></tr>
+  <tr><td>2</td><td>招标采购</td><td>首页 → 第2章</td></tr>
+  <tr><td>3</td><td>工程施工</td><td>首页 → 第3章</td></tr>
+  <tr><td>4</td><td>竣工验收及移交</td><td>首页 → 第4章</td></tr></table>
+</div>
+
+<div class="card">
+  <h3>二、AI 智能化（5个）</h3>
+  <table><tr><th>#</th><th>模块</th><th>类别</th></tr>
+  <tr><td>5</td><td>AI智能体</td><td>P1 · Agent Console</td></tr>
+  <tr><td>6</td><td>技能面板</td><td>P1 · Skill Panel</td></tr>
+  <tr><td>7</td><td>PMBOK框架</td><td>P1 · 10领域49过程</td></tr>
+  <tr><td>8</td><td>模块裁剪引擎</td><td>P0 · Tailoring</td></tr>
+  <tr><td>9</td><td>智能分析中心</td><td>AI综合项目分析</td></tr></table>
+</div>
+
+<div class="card">
+  <h3>三、AI 审查与生成（4个）</h3>
+  <table><tr><th>#</th><th>模块</th><th>类别</th></tr>
+  <tr><td>10</td><td>施工组织设计审查</td><td>AI + 知识图谱</td></tr>
+  <tr><td>11</td><td>合同审查</td><td>合规 + 风险识别</td></tr>
+  <tr><td>12</td><td>招投标文件审查</td><td>合规性检查</td></tr>
+  <tr><td>13</td><td>AI方案生成</td><td>Phase3 · Word导出</td></tr></table>
+</div>
+
+<div class="card">
+  <h3>四、项目管理核心（7个）</h3>
+  <table><tr><th>#</th><th>模块</th><th>说明</th></tr>
+  <tr><td>14</td><td>目标管理</td><td>P0 · WBS分解/达成度计算</td></tr>
+  <tr><td>15</td><td>项目仪表盘</td><td>CPI/SPI/完整度/质量分</td></tr>
+  <tr><td>16</td><td>计划管理</td><td>甘特图/里程碑/工期</td></tr>
+  <tr><td>17</td><td>干系人管理</td><td>登记册/权力利益矩阵</td></tr>
+  <tr><td>18</td><td>风险管理</td><td>概率影响矩阵/应对跟踪</td></tr>
+  <tr><td>19</td><td>资源与沟通</td><td>RACI矩阵/沟通记录</td></tr>
+  <tr><td>20</td><td>基线管理</td><td>三大基线/版本对比/KPI</td></tr></table>
+</div>
+
+<div class="card">
+  <h3>五、资料与知识（6个）</h3>
+  <table><tr><th>#</th><th>模块</th><th>说明</th></tr>
+  <tr><td>21</td><td>工程资料管理</td><td>DB11/T 695 &amp; 808 附录A</td></tr>
+  <tr><td>22</td><td>土储中心归档</td><td>86项分类归档</td></tr>
+  <tr><td>23</td><td>知识库</td><td>全文检索+语义搜索</td></tr>
+  <tr><td>24</td><td>知识图谱</td><td>关系图谱可视化</td></tr>
+  <tr><td>25</td><td>政策库</td><td>全过程工程咨询政策法规</td></tr>
+  <tr><td>26</td><td>制度规范库</td><td>土储中心制度标准</td></tr></table>
+</div>
+
+<div class="card">
+  <h3>六～八：供应商造价 / 手机端 / 高级工具（5个）</h3>
+  <table><tr><th>#</th><th>模块</th><th>类别</th></tr>
+  <tr><td>27</td><td>供应商库</td><td>资质审核/评价星级</td></tr>
+  <tr><td>28</td><td>造价数据</td><td>工程量清单/分类汇总</td></tr>
+  <tr><td>29</td><td>手机水印照片</td><td>GPS拍照/自动归档</td></tr>
+  <tr><td>30</td><td>工作流引擎</td><td>4模板/步骤可视化</td></tr>
+  <tr><td>31</td><td>审计日志</td><td>操作追溯/合规审计</td></tr></table>
+</div>
+
+
+<!-- ====== 二十三、知识图谱构建原则与关系体系 ====== -->
+<h2 id="s23">二十三、知识图谱构建原则与关系体系</h2>
+<p>系统知识图谱以 <strong>3D 力导向图</strong> 展示项目全要素关系网络，支持 5 种主题光效（深空黑/暮光紫/星光蓝/破晓金/月光白），是理解系统数据全貌的核心工具。</p>
+
+<h3>23.1 五大构建原则</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:15%">原则</th><th>说明</th><th style="width:35%">应用示例</th></tr>
+    <tr><td><strong>① 数据驱动</strong></td><td>仅对有实际数据存储的模块构建节点，不虚构数据。图谱反映系统真实状态</td><td>项目有干系人数据→生成干系人节点；无数据→不生成</td></tr>
+    <tr><td><strong>② 项目锚定</strong></td><td>所有节点最终通过边（Edge）关联到项目根节点，确保图谱以项目为中心展开</td><td>风险→项目、审查报告→项目、供应商→项目</td></tr>
+    <tr><td><strong>③ 关系优先</strong></td><td>每个节点类型必须有至少一种有意义的边关系，孤立节点不生成</td><td>belongs-to / references / assigned-to / produces / precedes / reviews</td></tr>
+    <tr><td><strong>④ 全量覆盖</strong></td><td>所有产生持久化数据的模块均应在图谱中有对应节点类型</td><td>31 个模块中有 localStorage 数据的 25 个已入图</td></tr>
+    <tr><td><strong>⑤ 可查询</strong></td><td>图谱应能回答项目管理关键问题，支持搜索节点、追溯关系链</td><td>「该项目有哪些风险」「谁负责哪些审查」</td></tr>
+  </table>
+</div>
+
+<h3>23.2 节点类型与关系体系（25类节点）</h3>
+
+<div class="card">
+  <h4>一、基础业务层（5类）</h4>
+  <table>
+    <tr><th>节点类型</th><th>颜色</th><th>数据源</th><th>关联边</th></tr>
+    <tr><td><strong>project</strong> 项目</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#3B82F6"></span> 蓝</td><td>项目列表（695/808规程）</td><td>← 所有节点最终锚定</td></tr>
+    <tr><td><strong>chapter</strong> 章节</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#6366F1"></span> 靛</td><td>指南模块 localStorage</td><td>→ 项目 belongs-to</td></tr>
+    <tr><td><strong>sub-module</strong> 子模块</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#8B5CF6"></span> 紫</td><td>指南章节子模块</td><td>→ 章节 belongs-to</td></tr>
+    <tr><td><strong>work-item</strong> 工作项</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#F59E0B"></span> 琥珀</td><td>指南子模块工作项</td><td>→ 子模块 belongs-to</td></tr>
+    <tr><td><strong>form</strong> 表单</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#EC4899"></span> 粉</td><td>表单填写记录</td><td>→ 章节 belongs-to</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>二、资料与知识层（6类）</h4>
+  <table>
+    <tr><th>节点类型</th><th>颜色</th><th>数据源</th><th>关联边</th></tr>
+    <tr><td><strong>document</strong> 文档资料</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#10B981"></span> 翠绿</td><td>上传记录 / 政策库 / 制度库 / 土储归档 / 计划文件</td><td>→ 项目 belongs-to</td></tr>
+    <tr><td><strong>kb-document</strong> 知识库</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#84CC16"></span> 黄绿</td><td>knowledge-base-documents</td><td>→ 项目 references · → 章节 references</td></tr>
+    <tr><td><strong>supplier</strong> 供应商</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#F97316"></span> 橙</td><td>supplier-data</td><td>→ 项目 references</td></tr>
+    <tr><td><strong>cost</strong> 造价</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#14B8A6"></span> 青</td><td>项目投资信息</td><td>→ 项目 belongs-to</td></tr>
+    <tr><td><strong>person</strong> 人员</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#EF4444"></span> 红</td><td>表单创建者 / 注册用户</td><td>← 风险 assigned-to</td></tr>
+    <tr><td><strong>stakeholder</strong> 干系人</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#D946EF"></span> 品红</td><td>stakeholder-{project}</td><td>→ 项目 assigned-to</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>三、项目管理核心层（4类）</h4>
+  <table>
+    <tr><th>节点类型</th><th>颜色</th><th>数据源</th><th>关联边</th></tr>
+    <tr><td><strong>objective</strong> 目标</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#06B6D4"></span> 天蓝</td><td>project-objectives-{name}</td><td>→ 项目 belongs-to · → 父目标 precedes</td></tr>
+    <tr><td><strong>risk-item</strong> 风险</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#DC2626"></span> 深红</td><td>risk-{project}</td><td>→ 项目 references · → 负责人 assigned-to</td></tr>
+    <tr><td><strong>raci-item</strong> RACI矩阵</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#0EA5E9"></span> 海蓝</td><td>raci-{project}</td><td>→ 项目 references · → 责任人 assigned-to</td></tr>
+    <tr><td><strong>baseline</strong> 基线</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#78716C"></span> 石灰</td><td>project-baselines-*</td><td>→ 项目 references</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>四、AI 智能化层（5类）</h4>
+  <table>
+    <tr><th>节点类型</th><th>颜色</th><th>数据源</th><th>关联边</th></tr>
+    <tr><td><strong>review-report</strong> 审查报告</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#F43F5E"></span> 玫红</td><td>施工/合同/招投标审查历史 ×3</td><td>→ 项目 references</td></tr>
+    <tr><td><strong>plan-generated</strong> AI方案</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#34D399"></span> 翠绿</td><td>plan-generator-history</td><td>→ 项目 produces</td></tr>
+    <tr><td><strong>ai-session</strong> AI对话</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#A855F7"></span> 紫罗兰</td><td>ai-sessions</td><td>→ 项目 references</td></tr>
+    <tr><td><strong>skill</strong> 技能配置</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#EAB308"></span> 金黄</td><td>skill-enabled</td><td>→ 项目 references</td></tr>
+    <tr><td><strong>workflow</strong> 工作流</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#22D3EE"></span> 荧光青</td><td>custom-workflows</td><td>→ 项目 precedes</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>五、移动端（1类）</h4>
+  <table>
+    <tr><th>节点类型</th><th>颜色</th><th>数据源</th><th>关联边</th></tr>
+    <tr><td><strong>mobile-photo</strong> 手机水印</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#FB923C"></span> 暖橙</td><td>mobile-watermark-templates</td><td>→ 项目 produces</td></tr>
+  </table>
+</div>
+
+<h3>23.3 边关系类型</h3>
+<div class="card">
+  <table>
+    <tr><th style="width:15%">边类型</th><th>含义</th><th style="width:40%">典型连接</th></tr>
+    <tr><td><strong>belongs-to</strong></td><td>归属关系（层级隶属）</td><td>工作项→子模块、文档→项目、目标→项目</td></tr>
+    <tr><td><strong>references</strong></td><td>引用关系（跨域关联）</td><td>供应商→项目、审查报告→项目、AI对话→项目</td></tr>
+    <tr><td><strong>assigned-to</strong></td><td>指派关系（人员关联）</td><td>风险→负责人、RACI→责任人、干系人→项目</td></tr>
+    <tr><td><strong>produces</strong></td><td>产出关系（输出物）</td><td>AI方案生成→项目、手机水印→项目</td></tr>
+    <tr><td><strong>precedes</strong></td><td>前后关系（流程依赖）</td><td>子目标→父目标、工作流→项目</td></tr>
+  </table>
+</div>
+
+<h3>23.4 主题效果</h3>
+<div class="card">
+  <table>
+    <tr><th>主题</th><th>背景</th><th>光源色</th><th>适用场景</th></tr>
+    <tr><td>深空黑</td><td>#000000 纯黑渐变</td><td>靛蓝</td><td>演示/汇报</td></tr>
+    <tr><td>暮光紫</td><td>深紫渐变</td><td>暖橙</td><td>夜景模式</td></tr>
+    <tr><td>星光蓝</td><td>深蓝渐变</td><td>冷白</td><td>日常浏览</td></tr>
+    <tr><td>破晓金</td><td>深蓝绿渐变</td><td>暖金</td><td>数据密集</td></tr>
+    <tr><td>月光白</td><td>浅灰白渐变</td><td>纯白</td><td>明亮环境 / 投影展示</td></tr>
+  </table>
+</div>
+
+<div class="tip">知识图谱数据来源于系统各模块的 localStorage 持久化存储。若某模块无数据则对应节点不显示。可通过各功能模块录入数据后刷新图谱查看更新。</div>
+
+
+<!-- ====== 二十四、项目日报数据存储与管理方案 ====== -->
+<h2 id="s24">二十四、项目日报数据存储与管理方案</h2>
+<p>项目日报是工程管理的数据基石，承载人员、机械、材料、进度、安全等全维度信息。系统采用 <strong>SQLite 结构化数据库 + 专用硬盘原始文档归档</strong> 双存储架构。</p>
+
+<h3>24.1 方案选型与对比</h3>
+<div class="card">
+  <table>
+    <tr><th>方案</th><th>全量留存</th><th>可视化</th><th>私有化</th><th>部署成本</th><th>匹配度</th></tr>
+    <tr><td><strong>SQLite + 专用硬盘（已采用）</strong></td><td>⭐⭐⭐⭐⭐</td><td>⭐⭐⭐⭐⭐</td><td>⭐⭐⭐⭐⭐</td><td>极低</td><td>⭐⭐⭐⭐⭐</td></tr>
+    <tr><td>PostgreSQL + MinIO（企业级）</td><td>⭐⭐⭐⭐⭐</td><td>⭐⭐⭐⭐⭐</td><td>⭐⭐⭐⭐</td><td>中</td><td>⭐⭐⭐</td></tr>
+    <tr><td>MongoDB + GridFS（NoSQL）</td><td>⭐⭐⭐⭐</td><td>⭐⭐⭐</td><td>⭐⭐⭐⭐</td><td>中</td><td>⭐⭐</td></tr>
+    <tr><td>云SaaS（简道云/明道云）</td><td>⭐⭐⭐</td><td>⭐⭐⭐</td><td>⭐</td><td>月费</td><td>⭐</td></tr>
+  </table>
+  <p style="font-size:.82rem;color:var(--accent);margin-top:.8rem;font-weight:700">选型结论：SQLite 零部署成本、完全离线、即开即用，完美匹配项目私有化交付需求。云SaaS方案因数据存在第三方服务器，违反数据主权原则，直接排除。</p>
+</div>
+
+<h3>24.2 双层存储架构</h3>
+<div class="card">
+  <svg viewBox="0 0 720 170" style="width:100%;max-width:720px;display:block;margin:1rem auto">
+    <defs><marker id="a24" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#38bdf8"/></marker></defs>
+    <rect x="20" y="15" width="320" height="140" rx="12" fill="rgba(56,189,248,.1)" stroke="#38bdf8" stroke-width="2"/>
+    <text x="180" y="42" font-size="14" font-weight="700" fill="#38bdf8" text-anchor="middle">结构化数据层（看板数据源）</text>
+    <text x="180" y="65" font-size="11" fill="#94a3b8" text-anchor="middle">SQLite · daily_reports 表</text>
+    <text x="180" y="85" font-size="11" fill="#94a3b8" text-anchor="middle">日期索引 · 字段标准化 · 聚合统计</text>
+    <text x="180" y="110" font-size="11" fill="#38bdf8" text-anchor="middle">→ Recharts 图表直接数据源</text>
+    <text x="180" y="135" font-size="10" fill="#64748b" text-anchor="middle">日增量 ~5KB · 10年 ≈ 18MB</text>
+    <rect x="380" y="15" width="320" height="140" rx="12" fill="rgba(167,139,250,.1)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="540" y="42" font-size="14" font-weight="700" fill="#a78bfa" text-anchor="middle">原始文档归档层（全量兜底）</text>
+    <text x="540" y="65" font-size="11" fill="#94a3b8" text-anchor="middle">daily-uploads/ 目录</text>
+    <text x="540" y="85" font-size="11" fill="#94a3b8" text-anchor="middle">PDF + DOCX 双格式 · 施工照片</text>
+    <text x="540" y="110" font-size="11" fill="#a78bfa" text-anchor="middle">→ 审计溯源 · 合规存档</text>
+    <text x="540" y="135" font-size="10" fill="#64748b" text-anchor="middle">专用硬盘 · 电子+纸质同步</text>
+  </svg>
+</div>
+
+<h3>24.3 五表数据模型</h3>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>表名</th><th>用途</th><th>核心字段</th></tr>
+    <tr><td>1</td><td><strong>daily_reports</strong></td><td>日基础工况，图表时间基准</td><td>日期、天气、预警、编制人、审核人</td></tr>
+    <tr><td>2</td><td><strong>daily_workers</strong></td><td>人效趋势分析</td><td>日期、管理人员、作业人数、特种人数、分包单位</td></tr>
+    <tr><td>3</td><td><strong>daily_machinery</strong></td><td>机械资源趋势</td><td>日期、设备名称、规格型号、数量、台班</td></tr>
+    <tr><td>4</td><td><strong>daily_progress</strong></td><td>进度偏差分析</td><td>日期、施工区域、工序、人数、完成率、进度偏差、分包单位</td></tr>
+    <tr><td>5</td><td><strong>daily_risks</strong></td><td>安全风险分析</td><td>日期、危大工程名、验收状态、隐患、协调问题、影响天数</td></tr>
+  </table>
+</div>
+
+<h3>24.4 日报全生命周期</h3>
+<div class="card">
+  <div class="step"><div class="step-num">1</div><div class="step-content"><div class="title">手机端填写/上传</div><div class="desc">通过填写表单或上传 DOCX 文件（AI 自动解析），提交 8 板块日报数据</div></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><div class="title">后端入库 + 文件存档</div><div class="desc">结构化数据写入 SQLite；原始文件保存至 daily-uploads/ 目录</div></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><div class="title">电脑端查看与分析</div><div class="desc">Dashboard Recharts 图表面板读取数据渲染趋势；日报管理页查看完整详情</div></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content"><div class="title">定期归档备份</div><div class="desc">建议每月将数据库文件和 daily-uploads/ 目录同步备份至专用硬盘</div></div></div>
+</div>
+
+<div class="tip">系统已内置 AI 日报解析功能：上传曙光模板格式的 DOCX 文件，DeepSeek 自动提取人员、机械、进度等 8 大类数据并填入表单。</div>
+
+
 <div class="footer">
-  <p>全过程工程咨询管理系统 · 操作说明书 v4.1</p>
-  <p>2026-07-14 · qubin2025/doc-management-system</p>
+  <p>全过程工程咨询管理系统 · 操作说明书 v4.4</p>
+  <p>2026-07-24 · qubin2025/doc-management-system</p>
 </div>
 
 </div>
