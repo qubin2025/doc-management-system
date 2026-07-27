@@ -109,3 +109,102 @@ export async function listTemplatesCloud(): Promise<WatermarkTemplate[]> {
   }
   return out;
 }
+
+// ===== v4.4 日报类型与API =====
+export interface MachineryItem { name: string; spec: string; count: number; }
+export interface MaterialItem { name: string; spec: string; quantity: string; note: string; }
+export interface TaskItem { area: string; description: string; workersAM: number; workersPM: number; workers: number; todayPct: string; totalPct: string; schedule: string; contractor: string; }
+export interface QualityRiskItem { name: string; startDate: string; inspected: string; inspectionResult: string; hazard: string; }
+export interface IssueItem2 { problem: string; cause: string; delayDays: number; measures: string; needHelp: string; }
+export interface DailyReportFull {
+  id: number; projectId: number; projectName?: string; reportDate: string;
+  weatherDay: string; weatherNight: string; weatherAlert: string; weatherAlertLevel: string;
+  managersMain: number; managersLabor: number; managersSpecialty: number;
+  workersMain: number; workersLabor: number; workersSpecialty: number; workersSpecial: number; workersTotal: number;
+  machinery: MachineryItem[]; machineryTotal: number; materials: MaterialItem[];
+  tasks: TaskItem[]; qualityRisks: QualityRiskItem[]; issues: IssueItem2[]; photos: string[];
+  originalText: string; notes: string; reportedBy: string; deleted?: number; createdAt: string;
+}
+export interface SubmitDailyReportParams {
+  projectId: number; reportDate: string; weatherDay: string; weatherNight: string; weatherAlert: string; weatherAlertLevel: string;
+  managersMain: number; managersLabor: number; managersSpecialty: number;
+  workersMain: number; workersLabor: number; workersSpecialty: number; workersSpecial: number; workersTotal: number;
+  machinery: MachineryItem[]; machineryTotal: number; materials: MaterialItem[];
+  tasks: TaskItem[]; qualityRisks: QualityRiskItem[]; issues: IssueItem2[]; photos: string[];
+  originalText?: string; notes: string;
+}
+export async function listDailyReports(projectId?: number): Promise<DailyReportFull[]> {
+  const params = projectId ? `?projectId=${projectId}` : '';
+  const res = await fetch(`${API_BASE}/mobile/daily/list${params}`, { headers: jsonHeaders() });
+  if (!res.ok) return [];
+  return await res.json();
+}
+export async function submitDailyReport(params: SubmitDailyReportParams): Promise<{ id: number; message: string }> {
+  const res = await fetch(`${API_BASE}/mobile/daily/submit`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(params) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '提交失败');
+  return data;
+}
+export async function uploadDailyFile(projectId: number, projectName: string, file: File): Promise<{
+  parsed: Record<string, any> | null; saved?: { id: number; message: string }; rawText?: string;
+}> {
+  const fd = new FormData(); fd.append('file', file); fd.append('projectId', String(projectId)); fd.append('projectName', projectName);
+  const res = await fetch(`${API_BASE}/mobile/daily/upload`, { method: 'POST', headers: authHeaders(), body: fd });
+  if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error || '文件上传失败'); }
+  return await res.json();
+}
+export async function updateDailyReport(id: number, params: SubmitDailyReportParams): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/mobile/daily/${id}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(params) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '修改失败');
+  return data;
+}
+export async function deleteDailyReport(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/mobile/daily/${id}`, { method: 'DELETE', headers: jsonHeaders() });
+  if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error || '删除失败'); }
+}
+
+// ===== v4.4 预警与问题 =====
+export interface NoticeData { totalMessages: number; urgentCount: number; todayTasks: number; upcomingDeadlines: { id: string; title: string; projectName: string; status: string; progress: number; deadline: string }[]; recentNotifications: { id: number; action: string; targetType: string; detail: string; time: string }[]; }
+export async function checkNotices(): Promise<NoticeData> {
+  const res = await fetch(`${API_BASE}/mobile/notice/check`, { headers: jsonHeaders() });
+  if (!res.ok) throw new Error('获取通知失败');
+  return await res.json();
+}
+export interface IssueItem { id: number; projectId: number; projectName: string; title: string; description: string; severity: 'normal'|'urgent'|'critical'; status: 'reported'|'processing'|'resolved'|'closed'; assignee: string; photoPath: string; reportedBy: string; createdAt: string; updatedAt: string; }
+export async function reportIssue(params: { projectId: number; title: string; description?: string; severity?: string; assignee?: string; photoData?: string }): Promise<{ id: number }> {
+  const res = await fetch(`${API_BASE}/mobile/issue/report`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(params) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '问题上报失败');
+  return data;
+}
+export async function listIssues(projectId?: number, status?: string): Promise<IssueItem[]> {
+  const params = new URLSearchParams();
+  if (projectId) params.set('projectId', String(projectId));
+  if (status) params.set('status', status);
+  const res = await fetch(`${API_BASE}/mobile/issue/list?${params}`, { headers: jsonHeaders() });
+  if (!res.ok) return [];
+  return await res.json();
+}
+export async function updateIssueStatus(id: number, status: string, assignee?: string): Promise<void> {
+  await fetch(`${API_BASE}/mobile/issue/update`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ id, status, assignee }) });
+}
+export async function listProgress(projectId?: number): Promise<ProgressEntry[]> { const params = projectId ? `?projectId=${projectId}` : ""; const res = await fetch(`${API_BASE}/mobile/progress/list${params}`, { headers: jsonHeaders() }); if (!res.ok) return []; return await res.json(); }
+
+// ===== v4.4 进度管理 =====
+export interface ProgressEntry { id: number; projectId: number; projectName?: string; planItemId: string | null; title: string; percentage: number; note: string; reportedBy: string; matchStatus: 'matched'|'unmatched'; createdAt: string; }
+export async function reportProgress(params: { projectId: number; title: string; percentage: number; note?: string }): Promise<{ id: number; matchStatus: string }> {
+  const res = await fetch(`${API_BASE}/mobile/progress/report`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(params) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '进度上报失败');
+  return data;
+}
+
+// ===== v4.4 干系人 =====
+export interface StakeholderItem { id: number; name: string; role: string; org: string; contact: string; }
+export async function uploadDocument(params: { projectId: number; docId: string; fileName: string; fileData: string; uploadTime?: string; version?: string; standard?: string }): Promise<void> { const res = await fetch(`${API_BASE}/documents/upload`, { method: "POST", headers: jsonHeaders(), body: JSON.stringify({ projectId: params.projectId, docId: params.docId, fileName: params.fileName, fileData: params.fileData, uploadTime: params.uploadTime || new Date().toISOString(), version: params.version || "1.0", standard: params.standard || "DB11/T695-2025" }) }); if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.error || "文档上传失败"); } }
+export async function fetchStakeholders(projectName: string): Promise<StakeholderItem[]> {
+  const res = await fetch(`${API_BASE}/stakeholders?project=${encodeURIComponent(projectName)}`, { headers: jsonHeaders() });
+  if (!res.ok) return [];
+  return await res.json();
+}

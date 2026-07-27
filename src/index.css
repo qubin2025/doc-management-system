@@ -199,6 +199,16 @@ th, td { white-space: nowrap; }
 .dark .hover\:bg-blue-50:hover { background-color: rgba(59,130,246,0.15); }
 .dark .hover\:text-blue-600:hover { color: #60a5fa; }
 
+/* 暗色下 AI 对话/侧边栏缺失覆盖 */
+.dark .border-gray-100 { border-color: #334155; }
+.dark .border-gray-50 { border-color: #334155; }
+.dark .text-gray-300 { color: #64748b; }
+.dark .hover\:bg-gray-100:hover { background-color: #334155; }
+.dark .hover\:text-gray-600:hover { color: #cbd5e1; }
+.dark .bg-gray-50\/30 { background-color: rgba(15,23,42,0.5); }
+.dark .bg-gray-50\/50 { background-color: rgba(15,23,42,0.7); }
+.dark .hover\:border-gray-300:hover { border-color: #475569; }
+
 /* 暗色下所有功能卡片渐变背景统一为深色卡片 */
 .dark .bg-gradient-to-br { background-image: none !important; background-color: #1e293b !important; }
 .dark .bg-gradient-to-br.from-indigo-50,
@@ -368,6 +378,53 @@ th, td { white-space: nowrap; }
 .dark .border-b { border-color: #334155; }
 .dark .border-t { border-color: #334155; }
 
+/* 暗色下登录页全量适配 */
+.dark .login-page-root { background-color: #0f172a !important; background-image: radial-gradient(circle, rgba(148,163,184,0.06) 1px, transparent 1px) !important; }
+.dark .login-brand-panel { background-color: #1e293b !important; }
+.dark .login-brand-panel .absolute { opacity: 0.3; }
+.dark .login-input-field { color: #e2e8f0 !important; border-bottom-color: #475569 !important; }
+.dark .login-input-field::placeholder { color: #64748b !important; }
+.dark .login-input-field:focus { border-bottom-color: #38bdf8 !important; }
+.dark .login-label { color: #94a3b8 !important; }
+.dark .login-title { color: #e2e8f0 !important; }
+.dark .login-subtitle { color: #94a3b8 !important; }
+.dark .login-brand-name { color: #cbd5e1 !important; }
+.dark .login-brand-tag { color: #94a3b8 !important; }
+.dark .login-btn-primary { background: #38bdf8 !important; border-color: #38bdf8 !important; color: #0f172a !important; }
+.dark .login-btn-primary:hover { background: transparent !important; color: #38bdf8 !important; }
+.dark .login-btn-demo { color: #94a3b8 !important; border-color: #475569 !important; }
+.dark .login-btn-demo:hover { color: #e2e8f0 !important; border-color: #e2e8f0 !important; }
+.dark .login-divider-line { border-color: #475569 !important; }
+.dark .login-divider-text { color: #64748b !important; background-color: #0f172a !important; }
+.dark .login-footer-text { color: #64748b !important; }
+.dark .login-error-box { background-color: rgba(248,113,113,0.1) !important; border-color: rgba(248,113,113,0.2) !important; color: #fca5a5 !important; }
+.dark .login-geo-node { background: #c87941 !important; }
+.dark .login-geo-rule { background: rgba(200,121,65,0.35) !important; }
+.dark .login-geo-circle { border-color: rgba(200,121,65,0.2) !important; }
+/* 暗色下模块网格 — 蓝金配色 */
+.dark .login-module-grid span[style*="background"] { background: #38bdf8 !important; }
+.dark .login-module-grid span:not([style*="opacity"]) { opacity: 0.7 !important; }
+
+/* ===== 主题切换渐变过渡（呼吸感 ease-in-out） ===== */
+html {
+  transition: background-color 1.4s ease-in-out;
+}
+.login-page-root,
+.login-brand-panel,
+.login-input-field,
+.login-title,
+.login-label,
+.login-subtitle,
+.login-btn-primary,
+.login-btn-demo {
+  transition: background-color 1.4s ease-in-out,
+              color 1.2s ease-in-out,
+              border-color 1.2s ease-in-out !important;
+}
+.login-geo-rule {
+  transition: background 1.4s ease-in-out !important;
+}
+
 /* 暖色主题下首页适配 */
 [data-theme="warm"] .bg-white { background-color: #fffbf5; }
 [data-theme="warm"] .bg-gray-50 { background-color: #fef6ee; }
@@ -387,8 +444,6 @@ th, td { white-space: nowrap; }
 /* ===== 移动端响应式 ===== */
 @media (max-width: 768px) {
   body { font-size: 14px; }
-  .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
-  .grid-cols-5 { grid-template-columns: repeat(2, 1fr) !important; }
   .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-7xl { padding-left: 0.5rem; padding-right: 0.5rem; }
   table { font-size: 10px; }
   th, td { padding: 0.25rem 0.4rem; white-space: normal; word-break: break-word; }
@@ -397,8 +452,6 @@ th, td { white-space: nowrap; }
 }
 
 @media (max-width: 480px) {
-  .grid-cols-2 { grid-template-columns: 1fr !important; }
-  .grid-cols-3 { grid-template-columns: 1fr !important; }
   h1 { font-size: 1.2rem; }
   h2 { font-size: 1rem; }
   body { padding: 0.5rem; }

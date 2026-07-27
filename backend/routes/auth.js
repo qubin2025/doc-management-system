@@ -87,6 +87,7 @@ router.get('/me', requireAuth, (req, res) => {
     user: {
       id: req.user.id,
       username: req.user.username,
+      displayName: req.user.displayName,
       role: req.user.role,
     },
     permissions: req.user.permissions,

@@ -1,5 +1,6 @@
 /**
- * Neo4j 知识图谱 API — 离线降级 + 增量同步
+ * Neo4j 知识图谱 API — 基础 CRUD
+ * GraphRAG 端点已拆分至 kg_graphrag.js
  */
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
@@ -11,7 +12,7 @@ let neo4j = null;
 let driver = null;
 let initPromise = null;
 
-async function initDriver() {
+export async function initDriver() {
   if (driver) return;
   if (initPromise) return initPromise;
   initPromise = (async () => {
@@ -29,6 +30,7 @@ async function initDriver() {
         await s.run('RETURN 1');
         await s.run('CREATE CONSTRAINT kg_node_id IF NOT EXISTS FOR (n:Node) REQUIRE n.id IS UNIQUE');
         await s.run('CREATE INDEX kg_node_type IF NOT EXISTS FOR (n:Node) ON (n.type)');
+        await s.run('CREATE INDEX kg_node_label IF NOT EXISTS FOR (n:Node) ON (n.label)');
         console.log('✓ Neo4j 知识图谱已连接');
       } finally { await s.close(); }
     } catch {
@@ -57,7 +59,6 @@ router.get('/', requireAuth, async (_req, res) => {
     nq += ' RETURN n.id AS id, n.type AS type, n.label AS label, n.props AS props';
     eq += ' RETURN a.id AS from, b.id AS to, type(r) AS type, r.label AS label';
 
-    // Neo4j session 不支持并发查询，需要顺序执行
     const nr = await session.run(nq, p);
     const er = await session.run(eq, p);
     res.json({

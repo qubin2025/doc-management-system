@@ -599,3 +599,83 @@ export async function unlinkWorkItem(objectiveId: string, workItemId: string) {
   if (!res.ok) throw new Error('取消关联失败');
   return res.json();
 }
+
+// ===== v4.4 桌面端 API（日报/进度/问题管理） =====
+
+export interface DesktopDailyReport {
+  id: number; projectId: number; projectName?: string;
+  reportDate: string; weatherDay: string; weatherNight: string;
+  weatherAlert: string; weatherAlertLevel: string;
+  managersMain: number; managersLabor: number; managersSpecialty: number;
+  workersMain: number; workersLabor: number; workersSpecialty: number;
+  workersSpecial: number; workersTotal: number;
+  machinery: { name: string; spec: string; count: number }[];
+  machineryTotal: number; materials: { name: string; spec: string; quantity: string; note: string }[];
+  tasks: { area: string; description: string; workersAM?: number; workersPM?: number; workers: number; todayPct: string; totalPct: string; schedule: string; contractor: string }[];
+  qualityRisks: { name: string; startDate: string; inspected: string; inspectionResult: string; hazard: string }[];
+  issues: { problem: string; cause: string; delayDays: number; measures: string; needHelp: string }[];
+  photos: string[]; originalText: string; safetyIssues?: string;
+  notes: string; reportedBy: string; deleted?: number; createdAt: string;
+}
+
+export interface DesktopIssue {
+  id: number; projectId: number; projectName: string;
+  title: string; description: string; severity: string;
+  status: string; assignee: string; photoPath: string;
+  reportedBy: string; createdAt: string; updatedAt: string;
+}
+
+export async function fetchDailyReports(projectName?: string): Promise<DesktopDailyReport[]> {
+  let url = `${API_BASE}/mobile/daily/list`;
+  if (projectName) url += `?projectName=${encodeURIComponent(projectName)}`;
+  const res = await fetch(url, { headers: headers() });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function fetchProjectIssues(projectName: string): Promise<DesktopIssue[]> {
+  const res = await fetch(`${API_BASE}/mobile/issue/list?projectName=${encodeURIComponent(projectName)}`, { headers: headers() });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function fetchProgressStats(projectName: string): Promise<{ total: number; matched: number; unmatched: number; avgPercentage: number }> {
+  const res = await fetch(`${API_BASE}/mobile/progress/stats?projectName=${encodeURIComponent(projectName)}`, { headers: headers() });
+  if (!res.ok) return { total: 0, matched: 0, unmatched: 0, avgPercentage: 0 };
+  return await res.json();
+}
+
+export async function updateIssueStatusDesktop(id: number, status: string): Promise<void> {
+  await fetch(`${API_BASE}/mobile/issue/update`, { method: 'POST', headers: headers(), body: JSON.stringify({ id, status }) });
+}
+
+// ===== v4.4 经验库 =====
+export interface ExperienceItem { id: string; projectName: string; category: string; title: string; description: string; patterns: any[]; metrics: any; referenceCount: number; createdAt: string; }
+export interface AggregatedPattern { type: string; title: string; count: number; projects: string[]; severity?: string; description?: string; agentHint?: string; totalRefs?: number; }
+export interface ExperienceExtractResult { success: boolean; message: string; experiences: ExperienceItem[]; aggregated: AggregatedPattern[]; extracted: number; }
+export async function extractExperiences(): Promise<ExperienceExtractResult> {
+  const res = await fetch(`${API_BASE}/experience/extract`, { method: 'POST', headers: headers() });
+  if (!res.ok) throw new Error('提取失败');
+  return await res.json();
+}
+export async function listExperiences(opts?: { category?: string; keyword?: string; limit?: number }): Promise<{ items: ExperienceItem[]; total: number; categories: string[]; aggregated: AggregatedPattern[] }> {
+  const params = new URLSearchParams();
+  if (opts?.category) params.set('category', opts.category);
+  if (opts?.keyword) params.set('keyword', opts.keyword);
+  if (opts?.limit) params.set('limit', String(opts.limit));
+  const res = await fetch(`${API_BASE}/experience/list?${params}`, { headers: headers() });
+  if (!res.ok) return { items: [], total: 0, categories: [], aggregated: [] };
+  return await res.json();
+}
+export async function deleteExperience(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/experience/${encodeURIComponent(id)}`, { method: 'DELETE', headers: headers() });
+  if (!res.ok) throw new Error('删除经验失败');
+}
+
+// ===== v4.4 进度桌面端 =====
+export interface DesktopProgress { id: number; projectId: number; projectName?: string; planItemId: string | null; title: string; percentage: number; note: string; reportedBy: string; matchStatus: 'matched'|'unmatched'; createdAt: string; }
+export async function fetchProgressList(projectName: string): Promise<DesktopProgress[]> {
+  const res = await fetch(`${API_BASE}/mobile/progress/list?projectName=${encodeURIComponent(projectName)}`, { headers: headers() });
+  if (!res.ok) return [];
+  return await res.json();
+}

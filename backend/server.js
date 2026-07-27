@@ -1,4 +1,9 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: resolve(__dirname, '.env') });
+
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -10,7 +15,9 @@ import authRouter from './routes/auth.js';
 import importRouter from './routes/import.js';
 import backupRouter from './routes/backup.js';
 import aiRouter from './routes/ai.js';
+import aiAdminRouter from './routes/ai_admin.js';
 import kgRouter from './routes/kg.js';
+import kgGraphragRouter from './routes/kg_graphrag.js';
 import ragflowRouter from './routes/ragflow.js';
 import objectivesRouter from './routes/objectives.js';
 import mcpRouter from './routes/mcp.js';
@@ -20,6 +27,8 @@ import exportRouter from './routes/export.js';
 import syncRouter from './routes/sync.js';
 import mobileRouter from './routes/mobile.js';
 import dataRouter from './routes/data.js';
+import experienceRouter from './routes/experience.js';
+import stakeholdersRouter from './routes/stakeholders.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,6 +66,15 @@ app.use((_req, res, next) => {
 // Initialize database
 getDb();
 
+// 生产模式：静态文件 + PWA 入口
+import { existsSync } from 'fs';
+const distPath = resolve(__dirname, '..', 'dist');
+if (isProduction && existsSync(distPath)) {
+  app.use(express.static(distPath, { maxAge: '7d' }));
+  // /mobile → mobile.html（PWA 入口）
+  app.get('/mobile', (_req, res) => res.sendFile(resolve(distPath, 'mobile.html')));
+}
+
 // Routes
 app.use('/api/projects', projectsRouter);
 app.use('/api/documents', documentsRouter);
@@ -64,7 +82,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/import', importRouter);
 app.use('/api/backup', backupRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/ai', aiAdminRouter);
 app.use('/api/kg', kgRouter);
+app.use('/api/kg', kgGraphragRouter);
 app.use('/api/ragflow', ragflowRouter);
 app.use('/api/objectives', objectivesRouter);
 app.use('/api/mcp', mcpRouter);
@@ -74,6 +94,8 @@ app.use('/api/export', exportRouter);
 app.use('/api/sync', syncRouter);
 app.use('/api/mobile', mobileRouter);
 app.use('/api/data', dataRouter);
+app.use('/api/experience', experienceRouter);
+app.use('/api/stakeholders', stakeholdersRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {

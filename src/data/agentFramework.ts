@@ -165,6 +165,66 @@ export class EngineeringAgent {
     }
   }
 
+  /** 使用Agent Profile进行规划（Multi-Agent支持） */
+  async planWithProfile(
+    profile: { name: string; role: string; systemPrompt: string },
+    goal: string,
+    context: AgentContext,
+    maxSteps = 5
+  ): Promise<AgentTask> {
+    const toolList = this.listTools().map(t => `- ${t.name} (${t.category}): ${t.description}`).join('\n');
+    const profileIntro = `[当前Agent角色: ${profile.name} — ${profile.role}]\n${profile.systemPrompt}`;
+
+    try {
+      const reply = await api.aiChat(
+        [{ role: 'user', content: `用户目标: ${goal}\n项目: ${context.projectName}\n请输出执行计划JSON。` }],
+        `${profileIntro}\n\n可用工具：\n${toolList}\n\n请输出JSON格式的执行计划，最多${maxSteps}步。`,
+        { projectName: context.projectName }
+      );
+
+      const jsonMatch = reply.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, reply];
+      const plan = JSON.parse(jsonMatch[1].trim());
+
+      const steps: AgentStep[] = (plan.steps || []).map((s: any, i: number) => ({
+        stepIndex: i,
+        thought: s.thought || `${profile.name}: 第${i + 1}步`,
+        actionName: s.action || s.actionName || null,
+        actionParams: s.params || s.actionParams || {},
+        observation: null,
+        completedAt: null,
+        status: 'pending' as const,
+      }));
+
+      return {
+        id: `task-${Date.now()}`,
+        goal,
+        steps,
+        currentStep: 0,
+        status: 'executing',
+        maxSteps,
+        startedAt: new Date().toISOString(),
+      };
+    } catch (e: any) {
+      return {
+        id: `task-${Date.now()}`,
+        goal,
+        steps: [{
+          stepIndex: 0,
+          thought: `[${profile.name}] 直接用AI分析: ${goal}`,
+          actionName: 'ai_chat',
+          actionParams: { query: goal },
+          observation: null,
+          completedAt: null,
+          status: 'pending',
+        }],
+        currentStep: 0,
+        status: 'executing',
+        maxSteps,
+        startedAt: new Date().toISOString(),
+      };
+    }
+  }
+
   /** 执行一个步骤 */
   async executeStep(step: AgentStep, context: AgentContext): Promise<AgentStep> {
     step.status = 'executing';

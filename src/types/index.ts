@@ -366,3 +366,30 @@ export interface WorkflowInstance {
   startedAt: string;
   completedAt?: string;
 }
+
+// ===== Multi-Agent 协作 (v5.0) =====
+export interface AgentProfile {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  icon: string;
+  color: string;
+  expertise: string[];
+  systemPrompt: string;
+}
+
+export interface AgentDispatchResult {
+  profile: AgentProfile;
+  score: number;
+  reason: string;
+}
+
+export interface MultiAgentReport {
+  goal: string;
+  profile: AgentProfile;
+  steps: AgentStep[];
+  result: string;
+  startedAt: string;
+  completedAt?: string;
+}

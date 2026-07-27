@@ -32,12 +32,24 @@
 - CLAUDE.md 是项目最权威的开发指南
 - 部署说明包含所有环境变量、端口和启动条件
 
-### 7. 使用说明书规范
+### 7. 字体克制
+- 项目中最多使用 **3 种** 字号，禁止引入第4种
+- 最小字体不小于 **12px**（Tailwind `text-xs`）
+- 禁止使用 `text-[10px]` 等硬编码小号字体
+- 推荐字号档位：12px/14px/16px 或 13px/15px/17px
+
+### 8. 使用说明书规范
 - 每个功能模块/卡片在说明文档中单独列为一个小节
 - 说明文档风格为明亮/暖色系（禁止暗色背景）
 - 最小字体 ≥ 12px，符合视觉传达设计原则
 - 能结合SVG图表的优先用图表说明
 - 新模块开发完成后必须同步更新说明文档对应小节
+
+### 9. 品牌标识规范
+- 全局Logo统一使用 `/public/zhjk-logo.png`，替换所有手写"ZHJK"文字块
+- 系统名称：「中航建科 · 工程咨询管理平台」
+- 品牌寓意：「源自中航，不断成长」
+- 新增任何页面/组件时，顶栏Logo格式：`<img src="/zhjk-logo.png" alt="中航建科" className="h-9 w-auto" />`
 
 ## 二、项目结构 (v3.0)
 
@@ -45,19 +57,20 @@
 工程资料管理系统源码/
 ├── src/                    # React 前端源码
 │   ├── components/         # 38个React组件
-│   │   ├── App.tsx         # 主路由中枢(~1100行, 30+view)
-│   │   ├── GuideChapter.tsx # 全过程指南工作模块(1341行)
+│   │   ├── App.tsx         # 主路由中枢(934行, 39view)
+│   │   ├── HomePage.tsx     # v5.1: 项目首页(219行)
+│   │   ├── GuideChapter.tsx # 全过程指南工作模块(698行)
 │   │   ├── TargetManager.tsx    # P0: 目标管理WBS树
 │   │   ├── TailoringEngine.tsx  # P0: 模块裁剪引擎
-│   │   ├── AgentConsole.tsx     # P1: Agent智能体控制台
+│   │   ├── AgentConsole.tsx     # P1: Agent智能体控制台(Multi-Agent)
 │   │   ├── SkillPanel.tsx       # P1: 技能面板
 │   │   ├── PMBOKFramework.tsx   # P1: PMBOK知识领域框架
 │   │   ├── AiChat/AiChatPage   # AI对话
 │   │   ├── *Review.tsx          # 施工/合同/招投标审查
 │   │   ├── Dashboard/GanttChart/NetworkDiagram/PlanManager
 │   │   ├── KnowledgeBase/KnowledgeGraph
-│   │   └── 其他业务组件...
-│   ├── data/               # 数据层(22个模块)
+│   │   └── 其他业务组件... (共64个组件)
+│   ├── data/               # 数据层(35个模块)
 │   │   ├── agentFramework.ts   # P1: Agent智能体核心
 │   │   ├── knowledgeOrchestrator.ts # P0: 统一知识编排器
 │   │   ├── skillRegistry.ts    # P1: Skill注册表(7技能)
@@ -67,7 +80,8 @@
 │   │   ├── pmbokData.ts        # P1: PMBOK 10领域49过程
 │   │   ├── objectiveEngine.ts  # P0: 目标进度计算引擎
 │   │   ├── tailoringEngine.ts  # P0: PMBOK裁剪规则20条
-│   │   ├── api.ts(570行)       # 统一API层(60+函数)
+│   │   ├── multiAgentOrchestrator.ts # v5.0: Multi-Agent编排器
+│   │   ├── api.ts(681行)       # 统一API层(60+函数)
 │   │   ├── knowledgeGraph.ts   # 知识图谱引擎
 │   │   ├── vectorStore.ts      # 本地向量存储
 │   │   ├── ragService.ts       # RAG检索增强
@@ -166,22 +180,30 @@ Agent智能体 — ReAct推理循环 (规划→观察→推理→执行→恢复
 - **双向桥**: AgentAction自动导出为MCPTool，远程MCPTool自动注册为AgentAction
 - **后端端点**: `/api/mcp/tools/list`, `/api/mcp/health`
 
-## 五、API端点清单 (35+端点和10路由)
+## 五、API端点清单 (73+端点和20路由)
 
 | 路由前缀 | 文件 | 端点数 | 认证 |
 |----------|------|--------|------|
 | `/api/projects` | projects.js | 3 (GET/POST/DELETE) | requireAuth/Role |
 | `/api/documents` | documents.js | 6 | requireAuth/Permission |
 | `/api/auth` | auth.js | 8 | 混合 |
-| `/api/ai` | ai.js | 4 | requireAuth+can_use_ai |
-| `/api/kg` | kg.js | 4 | requireAuth |
+| `/api/ai` | ai.js + ai_admin.js | 7 | 混合 |
+| `/api/kg` | kg.js + kg_graphrag.js | 9 | requireAuth |
 | `/api/ragflow` | ragflow.js | 7 | requireAuth |
 | `/api/objectives` | objectives.js | 7 | requireAuth/Role |
 | `/api/mcp` | mcp.js | 2 | requireAuth |
 | `/api/backup` | backup.js | 3 | requireAuth/Role |
 | `/api/import` | import.js | 1 | requireAuth |
+| `/api/mobile` | mobile.js | 10+ | requireAuth |
+| `/api/data` | data.js | 3 | requireAuth |
+| `/api/experience` | experience.js | 4 | requireAuth |
+| `/api/stakeholders` | stakeholders.js | 3 | requireAuth |
+| `/api/sync` | sync.js | 2 | requireAuth |
+| `/api/export` | export.js | 2 | requireAuth |
+| `/api/baselines` | baselines.js | 3 | requireAuth/Role |
+| `/api/audit` | audit.js | 1 | requireAuth |
 
-## 六、数据库Schema (7张表)
+## 六、数据库Schema (21张表)
 
 | 表名 | 用途 | 版本 |
 |------|------|------|
@@ -189,16 +211,23 @@ Agent智能体 — ReAct推理循环 (规划→观察→推理→执行→恢复
 | documents | 文档/文件存储 | v1.0 |
 | users | 用户认证(4角色) | v1.0 |
 | sessions | JWT会话 | v1.0 |
-| **objectives** | 目标层级(WBS) | **v3.0 P0** |
-| **baselines** | 三大基线快照 | **v3.0 P0** |
-| **knowledge_artifacts** | 知识加工产物 | **v3.0 P0** |
-| **audit_log** | 操作审计日志 | **v3.0 P0** |
+| **objectives** | 目标层级(WBS) | v3.0 P0 |
+| **baselines** | 三大基线快照 | v3.0 P0 |
+| **knowledge_artifacts** | 知识加工产物 | v3.0 P0 |
+| **audit_log** | 操作审计日志 | v3.0 P0 |
+| daily_reports | 项目日报(8段模板) | v4.4 |
+| issues | 现场问题管理 | v4.4 |
+| progress_reports | 进度快报 | v4.4 |
+| experience_items | 项目经验库 | v4.4 |
+| mobile_photos | 手机端照片 | v4.4 |
+| ... | 其他业务表 | v4.4+ |
 
 ## 七、全局单例 (src/data/ 模块级导出)
 
 | 单例 | 文件 | 用途 |
 |------|------|------|
 | `engineeringAgent` | agentFramework.ts | Agent智能体 |
+| `multiAgentOrchestrator` | multiAgentOrchestrator.ts | Multi-Agent编排器(5角色) |
 | `skillRegistry` | skillRegistry.ts | Skill注册表 |
 | `mcpRegistry` | mcpAgentBridge.ts | MCP服务器注册 |
 | `orchestrator` | knowledgeOrchestrator.ts | 知识编排器 |
@@ -263,6 +292,77 @@ node backend/server.js    # 后端启动(:3000)
 npx vite --host           # 前端启动(:5300)
 ```
 
+## 九.一、代码修改红线（2026-07-24 补充）
+
+> **血泪教训**：2026年7月24日开发中，DesktopDailyReport.tsx 因反复使用 `sed`、`node -e` 等 shell 脚本进行碎片化行内修改，导致文件 JSX 结构损毁（丢失 KV 组件、重复闭合标签、函数作用域错乱），累计消耗 2+ 小时无效排错。PromptConfigDialog 组件本身无任何问题，仅需 3 行代码即可接入，但因文件损毁自动化注入全部失败。
+
+### 绝对禁止
+
+| 红线 | 说明 | 为何禁止 |
+|------|------|---------|
+| **禁止 sed 修改 JSX/TSX 文件** | 不允许用 `sed -i` 对 `.tsx` 文件做行内替换 | sed 不理解 JSX 层级结构，容易破坏标签闭合、作用域嵌套 |
+| **禁止 node -e 行内注入** | 不允许用 `node -e` 或 inline script 向现有组件文件注入代码 | Bash 转义与 JS 语法叠加出错率极高，修复耗时远超手动开发 |
+| **禁止碎片化补丁迭代** | 不允许对同一文件多次零散局部修改，应统一规划后一次性完成 | 多次碎片补丁导致文件结构腐化，逐步演变为「屎山」 |
+
+### 必须遵守
+
+| 规则 | 说明 |
+|------|------|
+| **大改动用 Write** | 如需修改 >5 行的 TSX 文件，直接使用 Write 工具完整重写，确保结构规整 |
+| **小改动精确匹配** | 仅 1-3 行修改时，使用 Edit 工具，确保 old_string 唯一匹配 |
+| **结构损毁立即重构** | 一旦出现 JSX 编译错误（TS2657/TS1005/TS1128），立即停止修补，用 Write 完整重建 |
+| **组件化隔离** | 新增功能优先创建独立组件（如 PromptConfigDialog），避免侵入已有复杂页面 |
+| **先编译验证** | 每次修改后立即 `npx tsc --noEmit`，错误 >3 个即回退重做 |
+| **老旧文件手工处理** | 多次补丁的老旧文件禁止自动化注入，统一手动开发 |
+
+### 页面固定结构规范（强制落地）
+
+所有 React 页面统一固定区块顺序：
+```
+导入区 → 状态定义区 → 业务方法区 → 纯 JSX 渲染区 → 导出区
+```
+不允许打乱层级穿插代码。新页面严格遵循此结构，老页面重构时统一规整。
+
+### 开发规则补充（迭代卡点止损）
+
+```
+if (TSC 错误数 > 3) → 停止修补 → Write 完整重建
+if (同一文件已修改 >3 次) → 停止修补 → Write 完整重建  
+if (sed/node-e 修改后编译失败) → 立即回退 → 手动开发
+if (JSX 结构解析异常) → 立即止损 → 切换手动标准化开发
+if (老旧破损文件) → 永久禁用自动化注入 → 仅手动规范开发
+```
+
+> 完整落地手册参见：`迭代任务最终终端执行操作指令（完整落地手册）.docx`
+
+## 九.二、代码健康门禁（2026-07-25 补充）
+
+基于 2026-07-25 代码健康度综合评估（评分 5.6/10），建立以下 **5 条强制门禁规则**：
+
+| # | 门禁规则 | 检查方式 | 违反后果 |
+|---|---------|---------|---------|
+| 1 | **禁止新文件超过 250 行** | 新建文件时自查 `wc -l` | MR 不予合入 |
+| 2 | **禁止新增 `any` 类型** | `npx tsc --noEmit` 零 `any` 新增 | MR 不予合入 |
+| 3 | **禁止新模块 prop drilling** | 跨组件共享状态必须使用 Context | MR 不予合入 |
+| 4 | **禁止 sed/node-e 修改 TSX** | 仅用 Write/Edit 工具 | 立即回退 |
+| 5 | **新组件必须有测试文件** | 新建 `__tests__/ComponentName.test.tsx` | MR 不予合入 |
+
+### 存量改进策略（「改旧做新」原则）
+
+```
+不单独占用迭代周期做重构
+在功能开发中渐进式改进触及的模块
+每次触及 App.tsx 时拆分一个子路由（每次减 ~100 行）
+每次触及 api.ts 时统一一处认证逻辑
+6个迭代内综合评分目标 ≥7.0
+```
+
+### 代码健康度参考文档
+
+- `前端项目代码健康度提升专项执行清单.docx` — 九维度评估 + 门禁规则
+- `迭代任务最终终端执行操作指令（完整落地手册）.docx` — 代码修改红线 + 止损机制
+- `docs/全过程工程咨询管理系统_开发总结与下一步方向_20260714.html` 第十五章
+
 ## 九、版本历史
 
 | 版本 | 日期 | 内容 |
@@ -271,6 +371,9 @@ npx vite --host           # 前端启动(:5300)
 | **v3.0 P0** | 2026-07-13 | 目标管理+模块裁剪+知识编排+数据库升级 |
 | **v3.0 P1/P2** | 2026-07-13 | Agent+Skill+MCP+PMBOK+KG管道+工作流 |
 | **v4.1** | 2026-07-14 | 三色主题全局能力·手机端API·暗色19轮适配·SKILL配置中台·AgentConsole升级·数据持久化·IndexedDB迁移·AI安全防护 |
+| **v4.4** | 2026-07-21 | 手机UI重设计·日报体系(8段模板)·Recharts图表·PWA安装·DesktopDailyReport·知识图谱25节点·代码健康评估 |
+| **v5.0** | 2026-07-27 | Ollama本地AI(qwen2.5:7b)·Docker健康检查·GraphRAG图检索(9端点)·Multi-Agent协作(5角色) |
+| **v5.1** | 2026-07-27 | 还债止血: App.tsx 1373→934行·HomePage/StandardSelect组件化·kg.js 579→125行·ai.js 536→451行·门禁收紧250行 |
 
 ### Git提交记录
 ```

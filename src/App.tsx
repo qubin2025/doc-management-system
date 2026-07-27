@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, User, MessageSquare, ClipboardCheck, FileSearch, HardHat, CheckCircle2, Sparkles, Shield, BookOpen, GitBranch, FileCheck, Target, Bot, Zap, Users, AlertTriangle, Briefcase, History, Camera } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, MessageSquare, Users } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -15,7 +15,6 @@ import SupplierManager from './components/SupplierManager';
 import CostManager from './components/CostManager';
 import AnalysisCenter from './components/AnalysisCenter';
 import AdminPanel from './components/AdminPanel';
-import ModelAdmin from './components/ModelAdmin';
 import LandReserveArchive from './components/LandReserveArchive';
 import KnowledgeBase from './components/KnowledgeBase';
 import KnowledgeGraphView from './components/KnowledgeGraph';
@@ -30,7 +29,7 @@ import TailoringEngine from './components/TailoringEngine';
 import AgentConsole from './components/AgentConsole';
 import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
-import ThemeSwitcher from './components/ThemeSwitcher';
+import { getTheme, setTheme, type ThemeMode } from './data/themeEngine';
 import BaselineManager from './components/BaselineManager';
 import AuditLogViewer from './components/AuditLogViewer';
 import StakeholderManager from './components/StakeholderManager';
@@ -38,8 +37,14 @@ import RiskManager from './components/RiskManager';
 import ResourceManager from './components/ResourceManager';
 import WorkflowBuilder from './components/WorkflowBuilder';
 import MobilePhotoViewer from './components/MobilePhotoViewer';
-import GlobalSearch from './components/GlobalSearch';
 import PortfolioManager from './components/PortfolioManager';
+import GlobalDashboard from './components/GlobalDashboard';
+import IssueManager from './components/IssueManager';
+import DesktopDailyReport from './components/DesktopDailyReport';
+import DesktopProgressView from './components/DesktopProgressView';
+import ExperiencePanel from './components/ExperiencePanel';
+import HomePage from './components/HomePage';
+import StandardSelectPage from './components/StandardSelectPage';
 import { guideChapters } from './data/guideModules';
 import { kgPipeline } from './data/kgPipeline';
 import { startSync, markChanged } from './data/syncService';
@@ -84,6 +89,7 @@ const App: React.FC = () => {
 
   const currentInfo = STANDARD_INFO[standard];
   const currentData = standard === 'DB11/T695-2025' ? buildingData : municipalData;
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => getTheme());
   const STORAGE_KEY = `doc-mgmt-upload-${standard}`;
   const PROJECTS_KEY = `doc-mgmt-projects-${standard}`;
 
@@ -109,7 +115,7 @@ const App: React.FC = () => {
   const canUseAi = isAdmin || permissions.can_use_ai;
 
   // ===== View 路由 =====
-  const [view, setView] = useState<string>(auth ? 'project-entry' : 'login');
+  const [view, setView] = useState<string>(auth ? 'dashboard-global' : 'login');
 
   // ===== 项目列表 =====
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
@@ -182,7 +188,7 @@ const App: React.FC = () => {
     setAuth(authState);
     localStorage.setItem(AUTH_KEY, JSON.stringify(authState));
     api.setAuthToken(authState.token);
-    setView('project-entry');
+    setView('dashboard-global');
   };
 
   const handleLogout = () => {
@@ -218,7 +224,6 @@ const App: React.FC = () => {
 
   // ===== 操作 =====
   const [showProjectDialog, setShowProjectDialog] = useState(false);
-  const [showModelAdmin, setShowModelAdmin] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
   const handleSwitchStandard = (std: StandardType) => {
@@ -421,11 +426,11 @@ const App: React.FC = () => {
 
   // ===== AI 对话页 =====
   if (view === 'ai-chat' || showAiChat) {
-    return <AiChatPage onBack={() => { setView('project-entry'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} isAdmin={isAdmin} />;
+    return <AiChatPage onBack={() => { setView('dashboard-global'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} isAdmin={isAdmin} />;
   }
 
   if (view === 'dashboard' && currentProject) {
-    return <Dashboard projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v) => setView(v)} />;
+    return <Dashboard projectName={currentProject} onBack={() => setView('dashboard-global')} onNavigate={(v) => setView(v)} />;
   }
 
   if (view === 'plan-manager') {
@@ -566,13 +571,59 @@ const App: React.FC = () => {
   }
 
   // ===== 手机水印照片 =====
-  if (view === 'mobile-photos' && currentProject) {
-    return <MobilePhotoViewer projectName={currentProject} onBack={() => setView('homepage')} />;
+  if (view === 'mobile-photos') {
+    return <MobilePhotoViewer projectName={currentProject || ''} onBack={() => setView('dashboard-global')} />;
+  }
+
+  // ===== 现场问题管理 =====
+  if (view === 'issue-manager') {
+    return <IssueManager onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 项目日报管理 =====
+  if (view === 'daily-report-manager') {
+    return <DesktopDailyReport onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 进度管理 =====
+  if (view === 'progress-manager') {
+    return <DesktopProgressView onBack={() => setView('homepage')} />;
+  }
+
+  // ===== 项目经验库 =====
+  if (view === 'experience') {
+    return <ExperiencePanel projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 登录页 =====
   if (view === 'login') {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  // ===== 全局项目看板（默认首页） =====
+  if (view === 'dashboard-global') {
+    return (
+      <GlobalDashboard
+        onNavigate={(v, params) => {
+          if (v === 'dashboard' && params?.projectName) {
+            setCurrentProject(params.projectName);
+            setView('dashboard');
+          } else if (v === 'project-entry') {
+            setView('project-entry');
+          } else if (v === 'ai-chat') {
+            setShowAiChat(true);
+            setView('ai-chat');
+          } else if (v === 'mobile-photos') {
+            setView('mobile-photos');
+          } else {
+            setView(v);
+          }
+        }}
+        onLogout={handleLogout}
+        isAdmin={isAdmin}
+        standard={standard}
+      />
+    );
   }
 
   // ===== 项目入口页 =====
@@ -605,6 +656,7 @@ const App: React.FC = () => {
           setProjects(prev => prev.map(p => p.name === name ? { ...p, details } : p));
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects.map(p => p.name === name ? { ...p, details } : p)));
         }}
+        onBack={() => setView('dashboard-global')}
         onAiSubmit={(query) => {
           setAiQuery(query);
           setView('ai-chat');
@@ -635,413 +687,28 @@ const App: React.FC = () => {
   // ===== 首页 =====
   if (view === 'homepage') {
     return (
-      <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-          {/* 项目状态提醒条 — 全宽醒目 */}
-          <div className={`text-center py-1.5 text-xs font-bold ${currentProject ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}`}>
-            {currentProject ? `当前项目：${currentProject}` : '全局模式 — 未进入具体项目，AI将回答全局信息'}
-          </div>
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 flex items-center justify-center rounded-none">
-                <span className="text-white font-black text-xs">ZHJK</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">全过程工程咨询管理服务平台</h1>
-                <p className="text-xs text-gray-400">全过程工程咨询管理服务平台</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setView('project-entry')} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                <ArrowLeft className="w-4 h-4" /> 切换项目
-              </button>
-              <span className="flex items-center gap-1 text-sm text-gray-600"><User className="w-4 h-4" /> {auth?.user?.displayName || auth?.user?.username}</span>
-              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${isAdmin ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                {isAdmin ? '管理员' : auth?.user?.role === 'project_manager' ? '项目经理' : auth?.user?.role === 'construction_unit' ? '建设单位' : '用户'}
-              </span>
-              {isAdmin && (
-                <button onClick={() => setShowModelAdmin(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="模型配置">
-                  <Sparkles className="w-4 h-4" /> 模型
-                </button>
-              )}
-              {isAdmin && (
-                <button onClick={() => setView('admin')} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="系统管理">
-                  <Shield className="w-4 h-4" /> 管理
-                </button>
-              )}
-              {currentProject && <GlobalSearch projectName={currentProject} onNavigate={(view, params) => {
-                if (params?.chapterId) { setGuideChapterId(params.chapterId); setView('guide-chapter'); }
-                else setView(view);
-              }} />}
-              <ThemeSwitcher />
-              <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                <LogOut className="w-4 h-4" /> 退出
-              </button>
-            </div>
-          </div>
-        </header>
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          {/* ===== 第一区块：工作指南工作模块 ===== */}
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">指南工作模块</h2>
-          <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位严格按照指南手册内容执行，大模型智能分析驱动全过程管理</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-            {[
-              { id: 'ch1', icon: <ClipboardCheck className="w-6 h-6 text-blue-600" />, number: 1, title: '前期工作', desc: '项目立项、可行性研究、用地规划许可、建设许可、施工许可等前期管理' },
-              { id: 'ch2', icon: <FileSearch className="w-6 h-6 text-amber-600" />, number: 2, title: '招标采购', desc: '招标文件编制、招标公告、评标定标、中标通知、合同签订与备案' },
-              { id: 'ch3', icon: <HardHat className="w-6 h-6 text-emerald-600" />, number: 3, title: '工程施工', desc: '施工准备、质量管理、进度控制、安全监督、变更管理、监理协调' },
-              { id: 'ch4', icon: <CheckCircle2 className="w-6 h-6 text-indigo-600" />, number: 4, title: '竣工验收及移交', desc: '竣工预验收、正式验收、备案归档、工程移交、竣工结算、保修管理' },
-            ].map((m) => (
-              <button key={m.id} onClick={() => { setGuideChapterId(m.id); setView('guide-chapter'); }}
-                className="bg-white rounded-xl shadow-sm p-5 text-left border-2 border-gray-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 hover:border-gray-300 group cursor-pointer">
-                <div className="w-11 h-11 rounded-lg bg-gray-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">{m.icon}</div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-base font-bold text-gray-800">第{m.number}章 {m.title}</h3>
-                  <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-700 font-medium">已上线</span>
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
-              </button>
-            ))}
-          </div>
-
-          {/* 分隔线 */}
-          <div className="flex items-center gap-4 mb-12">
-            <div className="flex-1 h-px bg-gray-200"></div>
-            <span className="text-xs text-gray-400 font-medium">功能模块</span>
-            <div className="flex-1 h-px bg-gray-200"></div>
-          </div>
-
-          {/* ===== 第二区块：功能模块 ===== */}
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">功能模块</h2>
-          <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位打通数据联系，大模型智能分析驱动全过程管理</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* P1新功能: AI智能体 */}
-            <button onClick={() => setView('agent-console')}
-              className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-sm p-5 text-left border-2 border-purple-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-purple-500 text-white font-bold">NEW</div>
-              <div className="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Bot className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">AI智能体 <span className="text-xs text-purple-500">P1</span></h3>
-              <p className="text-xs text-gray-500 leading-relaxed">自主规划执行 · ReAct推理 · 多工具编排</p>
-            </button>
-
-            {/* P1新功能: 技能面板 */}
-            <button onClick={() => setView('skill-panel')}
-              className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl shadow-sm p-5 text-left border-2 border-amber-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-amber-500 text-white font-bold">NEW</div>
-              <div className="w-11 h-11 rounded-lg bg-amber-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">技能面板 <span className="text-xs text-amber-500">P1</span></h3>
-              <p className="text-xs text-gray-500 leading-relaxed">7个AI技能 · 审查/生成/填写 · 一键执行</p>
-            </button>
-
-            {/* P1新功能: PMBOK框架 */}
-            <button onClick={() => setView('pmbok')}
-              className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl shadow-sm p-5 text-left border-2 border-blue-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-blue-500 text-white font-bold">NEW</div>
-              <div className="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <BookOpen className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">PMBOK框架 <span className="text-xs text-blue-500">P1</span></h3>
-              <p className="text-xs text-gray-500 leading-relaxed">10大知识领域 · 49过程 · 8大绩效域</p>
-            </button>
-
-            {/* P0新功能: 模块裁剪 */}
-            <button onClick={() => setView('tailoring-engine')}
-              className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl shadow-sm p-5 text-left border-2 border-purple-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-purple-500 text-white font-bold">NEW</div>
-              <div className="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <ClipboardCheck className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">模块裁剪 <span className="text-xs text-purple-500">P0</span></h3>
-              <p className="text-xs text-gray-500 leading-relaxed">项目特征问卷 · PMBOK裁剪建议 · 灵活组装模块</p>
-            </button>
-
-            {/* P0新功能: 目标管理 */}
-            <button onClick={() => setView('target-manager')}
-              className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl shadow-sm p-5 text-left border-2 border-sky-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-sky-500 text-white font-bold">NEW</div>
-              <div className="w-11 h-11 rounded-lg bg-sky-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Target className="w-6 h-6 text-sky-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">目标管理 <span className="text-xs text-sky-500">P0</span></h3>
-              <p className="text-xs text-gray-500 leading-relaxed">OKR/WBS分解 · 目标-工作项联动 · 达成度自动计算</p>
-            </button>
-
-            {/* 资料管理 - 已上线 */}
-            <button
-              onClick={() => setView('standard-select')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">工程资料管理</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线 v1.0</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">建筑/市政工程资料分类保存管理，DB11/T 695-2025 & DB11/T 808-2020 附录A</p>
-            </button>
-            {/* 土储中心归档 - 已上线 */}
-            <button onClick={() => setView('land-reserve')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-teal-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6 text-teal-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">土储中心归档资料</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">土储中心归档移交资料规程，86项分类归档管理，上传自动填充</p>
-            </button>
-            {/* 手机水印照片 — NEW */}
-            <button onClick={() => setView('mobile-photos')}
-              className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl shadow-sm p-5 text-left border-2 border-cyan-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative overflow-hidden">
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full bg-cyan-500 text-white font-bold">NEW</div>
-              <div className="w-11 h-11 rounded-lg bg-cyan-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Camera className="w-6 h-6 text-cyan-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">手机水印照片</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-cyan-100 text-cyan-700 font-medium">手机端</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">工程现场手机拍照上传，含GPS/时间/项目/拍摄人水印，自动与电脑端同步</p>
-            </button>
-            {/* 项目仪表盘 - 已上线 */}
-            <button onClick={() => setView('dashboard')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-purple-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">项目仪表盘</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">CPI/SPI/完整度/质量分 KPI实时监控，异常预警，多项目对比</p>
-            </button>
-            {/* 计划管理 - 已上线 */}
-            <button onClick={() => setView('plan-manager')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-indigo-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-indigo-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Building2 className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">计划管理</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">项目进度甘特图、各章节完成度、里程碑节点、预计工期</p>
-            </button>
-            {/* 未来模块 - 规划中 */}
-            {/* 供应商库 - 已上线 */}
-            <button onClick={() => setView('supplier')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-orange-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-orange-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Upload className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">供应商库</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">供应商信息管理、资质审核标记、评价星级、供应商资源池</p>
-            </button>
-            {/* 造价数据 - 已上线 */}
-            <button onClick={() => setView('cost')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-cyan-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-cyan-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Download className="w-6 h-6 text-cyan-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">造价数据</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">工程量清单录入、单位价格、分类汇总、成本合计</p>
-            </button>
-            {/* 知识库 - 已上线 */}
-            <button onClick={() => setView('knowledge-base')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-100 to-sky-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <BookOpen className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">知识库</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">全文检索+语义搜索、文档自动索引、向量化知识库</p>
-            </button>
-            {/* 知识图谱 - 已上线 */}
-            <button onClick={() => setView('knowledge-graph')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-purple-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <GitBranch className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">知识图谱</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">项目-表单-文档-人员关系图谱、节点可点击跳转</p>
-            </button>
-            {/* 政策库 - 已上线 */}
-            <button onClick={() => setView('policy-library')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-red-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-red-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">政策库</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">全过程工程咨询服务相关政策法规、管理办法、技术标准</p>
-            </button>
-            {/* 制度规范库 - 已上线 */}
-            <button onClick={() => setView('regulations-library')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-teal-300 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Shield className="w-6 h-6 text-teal-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">制度规范库</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">土储中心制度规范、地方标准、工作规程、档案管理</p>
-            </button>
-            {/* 智能分析 - 已上线 */}
-            <button onClick={() => setView('analysis')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-emerald-300 group cursor-pointer bg-gradient-to-br from-white to-emerald-50/30">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-purple-100 to-emerald-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">智能分析</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">AI综合项目分析、风险预警、知识图谱、智能建议</p>
-            </button>
-            {/* 施工组织设计审查 */}
-            <button onClick={() => setView('construction-review')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-amber-300 group cursor-pointer bg-gradient-to-br from-white to-amber-50/30">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileCheck className="w-6 h-6 text-amber-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">施工组织设计审查</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">专项方案+施组审查、标准合规验证、知识图谱追溯</p>
-            </button>
-            {/* 合同审查 */}
-            <button onClick={() => setView('contract-review')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-blue-300 group cursor-pointer bg-gradient-to-br from-white to-blue-50/30">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-100 to-sky-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">合同审查</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">合同条款合规审查、风险条款识别、知识库标准对照</p>
-            </button>
-            {/* 方案生成 - Phase3 */}
-            <button onClick={() => setView('plan-generator')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-green-300 group cursor-pointer bg-gradient-to-br from-white to-green-50/30">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">AI方案生成</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">Phase3</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">AI逐章生成施工方案、标准条款自动注入、Word导出</p>
-            </button>
-            {/* 招投标文件审查 */}
-            <button onClick={() => setView('bid-review')}
-              className="bg-white rounded-xl shadow-sm p-5 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-200 border-2 border-indigo-300 group cursor-pointer bg-gradient-to-br from-white to-indigo-50/30">
-              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileSearch className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div className="flex items-center gap-2 mb-1"><h3 className="text-base font-bold text-gray-800">招投标文件审查</h3>
-                <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700 font-medium">已上线</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">招标文件合规性审查、评标要素提取、知识库辅助</p>
-            </button>
-          </div>
-
-          {/* ===== PMBOK管理模块 (Phase 4) ===== */}
-          <h2 className="text-2xl font-bold text-gray-800 text-center mt-8 mb-2">管理模块</h2>
-          <p className="text-center text-gray-500 mb-6 text-sm">干系人 · 风险 · 资源 · 基线 — PMBOK全套管理工具</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-            <button onClick={() => setView('stakeholder')}
-              className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm p-5 text-left border-2 border-orange-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-orange-100 flex items-center justify-center mb-3"><Users className="w-6 h-6 text-orange-600" /></div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">干系人管理</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">登记册 · 权力/利益矩阵 · 参与策略</p>
-            </button>
-            <button onClick={() => setView('risk')}
-              className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl shadow-sm p-5 text-left border-2 border-red-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-red-100 flex items-center justify-center mb-3"><AlertTriangle className="w-6 h-6 text-red-600" /></div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">风险管理</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">登记册 · 概率×影响矩阵 · 应对跟踪</p>
-            </button>
-            <button onClick={() => setView('resource')}
-              className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl shadow-sm p-5 text-left border-2 border-blue-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-blue-100 flex items-center justify-center mb-3"><Briefcase className="w-6 h-6 text-blue-600" /></div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">资源与沟通</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">团队 · RACI矩阵 · 沟通记录</p>
-            </button>
-            <button onClick={() => setView('baseline')}
-              className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-sm p-5 text-left border-2 border-teal-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-teal-100 flex items-center justify-center mb-3"><History className="w-6 h-6 text-teal-600" /></div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">基线管理</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">三大基线快照 · 版本对比 · KPI追踪</p>
-            </button>
-          </div>
-
-          {/* ===== 高级工具 (Phase 5) ===== */}
-          <h2 className="text-2xl font-bold text-gray-800 text-center mt-6 mb-2">高级工具</h2>
-          <p className="text-center text-gray-500 mb-6 text-sm">工作流引擎 · 审计日志 — 自动化与合规工具</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-            <button onClick={() => setView('workflow')}
-              className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl shadow-sm p-5 text-left border-2 border-violet-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-violet-100 flex items-center justify-center mb-3"><Zap className="w-6 h-6 text-violet-600" /></div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">工作流引擎</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">4个预设模板 · 一键执行 · 步骤可视化</p>
-            </button>
-            {isAdmin && (
-              <button onClick={() => setView('audit-log')}
-                className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl shadow-sm p-5 text-left border-2 border-gray-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-                <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center mb-3"><Shield className="w-6 h-6 text-gray-600" /></div>
-                <h3 className="text-base font-bold text-gray-800 mb-1">审计日志</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">操作追溯 · 合规审计 · 安全监控</p>
-              </button>
-            )}
-          </div>
-        </div>
-        <footer className="text-center text-xs text-gray-400 py-8">全过程工程咨询管理服务平台 · 内网系统</footer>
-      </div>
-      {showModelAdmin && <ModelAdmin onClose={() => setShowModelAdmin(false)} />}
-      </>
+      <HomePage
+        currentProject={currentProject}
+        isAdmin={isAdmin}
+        auth={auth}
+        themeMode={themeMode}
+        onNavigate={(v, params) => {
+          if (params?.chapterId) { setGuideChapterId(params.chapterId); setView('guide-chapter'); }
+          else setView(v);
+        }}
+        onToggleTheme={() => { const next = themeMode === 'dark' ? 'light' : 'dark'; setTheme(next); setThemeMode(next); }}
+        onLogout={handleLogout}
+      />
     );
   }
 
   // ===== 规程选择首页 =====
   if (view === 'standard-select' || showStandardSelect) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          <button onClick={() => setView('homepage')} className="flex items-center gap-1 mb-6 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
-            <ArrowLeft className="w-4 h-4" /> 返回首页
-          </button>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">工程资料管理系统</h1>
-            <p className="text-gray-500">请选择资料管理规程</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {(['DB11/T695-2025', 'DB11/T808-2020'] as StandardType[]).map((std) => {
-              const info = STANDARD_INFO[std];
-              return (
-                <button key={std} onClick={() => handleSwitchStandard(std)}
-                  className="bg-white rounded-xl shadow-lg p-8 text-left hover:shadow-xl transition-all duration-200 hover:-translate-y-1 border-2 border-gray-200 hover:border-blue-400 group">
-                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${info.headerBg} bg-opacity-10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <div className={info.color === 'blue' ? 'text-blue-600' : 'text-teal-600'}>{info.icon}</div>
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-800 mb-2">
-                    {std === 'DB11/T695-2025' ? '建筑工程资料管理规程' : '市政基础设施工程资料管理规程'}
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-1">{std}</p>
-                  <p className="text-xs text-gray-400">
-                    {std === 'DB11/T695-2025' ? '附录A — 建筑工程资料分类保存表' : '附录A — 市政工程资料分类保存表'}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <StandardSelectPage
+        onBack={() => setView('homepage')}
+        onSelectStandard={(std) => handleSwitchStandard(std)}
+      />
     );
   }
 
@@ -1051,7 +718,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* 头部 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+      <header className="bg-slate-300/70 backdrop-blur-md shadow-sm border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -1099,7 +766,7 @@ const App: React.FC = () => {
 
               {/* 用户信息 */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 flex items-center gap-1"><User className="w-3 h-3" /> {auth?.user?.displayName || currentUser}</span>
+                <span className="text-sm text-gray-600 flex items-center gap-1"><Users className="w-3 h-3" /> {auth?.user?.displayName || currentUser}</span>
                 {isAdmin ? (
                   <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">管理员</span>
                 ) : (

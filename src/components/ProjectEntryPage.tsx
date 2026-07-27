@@ -16,6 +16,7 @@ interface ProjectEntryPageProps {
   onCreateProject: () => void;
   onRenameProject: (oldName: string, newName: string) => void;
   onUpdateProject: (name: string, details: any) => void;
+  onBack?: () => void;
 }
 
 const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({

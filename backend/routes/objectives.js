@@ -195,4 +195,117 @@ router.delete('/:id', requireRole('admin'), (req, res) => {
   res.json({ success: true });
 });
 
+// ===== 价值度量链 =====
+
+// GET 项目价值看板统计
+router.get('/value-stats', requireAuth, (req, res) => {
+  const { project } = req.query;
+  if (!project) return res.status(400).json({ error: '缺少 project 参数' });
+  const db = getDb();
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS value_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      objective_id TEXT NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+      metric_name TEXT NOT NULL,
+      metric_unit TEXT DEFAULT '',
+      target_value REAL DEFAULT 0,
+      current_value REAL DEFAULT 0,
+      weight REAL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  const metrics = db.prepare(
+    `SELECT vm.*, o.title as obj_title, o.status as obj_status FROM value_metrics vm
+     JOIN objectives o ON vm.objective_id = o.id
+     WHERE o.project_name = ? ORDER BY vm.updated_at DESC`
+  ).all(project);
+
+  // 聚合统计
+  let totalTarget = 0, totalCurrent = 0;
+  const byObjective = {};
+  for (const m of metrics) {
+    totalTarget += (m.target_value || 0) * (m.weight || 1);
+    totalCurrent += (m.current_value || 0) * (m.weight || 1);
+    if (!byObjective[m.objective_id]) {
+      byObjective[m.objective_id] = { title: m.obj_title, status: m.obj_status, metrics: [], achievedRate: 0 };
+    }
+    byObjective[m.objective_id].metrics.push({
+      id: m.id, name: m.metric_name, unit: m.metric_unit,
+      target: m.target_value, current: m.current_value, weight: m.weight,
+    });
+  }
+
+  for (const key of Object.keys(byObjective)) {
+    const obj = byObjective[key];
+    const totalT = obj.metrics.reduce((s, x) => s + x.target * x.weight, 0);
+    const totalC = obj.metrics.reduce((s, x) => s + x.current * x.weight, 0);
+    obj.achievedRate = totalT > 0 ? Math.round(totalC / totalT * 100) : 0;
+  }
+
+  res.json({
+    projectName: project,
+    totalMetrics: metrics.length,
+    overallRate: totalTarget > 0 ? Math.round(totalCurrent / totalTarget * 100) : 0,
+    objectives: Object.values(byObjective),
+    raw: metrics.map(m => ({
+      id: m.id, objectiveId: m.objective_id, objTitle: m.obj_title,
+      metricName: m.metric_name, metricUnit: m.metric_unit,
+      targetValue: m.target_value, currentValue: m.current_value, weight: m.weight,
+    })),
+  });
+});
+
+// POST 保存/更新价值指标
+router.post('/value-metric', requireAuth, (req, res) => {
+  const { objectiveId, metricName, metricUnit, targetValue, currentValue, weight } = req.body;
+  if (!objectiveId || !metricName) return res.status(400).json({ error: '缺少必要参数' });
+  const db = getDb();
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS value_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      objective_id TEXT NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+      metric_name TEXT NOT NULL,
+      metric_unit TEXT DEFAULT '',
+      target_value REAL DEFAULT 0,
+      current_value REAL DEFAULT 0,
+      weight REAL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  const existing = db.prepare(
+    'SELECT id FROM value_metrics WHERE objective_id = ? AND metric_name = ?'
+  ).get(objectiveId, metricName);
+
+  if (existing) {
+    db.prepare(
+      `UPDATE value_metrics SET metric_unit = ?, target_value = ?, current_value = ?, weight = ?, updated_at = datetime('now')
+       WHERE id = ?`
+    ).run(metricUnit || '', targetValue || 0, currentValue || 0, weight ?? 1, existing.id);
+  } else {
+    db.prepare(
+      `INSERT INTO value_metrics (objective_id, metric_name, metric_unit, target_value, current_value, weight)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(objectiveId, metricName, metricUnit || '', targetValue || 0, currentValue || 0, weight ?? 1);
+  }
+
+  res.json({ success: true });
+});
+
+// PUT 更新指标当前值（Agent自动调用）
+router.put('/value-metric/:id', requireAuth, (req, res) => {
+  const { currentValue } = req.body;
+  if (currentValue === undefined) return res.status(400).json({ error: '缺少 currentValue' });
+  const db = getDb();
+  db.prepare(
+    `UPDATE value_metrics SET current_value = ?, updated_at = datetime('now') WHERE id = ?`
+  ).run(currentValue, req.params.id);
+  res.json({ success: true });
+});
+
 export default router;

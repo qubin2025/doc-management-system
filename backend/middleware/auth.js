@@ -8,7 +8,7 @@ export function requireAuth(req, res, next) {
 
   const db = getDb();
   const session = db.prepare(
-    'SELECT s.user_id, s.expires_at, u.username, u.role, u.permissions, u.is_active FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?'
+    'SELECT s.user_id, s.expires_at, u.username, u.display_name, u.role, u.permissions, u.is_active FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?'
   ).get(token);
 
   if (!session) {
@@ -27,6 +27,7 @@ export function requireAuth(req, res, next) {
   req.user = {
     id: session.user_id,
     username: session.username,
+    displayName: session.display_name,
     role: session.role,
     permissions: JSON.parse(session.permissions || '{}'),
   };

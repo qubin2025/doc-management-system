@@ -5,15 +5,162 @@ import { getDb } from '../db.js';
 
 const router = Router();
 
+// ── GraphRAG 图检索（轻量集成，直接复用 kg.js 的 Neo4j 连接） ──
+let _neo4jMod = null;
+let _kgDriver = null;
+let _kgInitPromise = null;
+
+async function _ensureKgDriver() {
+  if (_kgDriver) return;
+  if (_kgInitPromise) return _kgInitPromise;
+  _kgInitPromise = (async () => {
+    try {
+      _neo4jMod = await import('neo4j-driver');
+      const uri = process.env.NEO4J_URI || 'bolt://localhost:7687';
+      const user = process.env.NEO4J_USER || 'neo4j';
+      const pwd = process.env.NEO4J_PASSWORD || 'changeme123';
+      _kgDriver = _neo4jMod.default.driver(uri, _neo4jMod.default.auth.basic(user, pwd), {
+        maxConnectionLifetime: 3 * 60 * 60 * 1000,
+        maxConnectionPoolSize: 5,
+      });
+      const s = _kgDriver.session();
+      try { await s.run('RETURN 1'); } finally { await s.close(); }
+    } catch {
+      _kgDriver = null;
+    } finally {
+      _kgInitPromise = null;
+    }
+  })();
+  return _kgInitPromise;
+}
+
+function _kgInt(n) {
+  if (_neo4jMod?.default?.int) return _neo4jMod.default.int(n);
+  return Math.floor(n);
+}
+
+/**
+ * 从 Neo4j 知识图谱中检索与关键词相关的上下文（用于注入 AI prompt）
+ * @returns {string} 格式化文本，若 Neo4j 不可用返回空字符串
+ */
+async function fetchGraphRAGContext(keyword, depth = 2) {
+  await _ensureKgDriver();
+  if (!_kgDriver) return '';
+  const session = _kgDriver.session();
+  try {
+    // 种子节点匹配
+    const seedR = await session.run(
+      'MATCH (n:Node) WHERE n.label CONTAINS $kw RETURN n.id AS id, n.type AS type, n.label AS label, n.props AS props ORDER BY n.label LIMIT $limit',
+      { kw: keyword, limit: _kgInt(10) }
+    );
+    const seeds = seedR.records.map(r => ({
+      id: r.get('id'), type: r.get('type'), label: r.get('label'), props: r.get('props')
+    }));
+    if (seeds.length === 0) return '';
+
+    // 获取所有边
+    const edgeR = await session.run('MATCH (a:Node)-[r]->(b:Node) RETURN a.id AS from, b.id AS to, type(r) AS type, r.label AS label');
+    const edges = edgeR.records.map(r => ({
+      from: r.get('from'), to: r.get('to'), type: r.get('type'), label: r.get('label') || ''
+    }));
+
+    // BFS 图遍历
+    const adj = new Map();
+    for (const e of edges) {
+      if (!adj.has(e.from)) adj.set(e.from, []);
+      if (!adj.has(e.to)) adj.set(e.to, []);
+      adj.get(e.from).push(e.to);
+      adj.get(e.to).push(e.from);
+    }
+    const visited = new Set(seeds.map(s => s.id));
+    let frontier = [...visited];
+    for (let d = 0; d < depth; d++) {
+      const next = [];
+      for (const id of frontier) {
+        for (const nb of (adj.get(id) || [])) {
+          if (!visited.has(nb)) { visited.add(nb); next.push(nb); }
+        }
+      }
+      frontier = next;
+      if (frontier.length === 0) break;
+    }
+
+    // 获取子图节点
+    const nodeR = await session.run(
+      'MATCH (n:Node) WHERE n.id IN $ids RETURN n.id AS id, n.type AS type, n.label AS label, n.props AS props',
+      { ids: [...visited] }
+    );
+    const nodes = nodeR.records.map(r => ({
+      id: r.get('id'), type: r.get('type'), label: r.get('label'), props: r.get('props')
+    }));
+
+    // 格式化上下文
+    const seedIds = new Set(seeds.map(s => s.id));
+    const lines = ['【知识图谱关联上下文 — 以下标准/规范条款与当前审查内容相关，请参考】'];
+    for (const n of nodes) {
+      let props = {};
+      try { if (n.props) props = typeof n.props === 'object' ? n.props : JSON.parse(n.props); } catch {}
+      const mark = seedIds.has(n.id) ? '★' : '·';
+      const desc = props.description || props.summary || '';
+      const std = props.standard ? `[${props.standard}]` : '';
+      lines.push(`${mark} [${n.type}] ${std} ${n.label}${desc ? ' — ' + desc : ''}`);
+    }
+
+    // 关联关系
+    const subEdges = edges.filter(e => visited.has(e.from) && visited.has(e.to));
+    if (subEdges.length > 0 && subEdges.length <= 20) {
+      lines.push('');
+      lines.push('【关联关系】');
+      for (const e of subEdges) {
+        const fn = nodes.find(n => n.id === e.from);
+        const tn = nodes.find(n => n.id === e.to);
+        lines.push(`${fn?.label || e.from} → ${e.type} → ${tn?.label || e.to}`);
+      }
+    }
+    return lines.join('\n');
+  } catch (e) {
+    console.warn('[GraphRAG] 检索失败:', e.message);
+    return '';
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * 从消息中提取审查关键词（用于 GraphRAG 检索）
+ */
+function extractReviewKeywords(messages) {
+  if (!messages?.length) return null;
+  const fullText = messages.map(m => m.content || '').join(' ');
+  // 检测审查意图
+  const reviewPatterns = [
+    { re: /(施工.*审查|施工.*方案|施工组织设计)/i, kw: '施工质量' },
+    { re: /(合同.*审查|合同.*条款|合同.*风险)/i, kw: '合同管理' },
+    { re: /(招标.*审查|投标.*审查|招投标)/i, kw: '造价管理' },
+    { re: /(安全.*检查|安全.*管理|安全.*措施)/i, kw: '施工安全' },
+    { re: /(质量.*验收|质量.*检查|质量.*控制)/i, kw: '施工质量' },
+    { re: /(监理.*规划|监理.*细则|监理.*报告)/i, kw: '监理管理' },
+    { re: /(资料.*管理|资料.*归档|资料.*整理)/i, kw: '资料管理' },
+    { re: /(混凝土|钢筋|模板|结构)/i, kw: '混凝土' },
+  ];
+  for (const { re, kw } of reviewPatterns) {
+    if (re.test(fullText)) return kw;
+  }
+  // 未匹配到特定关键词，尝试提取通用术语
+  const keywords = ['施工', '安全', '质量', '验收', '合同', '监理', '招标', '投标', '造价', '工期', '变更', '索赔'];
+  const found = keywords.filter(k => fullText.includes(k));
+  return found.length > 0 ? found.slice(0, 3).join(' ') : null;
+}
+
 // 简单内存限流
 const rateMap = new Map();
 const RATE_LIMIT = 60;
 const RATE_WINDOW = 60000;
 
-// 日用量统计 + 异常检测
-const dailyUsage = new Map();
-const DAILY_LIMIT = 200;
-const DAILY_COST_LIMIT = 10;
+// 日用量统计 + 异常检测（ai_admin.js 共享）
+export const dailyUsage = new Map();
+export const DAILY_LIMIT = 200;
+export const DAILY_COST_LIMIT = 10;
 
 function checkDaily(userId) {
   const today = new Date().toISOString().slice(0, 10);
@@ -57,8 +204,8 @@ function buildProjectContext(projectName, standard) {
   return docs.map(d => d.filename).join(', ');
 }
 
-// ========== 模型配置 ==========
-const MODELS = {
+// ========== 模型配置（延迟加载，确保dotenv已执行） ==========
+function getModels() { return {
   'deepseek-chat': {
     name: 'DeepSeek-V3',
     endpoint: 'https://api.deepseek.com/chat/completions',
@@ -109,7 +256,7 @@ const MODELS = {
     model: 'llama3.1:8b',
     system: '你是全过程工程咨询管理平台的AI助手。',
   },
-};
+}; }
 
 // GET /api/ai/models — 列出可用模型（含真实探测）
 router.get('/models', requireAuth, async (req, res) => {
@@ -120,7 +267,7 @@ router.get('/models', requireAuth, async (req, res) => {
     ollamaOnline = r.ok;
   } catch {}
 
-  const available = Object.entries(MODELS).map(([id, cfg]) => {
+  const available = Object.entries(getModels()).map(([id, cfg]) => {
     let status = 'unknown';
     const hasKey = (k) => k && !k.includes('your-') && k.length > 20;
     if (id.startsWith('deepseek')) status = hasKey(cfg.key) ? 'online' : 'offline';
@@ -178,7 +325,7 @@ router.post('/vision', requireAuth, requirePermission('can_use_ai'), async (req,
 });
 
 // POST /api/ai/chat
-router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) => {
+router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, res) => {
   if (!checkRate(req.user?.id)) {
     return res.status(429).json({ error: '请求过于频繁，请稍后' });
   }
@@ -189,7 +336,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
   let requestedModel = reqModel || 'deepseek-chat';
   if (hasImage && (requestedModel === 'auto' || requestedModel === 'deepseek-chat')) {
     requestedModel = 'deepseek-v4-pro';
-    logger.info('检测到图片内容，自动切换为视觉模型 deepseek-v4-pro');
+    console.log('[AI] 检测到图片内容，自动切换为视觉模型 deepseek-v4-pro');
   }
 
   // Build context msgs
@@ -198,6 +345,22 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), (req, res) =>
   if (ctx) {
     ctxMsgs.push({ role: 'system', content: `当前项目资料信息：\n${sanitizeText(ctx)}` });
   }
+
+  // GraphRAG 审查增强：检测审查意图，注入知识图谱关联标准条款
+  const reviewKw = extractReviewKeywords(messages);
+  if (reviewKw) {
+    try {
+      const kgContext = await fetchGraphRAGContext(reviewKw);
+      if (kgContext) {
+        ctxMsgs.push({ role: 'system', content: kgContext });
+        logger.info(`[GraphRAG] 审查增强已激活，关键词: ${reviewKw}`);
+      }
+    } catch (e) {
+      // GraphRAG 不可用不影响主流程
+      console.warn(`[GraphRAG] 增强跳过: ${e.message}`);
+    }
+  }
+
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
   // Try requested model, fallback to offline if all fail
@@ -229,7 +392,7 @@ async function tryChat(modelId, ctxMsgs, userMsgs) {
     : [modelId];
 
   for (const mid of candidates) {
-    const cfg = MODELS[mid];
+    const cfg = getModels()[mid];
     if (!cfg) continue;
     if (mid.startsWith('deepseek') && !cfg.key) continue;
 
@@ -284,34 +447,5 @@ function trackUsage(userId, promptLen, model) {
   record.count++;
   record.cost += +(promptLen / 3000 * 0.002).toFixed(4);
 }
-
-// ===== AI用量统计 + 异常告警端点 =====
-
-// GET 管理员查看AI用量
-router.get('/stats', requireAuth, (req, res) => {
-  if (req.user?.role !== 'admin') return res.status(403).json({ error: '仅管理员' });
-  const today = new Date().toISOString().slice(0, 10);
-  const stats = [];
-  dailyUsage.forEach((v, k) => {
-    if (v.date === today) stats.push({ userId: k, ...v });
-  });
-  res.json({
-    today,
-    totalCalls: stats.reduce((s, u) => s + u.count, 0),
-    totalCost: +stats.reduce((s, u) => s + u.cost, 0).toFixed(2),
-    users: stats.sort((a, b) => b.count - a.count),
-    frozenUsers: stats.filter(u => u.frozen).map(u => u.userId),
-    limit: { dailyCalls: DAILY_LIMIT, dailyCost: DAILY_COST_LIMIT },
-  });
-});
-
-// POST 管理员解冻用户
-router.post('/unfreeze', requireAuth, (req, res) => {
-  if (req.user?.role !== 'admin') return res.status(403).json({ error: '仅管理员' });
-  const { userId } = req.body;
-  const record = dailyUsage.get(userId);
-  if (record) { record.frozen = false; record.count = 0; record.cost = 0; }
-  res.json({ success: true });
-});
 
 export default router;

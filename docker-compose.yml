@@ -38,17 +38,24 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Nginx 反向代理
+  # Nginx 反向代理（前端静态文件 + API代理 + PWA支持）
   nginx:
     image: nginx:alpine
     container_name: doc-mgmt-nginx
     restart: unless-stopped
     ports:
-      - "127.0.0.1:80:80"   # 仅监听本机，生产建议前置反向代理+HTTPS；如需直接外网访问改为 80:80
+      - "80:80"   # 外网可访问（移动端PWA安装需要同一IP）
     volumes:
+      - ./dist:/usr/share/nginx/html:ro
       - ./deploy/nginx-docker.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     logging:
       driver: "json-file"
       options:
@@ -71,6 +78,12 @@ services:
     volumes:
       - neo4j-data:/data
       - neo4j-logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     logging:
       driver: "json-file"
       options:
@@ -86,11 +99,40 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - lightrag-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/api/lightrag/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
       - LIGHTRAG_PORT=8000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Ollama 本地大模型（可选，离线AI能力）
+  ollama:
+    image: ollama/ollama:latest
+    container_name: doc-mgmt-ollama
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    profiles:
+      - full     # 仅完整部署时启动
     logging:
       driver: "json-file"
       options:
@@ -108,6 +150,12 @@ services:
       - PADDLEOCR_PORT=8001
     volumes:
       - paddleocr-cache:/root/.paddleocr
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8001/api/parse/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
@@ -121,3 +169,4 @@ volumes:
   neo4j-logs:
   lightrag-data:
   paddleocr-cache:
+  ollama-data:
