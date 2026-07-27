@@ -397,3 +397,62 @@ d86774a feat: P0核心架构升级 — 目标管理+模块裁剪+知识编排+�
 - 数据安全：SSO/OAuth集成，审计日志满足ISO27001
 - 监控告警：Prometheus + Grafana，异常自动通知
 - 灰度发布：金丝雀部署策略，避免全量回滚
+
+## 十一、开发纪律与防回退保障 (2026-07-28 补充)
+
+> **血泪教训**：v4.4-v5.1 全部代码因未提交而在 git 保护之外长达 6 天。一次 `git checkout` 操作回退了 v4.4 全部新增代码，6 个回退事件累计消耗数十小时修复。本章为制度化防回退机制，强制执行。
+
+### 11.1 提交纪律（零容忍）
+
+```
+每完成一个独立功能 → git add + git commit（不积累多个功能）
+每轮对话结束前     → git status 确认无遗漏
+每次大规模修改前   → git commit 创建 checkpoint
+新增文件立即跟踪   → 不在 untracked 状态停留超过 1 小时
+单次提交 ≤ 10 个文件变更
+```
+
+### 11.2 Git 安全操作规范
+
+| 禁止 | 替代方案 |
+|------|---------|
+| ❌ `git checkout -- <file>` | ✅ `git stash` 暂存改动 |
+| ❌ `git reset --hard` | ✅ `git reset --soft` 保留工作区 |
+| ❌ `git clean -fd` | ✅ 先 `git status` 确认，再手动逐文件处理 |
+| ❌ 有未提交改动时切换分支 | ✅ 先 `git stash` → 切换 → `git stash pop` |
+
+### 11.3 Checkpoint 机制
+
+```
+大规模重构前:
+  git add -A && git commit -m "checkpoint: <重构目标>前快照"
+
+高风险文件重写前:
+  git stash && git branch backup-$(date +%Y%m%d-%H%M)
+
+单文件整体重写前:
+  保留旧文件备份 → Write 新文件 → TSC 验证 → 删除备份
+```
+
+### 11.4 日常代码整洁实践
+
+| 实践 | 说明 |
+|------|------|
+| **一个功能一个提交** | 不把多个不相关改动混在一个 commit |
+| **提交信息写清楚"为什么"** | 不只是"fix bug"，而是"fix: 日报解析失败-DeepSeek返回markdown包裹的JSON" |
+| **删除代码有记录** | 大段删除单独提交并注明原因 |
+| **不积累未提交改动** | 修改文件数 >5 且未提交 → 立即提交 |
+| **提交前验证** | `git status` + `git diff --stat` + `npx tsc --noEmit` |
+| **CLAUDE.md 同步更新** | 每次功能交付后更新文件数/行数统计数据 |
+
+### 11.5 对话结束检查清单
+
+开发会话结束前必须逐项确认：
+
+- [ ] `git status` — 无遗漏的 untracked/modified 文件
+- [ ] `git diff --stat` — 所有改动已审阅
+- [ ] `npx tsc --noEmit` — 零 TypeScript 错误
+- [ ] `git log --oneline -3` — 确认当日提交记录
+- [ ] 新增文件 ≤ 250 行 — wc -l 检查
+- [ ] CLAUDE.md 统计数据已更新
+- [ ] 无临时调试文件残留（*.cjs, test-*.js 等）
