@@ -121,6 +121,23 @@ if (isProduction && existsSync(distPath)) {
   app.get('/mobile', (_req, res) => res.sendFile(resolve(distPath, 'mobile.html')));
 }
 
+// 健康检查端点
+app.get('/api/health', async (_req, res) => {
+  const services = { db: false, neo4j: false, ragflow: false, ai: false };
+  try { const { getDb } = await import('./db.js'); getDb().prepare('SELECT 1').get(); services.db = true; } catch {}
+  try { const r = await fetch('http://localhost:7474', { signal: AbortSignal.timeout(2000) }); services.neo4j = r.ok; } catch {}
+  try { const r = await fetch('http://localhost:9380/api/v1/version', { signal: AbortSignal.timeout(2000) }); services.ragflow = r.ok; } catch {}
+  services.ai = !!process.env.DEEPSEEK_API_KEY && !process.env.DEEPSEEK_API_KEY.includes('your-');
+  const allOk = Object.values(services).every(Boolean);
+  res.status(allOk ? 200 : 503).json({
+    status: allOk ? 'healthy' : 'degraded',
+    version: '5.1.0',
+    uptime: process.uptime(),
+    services,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Routes — 高频只读路由添加60s缓存
 app.use('/api/projects', cacheMiddleware(60000), projectsRouter);
 app.use('/api/kg', cacheMiddleware(30000), kgRouter);
