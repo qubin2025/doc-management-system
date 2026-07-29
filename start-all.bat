@@ -1,82 +1,83 @@
 @echo off
-chcp 65001 >nul
-echo ========================================
-echo  全过程工程咨询管理系统 — 一键启动
-echo ========================================
+chcp 65001 >nul 2>&1
+cls
+echo.
+echo ===============================================
+echo    Quan Guo Cheng Gong Cheng Zi Xun Guan Li
+echo   全过程工程咨询管理系统 - 一键启动
+echo ===============================================
 echo.
 
-:: 0. Docker (优先启动，后续服务依赖)
-echo [0/5] 启动 Docker Desktop...
+:: 0. Docker
+echo [0/5] Docker Desktop...
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
-    echo   正在启动 Docker Desktop...
+    echo   Starting Docker Desktop...
     start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-    echo   等待 Docker 就绪...
+    echo   Waiting for Docker...
     :wait_docker
     timeout /t 3 /nobreak >nul
     docker info >nul 2>&1
     if %errorlevel% neq 0 goto wait_docker
-    echo   ✓ Docker 已就绪
+    echo   Docker ready
 ) else (
-    echo   ✓ Docker 已运行
+    echo   Docker already running
 )
-
-echo   启动 Neo4j + RAGFlow...
+echo   Starting Neo4j + RAGFlow...
 docker compose -p docmgmt up -d neo4j ragflow 2>nul
 docker start doc-mgmt-neo4j ragflow-server 2>nul
-echo   ✓ 容器已启动
 
-:: 1. 后端服务
+:: 1. Backend
 echo.
-echo [1/5] 启动后端 API 服务...
+echo [1/5] Backend API :3000...
 start "Backend" cmd /c "cd backend && node server.js"
 timeout /t 3 /nobreak >nul
 
-:: 2. 前端服务
-echo [2/5] 启动前端开发服务器...
+:: 2. Frontend
+echo [2/5] Frontend Dev :5300...
 start "Frontend" cmd /c "npx vite --host"
 timeout /t 3 /nobreak >nul
 
-:: 3. Ollama 本地AI
-echo [3/5] 检查 Ollama 本地AI...
+:: 3. Ollama (check only, do not start)
+echo [3/5] Ollama local AI...
 ollama --version >nul 2>&1
 if %errorlevel%==0 (
-    echo   ✓ Ollama 已安装
+    echo   Ollama installed (run 'ollama serve' manually)
 ) else (
-    echo   - Ollama 未安装，跳过本地AI
+    echo   Ollama not installed - skipped
 )
 
-:: 4. Python 可选服务
-echo [4/5] 检查 Python 服务...
+:: 4. Python services
+echo [4/5] Python services...
 python --version >nul 2>&1
 if %errorlevel%==0 (
-    echo   启动 LightRAG + PaddleOCR...
+    echo   Starting LightRAG + PaddleOCR...
     start "LightRAG" cmd /c "cd services\lightrag-server && python main.py"
     start "OCR" cmd /c "cd services\paddleocr-server && python main.py"
 ) else (
-    echo   - Python 未安装，跳过
+    echo   Python not installed - skipped
 )
 
-:: 5. 健康检查
+:: 5. Done
 echo.
-echo [5/5] 等待服务就绪...
+echo [5/5] Waiting for services...
 timeout /t 5 /nobreak >nul
 
 echo.
-echo ╔══════════════════════════════════════════╗
-echo ║          启动完成！                       ║
-echo ╠══════════════════════════════════════════╣
-echo ║  🖥  桌面端  http://localhost:5300       ║
-echo ║  📱 手机端  http://localhost:5300        ║
-echo ║            /mobile.html                  ║
-echo ║  🔧 API     http://localhost:3000/api    ║
-echo ║  📊 Neo4j   http://localhost:7474       ║
-echo ║  📚 RAGFlow http://localhost:9380       ║
-echo ║  🤖 Ollama  http://localhost:11434      ║
-echo ╠══════════════════════════════════════════╣
-echo ║  登录: admin / admin123                  ║
-echo ╚══════════════════════════════════════════╝
+echo ===============================================
+echo   ALL SERVICES STARTED
+echo ===============================================
 echo.
-echo 按任意键打开前端...
+echo   Desktop   : http://localhost:5300
+echo   Mobile    : http://localhost:5300/mobile.html
+echo   API       : http://localhost:3000/api
+echo   Neo4j     : http://localhost:7474
+echo   RAGFlow   : http://localhost:9380
+echo.
+echo   Login     : admin / admin123
+echo.
+echo ===============================================
+echo.
+echo Press any key to open browser...
 pause >nul
 start http://localhost:5300
