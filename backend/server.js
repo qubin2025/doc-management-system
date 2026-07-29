@@ -6,6 +6,7 @@ dotenv.config({ path: resolve(__dirname, '.env') });
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { getDb } from './db.js';
@@ -36,13 +37,35 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 const isProduction = process.env.NODE_ENV === 'production';
 const corsOrigin = process.env.CORS_ORIGIN;
-app.use(cors(isProduction ? (corsOrigin ? {
-  origin: corsOrigin,
+
+// 安全头（生产环境全面启用）
+app.use(helmet({
+  contentSecurityPolicy: isProduction ? undefined : false,
+  crossOriginEmbedderPolicy: false,
+  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true } : false,
+}));
+
+// CORS — 生产白名单，开发全开
+app.use(cors(isProduction ? {
+  origin: corsOrigin ? corsOrigin.split(',').map(s => s.trim()) : false,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
-} : { origin: false }) : {}));
+  maxAge: 86400,
+} : { origin: true, credentials: true }));
+
 app.use(morgan(isProduction ? 'combined' : 'short'));
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({ limit: isProduction ? '10mb' : '100mb' }));
+
+// 认证端点限流（防暴力破解：每分钟5次）
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: { error: '登录尝试过于频繁，请1分钟后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // 全局限流 — 生产环境更严格
 app.use(rateLimit({
@@ -52,16 +75,6 @@ app.use(rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 }));
-
-// 安全头增强
-app.use((_req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', isProduction ? 'max-age=31536000; includeSubDomains' : '');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  next();
-});
 
 // Initialize database
 getDb();
