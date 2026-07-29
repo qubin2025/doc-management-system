@@ -4,25 +4,10 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-function ensureTable(db) {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS stakeholders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      project_name TEXT NOT NULL,
-      name TEXT NOT NULL,
-      role TEXT DEFAULT '',
-      org TEXT DEFAULT '',
-      contact TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
-}
-
 // GET /api/stakeholders?project=X — 获取项目干系人列表
 router.get('/', requireAuth, (req, res) => {
   const db = getDb();
-  ensureTable(db);
-  const { project } = req.query;
+    const { project } = req.query;
   if (!project) return res.json([]);
   const rows = db.prepare(
     'SELECT * FROM stakeholders WHERE project_name = ? ORDER BY name'
@@ -35,8 +20,7 @@ router.get('/', requireAuth, (req, res) => {
 // POST /api/stakeholders — 批量保存（桌面端同步）
 router.post('/', requireAuth, (req, res) => {
   const db = getDb();
-  ensureTable(db);
-  const { project, items } = req.body;
+    const { project, items } = req.body;
   if (!project || !Array.isArray(items)) return res.status(400).json({ error: '缺少参数' });
 
   // 先删后插

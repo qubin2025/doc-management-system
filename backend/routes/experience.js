@@ -4,24 +4,6 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-// ========== Schema init ==========
-function ensureExperienceTable(db) {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS project_experiences (
-      id TEXT PRIMARY KEY,
-      project_name TEXT NOT NULL,
-      category TEXT NOT NULL DEFAULT 'general',
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      patterns TEXT DEFAULT '[]',
-      metrics TEXT DEFAULT '{}',
-      reference_count INTEGER DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-  `);
-}
-
 // ========== Feature: AI辅助经验提取 (深度语义分析) ==========
 function analyzeWithAI(projectName, params) {
   const { objectives, completedItems, totalItems } = params;
@@ -176,8 +158,7 @@ function analyzeWithAI(projectName, params) {
 router.post('/extract', requireAuth, (req, res) => {
   try {
     const db = getDb();
-    ensureExperienceTable(db);
-
+    
     // Query all distinct projects that have objectives
     const projectNames = db.prepare(
       'SELECT DISTINCT project_name FROM objectives'
@@ -271,8 +252,7 @@ router.post('/extract', requireAuth, (req, res) => {
 router.get('/list', requireAuth, (req, res) => {
   try {
     const db = getDb();
-    ensureExperienceTable(db);
-
+    
     const { category, keyword, project, limit = 50, offset = 0 } = req.query;
 
     let sql = 'SELECT * FROM project_experiences WHERE 1=1';
@@ -347,8 +327,7 @@ router.get('/list', requireAuth, (req, res) => {
 router.delete('/:id', requireAuth, (req, res) => {
   try {
     const db = getDb();
-    ensureExperienceTable(db);
-
+    
     const existing = db.prepare('SELECT * FROM project_experiences WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: '经验记录不存在' });
 

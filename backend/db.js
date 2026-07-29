@@ -136,7 +136,159 @@ function initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_audit_log_project ON audit_log(project_name);
     CREATE INDEX IF NOT EXISTS idx_audit_log_user ON audit_log(user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+
+    -- v4.4: 手机端照片
+    CREATE TABLE IF NOT EXISTS mobile_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      file_path TEXT NOT NULL,
+      watermark_data TEXT DEFAULT '{}',
+      location TEXT DEFAULT '',
+      latitude REAL,
+      longitude REAL,
+      poi TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      uploaded_by TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_mobile_photos_project ON mobile_photos(project_id);
+
+    -- v4.4: 手机端水印模板
+    CREATE TABLE IF NOT EXISTS mobile_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      template_name TEXT NOT NULL,
+      template_data TEXT NOT NULL,
+      is_default INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- v4.4: 现场问题管理
+    CREATE TABLE IF NOT EXISTS mobile_issues (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      severity TEXT DEFAULT 'normal',
+      status TEXT DEFAULT 'reported',
+      assignee TEXT DEFAULT '',
+      photo_path TEXT DEFAULT '',
+      reported_by TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    -- v4.4: 手机端进度快报
+    CREATE TABLE IF NOT EXISTS mobile_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL,
+      plan_item_id TEXT NULL,
+      title TEXT NOT NULL,
+      percentage REAL DEFAULT 0,
+      note TEXT DEFAULT '',
+      reported_by TEXT NOT NULL,
+      match_status TEXT DEFAULT 'unmatched',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    -- v4.4: 项目日报 (8段曙光模板)
+    CREATE TABLE IF NOT EXISTS daily_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      report_date TEXT NOT NULL,
+      weather_day TEXT DEFAULT '',
+      weather_night TEXT DEFAULT '',
+      weather_alert TEXT DEFAULT '',
+      weather_alert_level TEXT DEFAULT '',
+      managers_main INTEGER DEFAULT 0,
+      managers_labor INTEGER DEFAULT 0,
+      managers_specialty INTEGER DEFAULT 0,
+      workers_main INTEGER DEFAULT 0,
+      workers_labor INTEGER DEFAULT 0,
+      workers_specialty INTEGER DEFAULT 0,
+      workers_special INTEGER DEFAULT 0,
+      workers_total INTEGER DEFAULT 0,
+      machinery TEXT DEFAULT '[]',
+      machinery_total INTEGER DEFAULT 0,
+      materials TEXT DEFAULT '[]',
+      tasks TEXT DEFAULT '[]',
+      quality_risks TEXT DEFAULT '[]',
+      issues TEXT DEFAULT '[]',
+      photos TEXT DEFAULT '[]',
+      original_text TEXT DEFAULT '',
+      notes TEXT DEFAULT '',
+      reported_by TEXT NOT NULL,
+      deleted INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(project_id, report_date)
+    );
+    CREATE TABLE IF NOT EXISTS daily_workers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      daily_id INTEGER NOT NULL REFERENCES daily_reports(id) ON DELETE CASCADE,
+      report_date TEXT NOT NULL,
+      worker_type TEXT NOT NULL,
+      count INTEGER DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS daily_machinery (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      daily_id INTEGER NOT NULL REFERENCES daily_reports(id) ON DELETE CASCADE,
+      report_date TEXT NOT NULL,
+      name TEXT NOT NULL,
+      spec TEXT DEFAULT '',
+      count INTEGER DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS daily_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      daily_id INTEGER NOT NULL REFERENCES daily_reports(id) ON DELETE CASCADE,
+      report_date TEXT NOT NULL,
+      area TEXT DEFAULT '',
+      description TEXT NOT NULL,
+      workers INTEGER DEFAULT 0,
+      today_pct TEXT DEFAULT '',
+      total_pct TEXT DEFAULT '',
+      schedule_deviation TEXT DEFAULT '',
+      contractor TEXT DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS daily_risks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      daily_id INTEGER NOT NULL REFERENCES daily_reports(id) ON DELETE CASCADE,
+      report_date TEXT NOT NULL,
+      category TEXT NOT NULL,
+      name TEXT DEFAULT '',
+      detail TEXT DEFAULT '',
+      status TEXT DEFAULT '',
+      impact_days INTEGER DEFAULT 0
+    );
+
+    -- v4.4: 项目经验库
+    CREATE TABLE IF NOT EXISTS project_experiences (
+      id TEXT PRIMARY KEY,
+      project_name TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'general',
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      patterns TEXT DEFAULT '[]',
+      metrics TEXT DEFAULT '{}',
+      reference_count INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- v4.4: 干系人管理
+    CREATE TABLE IF NOT EXISTS stakeholders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_name TEXT NOT NULL,
+      name TEXT NOT NULL,
+      role TEXT DEFAULT '',
+      org TEXT DEFAULT '',
+      contact TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
+
+  // 迁移：旧 daily_reports 表添加 deleted 列
+  try { db.exec('ALTER TABLE daily_reports ADD COLUMN deleted INTEGER DEFAULT 0'); } catch {}
 
   // 迁移：给旧 users 表添加缺失列（如果旧表已存在则 ALTER）
   migrateSchema(db);
