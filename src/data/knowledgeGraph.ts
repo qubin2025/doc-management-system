@@ -2,16 +2,27 @@
 
 export interface GraphNode {
   id: string;
-  type: 'project' | 'chapter' | 'sub-module' | 'work-item' | 'form' | 'document' | 'supplier' | 'cost' | 'person';
+  type:
+    // 9 基础类型 (v2.5)
+    | 'project' | 'chapter' | 'sub-module' | 'work-item' | 'form' | 'document' | 'supplier' | 'cost' | 'person'
+    // 4 文档子类型 (v3.0 — 提升为顶层节点)
+    | 'land-reserve' | 'policy' | 'regulation' | 'plan'
+    // 5 审查关联类型 (v3.0 P1 — 审查组件直接注入 Neo4j)
+    | 'construction-plan' | 'risk-point' | 'review-item' | 'contract' | 'bid-document'
+    // 5 业务实体类型 (v4.4)
+    | 'daily-report' | 'issue' | 'progress-report' | 'experience' | 'stakeholder'
+    // 2 管理类型 (v3.0 P0)
+    | 'objective' | 'baseline';
   label: string;
   props?: Record<string, string>;
-  parentId?: string; // 指向父节点，用于反向追溯
+  parentId?: string;
 }
 
 export interface GraphEdge {
   from: string;
   to: string;
-  type: 'belongs-to' | 'references' | 'produces' | 'reviews' | 'assigned-to' | 'precedes';
+  type: 'belongs-to' | 'references' | 'produces' | 'reviews' | 'assigned-to' | 'precedes'
+       | 'supplements' | 'refers_to' | 'parent_of' | 'child_of' | 'conflicts_with';
   label?: string;
 }
 
@@ -280,6 +291,55 @@ export function buildGraph(): KnowledgeGraph {
       } catch {}
     }
   }
+
+  // 4. 业务实体节点 (v4.4+)
+  // 4a. 日报节点
+  try {
+    const drKey = 'desktop-daily-reports';
+    const drData = JSON.parse(localStorage.getItem(drKey) || '[]');
+    if (Array.isArray(drData)) {
+      for (const dr of drData) {
+        if (dr.projectId) {
+          addNode({ id: `daily-${dr.id || dr.reportDate}`, type: 'daily-report', label: `${dr.projectName || ''} ${dr.reportDate || ''}`.trim(), parentId: dr.projectId, props: { reportDate: dr.reportDate, weatherDay: dr.weatherDay } });
+          addEdge(`daily-${dr.id || dr.reportDate}`, dr.projectId, 'belongs-to', '日报→项目');
+        }
+      }
+    }
+  } catch {}
+  // 4b. 现场问题节点
+  try {
+    const issueKey = 'desktop-issues';
+    const issueData = JSON.parse(localStorage.getItem(issueKey) || '[]');
+    if (Array.isArray(issueData)) {
+      for (const iss of issueData) {
+        if (iss.projectId) {
+          addNode({ id: `issue-${iss.id}`, type: 'issue', label: iss.title || iss.description?.slice(0, 40) || '', parentId: iss.projectId, props: { status: iss.status, severity: iss.severity } });
+          addEdge(`issue-${iss.id}`, iss.projectId, 'belongs-to', '问题→项目');
+        }
+      }
+    }
+  } catch {}
+  // 4c. 经验节点
+  try {
+    const expKey = 'experience-items';
+    const expData = JSON.parse(localStorage.getItem(expKey) || '[]');
+    if (Array.isArray(expData)) {
+      for (const exp of expData) {
+        addNode({ id: `exp-${exp.id}`, type: 'experience', label: exp.title || '', parentId: exp.projectName, props: { category: exp.category, patterns: String(exp.patterns?.length || 0) } });
+        if (exp.projectName) addEdge(`exp-${exp.id}`, exp.projectName, 'belongs-to', '经验→项目');
+      }
+    }
+  } catch {}
+  // 4d. 干系人节点
+  try {
+    const shKey = 'stakeholders-data';
+    const shData = JSON.parse(localStorage.getItem(shKey) || '[]');
+    if (Array.isArray(shData)) {
+      for (const sh of shData) {
+        addNode({ id: `stakeholder-${sh.id || sh.name}`, type: 'stakeholder', label: sh.name || '', props: { role: sh.role, influence: sh.influence, interest: sh.interest } });
+      }
+    }
+  } catch {}
 
   const graph: KnowledgeGraph = { nodes, edges, updatedAt: new Date().toISOString() };
   localStorage.setItem(KG_KEY, JSON.stringify(graph));
