@@ -185,21 +185,28 @@ app.listen(PORT, async () => {
   // 可选服务检查：条件满足时要求启动
   console.log('─── 可选服务 ───');
 
-  // Docker → RAGFlow
+  // Docker → RAGFlow + Neo4j
   let dockerOk = false;
   try { execSync('docker info', { timeout: 3000, stdio: 'ignore' }); dockerOk = true; } catch {}
   if (dockerOk) {
+    // RAGFlow
     try {
       const rf = await fetch('http://localhost:9380/api/v1/version', { signal: AbortSignal.timeout(2000) });
-      console.log(rf.ok ? '  ✓ RAGFlow(9380): 在线' : '  ⚠ RAGFlow(9380): Docker已就绪但RAGFlow未启动，请执行 docker compose up -d');
-    } catch { console.log('  ⚠ RAGFlow(9380): Docker已就绪但RAGFlow未启动，请执行 docker compose up -d'); }
+      console.log(rf.ok ? '  ✓ RAGFlow(9380): 在线' : '  ⚠ RAGFlow(9380): Docker已就绪但RAGFlow未启动');
+    } catch { console.log('  ⚠ RAGFlow(9380): 未启动 → docker compose -p docmgmt up -d ragflow'); }
 
-    try {
-      const n4j = await fetch('http://localhost:7687', { signal: AbortSignal.timeout(2000) });
-      console.log('  ✓ Neo4j(7687): 在线');
-    } catch { console.log('  ⚠ Neo4j(7687): 未启动，请启动Neo4j容器'); }
+    // Neo4j — 自动重试3次（Docker刚启动时Neo4j需要预热）
+    let neo4jOk = false;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const n4j = await fetch('http://localhost:7474', { signal: AbortSignal.timeout(3000) });
+        if (n4j.ok) { console.log('  ✓ Neo4j(7474): 在线 · GraphRAG可用'); neo4jOk = true; break; }
+      } catch {}
+      if (i < 2) await new Promise(r => setTimeout(r, 2000));
+    }
+    if (!neo4jOk) console.log('  ⚠ Neo4j(7474): 未连接 → docker compose -p docmgmt up -d neo4j');
   } else {
-    console.log('  - Docker未安装，RAGFlow/Neo4j不可用');
+    console.log('  - Docker未运行: 启动Docker Desktop后执行 docker compose -p docmgmt up -d neo4j ragflow');
   }
 
   // Python → OCR + LightRAG
@@ -210,15 +217,25 @@ app.listen(PORT, async () => {
       const po = await fetch('http://localhost:8001/api/parse/health', { signal: AbortSignal.timeout(2000) });
       const pd = await po.json();
       console.log(`  ✓ 文档解析(8001): ${pd.ocr_engine || 'easyocr'}在线`);
-    } catch { console.log('  ⚠ 文档解析(8001): Python已安装但未启动，请执行 python services/paddleocr-server/main.py'); }
+    } catch { console.log('  ⚠ 文档解析(8001): 未启动 → python services/paddleocr-server/main.py'); }
 
     try {
       const lr = await fetch('http://localhost:8000/api/lightrag/health', { signal: AbortSignal.timeout(2000) });
       console.log('  ✓ LightRAG(8000): 在线');
-    } catch { console.log('  ⚠ LightRAG(8000): Python已安装但未启动，请执行 python services/lightrag-server/main.py'); }
+    } catch { console.log('  ⚠ LightRAG(8000): 未启动 → python services/lightrag-server/main.py'); }
   } else {
     console.log('  - Python未安装，文档解析/LightRAG不可用');
   }
+
+  // Ollama 本地AI
+  try {
+    const ol = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(3000) });
+    if (ol.ok) {
+      const tags = await ol.json();
+      const models = (tags.models || []).map(m => m.name).join(', ');
+      console.log(`  ✓ Ollama(11434): 在线 · ${models || '无模型'}`);
+    }
+  } catch { console.log('  - Ollama(11434): 未启动 · 本地AI模型不可用'); }
 
   console.log('─── 启动完成 ───');
 });

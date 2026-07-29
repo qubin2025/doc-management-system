@@ -22,7 +22,7 @@ vi.mock('../components/GlobalSearch', () => ({
   default: () => null,
 }));
 vi.mock('../components/ModelAdmin', () => ({
-  default: ({ onClose }: { onClose: () => void }) => null,
+  default: () => null,
 }));
 
 describe('HomePage', () => {
