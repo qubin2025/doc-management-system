@@ -17,6 +17,11 @@ function headers(): Record<string, string> {
   return h;
 }
 
+/** 仅 Authorization 头 — FormData 上传时不含 Content-Type */
+function authHeader(): Record<string, string> {
+  return authToken ? { Authorization: `Bearer ${authToken}` } : {};
+}
+
 // ========== 连接检查 ==========
 export async function checkConnection(): Promise<boolean> {
   try {
@@ -496,7 +501,7 @@ export async function ragflowUploadDocument(datasetId: string, file: File, proje
   if (projectName) form.append('project', projectName);
   const res = await fetch(`${API_BASE}/ragflow/datasets/${datasetId}/documents`, {
     method: 'POST',
-    headers: { Authorization: headers()['Authorization'] || '' },
+    headers: authHeader(),
     body: form,
   });
   return res.json();
