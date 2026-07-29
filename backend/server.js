@@ -67,6 +67,18 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// 请求错误日志
+app.use((req, _res, next) => {
+  const start = Date.now();
+  _res.on('finish', () => {
+    const ms = Date.now() - start;
+    if (_res.statusCode >= 400) {
+      console.warn(`[${new Date().toISOString()}] ${req.method} ${req.path} → ${_res.statusCode} (${ms}ms)`);
+    }
+  });
+  next();
+});
+
 // 全局限流 — 生产环境更严格
 app.use(rateLimit({
   windowMs: 60 * 1000,
@@ -251,6 +263,26 @@ app.listen(PORT, async () => {
   } catch { console.log('  - Ollama(11434): 未启动 · 本地AI模型不可用'); }
 
   console.log('─── 启动完成 ───');
+});
+
+// ── 全局异常捕获 ──
+process.on('uncaughtException', (err) => {
+  console.error(`[FATAL ${new Date().toISOString()}] Uncaught: ${err.message}\n${err.stack}`);
+  if (process.env.NODE_ENV === 'production') process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error(`[FATAL ${new Date().toISOString()}] Unhandled Rejection:`, reason);
+});
+
+process.on('SIGTERM', () => {
+  console.log(`[${new Date().toISOString()}] SIGTERM — graceful shutdown`);
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log(`[${new Date().toISOString()}] SIGINT — graceful shutdown`);
+  process.exit(0);
 });
 
 export default app;

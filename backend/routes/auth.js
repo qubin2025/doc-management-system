@@ -68,7 +68,10 @@ router.post('/login', loginLimiter, (req, res) => {
 router.post('/register', registerLimiter, (req, res) => {
   const { username, password, displayName, phone, dept } = req.body;
   if (!username || !password) return res.status(400).json({ error: '用户名和密码为必填项' });
-  if (password.length < 6) return res.status(400).json({ error: '密码至少6位' });
+  if (password.length < 8) return res.status(400).json({ error: '密码至少8位' });
+  if (!/[A-Z]/.test(password)) return res.status(400).json({ error: '密码需包含大写字母' });
+  if (!/[a-z]/.test(password)) return res.status(400).json({ error: '密码需包含小写字母' });
+  if (!/[0-9]/.test(password)) return res.status(400).json({ error: '密码需包含数字' });
 
   const db = getDb();
   const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);

@@ -1,5 +1,7 @@
 import { getDb } from '../db.js';
 
+const SESSION_HOURS = 24;
+
 export function requireAuth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
@@ -23,6 +25,10 @@ export function requireAuth(req, res, next) {
   if (!session.is_active) {
     return res.status(403).json({ error: '账号已被禁用' });
   }
+
+  // Session 自动续期: 每次认证成功后延长有效期
+  const newExpiry = new Date(Date.now() + SESSION_HOURS * 3600000).toISOString();
+  db.prepare('UPDATE sessions SET expires_at = ? WHERE token = ?').run(newExpiry, token);
 
   req.user = {
     id: session.user_id,
