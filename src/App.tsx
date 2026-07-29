@@ -52,6 +52,7 @@ import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
 import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType, AuthState, Permissions } from './types';
 import * as api from './data/api';
+import { setGlobalProject, setGlobalAuth } from './data/ProjectContext';
 import JSZip from 'jszip';
 
 const AUTH_KEY = 'doc-system-auth';
@@ -176,6 +177,10 @@ const App: React.FC = () => {
       }
     }).finally(() => setUploadInfoLoading(false));
   }, [currentProject, apiAvailable, standard]);
+
+  // 同步 App state → ProjectContext 全局状态
+  useEffect(() => { setGlobalProject(currentProject); }, [currentProject]);
+  useEffect(() => { setGlobalAuth(auth); }, [auth]);
 
   // ===== View 路由 =====
   const [showAiChat, setShowAiChat] = useState(false);
@@ -688,9 +693,6 @@ const App: React.FC = () => {
   if (view === 'homepage') {
     return (
       <HomePage
-        currentProject={currentProject}
-        isAdmin={isAdmin}
-        auth={auth}
         themeMode={themeMode}
         onNavigate={(v, params) => {
           if (params?.chapterId) { setGuideChapterId(params.chapterId); setView('guide-chapter'); }

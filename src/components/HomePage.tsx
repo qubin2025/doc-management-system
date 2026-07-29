@@ -9,13 +9,10 @@ import {
 } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
 import ModelAdmin from './ModelAdmin';
-import type { AuthState } from '../types';
+import { useProject } from '../data/ProjectContext';
 import type { ThemeMode } from '../data/themeEngine';
 
 interface HomePageProps {
-  currentProject: string;
-  isAdmin: boolean;
-  auth: AuthState | null;
   themeMode: ThemeMode;
   onNavigate: (view: string, params?: { chapterId?: string }) => void;
   onToggleTheme: () => void;
@@ -34,7 +31,8 @@ interface ModuleCard {
   border: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ currentProject, isAdmin, auth, themeMode, onNavigate, onToggleTheme, onLogout }) => {
+const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleTheme, onLogout }) => {
+  const { currentProject, isAdmin, auth } = useProject();
   const [showModelAdmin, setShowModelAdmin] = useState(false);
 
   const guideModules = [
