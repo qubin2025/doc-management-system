@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock bcrypt and uuid before importing
 vi.mock('bcrypt', () => ({
@@ -69,18 +69,18 @@ describe('Session Management', () => {
 });
 
 // Rate limit window check
-function checkRateLimit(attempts: number, maxAttempts: number, windowMs: number): boolean {
+function checkRateLimit(attempts: number, maxAttempts: number): boolean {
   return attempts <= maxAttempts;
 }
 
 describe('Rate Limiting Logic', () => {
   it('allows requests within limit', () => {
-    expect(checkRateLimit(3, 5, 60000)).toBe(true);
-    expect(checkRateLimit(5, 5, 60000)).toBe(true);
+    expect(checkRateLimit(3, 5)).toBe(true);
+    expect(checkRateLimit(5, 5)).toBe(true);
   });
 
   it('blocks requests over limit', () => {
-    expect(checkRateLimit(6, 5, 60000)).toBe(false);
-    expect(checkRateLimit(100, 5, 60000)).toBe(false);
+    expect(checkRateLimit(6, 5)).toBe(false);
+    expect(checkRateLimit(100, 5)).toBe(false);
   });
 });

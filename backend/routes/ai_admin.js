@@ -5,7 +5,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../db.js';
-import { dailyUsage, DAILY_LIMIT, DAILY_COST_LIMIT } from './ai.js';
+import { dailyUsage, DAILY_LIMIT, DAILY_COST_LIMIT } from '../lib/ratelimit.js';
 
 const router = Router();
 
