@@ -4,13 +4,15 @@
  */
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
-import { initDriver } from './kg.js';
+import { initDriver, getDriver, getNeo4j } from './kg.js';
 
 const router = Router();
 
 // ── 工具函数 ──
 
 function toInt(n) {
+  const neo4j = getNeo4j();
+  if (neo4j?.default?.int) return neo4j.default.int(n);
   return Math.floor(n);
 }
 
@@ -64,12 +66,7 @@ function bfsTraverse(seedIds, edgeList, depth) {
  * 按关键词匹配节点，BFS扩散获取关联子图
  */
 router.get('/graphrag/search', requireAuth, async (req, res) => {
-  await initDriver();
-  const { default: neo4j } = await import('neo4j-driver');
-  const uri = process.env.NEO4J_URI || 'bolt://localhost:7687';
-  const user = process.env.NEO4J_USER || 'neo4j';
-  const pwd = process.env.NEO4J_PASSWORD || 'changeme123';
-  const driver = neo4j.driver(uri, neo4j.auth.basic(user, pwd), { maxConnectionLifetime: 3 * 60 * 60 * 1000, maxConnectionPoolSize: 5 });
+  await initDriver(); const driver = getDriver();
   const keyword = (req.query.keyword || '').trim();
   if (!keyword) return res.status(400).json({ error: 'keyword 必填' });
   const depth = Math.min(parseInt(req.query.depth) || 2, 4);
@@ -124,7 +121,7 @@ router.get('/graphrag/search', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('GraphRAG search:', e.message);
     res.status(500).json({ available: true, error: e.message });
-  } finally { await session.close(); await driver.close(); }
+  } finally { await session.close(); }
 });
 
 /**
@@ -132,12 +129,7 @@ router.get('/graphrag/search', requireAuth, async (req, res) => {
  * 返回适合注入 AI prompt 的文本摘要
  */
 router.get('/graphrag/context', requireAuth, async (req, res) => {
-  await initDriver();
-  const { default: neo4j } = await import('neo4j-driver');
-  const uri = process.env.NEO4J_URI || 'bolt://localhost:7687';
-  const user = process.env.NEO4J_USER || 'neo4j';
-  const pwd = process.env.NEO4J_PASSWORD || 'changeme123';
-  const driver = neo4j.driver(uri, neo4j.auth.basic(user, pwd), { maxConnectionLifetime: 3 * 60 * 60 * 1000, maxConnectionPoolSize: 5 });
+  await initDriver(); const driver = getDriver();
 
   const keyword = (req.query.keyword || '').trim();
   if (!keyword) return res.status(400).json({ error: 'keyword 必填' });
@@ -204,7 +196,7 @@ router.get('/graphrag/context', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('GraphRAG context:', e.message);
     res.json({ available: true, context: '', error: e.message });
-  } finally { await session.close(); await driver.close(); }
+  } finally { await session.close(); }
 });
 
 /**
@@ -212,12 +204,7 @@ router.get('/graphrag/context', requireAuth, async (req, res) => {
  * 语义边富化 — 基于节点标签相似度和层级关系自动创建语义边
  */
 router.post('/graphrag/enrich', requireAuth, async (req, res) => {
-  await initDriver();
-  const { default: neo4j } = await import('neo4j-driver');
-  const uri = process.env.NEO4J_URI || 'bolt://localhost:7687';
-  const user = process.env.NEO4J_USER || 'neo4j';
-  const pwd = process.env.NEO4J_PASSWORD || 'changeme123';
-  const driver = neo4j.driver(uri, neo4j.auth.basic(user, pwd), { maxConnectionLifetime: 3 * 60 * 60 * 1000, maxConnectionPoolSize: 5 });
+  await initDriver(); const driver = getDriver();
 
   const types = req.body.types || ['chapter', 'sub-module', 'work-item', 'form', 'document'];
   const similarityThreshold = req.body.similarityThreshold || 0.4;
@@ -315,7 +302,7 @@ router.post('/graphrag/enrich', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('GraphRAG enrich:', e.message);
     res.status(500).json({ error: e.message });
-  } finally { await session.close(); await driver.close(); }
+  } finally { await session.close(); }
 });
 
 /**
@@ -323,12 +310,7 @@ router.post('/graphrag/enrich', requireAuth, async (req, res) => {
  * BFS 获取指定节点的关联子图
  */
 router.get('/graphrag/related/:nodeId', requireAuth, async (req, res) => {
-  await initDriver();
-  const { default: neo4j } = await import('neo4j-driver');
-  const uri = process.env.NEO4J_URI || 'bolt://localhost:7687';
-  const user = process.env.NEO4J_USER || 'neo4j';
-  const pwd = process.env.NEO4J_PASSWORD || 'changeme123';
-  const driver = neo4j.driver(uri, neo4j.auth.basic(user, pwd), { maxConnectionLifetime: 3 * 60 * 60 * 1000, maxConnectionPoolSize: 5 });
+  await initDriver(); const driver = getDriver();
 
   const { nodeId } = req.params;
   const depth = Math.min(parseInt(req.query.depth) || 2, 4);
@@ -362,7 +344,7 @@ router.get('/graphrag/related/:nodeId', requireAuth, async (req, res) => {
   } catch (e) {
     console.error('GraphRAG related:', e.message);
     res.status(500).json({ error: e.message });
-  } finally { await session.close(); await driver.close(); }
+  } finally { await session.close(); }
 });
 
 /**
@@ -370,12 +352,7 @@ router.get('/graphrag/related/:nodeId', requireAuth, async (req, res) => {
  * 图统计信息
  */
 router.get('/graphrag/stats', requireAuth, async (_req, res) => {
-  await initDriver();
-  const { default: neo4j } = await import('neo4j-driver');
-  const uri = process.env.NEO4J_URI || 'bolt://localhost:7687';
-  const user = process.env.NEO4J_USER || 'neo4j';
-  const pwd = process.env.NEO4J_PASSWORD || 'changeme123';
-  const driver = neo4j.driver(uri, neo4j.auth.basic(user, pwd), { maxConnectionLifetime: 3 * 60 * 60 * 1000, maxConnectionPoolSize: 5 });
+  await initDriver(); const driver = getDriver();
 
   const session = driver.session();
   try {
@@ -393,7 +370,7 @@ router.get('/graphrag/stats', requireAuth, async (_req, res) => {
     });
   } catch (e) {
     res.json({ available: true, error: e.message });
-  } finally { await session.close(); await driver.close(); }
+  } finally { await session.close(); }
 });
 
 export default router;

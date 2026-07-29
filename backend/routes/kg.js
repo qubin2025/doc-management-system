@@ -12,6 +12,9 @@ let neo4j = null;
 let driver = null;
 let initPromise = null;
 
+export function getDriver() { return driver; }
+export function getNeo4j() { return neo4j; }
+
 export async function initDriver() {
   if (driver) return;
   if (initPromise) return initPromise;
