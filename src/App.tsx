@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, MessageSquare, Users } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
@@ -7,7 +7,7 @@ import AiChat from './components/AiChat';
 import AiChatPage from './components/AiChatPage';
 import { toast } from './components/Toast';
 import BackupModal from './components/BackupModal';
-import GuideChapter from './components/GuideChapter';
+const GuideChapter = lazy(() => import('./components/GuideChapter'));
 import ProjectEntryPage from './components/ProjectEntryPage';
 import Dashboard from './components/Dashboard';
 import PlanManager from './components/PlanManager';
@@ -17,16 +17,16 @@ import AnalysisCenter from './components/AnalysisCenter';
 import AdminPanel from './components/AdminPanel';
 import LandReserveArchive from './components/LandReserveArchive';
 import KnowledgeBase from './components/KnowledgeBase';
-import KnowledgeGraphView from './components/KnowledgeGraph';
+const KnowledgeGraphView = lazy(() => import('./components/KnowledgeGraph'));
 import PolicyLibrary from './components/PolicyLibrary';
 import RegulationsLibrary from './components/RegulationsLibrary';
-import ConstructionReview from './components/ConstructionReview';
-import ContractReview from './components/ContractReview';
-import BidReview from './components/BidReview';
+const ConstructionReview = lazy(() => import('./components/ConstructionReview'));
+const ContractReview = lazy(() => import('./components/ContractReview'));
+const BidReview = lazy(() => import('./components/BidReview'));
 import PlanGenerator from './components/PlanGenerator';
 import TargetManager from './components/TargetManager';
 import TailoringEngine from './components/TailoringEngine';
-import AgentConsole from './components/AgentConsole';
+const AgentConsole = lazy(() => import('./components/AgentConsole'));
 import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
 import { getTheme, setTheme, type ThemeMode } from './data/themeEngine';
@@ -462,7 +462,7 @@ const App: React.FC = () => {
   }
 
   if (view === 'knowledge-graph') {
-    return <KnowledgeGraphView onBack={() => setView('homepage')} />;
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><KnowledgeGraphView onBack={() => setView('homepage')} /></Suspense>;
   }
 
   if (view === 'policy-library') {
@@ -477,23 +477,23 @@ const App: React.FC = () => {
   if (view === 'guide-chapter' && guideChapterId) {
     const chapter = guideChapters.find(c => c.id === guideChapterId);
     if (chapter) {
-      return <GuideChapter chapter={chapter} projectName={currentProject} onBack={() => { setGuideChapterId(null); setView('homepage'); }} />;
+      return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><GuideChapter chapter={chapter} projectName={currentProject} onBack={() => { setGuideChapterId(null); setView('homepage'); }} /></Suspense>;
     }
   }
 
   // ===== 施工组织设计审查 =====
   if (view === 'construction-review' && currentProject) {
-    return <ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
   }
 
   // ===== 合同审查 =====
   if (view === 'contract-review' && currentProject) {
-    return <ContractReview projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><ContractReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
   }
 
   // ===== 招投标文件审查 =====
   if (view === 'bid-review' && currentProject) {
-    return <BidReview projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><BidReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
   }
 
   // ===== 方案生成 =====
@@ -515,7 +515,7 @@ const App: React.FC = () => {
 
   // ===== Agent智能体 (P1-1) =====
   if (view === 'agent-console' && currentProject) {
-    return <AgentConsole projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><AgentConsole projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
   }
 
   // ===== 技能面板 (P1-2) =====
