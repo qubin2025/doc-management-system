@@ -9,6 +9,27 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+
+// 简单内存缓存 (60s TTL, 用于高频只读API)
+const apiCache = new Map();
+function cacheMiddleware(ttlMs = 60000) {
+  return (req, res, next) => {
+    if (req.method !== 'GET') return next();
+    const key = req.originalUrl;
+    const cached = apiCache.get(key);
+    if (cached && Date.now() - cached.time < ttlMs) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.json(cached.data);
+    }
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
+      apiCache.set(key, { data, time: Date.now() });
+      res.setHeader('X-Cache', 'MISS');
+      return originalJson(data);
+    };
+    next();
+  };
+}
 import { getDb } from './db.js';
 import projectsRouter from './routes/projects.js';
 import documentsRouter from './routes/documents.js';
@@ -100,8 +121,9 @@ if (isProduction && existsSync(distPath)) {
   app.get('/mobile', (_req, res) => res.sendFile(resolve(distPath, 'mobile.html')));
 }
 
-// Routes
-app.use('/api/projects', projectsRouter);
+// Routes — 高频只读路由添加60s缓存
+app.use('/api/projects', cacheMiddleware(60000), projectsRouter);
+app.use('/api/kg', cacheMiddleware(30000), kgRouter);
 app.use('/api/documents', documentsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/import', importRouter);
