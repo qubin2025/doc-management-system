@@ -216,14 +216,34 @@ const App: React.FC = () => {
   // 保存到本地（作为备份）
   useEffect(() => {
     if (Object.keys(allUploadInfo).length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allUploadInfo));
+      try {
+        const data = JSON.stringify(allUploadInfo);
+        if (data.length > 4 * 1024 * 1024) {
+          console.warn('[存储] 上传数据超过4MB, 跳过localStorage保存 (使用API同步)');
+        } else {
+          localStorage.setItem(STORAGE_KEY, data);
+        }
+      } catch (e: unknown) {
+        const msg = (e as Error).message || '';
+        if (msg.includes('quota') || msg.includes('Quota')) {
+          console.warn('[存储] localStorage配额已满, 清理旧数据...');
+          try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        }
+      }
     }
   }, [allUploadInfo]);
 
   // 保存项目列表到本地
   useEffect(() => {
     if (projects.length > 0) {
-      localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+      try {
+        localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+      } catch (e: unknown) {
+        const msg = (e as Error).message || '';
+        if (msg.includes('quota') || msg.includes('Quota')) {
+          console.warn('[存储] 项目列表保存失败, 配额已满');
+        }
+      }
     }
   }, [projects]);
 

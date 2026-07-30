@@ -10,8 +10,9 @@ initTheme();
 
 // 全局错误捕获 — 过滤良性错误
 window.addEventListener('error', (e) => {
-  // ResizeObserver 和 Script error 是良性浏览器警告，不覆盖页面
+  // 过滤良性错误（不覆盖页面）
   if (e.message?.includes('ResizeObserver') || e.message?.includes('Script error')) return;
+  if (e.message?.includes('QuotaExceeded') || e.message?.includes('quota')) return; // localStorage配额
   const msg = `[全局错误] ${e.message} at ${e.filename}:${e.lineno}`;
   document.body.innerHTML = `<div style="padding:40px;font-family:monospace;color:red;background:#fff;min-height:100vh"><h2>运行时错误</h2><pre style="white-space:pre-wrap;word-break:break-all">${msg}\n\n${e.error?.stack || ''}</pre></div>`;
 });
