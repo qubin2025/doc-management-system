@@ -203,6 +203,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   id="username"
                   name="username"
                   type="text"
+                  value={username} onChange={e => setUsername(e.target.value)}
                   className="w-full rounded border-0 bg-transparent px-0 py-2 text-gray-800 placeholder:text-[#BFBFB8] focus:outline-none"
                   style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: '#141414', borderBottom: '1.5px solid #D4D4CE' }}
                   onFocus={e => (e.target.style.borderBottomColor = '#141414')}
@@ -217,6 +218,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     id="password"
                     name="password"
                     type={showPwd ? 'text' : 'password'}
+                    value={password} onChange={e => setPassword(e.target.value)}
                     className="w-full rounded border-0 bg-transparent px-0 py-2 text-gray-800 placeholder:text-[#BFBFB8] focus:outline-none"
                     style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: '#141414', borderBottom: '1.5px solid #D4D4CE' }}
                     onFocus={e => (e.target.style.borderBottomColor = '#141414')}
