@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft, LogOut, Sun, Moon, Sparkles, Shield,
   ClipboardCheck, FileSearch, HardHat, CheckCircle2,
@@ -34,6 +34,11 @@ interface ModuleCard {
 const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleTheme, onLogout }) => {
   const { currentProject, isAdmin, auth } = useProject();
   const [showModelAdmin, setShowModelAdmin] = useState(false);
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/system').then(r => r.json()).then(d => setVersion(d.version || '')).catch(() => {});
+  }, []);
 
   const guideModules = [
     { id: 'ch1', icon: <ClipboardCheck className="w-6 h-6 text-blue-600" />, number: 1, title: '前期工作', desc: '项目立项、可行性研究、用地规划许可、建设许可、施工许可等前期管理' },
@@ -206,7 +211,7 @@ const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleThem
           )}
         </div>
       </div>
-      <footer className="text-center text-xs text-gray-400 py-8">中航建科 · 工程咨询管理平台</footer>
+      <footer className="text-center text-xs text-gray-400 py-8">中航建科 · 工程咨询管理平台{version && <span className="ml-1">v{version}</span>}</footer>
     </div>
     {showModelAdmin && <ModelAdmin onClose={() => setShowModelAdmin(false)} />}
     </>

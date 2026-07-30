@@ -51,6 +51,7 @@ import mobileRouter from './routes/mobile.js';
 import dataRouter from './routes/data.js';
 import experienceRouter from './routes/experience.js';
 import stakeholdersRouter from './routes/stakeholders.js';
+import adminRouter from './routes/admin.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -160,6 +161,7 @@ app.use('/api/mobile', mobileRouter);
 app.use('/api/data', dataRouter);
 app.use('/api/experience', experienceRouter);
 app.use('/api/stakeholders', stakeholdersRouter);
+app.use('/api/admin', adminRouter);
 
 // Health check（无需登录）
 app.get('/api', (req, res) => {
