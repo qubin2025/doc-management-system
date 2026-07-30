@@ -1,4 +1,4 @@
-// 移动端根组件 — useState 假路由：login / projects / camera / templates
+// 移动端根组件 — 主路由：login → projects → dashboard → 7 子页面
 import React, { useEffect, useState } from 'react';
 import { getMe, logout, getAuthToken } from '../data/api';
 import { UserInfo } from '../types';
@@ -6,10 +6,16 @@ import { MobileProject, WatermarkTemplate } from './types';
 import { getActiveTemplate } from './lib/templates';
 import MobileLogin from './pages/MobileLogin';
 import ProjectPicker from './pages/ProjectPicker';
+import Dashboard from './pages/Dashboard';
 import CameraPage from './pages/CameraPage';
+import MobileDailyReport from './pages/MobileDailyReport';
+import MobileProgress from './pages/MobileProgress';
+import MobileUpload from './pages/MobileUpload';
+import MobilePhotoGallery from './pages/MobilePhotoGallery';
+import SafetyCheck from './pages/SafetyCheck';
 import TemplateEditor from './components/TemplateEditor';
 
-type MobileView = 'login' | 'projects' | 'camera' | 'templates';
+type MobileView = 'login' | 'projects' | 'dashboard' | 'camera' | 'daily-report' | 'progress' | 'upload' | 'gallery' | 'safety-check' | 'templates';
 
 const MobileApp: React.FC = () => {
   const [view, setView] = useState<MobileView>('login');
@@ -18,7 +24,6 @@ const MobileApp: React.FC = () => {
   const [template, setTemplate] = useState<WatermarkTemplate>(() => getActiveTemplate());
   const [booting, setBooting] = useState(true);
 
-  // 启动恢复会话
   useEffect(() => {
     (async () => {
       if (getAuthToken()) {
@@ -45,11 +50,7 @@ const MobileApp: React.FC = () => {
   };
 
   if (booting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-500 text-sm">加载中…</div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-slate-500 text-sm">加载中…</div></div>;
   }
 
   if (view === 'login' || !user) {
@@ -57,39 +58,34 @@ const MobileApp: React.FC = () => {
   }
 
   if (view === 'projects') {
-    return (
-      <ProjectPicker
-        user={user}
-        onSelect={p => { setProject(p); setView('camera'); }}
-        onLogout={handleLogout}
-      />
-    );
+    return <ProjectPicker user={user} onSelect={p => { setProject(p); setView('dashboard'); }} onLogout={handleLogout} />;
   }
 
-  if (view === 'templates') {
-    return (
-      <TemplateEditor
-        template={template}
-        onChange={t => setTemplate(t)}
-        onBack={() => setView('camera')}
-      />
-    );
-  }
-
-  // camera（默认）
   if (!project) {
     setView('projects');
     return null;
   }
-  return (
-    <CameraPage
-      user={user}
-      project={project}
-      template={template}
-      onBack={() => setView('projects')}
-      onOpenTemplates={() => setView('templates')}
-    />
-  );
+
+  switch (view) {
+    case 'dashboard':
+      return <Dashboard user={user} project={project} template={template} onNavigate={v => setView(v as MobileView)} onBackToProjects={() => setView('projects')} />;
+    case 'camera':
+      return <CameraPage user={user} project={project} template={template} onBack={() => setView('dashboard')} onOpenTemplates={() => setView('templates')} />;
+    case 'daily-report':
+      return <MobileDailyReport project={project} onBack={() => setView('dashboard')} />;
+    case 'progress':
+      return <MobileProgress project={project} onBack={() => setView('dashboard')} />;
+    case 'upload':
+      return <MobileUpload project={project} onBack={() => setView('dashboard')} />;
+    case 'gallery':
+      return <MobilePhotoGallery project={project} onBack={() => setView('dashboard')} />;
+    case 'safety-check':
+      return <SafetyCheck project={project} onBack={() => setView('dashboard')} />;
+    case 'templates':
+      return <TemplateEditor template={template} onChange={t => setTemplate(t)} onBack={() => setView('dashboard')} />;
+    default:
+      return <Dashboard user={user} project={project} template={template} onNavigate={v => setView(v as MobileView)} onBackToProjects={() => setView('projects')} />;
+  }
 };
 
 export default MobileApp;
