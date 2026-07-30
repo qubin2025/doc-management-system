@@ -19,19 +19,19 @@ function loadOverrides() {
   return {};
 }
 
-function saveOverrides(data: Record<string, string>) {
+function saveOverrides(data) {
   const dir = dirname(CONFIG_PATH);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(CONFIG_PATH, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-function maskKey(key: string) {
+function maskKey(key) {
   if (!key || key.length < 12) return '(未配置)';
   return key.slice(0, 6) + '***' + key.slice(-4);
 }
 
 /** 获取有效 API KEY（覆盖优先于 .env） */
-export function getApiKey(name: string): string {
+export function getApiKey(name) {
   const overrides = loadOverrides();
   return overrides[name] || process.env[name] || '';
 }
