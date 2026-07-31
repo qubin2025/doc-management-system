@@ -48,6 +48,22 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [report, setReport] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // 审查完成→自动回写知识图谱 (闭环)
+  useEffect(() => {
+    if (results.length === 0) return;
+    const nodes = results.map((r, i) => ({
+      id: `review-${projectName.replace(/\s/g, '')}-${Date.now()}-${i}`,
+      type: 'review-item', label: `${r.section}: ${r.status}`,
+      props: { standard: r.standard, comment: r.comment, status: r.status, project: projectName },
+    }));
+    const token = localStorage.getItem('doc-system-token') ||
+      JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
+    fetch('/api/kg/sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
+      body: JSON.stringify({ nodes, edges: [] }),
+    }).catch(() => {});
+  }, [results]);
+
   const handleFiles = async (flist: FileList) => {
     const arr = Array.from(flist);
     setFiles(prev => [...prev, ...arr]);
