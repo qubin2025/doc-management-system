@@ -338,4 +338,28 @@ router.delete('/:id', requireAuth, (req, res) => {
   }
 });
 
+// PUT /api/experience/:id/status — 审批知识条目 (admin)
+router.put('/:id/status', requireAuth, (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: '仅管理员' });
+  const { status } = req.body;
+  if (!['approved', 'rejected', 'pending'].includes(status)) {
+    return res.status(400).json({ error: '无效状态，可选: approved/rejected/pending' });
+  }
+  try {
+    const db = getDb();
+    const existing = db.prepare('SELECT * FROM project_experiences WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ error: '知识条目不存在' });
+    // 使用 metrics JSON 存储审批状态
+    let metrics = {};
+    try { metrics = JSON.parse(existing.metrics || '{}'); } catch {}
+    metrics.status = status;
+    metrics.reviewedBy = req.user?.username;
+    metrics.reviewedAt = new Date().toISOString();
+    db.prepare('UPDATE project_experiences SET metrics = ? WHERE id = ?').run(JSON.stringify(metrics), req.params.id);
+    res.json({ success: true, message: `已${status === 'approved' ? '通过' : status === 'rejected' ? '驳回' : '重置为待审核'}` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;

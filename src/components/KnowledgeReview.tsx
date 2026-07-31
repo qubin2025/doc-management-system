@@ -34,14 +34,25 @@ const KnowledgeReview: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   useEffect(() => { fetchEntries(); }, []);
 
   const handleApprove = async (id: string) => {
-    // 通过 local state 模拟审批状态
-    setEntries(prev => prev.map(e => e.id === id ? { ...e, status: 'approved' as const } : e));
-    toast('已通过审核', 'success');
+    const r = await fetch(`/api/experience/${id}/status`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: token() },
+      body: JSON.stringify({ status: 'approved' }),
+    });
+    if (r.ok) {
+      setEntries(prev => prev.map(e => e.id === id ? { ...e, status: 'approved' as const } : e));
+      toast('已通过审核', 'success');
+    }
   };
 
   const handleReject = async (id: string) => {
-    setEntries(prev => prev.map(e => e.id === id ? { ...e, status: 'rejected' as const } : e));
-    toast('已驳回', 'success');
+    const r = await fetch(`/api/experience/${id}/status`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: token() },
+      body: JSON.stringify({ status: 'rejected' }),
+    });
+    if (r.ok) {
+      setEntries(prev => prev.map(e => e.id === id ? { ...e, status: 'rejected' as const } : e));
+      toast('已驳回', 'success');
+    }
   };
 
   const filtered = entries.filter(e => filter === 'all' || e.status === filter);

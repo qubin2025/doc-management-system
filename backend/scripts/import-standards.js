@@ -64,6 +64,18 @@ const STANDARDS = [
   // 合同范本
   { id: 'contract-01', type: 'regulation', label: 'GF-2017-0201 建设工程施工合同（示范文本）', props: { category: '合同范本', source: 'appendixA' } },
   { id: 'contract-02', type: 'regulation', label: 'GF-2012-0202 建设工程监理合同（示范文本）', props: { category: '合同范本', source: 'appendixA' } },
+  // 市政工程标准
+  { id: 'gb-m01', type: 'regulation', label: 'GB50141-2008 给水排水构筑物工程施工及验收规范', props: { category: '国家标准-市政', source: 'appendixA_municipal' } },
+  { id: 'gb-m02', type: 'regulation', label: 'GB50268-2008 给水排水管道工程施工及验收规范', props: { category: '国家标准-市政', source: 'appendixA_municipal' } },
+  { id: 'gb-m03', type: 'regulation', label: 'CJJ1-2008 城镇道路工程施工与质量验收规范', props: { category: '行业标准-市政', source: 'appendixA_municipal' } },
+  { id: 'gb-m04', type: 'regulation', label: 'CJJ2-2008 城市桥梁工程施工与质量验收规范', props: { category: '行业标准-市政', source: 'appendixA_municipal' } },
+  // 验收标准
+  { id: 'gb-y01', type: 'regulation', label: 'GB50339-2013 智能建筑工程质量验收规范', props: { category: '国家标准-验收', source: 'appendixA' } },
+  { id: 'gb-y02', type: 'regulation', label: 'GB50411-2019 建筑节能工程施工质量验收标准', props: { category: '国家标准-验收', source: 'appendixA' } },
+  { id: 'gb-y03', type: 'regulation', label: 'GB50601-2010 建筑物防雷工程施工与质量验收规范', props: { category: '国家标准-验收', source: 'appendixA' } },
+  // 招标文件范本
+  { id: 'gf-01', type: 'regulation', label: 'GF-2007-0211 建设工程招标文件示范文本', props: { category: '招标范本', source: 'appendixA' } },
+  { id: 'gf-02', type: 'regulation', label: '标准施工招标资格预审文件（2007版）', props: { category: '招标范本', source: 'appendixA' } },
 ];
 
 // 创建引用关系边
