@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, MessageSquare, Users } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
@@ -7,7 +7,7 @@ import AiChat from './components/AiChat';
 import AiChatPage from './components/AiChatPage';
 import { toast } from './components/Toast';
 import BackupModal from './components/BackupModal';
-const GuideChapter = lazy(() => import('./components/GuideChapter'));
+import GuideChapter from './components/GuideChapter';
 import ProjectEntryPage from './components/ProjectEntryPage';
 import Dashboard from './components/Dashboard';
 import PlanManager from './components/PlanManager';
@@ -17,17 +17,17 @@ import AnalysisCenter from './components/AnalysisCenter';
 import AdminPanel from './components/AdminPanel';
 import LandReserveArchive from './components/LandReserveArchive';
 import KnowledgeBase from './components/KnowledgeBase';
-const KnowledgeGraphView = lazy(() => import('./components/KnowledgeGraph'));
+import KnowledgeGraphView from './components/KnowledgeGraph';
 import PolicyLibrary from './components/PolicyLibrary';
 import RegulationsLibrary from './components/RegulationsLibrary';
-const ConstructionReview = lazy(() => import('./components/ConstructionReview'));
-const ContractReview = lazy(() => import('./components/ContractReview'));
-const BidReview = lazy(() => import('./components/BidReview'));
-const PlanGenerator = lazy(() => import('./components/PlanGenerator'));
-const TargetManager = lazy(() => import('./components/TargetManager'));
-const TailoringEngine = lazy(() => import('./components/TailoringEngine'));
-const AgentConsole = lazy(() => import('./components/AgentConsole'));
-const SkillPanel = lazy(() => import('./components/SkillPanel'));
+import ConstructionReview from './components/ConstructionReview';
+import ContractReview from './components/ContractReview';
+import BidReview from './components/BidReview';
+import PlanGenerator from './components/PlanGenerator';
+import TargetManager from './components/TargetManager';
+import TailoringEngine from './components/TailoringEngine';
+import AgentConsole from './components/AgentConsole';
+import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
 import { getTheme, setTheme, type ThemeMode } from './data/themeEngine';
 import BaselineManager from './components/BaselineManager';
@@ -489,7 +489,7 @@ const App: React.FC = () => {
   }
 
   if (view === 'knowledge-graph') {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><KnowledgeGraphView onBack={() => setView('homepage')} /></Suspense>;
+    return <KnowledgeGraphView onBack={() => setView('homepage')} />;
   }
 
   if (view === 'policy-library') {
@@ -504,13 +504,13 @@ const App: React.FC = () => {
   if (view === 'guide-chapter' && guideChapterId) {
     const chapter = guideChapters.find(c => c.id === guideChapterId);
     if (chapter) {
-      return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><GuideChapter chapter={chapter} projectName={currentProject} onBack={() => { setGuideChapterId(null); setView('homepage'); }} /></Suspense>;
+      return <GuideChapter chapter={chapter} projectName={currentProject} onBack={() => { setGuideChapterId(null); setView('homepage'); }} />;
     }
   }
 
   // ===== 施工组织设计审查 =====
   if (view === 'construction-review' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
+    return <ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 合同管理 =====
@@ -520,17 +520,17 @@ const App: React.FC = () => {
 
   // ===== 合同审查 =====
   if (view === 'contract-review' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><ContractReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
+    return <ContractReview projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 招投标文件审查 =====
   if (view === 'bid-review' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><BidReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
+    return <BidReview projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 方案生成 =====
   if (view === 'plan-generator' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
+    return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // 引导流程：从项目创建或项目选择进入时为true
@@ -538,24 +538,24 @@ const App: React.FC = () => {
 
   // ===== 模块裁剪引擎 (P0-3) =====
   if (view === 'tailoring-engine' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><TailoringEngine projectName={currentProject}
+    return <TailoringEngine projectName={currentProject}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
       onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
-      onBack={() => setView('project-entry')} /></Suspense>;
+      onBack={() => setView('project-entry')} />;
   }
 
   // ===== Agent智能体 (P1-1) =====
   if (view === 'agent-console' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><AgentConsole projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
+    return <AgentConsole projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
+    return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
       if (params?.chapterId) { setGuideChapterId(params.chapterId); }
       setView(v);
-    }} /></Suspense>;
+    }} />;
   }
 
   // ===== 项目组合管理 (P3) =====
@@ -596,10 +596,10 @@ const App: React.FC = () => {
 
   // ===== 目标管理 (P0-1) =====
   if (view === 'target-manager' && currentProject) {
-    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><TargetManager projectName={currentProject} guideChapters={guideChapters}
+    return <TargetManager projectName={currentProject} guideChapters={guideChapters}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
-      onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} /></Suspense>;
+      onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} />;
   }
 
   // ===== 手机水印照片 =====
