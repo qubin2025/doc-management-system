@@ -9,6 +9,32 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [
     react(),
+    // 手机端剔除HMR客户端 — Vite在插件之后注入@vite/client,
+    // 只能通过configureServer中间件拦截响应体移除
+    {
+      name: 'mobile-no-hmr',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.url?.startsWith('/mobile.html')) {
+            const _write = _res.write; const _end = _res.end;
+            const chunks: Buffer[] = [];
+            _res.write = function (chunk: any, ...args: any[]) {
+              if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+              return true;
+            } as any;
+            _res.end = function (chunk: any, ...args: any[]) {
+              if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+              let html = Buffer.concat(chunks).toString('utf-8');
+              html = html.replace(/<script[^>]*@vite\/client[^>]*><\/script>/g, '');
+              _res.setHeader('Content-Length', Buffer.byteLength(html));
+              _res.write = _write; _res.end = _end;
+              _res.end(html);
+            } as any;
+          }
+          next();
+        });
+      },
+    },
     // PWA 仅服务移动端入口(mobile.html)：injectRegister:false + 手动在 src/mobile/main.tsx 注册，
     // 桌面端 index.html 不注册 Service Worker，互不影响
     VitePWA({
@@ -59,16 +85,6 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify('/api'),
-  },
-  // 手机端剔除HMR客户端脚本 — 手机浏览器WebSocket不稳定会导致页面全量刷新
-  transformIndexHtml: {
-    order: 'post',
-    handler(html, ctx) {
-      if (ctx.path.includes('mobile.html')) {
-        return html.replace(/<script[^>]*@vite\/client[^>]*><\/script>/g, '');
-      }
-      return html;
-    },
   },
   server: {
     port: 5300,
