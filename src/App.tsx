@@ -23,11 +23,11 @@ import RegulationsLibrary from './components/RegulationsLibrary';
 const ConstructionReview = lazy(() => import('./components/ConstructionReview'));
 const ContractReview = lazy(() => import('./components/ContractReview'));
 const BidReview = lazy(() => import('./components/BidReview'));
-import PlanGenerator from './components/PlanGenerator';
-import TargetManager from './components/TargetManager';
-import TailoringEngine from './components/TailoringEngine';
+const PlanGenerator = lazy(() => import('./components/PlanGenerator'));
+const TargetManager = lazy(() => import('./components/TargetManager'));
+const TailoringEngine = lazy(() => import('./components/TailoringEngine'));
 const AgentConsole = lazy(() => import('./components/AgentConsole'));
-import SkillPanel from './components/SkillPanel';
+const SkillPanel = lazy(() => import('./components/SkillPanel'));
 import PMBOKFramework from './components/PMBOKFramework';
 import { getTheme, setTheme, type ThemeMode } from './data/themeEngine';
 import BaselineManager from './components/BaselineManager';
@@ -523,7 +523,7 @@ const App: React.FC = () => {
 
   // ===== 方案生成 =====
   if (view === 'plan-generator' && currentProject) {
-    return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
   }
 
   // 引导流程：从项目创建或项目选择进入时为true
@@ -531,11 +531,11 @@ const App: React.FC = () => {
 
   // ===== 模块裁剪引擎 (P0-3) =====
   if (view === 'tailoring-engine' && currentProject) {
-    return <TailoringEngine projectName={currentProject}
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><TailoringEngine projectName={currentProject}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
       onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
-      onBack={() => setView('project-entry')} />;
+      onBack={() => setView('project-entry')} /></Suspense>;
   }
 
   // ===== Agent智能体 (P1-1) =====
@@ -545,10 +545,10 @@ const App: React.FC = () => {
 
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
-    return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
       if (params?.chapterId) { setGuideChapterId(params.chapterId); }
       setView(v);
-    }} />;
+    }} /></Suspense>;
   }
 
   // ===== 项目组合管理 (P3) =====
@@ -589,10 +589,10 @@ const App: React.FC = () => {
 
   // ===== 目标管理 (P0-1) =====
   if (view === 'target-manager' && currentProject) {
-    return <TargetManager projectName={currentProject} guideChapters={guideChapters}
+    return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><TargetManager projectName={currentProject} guideChapters={guideChapters}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
-      onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} />;
+      onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} /></Suspense>;
   }
 
   // ===== 手机水印照片 =====
