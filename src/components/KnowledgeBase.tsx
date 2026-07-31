@@ -7,6 +7,10 @@ import lunr from 'lunr';
 
 interface Props { onBack: () => void; }
 
+const LIBS = ['全部', '规程规范', '政策法规', '项目经验', '方案模板', '工程归档'] as const;
+const LIFECYCLES = ['全部', '前期工作', '招标采购', '工程施工', '竣工验收', '项目归档'] as const;
+const PROFESSIONS = ['全部', '土建', '机电', '市政', '安全', '造价', '合同', '监理'] as const;
+
 const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [search, setSearch] = useState('');
   const [searchMode, setSearchMode] = useState<'fulltext'|'semantic'|'hybrid'>('fulltext');
@@ -14,6 +18,9 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [graphResults, setGraphResults] = useState<{nodes:any[];edges:any[]}|null>(null);
   const [loading, setLoading] = useState(false);
   const [allDocs, setAllDocs] = useState<VectorDoc[]>([]);
+  const [libFilter, setLibFilter] = useState(0);
+  const [lifecycle, setLifecycle] = useState(0);
+  const [profession, setProfession] = useState(0);
 
   useEffect(() => {
     setAllDocs(vectorStore.getAllDocs());
@@ -93,6 +100,25 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* 5大知识库选项卡 */}
+        <div className="flex gap-1 mb-3 bg-white rounded-xl border p-1 overflow-x-auto">
+          {LIBS.map((lib, i) => (
+            <button key={lib} onClick={() => setLibFilter(i)}
+              className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap transition ${i === libFilter ? 'bg-blue-500 text-white shadow' : 'text-gray-500 hover:bg-gray-100'}`}>
+              {lib}
+            </button>
+          ))}
+        </div>
+        {/* 三维筛选 */}
+        <div className="flex gap-2 mb-4 text-xs">
+          <select value={lifecycle} onChange={e => setLifecycle(Number(e.target.value))} className="px-2 py-1.5 border border-gray-200 rounded-lg bg-white">
+            {LIFECYCLES.map((l, i) => <option key={l} value={i}>{i === 0 ? '生命周期▼' : l}</option>)}
+          </select>
+          <select value={profession} onChange={e => setProfession(Number(e.target.value))} className="px-2 py-1.5 border border-gray-200 rounded-lg bg-white">
+            {PROFESSIONS.map((p, i) => <option key={p} value={i}>{i === 0 ? '专业▼' : p}</option>)}
+          </select>
+          {libFilter > 0 && <span className="px-2 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs">{LIBS[libFilter]} · {LIFECYCLES[lifecycle] !== '全部' ? LIFECYCLES[lifecycle] + ' · ' : ''}{PROFESSIONS[profession] !== '全部' ? PROFESSIONS[profession] : '全部专业'}</span>}
+        </div>
         {/* 统计 */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">索引总量</div><div className="text-2xl font-black text-blue-600">{allDocs.length}</div></div>
