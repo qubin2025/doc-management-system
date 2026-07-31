@@ -43,6 +43,7 @@ import IssueManager from './components/IssueManager';
 import DesktopDailyReport from './components/DesktopDailyReport';
 import DesktopProgressView from './components/DesktopProgressView';
 import ContractManager from './components/ContractManager';
+import KnowledgeReview from './components/KnowledgeReview';
 import ExperiencePanel from './components/ExperiencePanel';
 import HomePage from './components/HomePage';
 import StandardSelectPage from './components/StandardSelectPage';
@@ -622,6 +623,10 @@ const App: React.FC = () => {
   }
 
   // ===== 项目经验库 =====
+  if (view === 'experience') {
+  if (view === 'knowledge-review') {
+    return <KnowledgeReview onBack={() => setView('homepage')} />;
+  }
   if (view === 'experience') {
     return <ExperiencePanel projectName={currentProject} onBack={() => setView('homepage')} />;
   }

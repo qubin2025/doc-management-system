@@ -203,12 +203,20 @@ const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleThem
             <p className="text-xs text-gray-500 leading-relaxed">4个预设模板 · 一键执行 · 步骤可视化</p>
           </button>
           {isAdmin && (
-            <button onClick={() => onNavigate('audit-log')}
-              className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl shadow-sm p-5 text-left border-2 border-gray-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
-              <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center mb-3"><Shield className="w-6 h-6 text-gray-600" /></div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">审计日志</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">操作追溯 · 合规审计 · 安全监控</p>
-            </button>
+            <>
+              <button onClick={() => onNavigate('knowledge-review')}
+                className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl shadow-sm p-5 text-left border-2 border-purple-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+                <div className="w-11 h-11 rounded-lg bg-purple-100 flex items-center justify-center mb-3"><BookOpen className="w-6 h-6 text-purple-600" /></div>
+                <h3 className="text-base font-bold text-gray-800 mb-1">知识审核</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">审批知识条目 · 质量把关 · 合规管理</p>
+              </button>
+              <button onClick={() => onNavigate('audit-log')}
+                className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl shadow-sm p-5 text-left border-2 border-gray-200 hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer">
+                <div className="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center mb-3"><Shield className="w-6 h-6 text-gray-600" /></div>
+                <h3 className="text-base font-bold text-gray-800 mb-1">审计日志</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">操作追溯 · 合规审计 · 安全监控</p>
+              </button>
+            </>
           )}
         </div>
       </div>
