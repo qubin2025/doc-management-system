@@ -21,7 +21,7 @@ interface ProjectEntryPageProps {
 
 const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   projects, currentUser, userDisplay, isAdmin, userRole,
-  onSelectProject, onLogout, onAiSubmit, onCreateProject, onRenameProject, onUpdateProject
+  onSelectProject, onLogout, onAiSubmit, onCreateProject, onRenameProject, onUpdateProject, onBack
 }) => {
   const light = true; // 固定浅色模式
   const [search, setSearch] = useState('');
@@ -158,8 +158,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             <span className={`px-2 py-0.5 text-xs rounded-full font-medium backdrop-blur-sm ${isAdmin ? t.roleAdmin : t.roleUser}`}>
               {isAdmin ? '管理员' : userRole === 'project_manager' ? '项目经理' : userRole === 'construction_unit' ? '建设单位' : '用户'}
             </span>
-            <button onClick={onLogout} className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${t.logout}`}>
-              <LogOut className="w-4 h-4" /> 退出
+            <button onClick={() => onBack ? onBack() : onLogout()} className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${t.logout}`}>
+              <ArrowRight className="w-4 h-4" /> 返回
             </button>
           </div>
         </div>
@@ -239,7 +239,15 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                   )}
                   <p className={`text-xs mt-1 ml-10 ${t.cardDate}`}>创建于 {proj.createdAt}</p>
                 </div>
-                <ArrowRight className={`w-4 h-4 group-hover:translate-x-1 transition-all ${t.cardArrow} mt-2`} />
+                <div className="flex items-center gap-1 mt-2">
+                {isAdmin && (
+                  <button onClick={e => { e.stopPropagation(); if (confirm(`确定删除项目"${proj.name}"？此操作不可恢复。`)) { api.deleteProjectApi(proj.name).then(() => { toast('项目已删除', 'success'); window.location.reload(); }).catch(() => toast('删除失败', 'error')); } }}
+                    className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="删除项目">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <ArrowRight className={`w-4 h-4 group-hover:translate-x-1 transition-all ${t.cardArrow}`} />
+              </div>
               </div>
               {/* 编辑按钮（右下角隐蔽） */}
               <button onClick={e => {
