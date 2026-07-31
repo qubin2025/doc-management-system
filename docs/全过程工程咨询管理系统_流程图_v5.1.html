@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询管理系统 — 流程图 v5.1</title>
+<style>
+:root{--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#334155;--blue:#3b82f6;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--teal:#14b8a6;--slate:#64748b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:14px;padding:2rem}
+h1{text-align:center;font-size:1.6rem;background:linear-gradient(135deg,#1e40af,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.5rem}
+.sub{text-align:center;color:var(--slate);font-size:.85rem;margin-bottom:2.5rem}
+.section{margin:3rem 0}
+.section h2{font-size:1.2rem;color:#1e40af;border-left:4px solid var(--blue);padding-left:1rem;margin-bottom:1.5rem}
+.flow{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:center;padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;margin:1rem 0;overflow-x:auto}
+.node{padding:.6rem 1rem;border-radius:8px;font-size:.82rem;font-weight:600;text-align:center;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.node-sm{padding:.4rem .7rem;font-size:.72rem}
+.node-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.node-green{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.node-amber{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+.node-red{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.node-purple{background:#faf5ff;color:#6d28d9;border:1px solid #ddd6fe}
+.node-teal{background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4}
+.node-slate{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
+.node-white{background:#fff;color:#334155;border:1px solid #e2e8f0}
+.arrow{font-size:1.2rem;color:var(--slate);margin:0 .2rem}
+.arrow-down{display:block;text-align:center;font-size:1.2rem;color:var(--slate);margin:.3rem 0}
+.row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem}
+table{width:100%;border-collapse:collapse;font-size:.8rem;margin:.5rem 0}
+th,td{border:1px solid var(--border);padding:.4rem .6rem;text-align:left}
+th{background:#f1f5f9;font-weight:600}
+</style>
+</head>
+<body>
+
+<h1>全过程工程咨询管理系统 — 流程逻辑图</h1>
+<p class="sub">版本 v5.1 | 2026-07-30 | 中航建科</p>
+
+<!-- ====== 1. 用户操作主流程 ====== -->
+<div class="section">
+  <h2>1. 用户操作主流程</h2>
+  <div class="flow">
+    <div class="node node-blue">打开浏览器</div><span class="arrow">→</span>
+    <div class="node node-purple">登录<br>admin / admin123</div><span class="arrow">→</span>
+    <div class="node node-teal">GlobalDashboard<br>全局看板</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="col">
+      <div class="node node-amber node-sm">新建项目</div>
+      <span class="arrow-down">↓</span>
+      <div class="node node-white node-sm">ProjectEntryPage</div>
+    </div>
+    <span style="margin:0 1.5rem">或</span>
+    <div class="col">
+      <div class="node node-green node-sm">点击项目卡片</div>
+      <span class="arrow-down">↓</span>
+      <div class="node node-white node-sm">Dashboard KPI</div>
+    </div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="node node-blue">HomePage 项目首页</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row" style="gap:.8rem">
+    <div class="node node-purple node-sm">指南模块<br>4章全过程</div>
+    <div class="node node-amber node-sm">AI智能体<br>Multi-Agent</div>
+    <div class="node node-green node-sm">功能模块<br>50+卡片</div>
+    <div class="node node-teal node-sm">管理模块<br>PMBOK工具</div>
+    <div class="node node-slate node-sm">高级工具<br>工作流/审计</div>
+  </div>
+</div>
+
+<!-- ====== 2. 项目管理全生命周期 ====== -->
+<div class="section">
+  <h2>2. 建设工程全生命周期管理流程</h2>
+  <div class="flow">
+    <div class="node node-blue">第1章<br>前期工作</div><span class="arrow">→</span>
+    <div class="node node-amber">第2章<br>招标采购</div><span class="arrow">→</span>
+    <div class="node node-green">第3章<br>工程施工</div><span class="arrow">→</span>
+    <div class="node node-purple">第4章<br>竣工验收及移交</div>
+  </div>
+  <div class="grid2" style="margin-top:1rem">
+    <div class="card">
+      <h4 style="color:var(--blue);margin-bottom:.5rem">第1章 前期工作</h4>
+      <table>
+        <tr><td>项目立项</td><td>可行性研究</td><td>用地规划许可</td></tr>
+        <tr><td>建设许可</td><td>施工许可</td><td>图纸会审</td></tr>
+        <tr><td>施工组织设计审批</td><td>技术交底</td><td>现场准备</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--amber);margin-bottom:.5rem">第2章 招标采购</h4>
+      <table>
+        <tr><td>招标文件编制</td><td>招标公告</td><td>投标人资格审查</td></tr>
+        <tr><td>评标定标</td><td>中标通知</td><td>合同签订与备案</td></tr>
+        <tr><td>合同审查(AI)</td><td>供应商入库</td><td>采购计划</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--green);margin-bottom:.5rem">第3章 工程施工</h4>
+      <table>
+        <tr><td>施工准备</td><td>质量控制</td><td>进度控制</td></tr>
+        <tr><td>安全监督</td><td>变更管理</td><td>监理协调</td></tr>
+        <tr><td>材料验收</td><td>旁站记录</td><td>问题上报</td></tr>
+        <tr><td>日报填写</td><td>进度快报</td><td>手机拍照</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--purple);margin-bottom:.5rem">第4章 竣工验收及移交</h4>
+      <table>
+        <tr><td>竣工预验收</td><td>正式验收</td><td>备案归档</td></tr>
+        <tr><td>工程移交</td><td>竣工结算</td><td>保修管理</td></tr>
+        <tr><td>资料归档(A/B/C/D)</td><td>经验提取</td><td>项目总结</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 3. AI应用逻辑流程 ====== -->
+<div class="section">
+  <h2>3. AI 应用逻辑流程</h2>
+  <div class="flow">
+    <div class="node node-blue">用户输入</div><span class="arrow">→</span>
+    <div class="node node-purple">Multi-Agent<br>路由匹配</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="node node-red node-sm">安全审查员<br>安全/脚手架/防护</div>
+    <div class="node node-blue node-sm">质量工程师<br>质量/验收/混凝土</div>
+    <div class="node node-purple node-sm">合同分析员<br>合同/违约/索赔</div>
+    <div class="node node-teal node-sm">造价分析师<br>造价/清单/招标</div>
+    <div class="node node-slate node-sm">综合Agent<br>兜底</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="node node-green">GraphRAG 增强<br>关键词检测→Neo4j BFS遍历<br>→标准条款→注入Prompt</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="node node-amber">7模型自动降级链</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row" style="font-size:.72rem;gap:.3rem">
+    <div class="node node-green node-sm">deepseek-v4-pro</div><span class="arrow">→</span>
+    <div class="node node-green node-sm">deepseek-chat</div><span class="arrow">→</span>
+    <div class="node node-amber node-sm">deepseek-r1</div><span class="arrow">→</span>
+    <div class="node node-slate node-sm">qwen-turbo</div><span class="arrow">→</span>
+    <div class="node node-slate node-sm">glm-4-flash</div><span class="arrow">→</span>
+    <div class="node node-red node-sm">ollama(本地)</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="node node-blue">AI 响应<br>审查报告 / 方案生成 / 日报解析 / 分析建议</div>
+  </div>
+</div>
+
+<!-- ====== 4. 手机端全流程 ====== -->
+<div class="section">
+  <h2>4. 手机端现场作业流程</h2>
+  <div class="flow">
+    <div class="node node-blue">打开手机端</div><span class="arrow">→</span>
+    <div class="node node-purple">登录</div><span class="arrow">→</span>
+    <div class="node node-teal">选择项目</div><span class="arrow">→</span>
+    <div class="node node-green">Dashboard<br>图标主界面</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="grid3">
+    <div class="card">
+      <h4 style="color:var(--blue);margin-bottom:.5rem">📷 水印拍照</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">打开相机</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">GPS定位+水印叠加</div><span class="arrow-down">↓</span>
+        <div class="node node-amber node-sm">本地保存</div><span class="arrow-down">↓</span>
+        <div class="node node-purple node-sm">联网→自动上传<br>离线→队列等待</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--amber);margin-bottom:.5rem">📝 项目日报</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">选择日期</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">填写8段模板<br>天气/人机/材料/质量/安全</div><span class="arrow-down">↓</span>
+        <div class="node node-amber node-sm">AI解析(上传文件)</div><span class="arrow-down">↓</span>
+        <div class="node node-teal node-sm">提交→桌面端同步</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--red);margin-bottom:.5rem">🔍 安全检查</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">检查清单</div><span class="arrow-down">↓</span>
+        <div class="node node-red node-sm">发现问题→拍照上报</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">桌面端跟踪处理</div><span class="arrow-down">↓</span>
+        <div class="node node-teal node-sm">状态流转闭环</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 5. 知识图谱流程 ====== -->
+<div class="section">
+  <h2>5. 知识图谱与GraphRAG流程</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="color:var(--purple);margin-bottom:.5rem">图谱构建</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">buildGraph()</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">从localStorage读取项目/文档/表单/供应商/造价</div><span class="arrow-down">↓</span>
+        <div class="node node-amber node-sm">构建节点(25类型)+边(6类型)</div><span class="arrow-down">↓</span>
+        <div class="node node-purple node-sm">持久化→localStorage + Neo4j自动同步</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--blue);margin-bottom:.5rem">GraphRAG检索</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">关键词检测</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">Neo4j BFS 2层扩散</div><span class="arrow-down">↓</span>
+        <div class="node node-amber node-sm">收集关联节点+边</div><span class="arrow-down">↓</span>
+        <div class="node node-purple node-sm">格式化上下文→注入AI Prompt</div>
+      </div>
+    </div>
+  </div>
+  <div class="flow" style="margin-top:1rem">
+    <div class="node node-blue node-sm">9个GraphRAG端点</div><span class="arrow">→</span>
+    <div class="node node-green node-sm">search</div>
+    <div class="node node-green node-sm">context</div>
+    <div class="node node-green node-sm">enrich</div>
+    <div class="node node-green node-sm">related</div>
+    <div class="node node-green node-sm">stats</div>
+    <div class="node node-slate node-sm">+4 CRUD</div>
+  </div>
+</div>
+
+<!-- ====== 6. 知识编排三级降级 ====== -->
+<div class="section">
+  <h2>6. 知识编排器 — 三级降级检索流程</h2>
+  <div class="flow">
+    <div class="node node-blue">用户查询</div><span class="arrow">→</span>
+    <div class="node node-purple">knowledgeOrchestrator<br>统一入口</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row">
+    <div class="col">
+      <div class="node node-green">优先级1<br>RAGFlow (Docker)</div>
+      <div style="font-size:.72rem;color:var(--slate)">完整知识库检索</div>
+    </div>
+    <span class="arrow">──→</span>
+    <div class="col">
+      <div class="node node-amber">优先级2<br>LightRAG (Python)</div>
+      <div style="font-size:.72rem;color:var(--slate)">语义实体检索</div>
+    </div>
+    <span class="arrow">──→</span>
+    <div class="col">
+      <div class="node node-red">优先级3<br>本地向量库+Lunr</div>
+      <div style="font-size:.72rem;color:var(--slate)">全文检索引擎兜底</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:.8rem;font-size:.8rem;color:var(--slate)">
+    每级不可用时自动降级到下一级，保证 100% 可用
+  </div>
+</div>
+
+<!-- ====== 7. 数据库Schema关系 ====== -->
+<div class="section">
+  <h2>7. 数据库表关系</h2>
+  <div class="flow">
+    <div class="node node-blue">projects<br>项目表</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row" style="gap:.4rem">
+    <div class="node node-green node-sm">documents<br>文档</div>
+    <div class="node node-green node-sm">objectives<br>目标(WBS)</div>
+    <div class="node node-green node-sm">baselines<br>基线</div>
+    <div class="node node-green node-sm">daily_reports<br>日报</div>
+    <div class="node node-green node-sm">mobile_issues<br>问题</div>
+    <div class="node node-green node-sm">mobile_progress<br>进度</div>
+    <div class="node node-green node-sm">mobile_photos<br>照片</div>
+    <div class="node node-green node-sm">project_experiences<br>经验</div>
+    <div class="node node-green node-sm">stakeholders<br>干系人</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row" style="gap:.4rem">
+    <div class="node node-amber node-sm">daily_workers<br>日报-人工</div>
+    <div class="node node-amber node-sm">daily_machinery<br>日报-机械</div>
+    <div class="node node-amber node-sm">daily_progress<br>日报-进度</div>
+    <div class="node node-amber node-sm">daily_risks<br>日报-风险</div>
+  </div>
+  <div style="text-align:center;margin-top:.8rem;font-size:.8rem;color:var(--slate)">
+    15 张表 · 1:N 外键关联 · SQLite + Neo4j 双存储
+  </div>
+</div>
+
+<!-- ====== 8. 部署流程 ====== -->
+<div class="section">
+  <h2>8. 部署与更新流程</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4 style="color:var(--green);margin-bottom:.5rem">首次部署</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">git clone</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">npm install (前端+后端)</div><span class="arrow-down">↓</span>
+        <div class="node node-amber node-sm">cp .env.example → backend/.env</div><span class="arrow-down">↓</span>
+        <div class="node node-purple node-sm">填写 API Key</div><span class="arrow-down">↓</span>
+        <div class="node node-teal node-sm">docker compose up -d</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">npm run build</div><span class="arrow-down">↓</span>
+        <div class="node node-blue node-sm">pm2 start + nginx + certbot</div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--blue);margin-bottom:.5rem">日常更新</h4>
+      <div class="flow" style="flex-direction:column;align-items:flex-start;padding:0">
+        <div class="node node-blue node-sm">bash deploy/update.sh</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">git pull</div><span class="arrow-down">↓</span>
+        <div class="node node-amber node-sm">npm install</div><span class="arrow-down">↓</span>
+        <div class="node node-purple node-sm">npm run build</div><span class="arrow-down">↓</span>
+        <div class="node node-teal node-sm">pm2 restart</div><span class="arrow-down">↓</span>
+        <div class="node node-green node-sm">curl /api/health 验证</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 9. 开发规范流程 ====== -->
+<div class="section">
+  <h2>9. 开发工作流与门禁流程</h2>
+  <div class="flow">
+    <div class="node node-blue">需求分析</div><span class="arrow">→</span>
+    <div class="node node-purple">方案设计</div><span class="arrow">→</span>
+    <div class="node node-amber">代码实现<br>Write/Edit only</div><span class="arrow">→</span>
+    <div class="node node-green">7 道门禁</div>
+  </div>
+  <div class="arrow-down">▼</div>
+  <div class="row" style="gap:.4rem">
+    <div class="node node-red node-sm">TSC零错误</div><span class="arrow">→</span>
+    <div class="node node-red node-sm">测试全通过</div><span class="arrow">→</span>
+    <div class="node node-red node-sm">构建成功</div><span class="arrow">→</span>
+    <div class="node node-red node-sm">≤250行</div><span class="arrow">→</span>
+    <div class="node node-red node-sm">零any</div><span class="arrow">→</span>
+    <div class="node node-red node-sm">git clean</div><span class="arrow">→</span>
+    <div class="node node-green">git commit</div>
+  </div>
+  <div style="text-align:center;margin-top:.8rem;font-size:.8rem;color:var(--slate)">
+    每功能一提交 · 修改>3次即重写 · 禁止sed/node-e操作源码
+  </div>
+</div>
+
+<p style="text-align:center;color:var(--slate);font-size:.75rem;margin-top:3rem">中航建科 · 工程咨询管理平台 v5.1 · 2026-07-30</p>
+
+</body>
+</html>
