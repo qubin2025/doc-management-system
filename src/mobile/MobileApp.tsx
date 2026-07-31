@@ -50,7 +50,11 @@ const MobileApp: React.FC = () => {
   };
 
   if (booting) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-slate-500 text-sm">加载中…</div></div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-800 flex items-center justify-center">
+        <div className="text-white/70 text-sm">加载中…</div>
+      </div>
+    );
   }
 
   if (view === 'login' || !user) {

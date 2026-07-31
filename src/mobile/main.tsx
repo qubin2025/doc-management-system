@@ -3,10 +3,11 @@ import ReactDOM from 'react-dom/client';
 import MobileApp from './MobileApp';
 import '../index.css';
 
-// PWA Service Worker 仅在移动端入口注册（桌面端 index.html 不注册）
+// PWA Service Worker 仅在移动端入口注册
+// immediate:false 防止登录页填写过程中被SW强制刷新
 if ('serviceWorker' in navigator) {
   import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({ immediate: true });
+    registerSW({ immediate: false });
   }).catch(() => { /* dev模式无SW，忽略 */ });
 }
 
