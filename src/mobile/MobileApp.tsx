@@ -13,9 +13,10 @@ import MobileProgress from './pages/MobileProgress';
 import MobileUpload from './pages/MobileUpload';
 import MobilePhotoGallery from './pages/MobilePhotoGallery';
 import SafetyCheck from './pages/SafetyCheck';
+import MobileKnowledge from './pages/MobileKnowledge';
 import TemplateEditor from './components/TemplateEditor';
 
-type MobileView = 'login' | 'projects' | 'dashboard' | 'camera' | 'daily-report' | 'progress' | 'upload' | 'gallery' | 'safety-check' | 'templates';
+type MobileView = 'login' | 'projects' | 'dashboard' | 'camera' | 'daily-report' | 'progress' | 'upload' | 'gallery' | 'safety-check' | 'templates' | 'knowledge';
 
 const MobileApp: React.FC = () => {
   const [view, setView] = useState<MobileView>('login');
@@ -103,6 +104,8 @@ const MobileApp: React.FC = () => {
       return <MobilePhotoGallery project={project} onBack={() => setView('dashboard')} />;
     case 'safety-check':
       return <SafetyCheck project={project} onBack={() => setView('dashboard')} />;
+    case 'knowledge':
+      return <MobileKnowledge project={project} onBack={() => setView('dashboard')} />;
     case 'templates':
       return <TemplateEditor template={template} onChange={t => setTemplate(t)} onBack={() => setView('dashboard')} />;
     default:

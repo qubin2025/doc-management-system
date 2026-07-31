@@ -82,6 +82,8 @@ const EDGES = [
   { from: 'law-03', to: 'law-08', type: 'references', label: '建筑法引用质量管理条例' },
   { from: 'law-06', to: 'law-09', type: 'references', label: '安全生产法引用安全管理条例' },
   { from: 'contract-01', to: 'gb-05', type: 'references', label: '施工合同引用计价规范' },
+  { from: 'jgj-09', to: 'db-01', type: 'SUPERSEDE', label: 'JGJ/T185-2009被DB11/T695-2025废止' },
+  { from: 'db-01', to: 'jgj-09', type: 'REPLACE_BY', label: 'DB11/T695-2025替代JGJ/T185-2009' },
 ];
 
 async function main() {

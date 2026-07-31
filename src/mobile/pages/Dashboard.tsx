@@ -1,6 +1,6 @@
 // 手机端图标主界面 — 4 列 App 风格图标网格 + 名称可选显示
 import React, { useEffect, useState } from 'react';
-import { Camera, Upload, Shield, Image, Settings2, ArrowLeft, Eye, EyeOff, TrendingUp, FileText } from 'lucide-react';
+import { Camera, Upload, Shield, Image, Settings2, ArrowLeft, Eye, EyeOff, TrendingUp, FileText, BookOpen } from 'lucide-react';
 import { UserInfo } from '../../types';
 import { MobileProject, WatermarkTemplate } from '../types';
 import { checkNotices, uploadPhoto, PhotoMeta } from '../data/mobileApi';
@@ -72,6 +72,7 @@ const Dashboard: React.FC<Props> = ({ user, project, template, onNavigate, onBac
     { id: 'gallery',   label: '照片浏览', icon: <Image className="w-7 h-7" />,       color: 'bg-purple-500' },
     { id: 'progress',  label: '进度管理', icon: <TrendingUp className="w-7 h-7" />,  color: 'bg-sky-500' },
     { id: 'daily-report', label: '项目日报', icon: <FileText className="w-7 h-7" />,  color: 'bg-orange-500' },
+    { id: 'knowledge',  label: '规范速查', icon: <BookOpen className="w-7 h-7" />,   color: 'bg-indigo-500' },
     { id: 'templates', label: '水印模板', icon: <Settings2 className="w-7 h-7" />,   color: 'bg-slate-500' },
   ];
 
