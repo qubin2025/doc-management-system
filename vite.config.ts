@@ -60,6 +60,16 @@ export default defineConfig({
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify('/api'),
   },
+  // 手机端剔除HMR客户端脚本 — 手机浏览器WebSocket不稳定会导致页面全量刷新
+  transformIndexHtml: {
+    order: 'post',
+    handler(html, ctx) {
+      if (ctx.path.includes('mobile.html')) {
+        return html.replace(/<script[^>]*@vite\/client[^>]*><\/script>/g, '');
+      }
+      return html;
+    },
+  },
   server: {
     port: 5300,
     strictPort: true,
