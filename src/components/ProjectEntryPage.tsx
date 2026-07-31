@@ -38,6 +38,24 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   const [projectDocs, setProjectDocs] = useState<{ fileName: string; data: string; size: number }[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
 
+  const handleDeleteProject = async (projectName: string) => {
+    if (!confirm('确定删除项目' + projectName + '？此操作不可恢复。')) return;
+    try {
+      await api.deleteProjectApi(projectName);
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.includes('doc-mgmt-projects') || k.includes('doc-mgmt-upload-'))) {
+          try {
+            const v = JSON.parse(localStorage.getItem(k) || '[]');
+            if (Array.isArray(v)) localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || x.projectName || '') !== projectName)));
+          } catch {}
+        }
+      }
+      toast('项目已删除', 'success');
+      setTimeout(() => window.location.reload(), 300);
+    } catch { toast('删除失败', 'error'); }
+  };
+
   // 读取项目的指南模块进度
   const getProjectProgress = (_projName: string): { done: number; total: number } => {
     let done = 0, total = 0;
@@ -241,7 +259,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 </div>
                 <div className="flex items-center gap-1 mt-2">
                 {isAdmin && (
-                  <button onClick={async e => { e.stopPropagation(); if (!confirm(\`确定删除项目"\${proj.name}"？此操作不可恢复。\`)) return; try { await api.deleteProjectApi(proj.name); // 清除所有本地缓存的项目数据 for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && (k.includes('doc-mgmt-projects') || k.includes(\`doc-mgmt-upload-\`))) { try { const v = JSON.parse(localStorage.getItem(k) || '[]'); if (Array.isArray(v)) { localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || x.projectName || '') !== proj.name))); } } catch {} } } toast('项目已删除', 'success'); setTimeout(() => window.location.reload(), 300); } catch { toast('删除失败', 'error'); } }}
+                  <button onClick={e => { e.stopPropagation(); handleDeleteProject(proj.name); }}
                     className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="删除项目">
                     <Trash2 className="w-4 h-4" />
                   </button>
