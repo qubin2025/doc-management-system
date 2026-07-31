@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, XCircle, Edit3, Eye, Filter, BookOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Eye, BookOpen } from 'lucide-react';
 import { toast } from './Toast';
 
 interface KnowledgeEntry {
