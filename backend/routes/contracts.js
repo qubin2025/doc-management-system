@@ -69,17 +69,32 @@ router.post('/create', requireAuth, (req, res) => {
   res.status(201).json({ id: r.lastInsertRowid, message: '合同已创建' });
 });
 
-// PUT /api/contracts/:id — 更新合同（含审查结果）
+// PUT /api/contracts/:id — 更新合同（含审查结果+自动沉淀知识）
 router.put('/:id', requireAuth, (req, res) => {
   const db = getDb(); ensureTables(db);
-  const { review_result, risk_level, risk_items, content_text } = req.body;
+  const { review_result, risk_level, risk_items, content_text, auto_deposit } = req.body;
   const existing = db.prepare('SELECT * FROM contracts WHERE id=?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: '合同不存在' });
   db.prepare(`UPDATE contracts SET review_result=?, risk_level=?, risk_items=?, content_text=?, updated_at=datetime('now') WHERE id=?`)
     .run(review_result || existing.review_result, risk_level || existing.risk_level,
       JSON.stringify(risk_items || JSON.parse(existing.risk_items || '[]')),
       content_text || existing.content_text, req.params.id);
-  res.json({ success: true, message: '合同已更新' });
+
+  // 自动沉淀知识
+  if (auto_deposit && review_result) {
+    const riskList = risk_items || JSON.parse(existing.risk_items || '[]');
+    const expId = `contract-${req.params.id}-${Date.now()}`;
+    db.prepare(`INSERT OR IGNORE INTO project_experiences (id,project_name,category,title,description,patterns,metrics,reference_count)
+      VALUES (?,?,?,?,?,?,?,?)`).run(
+      expId, existing.project_name, '合同管理',
+      `合同审查: ${existing.contract_name}`,
+      review_result.slice(0, 500),
+      JSON.stringify(riskList.map((r) => ({ type: 'contract-risk', content: r.issue || r.problem || '' }))),
+      JSON.stringify({ riskLevel: risk_level || existing.risk_level, amount: existing.amount, autoDeposit: true }),
+      1
+    );
+  }
+  res.json({ success: true, message: '合同已更新' + (auto_deposit ? '，知识已自动沉淀' : '') });
 });
 
 // DELETE /api/contracts/:id

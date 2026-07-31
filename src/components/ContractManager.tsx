@@ -71,9 +71,9 @@ const ContractManager: React.FC<{ projectName: string; onBack: () => void }> = (
 
       await fetch(`/api/contracts/${contract.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: token() },
-        body: JSON.stringify({ review_result: reply.slice(0, 2000), risk_level: overallRisk, risk_items: riskItems }),
+        body: JSON.stringify({ review_result: reply.slice(0, 2000), risk_level: overallRisk, risk_items: riskItems, auto_deposit: true }),
       });
-      toast('AI审查完成', 'success');
+      toast('AI审查完成，知识已自动沉淀', 'success');
       fetchContracts();
     } catch (e: any) { toast('审查失败: ' + (e.message || '网络错误'), 'error'); }
     finally { setAiReviewing(null); }
