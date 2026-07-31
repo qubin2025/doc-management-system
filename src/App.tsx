@@ -622,11 +622,12 @@ const App: React.FC = () => {
     return <DesktopProgressView onBack={() => setView('homepage')} />;
   }
 
-  // ===== 项目经验库 =====
-  if (view === 'experience') {
+  // ===== 知识审核 =====
   if (view === 'knowledge-review') {
     return <KnowledgeReview onBack={() => setView('homepage')} />;
   }
+
+  // ===== 项目经验库 =====
   if (view === 'experience') {
     return <ExperiencePanel projectName={currentProject} onBack={() => setView('homepage')} />;
   }
