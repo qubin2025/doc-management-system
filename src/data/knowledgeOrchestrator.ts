@@ -155,11 +155,29 @@ export class KnowledgeOrchestrator {
     };
   }
 
+  // ── 意图检测 ──
+  private detectIntent(query: string): 'regulation' | 'template' | 'exact' | 'general' {
+    if (/GB\d|JGJ\d|DB\d|GF-|标准|规范|条款|合规|检查|验收|安全|质量/.test(query)) return 'regulation';
+    if (/模板|方案|范本|生成|示例|样例|报告|编写|格式/.test(query)) return 'template';
+    if (/^[A-Z0-9\-\/]{4,30}$/.test(query.trim())) return 'exact';
+    return 'general';
+  }
+
   // ===== 检索 =====
   async search(request: SearchRequest): Promise<SearchResult> {
     const startTime = performance.now();
     await this.refreshCapabilities();
-    const { query, projectName, mode, topK = 5 } = request;
+    const { query, projectName, topK = 5 } = request;
+    let mode = request.mode;
+
+    // auto模式→意图路由
+    if (mode === 'auto') {
+      const intent = this.detectIntent(query);
+      if (intent === 'regulation') mode = 'hybrid';  // GraphRAG + 语义
+      else if (intent === 'template') mode = 'semantic'; // RAGFlow
+      else if (intent === 'exact') mode = 'fulltext';    // Lunr
+      // general → 保持auto降级链
+    }
 
     let items: SearchResultItem[] = [];
     let sources: string[] = [];
