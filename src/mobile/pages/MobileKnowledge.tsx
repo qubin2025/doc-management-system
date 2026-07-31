@@ -3,9 +3,9 @@ import { ArrowLeft, Search, BookOpen } from 'lucide-react';
 import { MobileProject } from '../types';
 
 interface KnowledgeItem { id: string; title: string; category: string; description: string; }
-interface Props { project: MobileProject; onBack: () => void; }
+interface Props { project?: MobileProject; onBack: () => void; }
 
-const MobileKnowledge: React.FC<Props> = ({ project, onBack }) => {
+const MobileKnowledge: React.FC<Props> = ({ onBack }) => {
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
