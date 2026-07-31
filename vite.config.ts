@@ -9,32 +9,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [
     react(),
-    // 手机端剔除HMR客户端 — Vite在插件之后注入@vite/client,
-    // 只能通过configureServer中间件拦截响应体移除
-    {
-      name: 'mobile-no-hmr',
-      configureServer(server) {
-        server.middlewares.use((req, _res, next) => {
-          if (req.url?.startsWith('/mobile.html')) {
-            const _write = _res.write; const _end = _res.end;
-            const chunks: Buffer[] = [];
-            _res.write = function (chunk: any, ...args: any[]) {
-              if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-              return true;
-            } as any;
-            _res.end = function (chunk: any, ...args: any[]) {
-              if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-              let html = Buffer.concat(chunks).toString('utf-8');
-              html = html.replace(/<script[^>]*@vite\/client[^>]*><\/script>/g, '');
-              _res.setHeader('Content-Length', Buffer.byteLength(html));
-              _res.write = _write; _res.end = _end;
-              _res.end(html);
-            } as any;
-          }
-          next();
-        });
-      },
-    },
     // PWA 仅服务移动端入口(mobile.html)：injectRegister:false + 手动在 src/mobile/main.tsx 注册，
     // 桌面端 index.html 不注册 Service Worker，互不影响
     VitePWA({

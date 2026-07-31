@@ -22,19 +22,14 @@ const MobileApp: React.FC = () => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [project, setProject] = useState<MobileProject | null>(null);
   const [template, setTemplate] = useState<WatermarkTemplate>(() => getActiveTemplate());
-  const [booting, setBooting] = useState(true);
 
+  // 后台静默恢复会话 — 不阻塞渲染, 登录页立即可用
   useEffect(() => {
-    (async () => {
-      if (getAuthToken()) {
-        const me = await getMe();
-        if (me) {
-          setUser(me.user);
-          setView('projects');
-        }
-      }
-      setBooting(false);
-    })();
+    const token = getAuthToken();
+    if (!token) return;
+    getMe().then(me => {
+      if (me) { setUser(me.user); setView('projects'); }
+    }).catch(() => {});
   }, []);
 
   const handleLogin = (u: UserInfo) => {
@@ -48,14 +43,6 @@ const MobileApp: React.FC = () => {
     setProject(null);
     setView('login');
   };
-
-  if (booting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-800 flex items-center justify-center">
-        <div className="text-white/70 text-sm">加载中…</div>
-      </div>
-    );
-  }
 
   if (view === 'login' || !user) {
     return <MobileLogin onLogin={handleLogin} />;
