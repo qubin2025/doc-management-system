@@ -22,14 +22,20 @@ const MobileApp: React.FC = () => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [project, setProject] = useState<MobileProject | null>(null);
   const [template, setTemplate] = useState<WatermarkTemplate>(() => getActiveTemplate());
+  const [booting, setBooting] = useState(true);
 
-  // 后台静默恢复会话 — 不阻塞渲染, 登录页立即可用
+  // 启动生命周期: 后台静默检测会话 → 不卸载登录表单 → 浮层loading覆盖
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) return;
-    getMe().then(me => {
-      if (me) { setUser(me.user); setView('projects'); }
-    }).catch(() => {});
+    (async () => {
+      const token = getAuthToken();
+      if (token) {
+        try {
+          const me = await getMe();
+          if (me) { setUser(me.user); setView('projects'); }
+        } catch { /* 网络不通, 留在登录页 */ }
+      }
+      setBooting(false);
+    })();
   }, []);
 
   const handleLogin = (u: UserInfo) => {
@@ -44,8 +50,33 @@ const MobileApp: React.FC = () => {
     setView('login');
   };
 
+  // 登录表单始终渲染 — booting阶段仅叠加浮层loading, 不卸载表单
   if (view === 'login' || !user) {
-    return <MobileLogin onLogin={handleLogin} />;
+    return (
+      <>
+        <style>{'@keyframes mobile-spin{to{transform:rotate(360deg)}}'}</style>
+        <div style={{ position: 'relative' }}>
+          <MobileLogin onLogin={handleLogin} />
+          {booting && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(30,58,138,0.85)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 100,
+            }}>
+              <div style={{ textAlign: 'center', color: '#fff' }}>
+                <div style={{
+                  width: 36, height: 36, border: '3px solid rgba(255,255,255,0.2)',
+                  borderTopColor: '#fff', borderRadius: '50%',
+                  animation: 'mobile-spin 0.8s linear infinite', margin: '0 auto 12px',
+                }} />
+                <div style={{ fontSize: 14 }}>正在恢复会话…</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
   }
 
   if (view === 'projects') {
