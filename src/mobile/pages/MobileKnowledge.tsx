@@ -5,10 +5,14 @@ import { MobileProject } from '../types';
 interface KnowledgeItem { id: string; title: string; category: string; description: string; }
 interface Props { project?: MobileProject; onBack: () => void; }
 
+const CACHE_KEY = 'mobile-kg-cache';
+const CACHE_TIME_KEY = 'mobile-kg-cache-time';
+
 const MobileKnowledge: React.FC<Props> = ({ onBack }) => {
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [cachedAt, setCachedAt] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('doc-system-token') ||
@@ -22,8 +26,16 @@ const MobileKnowledge: React.FC<Props> = ({ onBack }) => {
             description: n.props?.description || n.props?.standard || '',
           }));
           setItems(mapped);
+          // 缓存到本地
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(mapped)); localStorage.setItem(CACHE_TIME_KEY, new Date().toLocaleString('zh-CN')); } catch {}
         }
-      }).catch(() => {}).finally(() => setLoading(false));
+      }).catch(() => {
+        // 离线回退
+        try {
+          const cached = localStorage.getItem(CACHE_KEY);
+          if (cached) { setItems(JSON.parse(cached)); setCachedAt(localStorage.getItem(CACHE_TIME_KEY) || ''); }
+        } catch {}
+      }).finally(() => setLoading(false));
   }, []);
 
   const filtered = search ? items.filter(i =>
@@ -36,6 +48,7 @@ const MobileKnowledge: React.FC<Props> = ({ onBack }) => {
         <button onClick={onBack} className="p-1"><ArrowLeft className="w-5 h-5 text-slate-600" /></button>
         <BookOpen className="w-5 h-5 text-indigo-500" />
         <h1 className="text-sm font-semibold text-slate-800">规范速查</h1>
+        {cachedAt && <span className="text-xs text-slate-400">缓存: {cachedAt}</span>}
       </header>
       <div className="px-4 py-3">
         <div className="relative">
