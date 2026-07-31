@@ -71,6 +71,7 @@ const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleThem
     { view: 'analysis', icon: <Sparkles className="w-6 h-6 text-purple-600" />, title: '智能分析', badge: '已上线', badgeColor: 'bg-green-100 text-green-700', desc: 'AI综合项目分析、风险预警、知识图谱、智能建议', border: 'border-emerald-300' },
     { view: 'construction-review', icon: <FileCheck className="w-6 h-6 text-amber-600" />, title: '施工组织设计审查', badge: '已上线', badgeColor: 'bg-green-100 text-green-700', desc: '专项方案+施组审查、标准合规验证、知识图谱追溯', border: 'border-amber-300' },
     { view: 'contract-review', icon: <FileText className="w-6 h-6 text-blue-600" />, title: '合同审查', badge: '已上线', badgeColor: 'bg-green-100 text-green-700', desc: '合同条款合规审查、风险条款识别、知识库标准对照', border: 'border-blue-300' },
+    { view: 'contract-manager', icon: <BookOpen className="w-6 h-6 text-violet-600" />, title: '合同管理', badge: 'NEW', badgeColor: 'bg-violet-500', desc: '合同台账·AI审查·生成模板·沉淀知识', border: 'border-violet-300', gradient: 'from-violet-50 to-purple-50' },
     { view: 'plan-generator', icon: <Sparkles className="w-6 h-6 text-green-600" />, title: 'AI方案生成', badge: 'Phase3', badgeColor: 'bg-green-100 text-green-700', desc: 'AI逐章生成施工方案、标准条款自动注入、Word导出', border: 'border-green-300' },
     { view: 'bid-review', icon: <FileSearch className="w-6 h-6 text-indigo-600" />, title: '招投标文件审查', badge: '已上线', badgeColor: 'bg-green-100 text-green-700', desc: '招标文件合规性审查、评标要素提取、知识库辅助', border: 'border-indigo-300' },
   ];

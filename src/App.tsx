@@ -42,6 +42,7 @@ import GlobalDashboard from './components/GlobalDashboard';
 import IssueManager from './components/IssueManager';
 import DesktopDailyReport from './components/DesktopDailyReport';
 import DesktopProgressView from './components/DesktopProgressView';
+import ContractManager from './components/ContractManager';
 import ExperiencePanel from './components/ExperiencePanel';
 import HomePage from './components/HomePage';
 import StandardSelectPage from './components/StandardSelectPage';
@@ -509,6 +510,11 @@ const App: React.FC = () => {
   // ===== 施工组织设计审查 =====
   if (view === 'construction-review' && currentProject) {
     return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>}><ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} /></Suspense>;
+  }
+
+  // ===== 合同管理 =====
+  if (view === 'contract-manager') {
+    return <ContractManager projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== 合同审查 =====
