@@ -51,6 +51,11 @@ export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
+        },
+      },
       input: {
         main: resolve(__dirname, 'index.html'),
         mobile: resolve(__dirname, 'mobile.html'),
@@ -59,6 +64,9 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify('/api'),
+  },
+  resolve: {
+    dedupe: ['react', 'react-dom'],
   },
   server: {
     port: 5300,
