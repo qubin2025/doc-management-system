@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, FolderOpen, ArrowRight, Send, User, LogOut, Sparkles, Plus, Settings, Paperclip, Image, BarChart3, ChevronDown, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
+import { Search, FolderOpen, ArrowRight, Send, User, Sparkles, Plus, Settings, Paperclip, Image, BarChart3, ChevronDown, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
 import { ProjectInfo } from '../types';
 import * as api from '../data/api';
 import { toast } from './Toast';
