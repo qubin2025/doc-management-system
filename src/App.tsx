@@ -42,7 +42,6 @@ import GlobalDashboard from './components/GlobalDashboard';
 import IssueManager from './components/IssueManager';
 import DesktopDailyReport from './components/DesktopDailyReport';
 import DesktopProgressView from './components/DesktopProgressView';
-import ErrorBoundary from './components/shared/ErrorBoundary';
 import ContractManager from './components/ContractManager';
 import KnowledgeReview from './components/KnowledgeReview';
 import ExperiencePanel from './components/ExperiencePanel';
