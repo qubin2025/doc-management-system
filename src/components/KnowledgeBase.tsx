@@ -16,6 +16,7 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [searchMode, setSearchMode] = useState<'fulltext'|'semantic'|'hybrid'>('fulltext');
   const [results, setResults] = useState<VectorDoc[]>([]);
   const [graphResults, setGraphResults] = useState<{nodes:any[];edges:any[]}|null>(null);
+  const [graphragTrace, setGraphragTrace] = useState<{nodes:any[];edges:any[];context:string}|null>(null);
   const [loading, setLoading] = useState(false);
   const [allDocs, setAllDocs] = useState<VectorDoc[]>([]);
   const [libFilter, setLibFilter] = useState(0);
@@ -71,6 +72,12 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
       }
     } catch (e: any) { toast('搜索失败: ' + e.message, 'error'); }
     finally { setLoading(false); }
+    // 合规查询→GraphRAG溯源
+    if (/标准|规范|GB|JGJ|DB|条款|合规|验收/.test(search.trim())) {
+      const token = localStorage.getItem('doc-system-token') || JSON.parse(localStorage.getItem('doc-system-auth')||'{}')?.token;
+      fetch('/api/kg/graphrag/search?keyword=' + encodeURIComponent(search.trim()) + '&depth=1&seedLimit=5', { headers: { Authorization: 'Bearer ' + (token||'') } })
+        .then(r => r.json()).then(d => { if (d.nodes) setGraphragTrace(d); }).catch(() => {});
+    } else { setGraphragTrace(null); }
   };
 
   // 分类统计
@@ -165,6 +172,25 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
                 <span key={n.id} className={`px-2 py-0.5 rounded-full text-[10px] ${n.type==='STANDARD'?'bg-blue-50 text-blue-600':n.type==='LOCATION'?'bg-green-50 text-green-600':'bg-gray-100 text-gray-600'}`}>{n.label}</span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* GraphRAG 溯源面板 */}
+        {graphragTrace && graphragTrace.nodes && graphragTrace.nodes.length > 0 && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4 mb-4">
+            <h3 className="text-xs font-semibold text-indigo-700 mb-2">GraphRAG 标准溯源 ({graphragTrace.nodes.length}节点)</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {graphragTrace.nodes.map((n: any) => (
+                <span key={n.id || n.label} className="px-2 py-0.5 rounded-full text-xs bg-white border border-indigo-200 text-indigo-700">{n.label?.slice(0, 50)}</span>
+              ))}
+            </div>
+            {graphragTrace.edges && graphragTrace.edges.length > 0 && (
+              <div className="mt-2 text-xs text-indigo-500">
+                {graphragTrace.edges.slice(0, 5).map((e: any, i: number) => (
+                  <span key={i} className="mr-3">{e.from} → {e.type} → {e.to}</span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
