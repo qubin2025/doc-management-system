@@ -22,6 +22,15 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [libFilter, setLibFilter] = useState(0);
   const [lifecycle, setLifecycle] = useState(0);
   const [profession, setProfession] = useState(0);
+  const [templates, setTemplates] = useState<any[]>([]);
+
+  // 方案模板库 → 读取 contract_templates
+  useEffect(() => {
+    if (libFilter !== 4) { setTemplates([]); return; } // 4 = 方案模板
+    const t = JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
+    fetch('/api/contracts/templates/list', { headers: { Authorization: 'Bearer ' + (t || '') } })
+      .then(r => r.json()).then(d => setTemplates(d || [])).catch(() => {});
+  }, [libFilter]);
 
   useEffect(() => {
     setAllDocs(vectorStore.getAllDocs());
@@ -170,6 +179,22 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
             <div className="flex flex-wrap gap-2">
               {graphResults.nodes.map((n:any) => (
                 <span key={n.id} className={`px-2 py-0.5 rounded-full text-[10px] ${n.type==='STANDARD'?'bg-blue-50 text-blue-600':n.type==='LOCATION'?'bg-green-50 text-green-600':'bg-gray-100 text-gray-600'}`}>{n.label}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 方案模板列表 */}
+        {libFilter === 4 && templates.length > 0 && (
+          <div className="bg-white rounded-xl border p-4 mb-4">
+            <h3 className="text-xs font-semibold text-violet-700 mb-2">方案模板 ({templates.length})</h3>
+            <div className="space-y-2">
+              {templates.map((t: any) => (
+                <div key={t.id} className="flex items-center gap-3 p-2 bg-violet-50 rounded-lg text-sm">
+                  <span className="font-medium text-gray-800">{t.name}</span>
+                  <span className="text-xs text-gray-400">{t.category}</span>
+                  <span className="text-xs text-gray-400 ml-auto">{t.created_at?.slice(0, 10)}</span>
+                </div>
               ))}
             </div>
           </div>
