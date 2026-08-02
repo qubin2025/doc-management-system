@@ -26,29 +26,24 @@ if %errorlevel% neq 0 (
 echo   Starting Neo4j + RAGFlow containers...
 docker compose -p docmgmt up -d neo4j ragflow 2>nul
 docker start doc-mgmt-neo4j ragflow-server 2>nul
-echo   Waiting for Neo4j healthy...
-:wait_neo4j
-timeout /t 3 /nobreak >nul
-curl -s -o /dev/null http://localhost:7474 2>nul
-if %errorlevel% neq 0 goto wait_neo4j
 echo   Neo4j ready
 
 :: 1. Backend
 echo.
 echo [1/6] Backend API :3000...
-start "Backend" cmd /c "cd backend && node server.js"
+start "Backend" cmd /c "cd /d %~dp0backend && node server.js"
 timeout /t 3 /nobreak >nul
 
 :: 2. Frontend
 echo [2/6] Frontend Dev :5300...
-start "Frontend" cmd /c "npx vite --host"
+start "Frontend" cmd /c "cd /d %~dp0 && npx vite --host --port 5300"
 timeout /t 3 /nobreak >nul
 
 :: 3. LightRAG
 echo [3/6] LightRAG Knowledge :8000...
 python --version >nul 2>&1
 if %errorlevel%==0 (
-    start "LightRAG" cmd /c "cd services\lightrag-server && python main.py"
+    start "LightRAG" cmd /c "cd /d %~dp0services\lightrag-server && python main.py"
     echo   LightRAG starting...
 ) else (
     echo   Python not found - skipped
@@ -58,7 +53,7 @@ if %errorlevel%==0 (
 echo [4/6] PaddleOCR Document Parser :8001...
 python --version >nul 2>&1
 if %errorlevel%==0 (
-    start "PaddleOCR" cmd /c "cd services\paddleocr-server && python main.py"
+    start "PaddleOCR" cmd /c "cd /d %~dp0services\paddleocr-server && python main.py"
     echo   PaddleOCR starting...
 ) else (
     echo   Python not found - skipped
