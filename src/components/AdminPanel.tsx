@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3, HardDrive } from 'lucide-react';
 import * as api from '../data/api';
 import { toast } from './Toast';
+import LocalStoragePanel from './LocalStoragePanel';
 
 interface User { id: number; username: string; display_name: string; role: string; permissions: string; is_active: number; created_at: string; }
 
@@ -18,6 +19,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const [form, setForm] = useState({ username: '', password: '', displayName: '', role: 'viewer', permissions: { can_upload: true, can_download: true, can_use_ai: false } });
   const [stats, setStats] = useState({ projects: 0, documents: 0, users: 0, activeUsers: 0, health: {} as any, uptime: 0, memory: 0 });
   const [aiStats, setAiStats] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'users' | 'storage'>('users');
 
   const fetchAiStats = async () => {
     try {
@@ -98,13 +100,17 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
             <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
             <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-xs">ZHJK</span></div>
             <h1 className="text-lg font-bold text-gray-800">系统管理</h1>
+            <div className="flex bg-gray-100 rounded-lg p-0.5 ml-4">
+              <button onClick={() => setActiveTab('users')} className={`px-3 py-1 text-xs rounded-md ${activeTab === 'users' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}>用户管理</button>
+              <button onClick={() => setActiveTab('storage')} className={`px-3 py-1 text-xs rounded-md flex items-center gap-1 ${activeTab === 'storage' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}><HardDrive size={12} />存储诊断</button>
+            </div>
           </div>
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"><Plus className="w-4 h-4" />添加用户</button>
+          {activeTab === 'users' && <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"><Plus className="w-4 h-4" />添加用户</button>}
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* 实时统计 */}
+        {activeTab === 'storage' ? <LocalStoragePanel /> : <>
         <div className="grid grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">项目数</div><div className="text-2xl font-black">{stats.projects}</div></div>
           <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">文档数</div><div className="text-2xl font-black">{stats.documents}</div></div>
@@ -298,6 +304,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
           </div>
         </div>
       )}
+    )}
     </div>
   );
 };
