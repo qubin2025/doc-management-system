@@ -40,24 +40,22 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
   const handleDeleteProject = async (projectName: string) => {
     if (!confirm('确定删除项目' + projectName + '？此操作不可恢复。')) return;
-    // 先清本地缓存再调API, 确保reload后不出现旧数据
-    const clearLocalCache = () => {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && (k.includes('doc-mgmt-projects') || k.includes('doc-mgmt-upload-'))) {
-          try {
-            const v = JSON.parse(localStorage.getItem(k) || '[]');
-            if (Array.isArray(v)) localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || x.projectName || '') !== projectName)));
-          } catch {}
-        }
-      }
-    };
-    clearLocalCache();
+    // 写入删除黑名单, 所有数据源统一过滤
+    const deleted = JSON.parse(localStorage.getItem('deleted-projects') || '[]');
+    deleted.push(projectName);
+    localStorage.setItem('deleted-projects', JSON.stringify(deleted));
+    // 清除双规程缓存
+    for (const std of ['DB11/T695-2025', 'DB11/T808-2020']) {
+      const key = 'doc-mgmt-projects-' + std;
+      try {
+        const v = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(v)) localStorage.setItem(key, JSON.stringify(v.filter((x: any) => (x.name || x.projectName || '') !== projectName)));
+      } catch {}
+    }
     try {
       await api.deleteProjectApi(projectName);
       toast('项目已删除', 'success');
     } catch {
-      // API失败但本地缓存已清, 仍可reload
       toast('项目已从本地删除', 'success');
     }
     setTimeout(() => window.location.reload(), 300);
