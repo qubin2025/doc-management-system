@@ -304,7 +304,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
           </div>
         </div>
       )}
-    )}
+    </>)}
     </div>
   );
 };
