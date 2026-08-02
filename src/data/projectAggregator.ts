@@ -30,7 +30,7 @@ export interface ProjectDeadline {
 export interface ProjectInfo {
   name: string;
   createdAt: string;
-  standard: string;
+  standard?: string;
   details?: any;
 }
 

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { computeIndicators, ProjectIndicators } from '../data/indicatorEngine';
 import { getTheme, setTheme, type ThemeMode } from '../data/themeEngine';
-import { loadAllProjects, extractAllPhotos, extractRecentDocUpdates, extractProjectDeadlines, getProjectPhotoCount, getProjectDocCount, countNewThisMonth, countNewThisWeek, fetchMobilePhotoStats, fetchMobilePhotosPreview, ProjectInfo, MobilePhotoStat } from '../data/projectAggregator';
+import { extractAllPhotos, extractRecentDocUpdates, extractProjectDeadlines, getProjectPhotoCount, getProjectDocCount, countNewThisMonth, countNewThisWeek, fetchMobilePhotoStats, fetchMobilePhotosPreview, ProjectInfo, MobilePhotoStat } from '../data/projectAggregator';
 import { getUnreadCount, getAllNotifications, markRead, markAllRead, deleteNotification, MobileNotification } from '../data/mobileNotifications';
 
 // ========== 类型 ==========
@@ -15,6 +15,7 @@ interface Props {
   onLogout?: () => void;
   isAdmin?: boolean;
   standard?: string;
+  projects: ProjectInfo[];
 }
 
 type SortKey = 'risk' | 'progress' | 'recent' | 'name';
@@ -157,8 +158,7 @@ const PhotoLightbox: React.FC<{ photos: { fileName: string; dataUrl?: string; pr
 };
 
 // ========== 全局看板主组件 ==========
-const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAdmin, standard }) => {
-  const [projects, setProjects] = useState<ProjectInfo[]>([]);
+const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAdmin, standard, projects }) => {
   const [indicators, setIndicators] = useState<Map<string, ProjectIndicators>>(new Map());
   const [photos, setPhotos] = useState<ReturnType<typeof extractAllPhotos>>([]);
   const [mobilePhotos, setMobilePhotos] = useState<ReturnType<typeof extractAllPhotos>>([]);
@@ -177,24 +177,17 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getTheme());
   const notifCount = useMemo(() => getUnreadCount(), [refreshing, notifPanel]);
 
-  // 加载数据 — 同步取 localStorage，异步取后端 API
-  const loadData = useCallback(async () => {
-    const projList = loadAllProjects();
-    setProjects(projList);
-
+  // 从props加载辅助数据（projects由App.tsx统一管理）
+  const loadData = useCallback(() => {
     const map = new Map<string, ProjectIndicators>();
-    for (const p of projList) { map.set(p.name, computeIndicators(p.name)); }
+    for (const p of projects) { map.set(p.name, computeIndicators(p.name)); }
     setIndicators(map);
-
-    // 同步：localStorage 内的照片/文档
-    setPhotos(extractAllPhotos(projList));
-    setDocUpdates(extractRecentDocUpdates(projList));
-    setDeadlines(extractProjectDeadlines(projList));
-
-    // 异步：手机端水印照片（后端 API）
-    fetchMobilePhotoStats(projList).then(setMobileStats).catch(() => {});
+    setPhotos(extractAllPhotos(projects));
+    setDocUpdates(extractRecentDocUpdates(projects));
+    setDeadlines(extractProjectDeadlines(projects));
+    fetchMobilePhotoStats(projects).then(setMobileStats).catch(() => {});
     fetchMobilePhotosPreview(12).then(setMobilePhotos).catch(() => {});
-  }, []);
+  }, [projects]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

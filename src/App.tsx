@@ -641,6 +641,7 @@ const App: React.FC = () => {
   if (view === 'dashboard-global') {
     return (
       <GlobalDashboard
+        projects={projects}
         onNavigate={(v, params) => {
           if (v === 'dashboard' && params?.projectName) {
             setCurrentProject(params.projectName);
