@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalStorage 诊断与清理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f8fafc;color:#334155;padding:2rem;line-height:1.6}
+.container{max-width:900px;margin:0 auto}
+h1{font-size:1.4rem;color:#1e40af;margin-bottom:.5rem}
+.sub{color:#64748b;font-size:.85rem;margin-bottom:2rem}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0}
+.card h3{font-size:1rem;color:#334155;margin-bottom:.8rem}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th,td{border:1px solid #e2e8f0;padding:.4rem .6rem;text-align:left}
+th{background:#f1f5f9;font-weight:600;font-size:.75rem}
+.tag{display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.7rem;font-weight:600}
+.tag-red{background:#fef2f2;color:#dc2626}.tag-green{background:#f0fdf4;color:#16a34a}.tag-amber{background:#fffbeb;color:#d97706}
+.btn{padding:.5rem 1rem;border:none;border-radius:6px;font-size:.8rem;cursor:pointer;font-weight:600;transition:all .2s}
+.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
+.btn-amber{background:#f59e0b;color:#fff}.btn-amber:hover{background:#d97706}
+.btn-blue{background:#3b82f6;color:#fff;margin-left:.5rem}.btn-blue:hover{background:#2563eb}
+.btn-gray{background:#e2e8f0;color:#64748b}.btn-gray:hover{background:#cbd5e1}
+.flex{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.total{font-size:.85rem;color:#64748b;margin-bottom:1rem}
+.selected{background:#eff6ff!important}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>LocalStorage 诊断与清理</h1>
+<p class="sub">扫描浏览器 localStorage 中所有与项目相关的存储条目</p>
+
+<div id="stats" class="total">扫描中…</div>
+
+<div id="projectsCard" class="card" style="display:none">
+  <h3>📋 项目列表中的项目</h3>
+  <p style="font-size:.8rem;color:#64748b;margin-bottom:.8rem">来源: doc-mgmt-projects-DB11/T695-2025 和 doc-mgmt-projects-DB11/T808-2020</p>
+  <div id="projectList"></div>
+</div>
+
+<div id="orphanCard" class="card" style="display:none">
+  <h3>👻 孤立数据（已不在项目列表中但仍占用存储的项目名）</h3>
+  <p style="font-size:.8rem;color:#64748b;margin-bottom:.8rem">这些项目已从列表中删除，但相关数据（上传/指南/日报/表单等）残余在 localStorage 中</p>
+  <div id="orphanList"></div>
+</div>
+
+<div id="allKeysCard" class="card" style="display:none">
+  <h3>📦 全部键值 (共 <span id="totalKeys">0</span> 条)</h3>
+  <div id="keyList"></div>
+</div>
+
+<div id="actions" style="display:none" class="flex">
+  <button class="btn btn-red" onclick="cleanAll()">🗑 重置全部项目数据</button>
+  <button class="btn btn-amber" onclick="cleanOrphan()">🧹 清除全部孤立数据</button>
+  <button class="btn btn-blue" onclick="location.reload()">🔄 刷新扫描</button>
+</div>
+
+</div>
+<script>
+function formatSize(bytes) { return bytes > 1024 ? (bytes/1024).toFixed(1)+'KB' : bytes+'B'; }
+
+function scan() {
+  const allKeys = [];
+  const projectNames = new Set();
+  const projectKeyPatterns = ['doc-mgmt-projects-DB11/T695', 'doc-mgmt-projects-DB11/T808'];
+
+  // 从项目列表中提取项目名
+  for (const pk of projectKeyPatterns) {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(pk)) {
+        try {
+          const v = JSON.parse(localStorage.getItem(k) || '[]');
+          if (Array.isArray(v)) v.forEach(p => { if (p.name) projectNames.add(p.name); });
+        } catch {}
+      }
+    }
+  }
+
+  // 扫描所有键
+  let totalSize = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    const v = localStorage.getItem(k) || '';
+    const size = new Blob([v]).size;
+    totalSize += size;
+
+    let category = '其他';
+    if (k.startsWith('doc-mgmt-projects-')) category = '项目列表';
+    else if (k.startsWith('doc-mgmt-upload-')) category = '上传数据';
+    else if (k.includes('guide-') || k.includes('-modules') || k.includes('-done')) category = '指南数据';
+    else if (k.startsWith('form-')) category = '表单数据';
+    else if (k.startsWith('desktop-')) category = '日报/问题';
+    else if (k.startsWith('objective-') || k.includes('tailoring-')) category = '目标/裁剪';
+    else if (k === 'doc-system-auth' || k.includes('token')) category = '认证';
+    else if (k.startsWith('experience-') || k.includes('stakeholder')) category = '经验/干系人';
+
+    // 从键名中提取可能关联的项目名
+    let relatedProjects = [];
+    for (const pn of projectNames) {
+      if (k.includes(pn) || v.includes(pn)) relatedProjects.push(pn);
+    }
+
+    allKeys.push({ key: k, size, category, relatedProjects, value: v.slice(0, 80) });
+  }
+
+  // 找孤立项目名
+  const orphanNames = [];
+  const allNamesSet = new Set();
+  allKeys.forEach(k => {
+    if (k.key === 'doc-system-auth' || k.key === 'doc-system-token' || k.key.includes('mobile-') && !k.key.includes('doc-mgmt')) return;
+    const text = k.key + k.value;
+    projectNames.forEach(pn => { if (text.includes(pn)) allNamesSet.add(pn); });
+  });
+  projectNames.forEach(pn => { if (!allNamesSet.has(pn)) orphanNames.push(pn); });
+
+  // 从所有键值字符串中提取疑似孤立项目名
+  const orphanFromKeys = new Set();
+  allKeys.forEach(k => {
+    if (k.category !== '项目列表' && k.category !== '认证') {
+      const matches = k.key.match(/doc-mgmt-upload-([A-Z0-9/\\-]+)/);
+      if (matches && matches[1] && !projectNames.has(matches[1])) orphanFromKeys.add(matches[1]);
+    }
+  });
+
+  // 渲染
+  document.getElementById('stats').innerHTML =
+    '总条目: <b>' + allKeys.length + '</b> · 总大小: <b>' + formatSize(totalSize) + '</b> · 项目数: <b>' + projectNames.size + '</b>' +
+    (orphanNames.length + orphanFromKeys.size > 0 ? ' · 孤立数据: <b style="color:#dc2626">' + (orphanNames.length + orphanFromKeys.size) + '处</b>' : '');
+
+  // 项目列表
+  if (projectNames.size > 0) {
+    document.getElementById('projectsCard').style.display = 'block';
+    document.getElementById('projectList').innerHTML =
+      '<table><tr><th>项目名</th><th>关联键数</th><th>关联大小</th><th>操作</th></tr>' +
+      [...projectNames].map(pn => {
+        const related = allKeys.filter(k => k.relatedProjects.includes(pn));
+        const relSize = related.reduce((s, k) => s + k.size, 0);
+        return '<tr><td>' + pn + '</td><td>' + related.length + ' 条</td><td>' + formatSize(relSize) + '</td>' +
+          '<td><button class="btn btn-red" style="font-size:.7rem;padding:.2rem .5rem" onclick="cleanProject(\'' + pn.replace(/'/g, "\\'") + '\')">清除此项目全部数据</button></td></tr>';
+      }).join('') + '</table>';
+  }
+
+  // 孤立数据
+  const allOrphans = [...new Set([...orphanNames, ...orphanFromKeys])];
+  if (allOrphans.length > 0) {
+    document.getElementById('orphanCard').style.display = 'block';
+    document.getElementById('orphanList').innerHTML =
+      '<p style="font-size:.8rem;color:#dc2626;margin-bottom:.5rem">以下项目名出现在 localStorage 数据中，但不在项目列表中：</p>' +
+      allOrphans.map(on => '<span class="tag tag-red" style="margin:2px">' + on + '</span>').join(' ') +
+      '<br><br><button class="btn btn-red" onclick="cleanOrphan()">清除全部孤立数据</button>';
+  }
+
+  // 全部键值
+  document.getElementById('allKeysCard').style.display = 'block';
+  document.getElementById('totalKeys').textContent = allKeys.length;
+  document.getElementById('keyList').innerHTML =
+    '<table style="table-layout:fixed"><tr><th style="width:40%">键名</th><th style="width:10%">分类</th><th style="width:10%">大小</th><th style="width:40%">内容预览</th></tr>' +
+    allKeys.map(k => '<tr><td style="word-break:break-all;font-size:.7rem">' + k.key + '</td><td>' + k.category + '</td><td>' + formatSize(k.size) + '</td><td style="font-size:.7rem;color:#64748b;word-break:break-all">' + k.value + '</td></tr>').join('') +
+    '</table>';
+
+  document.getElementById('actions').style.display = 'flex';
+
+  window._scanData = { allKeys, projectNames, allOrphans };
+}
+
+function cleanProject(name) {
+  if (!confirm('确定删除项目"' + name + '"的全部 localStorage 数据？此操作不可恢复。')) return;
+  let count = 0;
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k.includes(name)) { keysToRemove.push(k); }
+    // 项目列表数组中的条目
+    if (k.startsWith('doc-mgmt-projects-')) {
+      try {
+        const v = JSON.parse(localStorage.getItem(k) || '[]');
+        if (Array.isArray(v)) {
+          localStorage.setItem(k, JSON.stringify(v.filter(x => (x.name || '') !== name)));
+        }
+      } catch {}
+    }
+  }
+  keysToRemove.forEach(k => { localStorage.removeItem(k); count++; });
+  alert('已清除 ' + count + ' 条关联数据，页面即将刷新');
+  location.reload();
+}
+
+function cleanOrphan() {
+  if (!confirm('确定清除全部孤立数据？这将删除所有不在项目列表中的残余条目。')) return;
+  let count = 0;
+  const data = window._scanData;
+  if (!data) return;
+  const orphans = new Set(data.allOrphans);
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    for (const on of orphans) {
+      if (k.includes(on)) { localStorage.removeItem(k); count++; break; }
+    }
+  }
+  alert('已清除 ' + count + ' 条孤立数据');
+  location.reload();
+}
+
+function cleanAll() {
+  if (!confirm('⚠ 确定重置全部项目数据？认证信息保留，其余全部清除。')) return;
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k === 'doc-system-auth' || k === 'doc-system-token' || k === 'document-management-standard') continue;
+    localStorage.removeItem(k);
+  }
+  alert('已清除全部项目数据（认证信息保留）');
+  location.reload();
+}
+
+scan();
+</script>
+</body>
+</html>
