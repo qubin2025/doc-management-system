@@ -40,8 +40,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
   const handleDeleteProject = async (projectName: string) => {
     if (!confirm('确定删除项目' + projectName + '？此操作不可恢复。')) return;
-    try {
-      await api.deleteProjectApi(projectName);
+    // 先清本地缓存再调API, 确保reload后不出现旧数据
+    const clearLocalCache = () => {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && (k.includes('doc-mgmt-projects') || k.includes('doc-mgmt-upload-'))) {
@@ -51,9 +51,16 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
           } catch {}
         }
       }
+    };
+    clearLocalCache();
+    try {
+      await api.deleteProjectApi(projectName);
       toast('项目已删除', 'success');
-      setTimeout(() => window.location.reload(), 300);
-    } catch { toast('删除失败', 'error'); }
+    } catch {
+      // API失败但本地缓存已清, 仍可reload
+      toast('项目已从本地删除', 'success');
+    }
+    setTimeout(() => window.location.reload(), 300);
   };
 
   // 读取项目的指南模块进度

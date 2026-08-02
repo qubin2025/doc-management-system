@@ -37,7 +37,21 @@ router.delete('/:id', requireRole('admin'), (req, res) => {
   if (!project) {
     return res.status(404).json({ error: '项目不存在' });
   }
-  db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
+  // 级联删除所有关联数据
+  db.prepare('DELETE FROM documents WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM objectives WHERE project_name = (SELECT name FROM projects WHERE id = ?)').run(req.params.id);
+  db.prepare('DELETE FROM baselines WHERE project_name = (SELECT name FROM projects WHERE id = ?)').run(req.params.id);
+  db.prepare('DELETE FROM daily_reports WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM mobile_photos WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM mobile_issues WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM mobile_progress WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM project_experiences WHERE project_name = (SELECT name FROM projects WHERE id = ?)').run(req.params.id);
+  db.prepare('DELETE FROM stakeholders WHERE project_name = (SELECT name FROM projects WHERE id = ?)').run(req.params.id);
+  // 删除项目本身
+  const result = db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
+  if (result.changes === 0) {
+    return res.status(500).json({ error: '删除失败，请重试' });
+  }
   res.json({ success: true });
 });
 
