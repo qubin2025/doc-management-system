@@ -41,8 +41,6 @@ const STANDARDS = ['DB11/T695-2025', 'DB11/T808-2020'] as const;
 export function loadAllProjects(): ProjectInfo[] {
   const seen = new Set<string>();
   const results: ProjectInfo[] = [];
-  // 删除黑名单
-  const deleted: string[] = JSON.parse(localStorage.getItem('deleted-projects') || '[]');
   try {
     for (const std of STANDARDS) {
       const raw = localStorage.getItem(`doc-mgmt-projects-${std}`);
@@ -50,7 +48,7 @@ export function loadAllProjects(): ProjectInfo[] {
       const list = JSON.parse(raw);
       if (!Array.isArray(list)) continue;
       for (const p of list) {
-        if (p.name && !seen.has(p.name) && !deleted.includes(p.name)) {
+        if (p.name && !seen.has(p.name)) {
           seen.add(p.name);
           results.push({
             name: p.name,

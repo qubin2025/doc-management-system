@@ -131,7 +131,6 @@ const App: React.FC = () => {
           const list = await api.fetchProjects();
           setProjects(list);
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
-          localStorage.removeItem('deleted-projects'); // API成功, 黑名单已无意义
         } catch {
           loadProjectsFromLocal();
         }
@@ -142,13 +141,7 @@ const App: React.FC = () => {
 
     function loadProjectsFromLocal() {
       const s = localStorage.getItem(PROJECTS_KEY);
-      if (!s) return;
-      try {
-        let list = JSON.parse(s);
-        const deleted = JSON.parse(localStorage.getItem('deleted-projects') || '[]');
-        if (deleted.length > 0) list = list.filter((p: any) => !deleted.includes(p.name));
-        setProjects(list);
-      } catch { setProjects([]); }
+      if (s) { try { setProjects(JSON.parse(s)); } catch { setProjects([]); } }
     }
   }, [apiAvailable, PROJECTS_KEY]);
 

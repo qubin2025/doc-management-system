@@ -39,25 +39,30 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   const [aiLoading, setAiLoading] = useState(false);
 
   const handleDeleteProject = async (projectName: string) => {
-    if (!confirm('确定删除项目' + projectName + '？此操作不可恢复。')) return;
-    // 写入删除黑名单, 所有数据源统一过滤
-    const deleted = JSON.parse(localStorage.getItem('deleted-projects') || '[]');
-    deleted.push(projectName);
-    localStorage.setItem('deleted-projects', JSON.stringify(deleted));
-    // 清除双规程缓存
-    for (const std of ['DB11/T695-2025', 'DB11/T808-2020']) {
-      const key = 'doc-mgmt-projects-' + std;
-      try {
-        const v = JSON.parse(localStorage.getItem(key) || '[]');
-        if (Array.isArray(v)) localStorage.setItem(key, JSON.stringify(v.filter((x: any) => (x.name || x.projectName || '') !== projectName)));
-      } catch {}
+    if (!confirm('确定删除项目"' + projectName + '"？此操作将彻底清除该项目全部数据，不可恢复。')) return;
+    // 物理清除 localStorage 中所有与该项目相关的键
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      // 项目列表
+      if (k.startsWith('doc-mgmt-projects-')) {
+        try {
+          const v = JSON.parse(localStorage.getItem(k) || '[]');
+          if (Array.isArray(v)) {
+            localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || '') !== projectName)));
+          }
+        } catch {}
+      }
+      // 项目专属数据 (上传/指南/日报/目标/表单等)
+      if (k.includes(projectName)) {
+        keysToRemove.push(k);
+      }
     }
-    try {
-      await api.deleteProjectApi(projectName);
-      toast('项目已删除', 'success');
-    } catch {
-      toast('项目已从本地删除', 'success');
-    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    // 后端级联删除
+    try { await api.deleteProjectApi(projectName); } catch {}
+    toast('项目已彻底删除', 'success');
     setTimeout(() => window.location.reload(), 300);
   };
 
