@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3, HardDrive } from 'lucide-react';
 import * as api from '../data/api';
 import { toast } from './Toast';
@@ -110,7 +110,8 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'storage' ? <LocalStoragePanel /> : <>
+        {activeTab === 'storage' && <LocalStoragePanel />}
+        {activeTab === 'users' && <React.Fragment>
         <div className="grid grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">项目数</div><div className="text-2xl font-black">{stats.projects}</div></div>
           <div className="bg-white rounded-xl border p-4"><div className="text-xs text-gray-500">文档数</div><div className="text-2xl font-black">{stats.documents}</div></div>
@@ -304,7 +305,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
           </div>
         </div>
       )}
-    </>)}
+    </React.Fragment>}
     </div>
   );
 };
