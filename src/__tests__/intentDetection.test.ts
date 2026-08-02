@@ -22,9 +22,10 @@ describe('Knowledge Orchestrator — Intent Detection', () => {
     expect(detectIntent('日报格式示例')).toBe('template');
   });
 
-  it('detects exact match intent', () => {
-    expect(detectIntent('GB50300-2013')).toBe('exact');
-    expect(detectIntent('JGJ59-2011')).toBe('exact');
+  it('detects exact match intent for non-standard IDs', () => {
+    expect(detectIntent('A3-1')).toBe('exact');
+    expect(detectIntent('GF-2017-0201')).toBe('regulation'); // 标准编号优先走regulation
+    expect(detectIntent('12345')).toBe('exact');
   });
 
   it('returns general for ambiguous queries', () => {

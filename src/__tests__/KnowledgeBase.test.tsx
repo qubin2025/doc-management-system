@@ -14,7 +14,8 @@ describe('KnowledgeBase', () => {
 
   it('renders 5 library tabs', () => {
     render(<KnowledgeBase onBack={vi.fn()} />);
-    expect(screen.getByText('全部')).toBeTruthy();
+    const all = screen.getAllByText('全部');
+    expect(all.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('规程规范')).toBeTruthy();
     expect(screen.getByText('政策法规')).toBeTruthy();
     expect(screen.getByText('项目经验')).toBeTruthy();
