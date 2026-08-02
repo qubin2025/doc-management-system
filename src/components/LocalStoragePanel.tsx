@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
 interface KeyInfo { key: string; size: number; category: string; relatedProjects: string[]; value: string; }
-interface ProjectInfo { name: string; keys: number; size: number; }
 
 function fmtSize(b: number) { return b > 1024 ? (b / 1024).toFixed(1) + ' KB' : b + ' B'; }
 
