@@ -18,6 +18,7 @@ export async function fetchProjectsWithId(): Promise<MobileProject[]> {
   const res = await fetch(`${API_BASE}/projects`, { headers: jsonHeaders() });
   if (!res.ok) throw new Error('获取项目列表失败');
   const data = await res.json();
+  if (!Array.isArray(data)) return [];
   return data.map((p: any) => ({ id: p.id, name: p.name }));
 }
 
