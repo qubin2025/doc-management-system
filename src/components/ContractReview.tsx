@@ -45,6 +45,16 @@ const ContractReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [report, setReport] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // 审查完成→持久化到后端
+  useEffect(() => {
+    if (clauses.length === 0 || !report) return;
+    const token = JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
+    fetch('/api/ai/review/history', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+      body: JSON.stringify({ projectName, reviewType: 'contract', fileName: file?.name || '', results: clauses, report: report.slice(0, 5000) }),
+    }).catch(() => {});
+  }, [clauses, report]);
+
   // 历史记录
   const [history, setHistory] = useState<HistoryItem[]>(loadHistory);
   const [showHistory, setShowHistory] = useState(false);
