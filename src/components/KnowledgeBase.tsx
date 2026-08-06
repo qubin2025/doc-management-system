@@ -190,11 +190,11 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
             {templates.map((t: any) => <div key={t.id} className="flex gap-3 p-2 bg-violet-50 rounded-lg text-sm"><span className="font-medium">{t.name}</span><span className="text-xs text-gray-400">{t.category}</span><span className="text-xs text-gray-400 ml-auto">{t.created_at?.slice(0, 10)}</span></div>)}
           </div>
         )}
-        {graphragTrace?.nodes?.length > 0 && (
+        {graphragTrace?.nodes && graphragTrace.nodes.length > 0 && (
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4 mb-4">
             <h3 className="text-xs font-semibold text-indigo-700 mb-2">GraphRAG 标准溯源 ({graphragTrace.nodes.length}节点)</h3>
             <div className="flex flex-wrap gap-1.5">{graphragTrace.nodes.map((n: any) => <span key={n.id||n.label} className="px-2 py-0.5 rounded-full text-xs bg-white border border-indigo-200 text-indigo-700">{n.label?.slice(0,50)}</span>)}</div>
-            {graphragTrace.edges?.length > 0 && <div className="mt-2 text-xs text-indigo-500">{graphragTrace.edges.slice(0,5).map((e:any,i:number)=><span key={i} className="mr-3">{e.from}→{e.type}→{e.to}</span>)}</div>}
+            {graphragTrace.edges && graphragTrace.edges.length > 0 && <div className="mt-2 text-xs text-indigo-500">{graphragTrace.edges.slice(0,5).map((e:any,i:number)=><span key={i} className="mr-3">{e.from}→{e.type}→{e.to}</span>)}</div>}
           </div>
         )}
 
