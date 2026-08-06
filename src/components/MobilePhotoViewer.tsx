@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Camera, MapPin, Clock, User as UserIcon, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { listMobilePhotos, getMobilePhotoFile, fetchProjectsWithId, MobilePhotoItem } from '../mobile/data/mobileApi';
+import React, { useEffect, useState, useRef } from 'react';
+import { ArrowLeft, Camera, MapPin, Clock, User as UserIcon, Loader2, X, ChevronLeft, ChevronRight, Upload, Trash2 } from 'lucide-react';
+import { listMobilePhotos, getMobilePhotoFile, fetchProjectsWithId, deleteMobilePhoto, uploadDisplayPhoto, MobilePhotoItem } from '../mobile/data/mobileApi';
+import { toast } from './Toast';
 
 /** 单个照片缩略卡片 — 通过 API 带 Auth 头加载图片(base64) */
 const PhotoCard: React.FC<{ photo: MobilePhotoItem; onClick: () => void; formatTime: (t: string) => string }> = ({ photo, onClick, formatTime }) => {
@@ -45,6 +46,11 @@ const MobilePhotoViewer: React.FC<Props> = ({ projectName, onBack }) => {
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [previewData, setPreviewData] = useState('');
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const auth = JSON.parse(localStorage.getItem('doc-system-auth') || '{}');
+  const canManage = auth?.user?.role === 'admin' || auth?.user?.role === 'project_manager';
 
   const load = async () => {
     setLoading(true);
@@ -63,6 +69,31 @@ const MobilePhotoViewer: React.FC<Props> = ({ projectName, onBack }) => {
   };
 
   useEffect(() => { load(); }, [projectName]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files; if (!files?.length) return;
+    setUploading(true);
+    try {
+      const projects = await fetchProjectsWithId();
+      const proj = projects.find(p => p.name === projectName);
+      if (!proj) throw new Error('找不到项目');
+      for (let i = 0; i < files.length; i++) {
+        await uploadDisplayPhoto(files[i], proj.id);
+      }
+      toast('照片上传成功', 'success');
+      load();
+    } catch (err: any) { toast('上传失败: ' + (err.message || '网络错误'), 'error'); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('确定删除这张照片？')) return;
+    try {
+      await deleteMobilePhoto(id);
+      setPhotos(prev => prev.filter(p => p.id !== id));
+      toast('已删除', 'success');
+    } catch { toast('删除失败', 'error'); }
+  };
 
   // 大图预览
   const openPreview = async (index: number) => {
@@ -102,6 +133,12 @@ const MobilePhotoViewer: React.FC<Props> = ({ projectName, onBack }) => {
           </h1>
           <p className="text-xs text-gray-500">项目：{projectName} · 共 {photos.length} 张</p>
         </div>
+        {canManage && (
+          <label className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm cursor-pointer transition ${uploading ? 'bg-gray-300 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+            <Upload className="w-4 h-4" /> {uploading ? '上传中…' : '上传照片'}
+            <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handleUpload} disabled={uploading} />
+          </label>
+        )}
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
@@ -128,7 +165,16 @@ const MobilePhotoViewer: React.FC<Props> = ({ projectName, onBack }) => {
         {!loading && photos.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {photos.map((p, i) => (
-              <PhotoCard key={p.id} photo={p} onClick={() => openPreview(i)} formatTime={formatTime} />
+              <div key={p.id} className="relative group">
+                <PhotoCard photo={p} onClick={() => openPreview(i)} formatTime={formatTime} />
+                {canManage && (
+                  <button onClick={e => { e.stopPropagation(); handleDelete(p.id); }}
+                    className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-red-50 rounded-lg shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="删除照片">
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         )}

@@ -232,6 +232,22 @@ router.get('/photo/file/:id', requireAuth, (req, res) => {
   res.status(404).json({ error: '照片文件不可用' });
 });
 
+// DELETE 照片（管理员/项目经理）
+router.delete('/photo/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const photo = db.prepare('SELECT file_path FROM mobile_photos WHERE id = ?').get(req.params.id);
+  if (!photo) return res.status(404).json({ error: '照片不存在' });
+  // 删除磁盘文件
+  try {
+    let rel = (photo.file_path || '').replace(/\\/g, '/');
+    if (/^files[\/\\]/.test(rel)) rel = rel.replace(/^files[\/\\]/, '');
+    rel = rel.replace(/^\/+/, '');
+    if (rel) { const fp = path.resolve(FILES_ROOT, rel); if (isPathSafe(fp, FILES_ROOT)) fs.unlinkSync(fp); }
+  } catch {}
+  db.prepare('DELETE FROM mobile_photos WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
 // ===== 7. 定位信息获取 =====
 router.get('/location/get', requireAuth, (req, res) => {
   const { lat, lng } = req.query;

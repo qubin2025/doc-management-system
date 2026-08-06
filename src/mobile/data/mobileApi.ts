@@ -96,6 +96,22 @@ export async function getMobilePhotoFile(id: number): Promise<{ fileName: string
   return await res.json();
 }
 
+export async function deleteMobilePhoto(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/mobile/photo/${id}`, { method: 'DELETE', headers: jsonHeaders() });
+  if (!res.ok) throw new Error('删除照片失败');
+}
+
+/** 桌面端直接上传照片 (FormData, 不含水印), 用于项目展示 */
+export async function uploadDisplayPhoto(file: File, projectId: number, location?: string): Promise<{ id: number }> {
+  const fd = new FormData();
+  fd.append('photo', file);
+  fd.append('projectId', String(projectId));
+  if (location) fd.append('location', location);
+  const res = await fetch(`${API_BASE}/mobile/photo/upload`, { method: 'POST', headers: authHeaders(), body: fd });
+  if (!res.ok) throw new Error('上传失败');
+  return await res.json();
+}
+
 /** 拉取云端模板列表，解析 template_data 为 WatermarkTemplate（解析失败的条目跳过） */
 export async function listTemplatesCloud(): Promise<WatermarkTemplate[]> {
   const res = await fetch(`${API_BASE}/mobile/template/list`, { headers: jsonHeaders() });
