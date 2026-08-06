@@ -97,7 +97,9 @@ const App: React.FC = () => {
   const PROJECTS_KEY = `doc-mgmt-projects-${standard}`;
 
   // ===== API 可用性 =====
-  const [apiAvailable, setApiAvailable] = useState(false);
+  // 有本地token时优先假定API可用(避免空localStorage覆盖), checkConnection异步验证
+  const hasToken = !!(localStorage.getItem(AUTH_KEY) || localStorage.getItem('doc-system-token'));
+  const [apiAvailable, setApiAvailable] = useState(hasToken);
   const [apiChecking, setApiChecking] = useState(true);
 
   useEffect(() => {
@@ -202,6 +204,8 @@ const App: React.FC = () => {
     localStorage.setItem(AUTH_KEY, JSON.stringify(authState));
     api.setAuthToken(authState.token);
     setView('dashboard-global');
+    // 登录成功证明API可用, 立即标记避免加载空localStorage
+    if (!apiAvailable) setApiAvailable(true);
   };
 
   const handleLogout = () => {
