@@ -40,30 +40,28 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
   const handleDeleteProject = async (projectName: string) => {
     if (!confirm('确定删除项目"' + projectName + '"？此操作将彻底清除该项目全部数据，不可恢复。')) return;
-    // 物理清除 localStorage 中所有与该项目相关的键
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k) continue;
-      // 项目列表
-      if (k.startsWith('doc-mgmt-projects-')) {
-        try {
-          const v = JSON.parse(localStorage.getItem(k) || '[]');
-          if (Array.isArray(v)) {
-            localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || '') !== projectName)));
-          }
-        } catch {}
+    try {
+      // 先调后端API
+      await api.deleteProjectApi(projectName);
+      // API成功 → 清除本地缓存
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('doc-mgmt-projects-')) {
+          try {
+            const v = JSON.parse(localStorage.getItem(k) || '[]');
+            if (Array.isArray(v)) localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || '') !== projectName)));
+          } catch {}
+        }
+        if (k.includes(projectName)) keysToRemove.push(k);
       }
-      // 项目专属数据 (上传/指南/日报/目标/表单等)
-      if (k.includes(projectName)) {
-        keysToRemove.push(k);
-      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      toast('项目已彻底删除', 'success');
+      setTimeout(() => window.location.reload(), 300);
+    } catch (e: any) {
+      toast('删除失败: ' + (e.message || '后端未响应'), 'error');
     }
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-    // 后端级联删除
-    try { await api.deleteProjectApi(projectName); } catch {}
-    toast('项目已彻底删除', 'success');
-    setTimeout(() => window.location.reload(), 300);
   };
 
   // 读取项目的指南模块进度

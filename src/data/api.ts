@@ -111,8 +111,12 @@ export async function createProject(name: string): Promise<any> {
 export async function deleteProjectApi(projectName: string): Promise<void> {
   const projects = await fetchProjects();
   const proj = projects.find(p => p.name === projectName);
-  if (!proj) return;
-  await fetch(`${API_BASE}/projects/${(proj as any).id}`, { method: 'DELETE', headers: headers() });
+  if (!proj) throw new Error('项目不存在');
+  const res = await fetch(`${API_BASE}/projects/${(proj as any).id}`, { method: 'DELETE', headers: headers() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error || `删除失败(HTTP ${res.status})`);
+  }
 }
 
 // ========== 文档 ==========
