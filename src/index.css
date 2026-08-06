@@ -471,3 +471,13 @@ html {
 /* 支持: Chrome 90+, Edge 90+, Firefox 88+, Safari 15+ */
 /* 需要: ES2020, CSS Grid, CSS Variables, Fetch API */
 /* IE11 不支持，请升级浏览器 */
+
+/* ===== 登录页输入框 autofill 强制透明 — 防止浏览器覆盖背景色 ===== */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #141414 !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: #141414;
+}
