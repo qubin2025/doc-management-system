@@ -302,6 +302,16 @@ function initSchema(db) {
       updated_at TEXT DEFAULT (datetime('now')),
       UNIQUE(project_name, chapter_id, form_code)
     );
+    CREATE TABLE IF NOT EXISTS ai_review_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      project_name TEXT NOT NULL,
+      review_type TEXT NOT NULL,
+      file_name TEXT DEFAULT '',
+      results TEXT DEFAULT '[]',
+      report TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // 迁移：旧 daily_reports 表添加 deleted 列

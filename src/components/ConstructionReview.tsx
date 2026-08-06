@@ -48,7 +48,7 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
   const [report, setReport] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // 审查完成→自动回写知识图谱 (闭环)
+  // 审查完成→自动回写知识图谱 + 保存审查历史 (闭环)
   useEffect(() => {
     if (results.length === 0) return;
     const nodes = results.map((r, i) => ({
@@ -62,7 +62,14 @@ const ConstructionReview: React.FC<Props> = ({ projectName, onBack }) => {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
       body: JSON.stringify({ nodes, edges: [] }),
     }).catch(() => {});
-  }, [results]);
+    // 保存审查历史
+    if (report) {
+      fetch('/api/ai/review/history', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+        body: JSON.stringify({ projectName, reviewType: 'construction', fileName: files[0]?.name || '', results, report: report.slice(0, 5000) }),
+      }).catch(() => {});
+    }
+  }, [results, report]);
 
   const handleFiles = async (flist: FileList) => {
     const arr = Array.from(flist);

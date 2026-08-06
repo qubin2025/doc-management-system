@@ -92,4 +92,32 @@ router.get('/ratings', requireAuth, (req, res) => {
   } catch { res.json({ summary: {}, recent: [] }); }
 });
 
+// POST 审查历史保存
+router.post('/review/history', requireAuth, (req, res) => {
+  const { projectName, reviewType, fileName, results, report } = req.body;
+  if (!projectName || !reviewType) return res.status(400).json({ error: '缺少参数' });
+  try {
+    getDb().prepare(`INSERT INTO ai_review_history (user_id, project_name, review_type, file_name, results, report)
+      VALUES (?,?,?,?,?,?)`).run(
+      req.user?.username || 'unknown', projectName, reviewType, fileName || '',
+      JSON.stringify(results || []), (report || '').slice(0, 5000)
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET 审查历史
+router.get('/review/history', requireAuth, (req, res) => {
+  const { project, type } = req.query;
+  let sql = 'SELECT * FROM ai_review_history WHERE 1=1';
+  const params: any[] = [];
+  if (project) { sql += ' AND project_name=?'; params.push(project); }
+  if (type) { sql += ' AND review_type=?'; params.push(type); }
+  sql += ' ORDER BY created_at DESC LIMIT 50';
+  try {
+    const rows = getDb().prepare(sql).all(...params);
+    res.json(rows.map((r: any) => ({ ...r, results: JSON.parse(r.results || '[]') })));
+  } catch (e) { res.json([]); }
+});
+
 export default router;
