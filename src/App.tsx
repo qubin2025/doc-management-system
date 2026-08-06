@@ -132,6 +132,11 @@ const App: React.FC = () => {
           setProjects(list);
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
         } catch {
+          // API失败但有token → token可能过期 → 清除重新登录
+          if (localStorage.getItem(AUTH_KEY)) {
+            localStorage.removeItem(AUTH_KEY);
+            console.warn('[启动] API调用失败, token可能过期, 已清除认证信息');
+          }
           loadProjectsFromLocal();
         }
       } else {
@@ -142,6 +147,7 @@ const App: React.FC = () => {
     function loadProjectsFromLocal() {
       const s = localStorage.getItem(PROJECTS_KEY);
       if (s) { try { setProjects(JSON.parse(s)); } catch { setProjects([]); } }
+      // 无本地缓存也无API → 空项目列表(用户会看到空看板, 可手动刷新)
     }
   }, [apiAvailable, PROJECTS_KEY]);
 
