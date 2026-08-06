@@ -51,6 +51,7 @@ import mobileRouter from './routes/mobile.js';
 import dataRouter from './routes/data.js';
 import experienceRouter from './routes/experience.js';
 import contractsRouter from './routes/contracts.js';
+import guideRouter from './routes/guide.js';
 import stakeholdersRouter from './routes/stakeholders.js';
 import adminRouter from './routes/admin.js';
 
@@ -162,6 +163,7 @@ app.use('/api/mobile', mobileRouter);
 app.use('/api/data', dataRouter);
 app.use('/api/experience', experienceRouter);
 app.use('/api/contracts', contractsRouter);
+app.use('/api/guide', guideRouter);
 app.use('/api/stakeholders', stakeholdersRouter);
 app.use('/api/admin', adminRouter);
 

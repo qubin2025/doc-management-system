@@ -82,6 +82,17 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   const [zoomLevel, setZoomLevel] = useState(1);
   const [expandedAttachments, setExpandedAttachments] = useState<Set<string>>(new Set());
 
+  // 指南进度 → API 持久化
+  useEffect(() => {
+    if (!projectName || checkedItems.size === 0) return;
+    const token = JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
+    fetch('/api/guide/progress', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+      body: JSON.stringify({ projectName, chapterId: initialChapter.id, completedItems: [...checkedItems] }),
+    }).catch(() => {});
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedItems]));
+  }, [checkedItems]);
+
   const [editingSmId, setEditingSmId] = useState('');
   const [editingSmName, setEditingSmName] = useState('');
   const handleSaveSmName = () => {
