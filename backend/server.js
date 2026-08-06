@@ -239,6 +239,18 @@ import { execSync } from 'child_process';
 app.listen(PORT, async () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
   console.log(`✓ DB: ${process.env.DB_PATH || 'backend/data/planning.db (default)'}`);
+  // DB 完整性检测
+  try {
+    const { getDb } = await import('./db.js');
+    const db = getDb();
+    const integrity = db.pragma('integrity_check');
+    if (integrity[0]?.integrity_check === 'ok') {
+      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+      console.log(`✓ DB integrity: ok (${tables.length} tables)`);
+    } else {
+      console.warn('⚠ DB integrity check failed:', integrity);
+    }
+  } catch (e) { console.warn('⚠ DB integrity check skipped:', e.message); }
   console.log(`✓ Files: ${process.env.FILES_PATH || 'backend/files/ (default)'}`);
 
   // 必填环境检查
@@ -310,10 +322,22 @@ app.listen(PORT, async () => {
   console.log('─── 启动完成 ───');
 });
 
-// ── 全局异常捕获 ──
+// ── 全局异常捕获 + 自动重启 ──
+let restarting = false;
 process.on('uncaughtException', (err) => {
   console.error(`[FATAL ${new Date().toISOString()}] Uncaught: ${err.message}\n${err.stack}`);
-  if (process.env.NODE_ENV === 'production') process.exit(1);
+  if (!restarting) {
+    restarting = true;
+    console.log('[守护] 3秒后自动重启…');
+    setTimeout(() => {
+      const { spawn } = require('child_process');
+      const child = spawn(process.argv[0], process.argv.slice(1), { detached: true, stdio: 'inherit' });
+      child.unref();
+      process.exit(1);
+    }, 3000);
+  } else {
+    process.exit(1);
+  }
 });
 
 process.on('unhandledRejection', (reason) => {
