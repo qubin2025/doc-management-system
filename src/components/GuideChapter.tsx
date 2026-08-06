@@ -347,6 +347,12 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
     if (formEditModal) {
       const key = `form-content-${initialChapter.id}-${formEditModal.code}`;
       localStorage.setItem(key, JSON.stringify({ content: formEditContent, lastModified: new Date().toISOString(), version: 1 }));
+      // API 持久化
+      const token = JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
+      fetch('/api/guide/forms', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+        body: JSON.stringify({ projectName, chapterId: initialChapter.id, code: formEditModal.code, content: formEditContent }),
+      }).catch(() => {});
       toast('表单已保存', 'success');
       setFormEditModal(null);
     }
