@@ -284,7 +284,7 @@ function initSchema(db) {
       org TEXT DEFAULT '',
       contact TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now'))
-    -- v5.1: 指南进度持久化
+    );
     CREATE TABLE IF NOT EXISTS guide_progress (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       project_name TEXT NOT NULL,

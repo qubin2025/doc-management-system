@@ -110,13 +110,13 @@ router.post('/review/history', requireAuth, (req, res) => {
 router.get('/review/history', requireAuth, (req, res) => {
   const { project, type } = req.query;
   let sql = 'SELECT * FROM ai_review_history WHERE 1=1';
-  const params: any[] = [];
+  const params = [];
   if (project) { sql += ' AND project_name=?'; params.push(project); }
   if (type) { sql += ' AND review_type=?'; params.push(type); }
   sql += ' ORDER BY created_at DESC LIMIT 50';
   try {
     const rows = getDb().prepare(sql).all(...params);
-    res.json(rows.map((r: any) => ({ ...r, results: JSON.parse(r.results || '[]') })));
+    res.json(rows.map((r) => ({ ...r, results: JSON.parse(r.results || '[]') })));
   } catch (e) { res.json([]); }
 });
 
