@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, MessageSquare, Users } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
@@ -166,7 +166,8 @@ const App: React.FC = () => {
   const [allUploadInfo, setAllUploadInfo] = useState<Record<string, Record<string, UploadInfo[]>>>({});
   const [uploadInfoLoading, setUploadInfoLoading] = useState(false);
 
-  const uploadInfo = allUploadInfo[currentProject] || {};
+  // useMemo 保证引用稳定，避免 || {} 每次渲染创建新对象触发 useEffect 无限更新
+  const uploadInfo = useMemo(() => allUploadInfo[currentProject] || {}, [allUploadInfo, currentProject]);
 
   // 切换项目时从 API 加载数据
   useEffect(() => {
