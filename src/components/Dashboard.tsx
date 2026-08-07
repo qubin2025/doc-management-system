@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck, Zap, LayoutDashboard } from 'lucide-react';
-import { computeIndicators, ProjectIndicators, getAllProjectIndicators } from '../data/indicatorEngine';
+import { computeIndicators, ProjectIndicators } from '../data/indicatorEngine';
 
 interface Props { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
 
@@ -13,12 +13,10 @@ const barColor = (v: number): string =>
 const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
   const alertNavMap: Record<string, string> = { cost: 'baseline', schedule: 'plan-manager', completeness: 'standard-select', quality: 'construction-review' };
   const [indicators, setIndicators] = useState<ProjectIndicators | null>(null);
-  const [allIndicators, setAllIndicators] = useState<ProjectIndicators[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     setIndicators(computeIndicators(projectName));
-    setAllIndicators(getAllProjectIndicators());
   }, [projectName, refreshKey]);
 
   const alertCount = indicators?.alerts.filter(a => a.level === 'danger').length || 0;
@@ -129,37 +127,6 @@ const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
             ))}
           </div>
         </div>
-
-        {/* 多项目对比 */}
-        {allIndicators.length > 1 && (
-          <div className="mt-6 bg-white rounded-xl border p-5">
-            <h3 className="text-sm font-bold text-gray-800 mb-4">项目对比</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs text-gray-500 uppercase">
-                    <th className="pb-2">项目</th><th className="pb-2 text-center">CPI</th><th className="pb-2 text-center">SPI</th><th className="pb-2 text-center">完整度</th><th className="pb-2 text-center">质量</th><th className="pb-2">风险</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allIndicators.map(ind => (
-                    <tr key={ind.projectName} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="py-2 font-medium text-gray-700">{ind.projectName}</td>
-                      <td className={`py-2 text-center font-bold ${ind.cpi > 1.05 ? 'text-red-500' : ind.cpi > 0.95 ? 'text-amber-500' : 'text-green-500'}`}>{ind.cpi}</td>
-                      <td className={`py-2 text-center font-bold ${gaugeColor(ind.spi, [0.5, 0.8])}`}>{ind.spi}</td>
-                      <td className={`py-2 text-center font-bold ${gaugeColor(ind.completeness / 100, [0.3, 0.6])}`}>{ind.completeness}%</td>
-                      <td className="py-2 text-center font-bold">{ind.qualityScore || '-'}</td>
-                      <td className="py-2">
-                        {ind.alerts.filter(a => a.level === 'danger').length > 0 && <span className="text-[10px] text-red-500">⚠{ind.alerts.filter(a => a.level === 'danger').length}</span>}
-                        {ind.alerts.filter(a => a.level === 'danger').length === 0 && <span className="text-[10px] text-green-500">✓</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
         <div className="text-center text-xs text-gray-400 mt-8">
           数据基于本地存储实时计算 · {indicators?.computedAt ? new Date(indicators.computedAt).toLocaleString('zh-CN') : ''}
