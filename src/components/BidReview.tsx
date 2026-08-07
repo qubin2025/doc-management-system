@@ -32,6 +32,16 @@ const BidReview: React.FC<Props> = ({ projectName, onBack }) => {
   useEffect(() => {(async()=>{try{const t=localStorage.getItem('doc-system-token')||'';const r=await fetch('/api/ai/models',{headers:{'Content-Type':'application/json',Authorization:`Bearer ${t}`}});if(r.ok){const d=await r.json();setAvailableModels(d.models||availableModels);setAiStatus(d.models?.some((m:any)=>m.status==='online')?'online':'offline')}}catch{/*保持默认*/}})()},[]);
   const [items, setItems] = useState<{ item: string; status: 'pass'|'warn'|'fail'; issue: string; regulation: string }[]>([]);
   const [report, setReport] = useState('');
+
+  // 审查完成→持久化到后端
+  useEffect(() => {
+    if (items.length === 0 || !report) return;
+    const token = JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
+    fetch('/api/ai/review/history', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
+      body: JSON.stringify({ projectName, reviewType: 'bid', fileName: file?.name || '', results: items, report: report.slice(0, 5000) }),
+    }).catch(() => {});
+  }, [items, report]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (f: File) => {
