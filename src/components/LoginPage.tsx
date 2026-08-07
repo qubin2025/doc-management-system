@@ -67,6 +67,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   const fontFamily = "'Century Gothic','Futura','Tw Cen MT',-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif";
+  const isDark = typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark';
 
   return (
     <div className="flex h-screen min-h-[600px]" style={{ fontFamily, background: '#FAFAF8', backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.028) 1px, transparent 1px)', backgroundSize: '40px 40px', color: '#141414' }}>
@@ -169,7 +170,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     <label className="block font-semibold uppercase mb-1.5" style={{ fontSize: '0.68rem', letterSpacing: '0.1em', color: '#6E6E68' }}>{f.label}</label>
                     <input type={f.type} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph}
                       className="w-full bg-transparent border-0 outline-none transition-colors placeholder:text-[#BFBFB8]"
-                      style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: '#141414', borderBottom: '1.5px solid #D4D4CE' }}
+                      style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: isDark ? '#e2e8f0' : '#141414', borderBottom: isDark ? '1.5px solid #475569' : '1.5px solid #D4D4CE' }}
                       onFocus={e => (e.target.style.borderBottomColor = '#141414')}
                       onBlur={e => (e.target.style.borderBottomColor = '#D4D4CE')} />
                   </div>
@@ -205,7 +206,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   type="text"
                   value={username} onChange={e => setUsername(e.target.value)}
                   className="w-full rounded border-0 bg-transparent px-0 py-2 text-gray-800 placeholder:text-[#BFBFB8] focus:outline-none"
-                  style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: '#141414', borderBottom: '1.5px solid #D4D4CE' }}
+                  style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: isDark ? '#e2e8f0' : '#141414', borderBottom: isDark ? '1.5px solid #475569' : '1.5px solid #D4D4CE' }}
                   onFocus={e => (e.target.style.borderBottomColor = '#141414')}
                   onBlur={e => (e.target.style.borderBottomColor = '#D4D4CE')} />
               </div>
@@ -220,7 +221,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                     type={showPwd ? 'text' : 'password'}
                     value={password} onChange={e => setPassword(e.target.value)}
                     className="w-full rounded border-0 bg-transparent px-0 py-2 text-gray-800 placeholder:text-[#BFBFB8] focus:outline-none"
-                    style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: '#141414', borderBottom: '1.5px solid #D4D4CE' }}
+                    style={{ padding: '8px 0', fontSize: '0.9rem', fontFamily, letterSpacing: '0.03em', color: isDark ? '#e2e8f0' : '#141414', borderBottom: isDark ? '1.5px solid #475569' : '1.5px solid #D4D4CE' }}
                     onFocus={e => (e.target.style.borderBottomColor = '#141414')}
                     onBlur={e => (e.target.style.borderBottomColor = '#D4D4CE')} />
                   <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-0 top-1/2 -translate-y-1/2 p-1" style={{ color: '#BFBFB8' }}>
