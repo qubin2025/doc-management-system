@@ -258,7 +258,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
             <img src="/zhjk-logo.png" alt="中航建科" className="h-8 w-auto" />
             <div>
               <h1 className="text-sm font-bold text-gray-800 dark:text-slate-200 leading-tight">中航建科 · 工程咨询管理平台</h1>
-              <p className="text-xs text-gray-600 dark:text-slate-700">全局项目看板 依据《建设项目全过程工程咨询》——"十四五"热点培训教材</p>
+              <p className="text-xs text-gray-600 dark:text-slate-700">AI+知识图谱驱动 · 全过程数智化 · 50+功能模块 · 移动端现场联动</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
