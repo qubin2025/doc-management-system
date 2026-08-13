@@ -7,15 +7,21 @@ import { toast } from './Toast';
 
 interface PlanFile { id: string; fileName: string; uploadTime: string; data: any; }
 
-const PlanManager: React.FC<Props> = ({ onBack }) => {
+const PlanManager: React.FC<Props> = ({ onBack, projectName }) => {
   const [tab, setTab] = useState<'overview' | 'gantt' | 'network'>('overview');
   const [cpmResult, setCpmResult] = useState<any>(null);
+  // v5.2: plan-files 改为项目级键，与 syncService 收集方一致
+  const PLAN_FILES_KEY = projectName ? `plan-files-${projectName}` : 'plan-files';
   const [planFiles, setPlanFiles] = useState<PlanFile[]>(() => {
-    try { return JSON.parse(localStorage.getItem('plan-files') || '[]'); } catch { return []; }
+    // 一次性迁移：旧全局键 plan-files → 新项目级键
+    if (projectName && !localStorage.getItem(PLAN_FILES_KEY) && localStorage.getItem('plan-files')) {
+      localStorage.setItem(PLAN_FILES_KEY, localStorage.getItem('plan-files')!);
+    }
+    try { return JSON.parse(localStorage.getItem(PLAN_FILES_KEY) || '[]'); } catch { return []; }
   });
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
-  const saveFiles = (fs: PlanFile[]) => { setPlanFiles(fs); localStorage.setItem('plan-files', JSON.stringify(fs)); };
+  const saveFiles = (fs: PlanFile[]) => { setPlanFiles(fs); localStorage.setItem(PLAN_FILES_KEY, JSON.stringify(fs)); };
 
   const delFile = (id: string) => { saveFiles(planFiles.filter(f => f.id !== id)); if (activeFileId === id) { setActiveFileId(null); setCpmResult(null); } };
 
@@ -25,7 +31,7 @@ const PlanManager: React.FC<Props> = ({ onBack }) => {
   const allItems = useMemo(() => {
     const items: { id: string; name: string; chapter: string; chTitle: string; startDate: string; endDate: string; duration: number; completed: boolean }[] = [];
     for (const ch of guideChapters) {
-      const done = new Set(JSON.parse(localStorage.getItem(`guide-chapter-${ch.id}-done`) || '[]') as string[]);
+      const done = new Set(JSON.parse(localStorage.getItem(projectName ? `guide-${projectName}-chapter-${ch.id}-done` : `guide-chapter-${ch.id}-done`) || '[]') as string[]);
       for (const sm of ch.subModules) for (const wi of sm.workItems) {
         const savedPlanned = wi.plannedDate || '';
         let start, end, dur;
@@ -149,7 +155,7 @@ const PlanManager: React.FC<Props> = ({ onBack }) => {
 
         {/* ── 甘特图Tab ── */}
         {tab === 'gantt' && (
-          <GanttChart onCpmUpdate={(r) => { setCpmResult(r); if (r) { const f: PlanFile = { id: Date.now().toString(), fileName: `计划_${new Date().toLocaleDateString('zh-CN')}`, uploadTime: new Date().toISOString(), data: r }; setPlanFiles(p => { const n = [f, ...p]; localStorage.setItem('plan-files', JSON.stringify(n)); return n; }); setActiveFileId(f.id); toast('计划已同步到首页文件列表', 'success'); } }} initialResult={cpmResult} />
+          <GanttChart onCpmUpdate={(r) => { setCpmResult(r); if (r) { const f: PlanFile = { id: Date.now().toString(), fileName: `计划_${new Date().toLocaleDateString('zh-CN')}`, uploadTime: new Date().toISOString(), data: r }; setPlanFiles(p => { const n = [f, ...p]; localStorage.setItem(PLAN_FILES_KEY, JSON.stringify(n)); return n; }); setActiveFileId(f.id); toast('计划已同步到首页文件列表', 'success'); } }} initialResult={cpmResult} />
         )}
 
         {/* ── 网络图Tab ── */}
@@ -158,7 +164,7 @@ const PlanManager: React.FC<Props> = ({ onBack }) => {
             const updated = { ...cpmResult, tasks };
             setCpmResult(updated);
             if (activeFileId) {
-              setPlanFiles(p => { const n = p.map(f => f.id === activeFileId ? { ...f, data: updated } : f); localStorage.setItem('plan-files', JSON.stringify(n)); return n; });
+              setPlanFiles(p => { const n = p.map(f => f.id === activeFileId ? { ...f, data: updated } : f); localStorage.setItem(PLAN_FILES_KEY, JSON.stringify(n)); return n; });
             }
             toast('网络图修改已同步到甘特图', 'success');
           }} />
@@ -173,6 +179,6 @@ const PlanManager: React.FC<Props> = ({ onBack }) => {
   );
 };
 
-interface Props { onBack: () => void; }
+interface Props { onBack: () => void; projectName?: string; }
 
 export default PlanManager;

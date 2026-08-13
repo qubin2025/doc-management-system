@@ -81,6 +81,12 @@ function collectProjectData(proj: string): Record<string, any[]> {
     if (ka) data.knowledgeArtifacts = JSON.parse(ka);
   } catch {}
 
+  // v5.2: 计划文件（项目级，CPM/甘特图数据）
+  try {
+    const pf = localStorage.getItem(`plan-files-${proj}`);
+    if (pf) data.planFiles = JSON.parse(pf);
+  } catch {}
+
   return data;
 }
 

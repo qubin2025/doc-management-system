@@ -476,7 +476,7 @@ const App: React.FC = () => {
   }
 
   if (view === 'plan-manager') {
-    return <PlanManager onBack={() => setView('homepage')} />;
+    return <PlanManager onBack={() => setView('homepage')} projectName={currentProject || undefined} />;
   }
 
   if (view === 'supplier') {
