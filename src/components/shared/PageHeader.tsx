@@ -19,7 +19,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, onBack, backLa
           </button>
         )}
         <div>
-          <h1 className="text-lg font-bold text-gray-800 dark:text-slate-100">{title}</h1>
+          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-200">{title}</h1>
           {subtitle && <span className="text-xs text-slate-400 dark:text-slate-500">{subtitle}</span>}
         </div>
       </div>

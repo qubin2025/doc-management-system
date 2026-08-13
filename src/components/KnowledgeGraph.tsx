@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react';
 import { ArrowLeft, Search, X, Plus, Link2, Save, Users, Cpu, Palette, ChevronDown, RotateCcw, Download, Edit2, Trash2, Camera, Type } from 'lucide-react';
 import * as THREE from 'three';
-import { buildGraph, KnowledgeGraph as KGType, getParentChain } from '../data/knowledgeGraph';
+import { buildGraph, KnowledgeGraph as KGType, getParentChain, TYPE_NAMES, TYPE_EDGE_NAMES } from '../data/knowledgeGraph';
 import * as api from '../data/api';
 
 const ForceGraph3D = React.lazy(() => import('react-force-graph-3d'));
@@ -11,13 +11,7 @@ const TYPE_COLORS: Record<string, string> = {
   project: '#3B82F6', chapter: '#6366F1', 'sub-module': '#8B5CF6', 'work-item': '#F59E0B',
   form: '#EC4899', document: '#10B981', supplier: '#F97316', cost: '#14B8A6', person: '#EF4444',
   'construction-plan': '#F59E0B', 'standard-clause': '#3B82F6', 'review-item': '#EF4444', 'risk-point': '#DC2626',
-  contract: '#8B5CF6', 'bid-document': '#6366F1',
-};
-const TYPE_NAMES: Record<string, string> = {
-  project: '项目', chapter: '章节', 'sub-module': '子模块', 'work-item': '工作项',
-  form: '表单', document: '资料', supplier: '供应商', cost: '造价', person: '人员',
-  'construction-plan': '施工方案', 'standard-clause': '标准条款', 'review-item': '审核项', 'risk-point': '风险点',
-  contract: '合同', 'bid-document': '招投标文件',
+  contract: '#8B5CF6', 'bid-document': '#6366F1', agent: '#8B5CF6',
 };
 
 // ===== 3D 主题光效 =====
@@ -229,7 +223,7 @@ const NodeDetailPanel: React.FC<{
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="text-[9px] text-gray-600">{TYPE_NAMES[other.type]}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-900/30 text-indigo-300">{e.type}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-900/30 text-indigo-300">{TYPE_EDGE_NAMES[e.type] || e.type}</span>
                   </span>
                 </button>
               );

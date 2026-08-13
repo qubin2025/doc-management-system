@@ -84,6 +84,11 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
     stakeholderCount: 3,
     hasDesignManagement: false,
     hasBiddingAgency: false,
+    hasCostConsulting: false,
+    hasConstructionSupervision: false,
+    hasConstructionUnit: false,
+    hasProjectManagement: false,
+    hasSupplier: false,
   });
 
   const updateProfile = (key: keyof ProjectProfile, value: unknown) => {
@@ -298,7 +303,7 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                     min={1} max={20}
                     className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-2 text-sm" />
                 </div>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={profile.hasDesignManagement}
                       onChange={e => updateProfile('hasDesignManagement', e.target.checked)}
@@ -310,6 +315,36 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                       onChange={e => updateProfile('hasBiddingAgency', e.target.checked)}
                       className="accent-purple-500" />
                     <span className="text-xs text-[var(--text-secondary)]">招标代理</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={profile.hasCostConsulting}
+                      onChange={e => updateProfile('hasCostConsulting', e.target.checked)}
+                      className="accent-purple-500" />
+                    <span className="text-xs text-[var(--text-secondary)]">造价咨询</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={profile.hasConstructionSupervision}
+                      onChange={e => updateProfile('hasConstructionSupervision', e.target.checked)}
+                      className="accent-purple-500" />
+                    <span className="text-xs text-[var(--text-secondary)]">施工监理</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={profile.hasConstructionUnit}
+                      onChange={e => updateProfile('hasConstructionUnit', e.target.checked)}
+                      className="accent-purple-500" />
+                    <span className="text-xs text-[var(--text-secondary)]">建设单位</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={profile.hasProjectManagement}
+                      onChange={e => updateProfile('hasProjectManagement', e.target.checked)}
+                      className="accent-purple-500" />
+                    <span className="text-xs text-[var(--text-secondary)]">项目管理</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={profile.hasSupplier}
+                      onChange={e => updateProfile('hasSupplier', e.target.checked)}
+                      className="accent-purple-500" />
+                    <span className="text-xs text-[var(--text-secondary)]">供应商</span>
                   </label>
                 </div>
               </div>

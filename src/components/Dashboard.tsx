@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck, Zap, LayoutDashboard } from 'lucide-react';
 import { computeIndicators, ProjectIndicators } from '../data/indicatorEngine';
+import ProjectAnalysisCharts from './charts/ProjectAnalysisCharts';
+import ProjectDeepCharts from './charts/ProjectDeepCharts';
+import ProjectOperationCharts from './charts/ProjectOperationCharts';
+import ProjectAdvancedCharts from './charts/ProjectAdvancedCharts';
 
 interface Props { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
 
@@ -25,12 +29,12 @@ const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between h-[50px]">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-[10px]">ZHJK</span></div>
-            <h1 className="text-lg font-bold text-gray-800">项目仪表盘</h1>
-            <span className="text-sm text-gray-400 ml-2">{projectName}</span>
+            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" /></button>
+            <img src="/zhjk-logo.png" alt="中航建科" className="h-8 w-auto" />
+            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-200">项目看板</h1>
+            <span className="text-sm text-slate-400 dark:text-slate-500 ml-2">{projectName}</span>
           </div>
           <button onClick={() => setRefreshKey(k => k + 1)}
             className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">刷新</button>
@@ -126,6 +130,27 @@ const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ===== 图表分析区块 ===== */}
+        <div className="mt-6">
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">📊 项目分析图表</h2>
+          <ProjectAnalysisCharts projectName={projectName} />
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">🔬 深度分析图表</h2>
+          <ProjectDeepCharts projectName={projectName} />
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">🔧 运营分析图表</h2>
+          <ProjectOperationCharts projectName={projectName} />
+        </div>
+
+        <div className="mt-6">
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">🛤️ 高级分析图表</h2>
+          <ProjectAdvancedCharts projectName={projectName} />
         </div>
 
         <div className="text-center text-xs text-gray-400 mt-8">

@@ -161,7 +161,7 @@ const DesktopProgressView: React.FC<Props> = ({ onBack }) => {
                   />
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
                   <span>上报人: {p.reportedBy}</span>
                   <span className="flex-1" />
                   <span>{p.createdAt?.slice(0, 16)}</span>

@@ -12,7 +12,9 @@ export interface GraphNode {
     // 5 业务实体类型 (v4.4)
     | 'daily-report' | 'issue' | 'progress-report' | 'experience' | 'stakeholder'
     // 2 管理类型 (v3.0 P0)
-    | 'objective' | 'baseline';
+    | 'objective' | 'baseline'
+    // 1 AI 类型 (v5.2 — Agent 协作网络注入)
+    | 'agent';
   label: string;
   props?: Record<string, string>;
   parentId?: string;
@@ -22,7 +24,8 @@ export interface GraphEdge {
   from: string;
   to: string;
   type: 'belongs-to' | 'references' | 'produces' | 'reviews' | 'assigned-to' | 'precedes'
-       | 'supplements' | 'refers_to' | 'parent_of' | 'child_of' | 'conflicts_with';
+       | 'supplements' | 'refers_to' | 'parent_of' | 'child_of' | 'conflicts_with'
+       | 'collaborates';
   label?: string;
 }
 
@@ -30,12 +33,41 @@ export interface KnowledgeGraph {
   nodes: GraphNode[];
   edges: GraphEdge[];
   updatedAt: string;
+  version: number;
 }
 
 const KG_KEY = 'knowledge-graph';
+const KG_VERSION = 2; // v2: 新增 Agent 节点 + collaborates 关系
 
 const CHAPTER_NAMES: Record<string, string> = {
   ch1: '前期工作', ch2: '招标采购', ch3: '工程施工', ch4: '竣工验收及移交',
+};
+
+// ===== 节点类型 → 中文名称映射 =====
+export const TYPE_NAMES: Record<string, string> = {
+  // 9 基础类型
+  project: '项目', chapter: '章节', 'sub-module': '子模块', 'work-item': '工作项',
+  form: '表单', document: '资料', supplier: '供应商', cost: '造价', person: '人员',
+  // 4 文档子类型
+  'land-reserve': '土地储备', policy: '政策法规', regulation: '制度规范', plan: '计划管理',
+  // 5 审查关联类型
+  'construction-plan': '施工方案', 'standard-clause': '标准条款',
+  'review-item': '审核项', 'risk-point': '风险点',
+  contract: '合同', 'bid-document': '招投标文件',
+  // 5 业务实体类型
+  'daily-report': '日报', issue: '现场问题', 'progress-report': '进度快报',
+  experience: '经验库', stakeholder: '干系人',
+  // 2 管理类型
+  objective: '目标', baseline: '基线',
+  // 1 AI 类型
+  agent: 'Agent智能体',
+};
+
+// ===== 边类型 → 中文名称映射 =====
+export const TYPE_EDGE_NAMES: Record<string, string> = {
+  'belongs-to': '所属', references: '引用', produces: '产出', reviews: '审查',
+  'assigned-to': '服务于', precedes: '前置', supplements: '补充', refers_to: '参考',
+  'parent_of': '父级', 'child_of': '子级', 'conflicts_with': '冲突', collaborates: '协作',
 };
 
 // ================================================================
@@ -341,7 +373,56 @@ export function buildGraph(): KnowledgeGraph {
     }
   } catch {}
 
-  const graph: KnowledgeGraph = { nodes, edges, updatedAt: new Date().toISOString() };
+  // ===== 5. AI Agent 节点 + 协作关系（v5.2 注入） =====
+  // 注：为避免循环依赖（multiAgentOrchestrator → agentFramework → knowledgeGraph），
+  // 此处硬编码 5 个 Agent 基本信息，与 AGENT_PROFILES 保持同步
+  try {
+    const AGENTS = [
+      { id: 'safety-inspector', name: '安全审查员', role: '施工安全专家', color: 'bg-red-500' },
+      { id: 'quality-engineer', name: '质量工程师', role: '施工质量专家', color: 'bg-green-500' },
+      { id: 'contract-analyst', name: '合同分析师', role: '合同法律专家', color: 'bg-blue-500' },
+      { id: 'cost-analyst', name: '造价分析师', role: '工程造价专家', color: 'bg-amber-500' },
+      { id: 'general-engineer', name: '综合工程Agent', role: '全过程工程咨询专家', color: 'bg-violet-500' },
+    ];
+
+    // 5a. Agent 节点
+    for (const a of AGENTS) {
+      addNode({
+        id: `agent-${a.id}`,
+        type: 'agent',
+        label: a.name,
+        props: { role: a.role, color: a.color },
+      });
+    }
+
+    // 5b. Agent 协作关系（基于角色互补性）
+    const collaborations: Array<{ from: string; to: string; label: string }> = [
+      { from: 'agent-general-engineer', to: 'agent-safety-inspector', label: '安全咨询协作' },
+      { from: 'agent-general-engineer', to: 'agent-quality-engineer', label: '质量咨询协作' },
+      { from: 'agent-general-engineer', to: 'agent-contract-analyst', label: '合同咨询协作' },
+      { from: 'agent-general-engineer', to: 'agent-cost-analyst', label: '造价咨询协作' },
+      { from: 'agent-safety-inspector', to: 'agent-quality-engineer', label: '安全质量联动' },
+      { from: 'agent-contract-analyst', to: 'agent-cost-analyst', label: '合同造价联动' },
+    ];
+    for (const c of collaborations) {
+      if (nodeMap.has(c.from) && nodeMap.has(c.to)) {
+        addEdge(c.from, c.to, 'collaborates', c.label);
+      }
+    }
+
+    // 5c. Agent → 项目 关联（Agent 服务于所有项目）
+    nodeMap.forEach(n => {
+      if (n.type === 'project') {
+        nodeMap.forEach(agent => {
+          if (agent.type === 'agent') {
+            addEdge(agent.id, n.id, 'assigned-to', '服务项目');
+          }
+        });
+      }
+    });
+  } catch {}
+
+  const graph: KnowledgeGraph = { nodes, edges, updatedAt: new Date().toISOString(), version: KG_VERSION };
   localStorage.setItem(KG_KEY, JSON.stringify(graph));
   // 自动同步到Neo4j（后台静默，失败不影响前端）
   autoSyncToNeo4j(nodes, edges);
@@ -411,9 +492,19 @@ export function getParentChain(nodeId: string, allNodes: GraphNode[], allEdges: 
   return chain;
 }
 
-/** 获取已构建的知识图谱 */
+/** 获取已构建的知识图谱（版本检测：旧版本自动重建） */
 export function getGraph(): KnowledgeGraph | null {
-  try { return JSON.parse(localStorage.getItem(KG_KEY) || 'null'); } catch { return null; }
+  try {
+    const raw = localStorage.getItem(KG_KEY);
+    if (!raw) return null;
+    const graph: KnowledgeGraph = JSON.parse(raw);
+    // 版本检测：如果版本落后，自动触发重建
+    if (!graph.version || graph.version < KG_VERSION) {
+      console.log(`[KnowledgeGraph] 检测到旧版本(v${graph.version || 0})，自动重建为v${KG_VERSION}...`);
+      return buildGraph();
+    }
+    return graph;
+  } catch { return null; }
 }
 
 /** 自动同步图谱到Neo4j后端（后台静默，失败不影响前端） */

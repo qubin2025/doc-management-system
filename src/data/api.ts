@@ -31,14 +31,22 @@ export async function checkConnection(): Promise<boolean> {
 }
 
 // ========== 认证 ==========
+
+/** 安全解析 JSON 响应体，空响应或解析失败时返回 fallback */
+async function safeJson<T = any>(res: Response, fallback: T = {} as T): Promise<T> {
+  const text = await res.text();
+  if (!text) return fallback;
+  try { return JSON.parse(text) as T; } catch { return fallback; }
+}
+
 export async function register(username: string, password: string, displayName?: string, phone?: string, dept?: string): Promise<void> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password, displayName, phone, dept }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || '注册失败');
+  const data = await safeJson(res, { error: '' });
+  if (!res.ok) throw new Error(data.error || (res.status === 502 ? '后端服务未启动，请稍后重试' : '注册失败'));
 }
 
 export async function login(username: string, password: string): Promise<AuthState> {
@@ -47,8 +55,9 @@ export async function login(username: string, password: string): Promise<AuthSta
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || '登录失败');
+  const data = await safeJson<{ token?: string; user?: any; permissions?: any; error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || (res.status === 502 ? '后端服务未启动，请稍后重试' : '登录失败'));
+  if (!data.token) throw new Error('登录响应异常，未获取到令牌');
   setAuthToken(data.token);
   return { token: data.token, user: data.user, permissions: data.permissions };
 }
@@ -58,7 +67,7 @@ export async function getMe(): Promise<{ user: UserInfo; permissions: Permission
   try {
     const res = await fetch(`${API_BASE}/auth/me`, { headers: headers() });
     if (!res.ok) { setAuthToken(''); return null; }
-    return await res.json();
+    return await safeJson(res, null);
   } catch { return null; }
 }
 
@@ -425,14 +434,14 @@ export function getBackupUrl(projectId?: number | string): string {
 }
 
 // ========== 知识图谱 ==========
-export async function fetchKnowledgeGraph(type?: string): Promise<{ available: boolean; nodes: any[]; edges: any[]; updatedAt: string }> {
+export async function fetchKnowledgeGraph(type?: string): Promise<{ available: boolean; nodes: any[]; edges: any[]; updatedAt: string; version?: number }> {
   try {
     const qs = type && type !== 'all' ? `?type=${encodeURIComponent(type)}` : '';
     const res = await fetch(`${API_BASE}/kg${qs}`, { headers: headers() });
     if (!res.ok) throw new Error('KG fetch failed');
     return await res.json();
   } catch {
-    return { available: false, nodes: [], edges: [], updatedAt: '' };
+    return { available: false, nodes: [], edges: [], updatedAt: '', version: 0 };
   }
 }
 
@@ -634,6 +643,149 @@ export interface DesktopIssue {
   reportedBy: string; createdAt: string; updatedAt: string;
 }
 
+// ===== 指南模块 - 进度/表单/样本/成果/AI提示词 (P1) =====
+
+export interface GuideSampleFileApi {
+  id: string; fileName: string; fileData: string;
+  uploadedAt: string; uploadedBy: string;
+}
+export interface GuideArtifactApi {
+  id: string; fileName: string; fileData: string;
+  version: number; uploadedAt: string; uploadedBy: string; note?: string;
+}
+
+/** 保存章节工作项完成进度 */
+export async function saveGuideProgress(projectName: string, chapterId: string, completedItems: string[]): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/progress`, {
+      method: 'POST', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName, chapterId, completedItems }),
+    });
+    return res.ok;
+  } catch (e) { console.warn('[api] saveGuideProgress 失败:', e); return false; }
+}
+
+/** 读取章节工作项完成进度 */
+export async function fetchGuideProgress(projectName: string, chapterId: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/progress?project=${encodeURIComponent(projectName)}&chapter=${encodeURIComponent(chapterId)}`, { headers: headers() });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.completedItems || [];
+  } catch (e) { console.warn('[api] fetchGuideProgress 失败:', e); return []; }
+}
+
+/** 保存表单编辑内容 */
+export async function saveGuideForm(projectName: string, chapterId: string, code: string, content: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/forms`, {
+      method: 'POST', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName, chapterId, code, content }),
+    });
+    return res.ok;
+  } catch (e) { console.warn('[api] saveGuideForm 失败:', e); return false; }
+}
+
+/** 保存样本文件列表（整组覆盖） */
+export async function saveGuideSampleFiles(projectName: string, chapterId: string, code: string, sampleFiles: GuideSampleFileApi[]): Promise<boolean> {
+  try {
+    console.log(`[api] 保存样本文件 → backend: project=${projectName} chapter=${chapterId} code=${code} count=${sampleFiles.length}`);
+    const res = await fetch(`${API_BASE}/guide/sample-files`, {
+      method: 'POST', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName, chapterId, code, sampleFiles }),
+    });
+    if (res.ok) {
+      console.log(`[api] 样本文件保存成功 ✓ code=${code}`);
+      return true;
+    }
+    console.error(`[api] 样本文件保存失败 HTTP ${res.status}`);
+    return false;
+  } catch (e) {
+    console.error(`[api] 样本文件保存异常:`, e);
+    return false;
+  }
+}
+
+/** 读取某表单的样本文件列表 */
+export async function fetchGuideSampleFiles(projectName: string, chapterId: string, code: string): Promise<GuideSampleFileApi[]> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/sample-files?project=${encodeURIComponent(projectName)}&chapter=${encodeURIComponent(chapterId)}&code=${encodeURIComponent(code)}`, { headers: headers() });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.sampleFiles || [];
+  } catch (e) { console.warn('[api] fetchGuideSampleFiles 失败:', e); return []; }
+}
+
+/** 保存成果文件列表（整组覆盖，含版本号） */
+export async function saveGuideArtifacts(projectName: string, chapterId: string, code: string, artifacts: GuideArtifactApi[]): Promise<boolean> {
+  try {
+    console.log(`[api] 保存成果文件 → backend: project=${projectName} chapter=${chapterId} code=${code} count=${artifacts.length}`);
+    const res = await fetch(`${API_BASE}/guide/artifacts`, {
+      method: 'POST', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName, chapterId, code, artifacts }),
+    });
+    if (res.ok) {
+      console.log(`[api] 成果文件保存成功 ✓ code=${code}`);
+      return true;
+    }
+    console.error(`[api] 成果文件保存失败 HTTP ${res.status}`);
+    return false;
+  } catch (e) {
+    console.error(`[api] 成果文件保存异常:`, e);
+    return false;
+  }
+}
+
+/** 读取某表单的成果文件列表 */
+export async function fetchGuideArtifacts(projectName: string, chapterId: string, code: string): Promise<GuideArtifactApi[]> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/artifacts?project=${encodeURIComponent(projectName)}&chapter=${encodeURIComponent(chapterId)}&code=${encodeURIComponent(code)}`, { headers: headers() });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.artifacts || [];
+  } catch (e) { console.warn('[api] fetchGuideArtifacts 失败:', e); return []; }
+}
+
+/** 保存 AI 提示词 */
+export async function saveGuideAiPrompt(projectName: string, chapterId: string, code: string, aiPrompt: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/ai-prompt`, {
+      method: 'POST', headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName, chapterId, code, aiPrompt }),
+    });
+    return res.ok;
+  } catch (e) { console.warn('[api] saveGuideAiPrompt 失败:', e); return false; }
+}
+
+/** 读取某表单的 AI 提示词 */
+export async function fetchGuideAiPrompt(projectName: string, chapterId: string, code: string): Promise<string> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/ai-prompt?project=${encodeURIComponent(projectName)}&chapter=${encodeURIComponent(chapterId)}&code=${encodeURIComponent(code)}`, { headers: headers() });
+    if (!res.ok) return '';
+    const data = await res.json();
+    return data.aiPrompt || '';
+  } catch (e) { console.warn('[api] fetchGuideAiPrompt 失败:', e); return ''; }
+}
+
+/** 一次性读取某章节全部表单数据（含样本/成果/提示词），用于初始化加载 */
+export async function fetchAllGuideForms(projectName: string, chapterId: string): Promise<{
+  forms: Record<string, {
+    content: string;
+    sampleFiles: GuideSampleFileApi[];
+    artifacts: GuideArtifactApi[];
+    aiPrompt: string;
+  }>;
+}> {
+  try {
+    const res = await fetch(`${API_BASE}/guide/all-forms?project=${encodeURIComponent(projectName)}&chapter=${encodeURIComponent(chapterId)}`, { headers: headers() });
+    if (!res.ok) return { forms: {} };
+    return await res.json();
+  } catch (e) {
+    console.warn('[api] fetchAllGuideForms 失败:', e);
+    return { forms: {} };
+  }
+}
+
 export async function fetchDailyReports(projectName?: string): Promise<DesktopDailyReport[]> {
   let url = `${API_BASE}/mobile/daily/list`;
   if (projectName) url += `?projectName=${encodeURIComponent(projectName)}`;
@@ -685,6 +837,34 @@ export async function deleteExperience(id: string): Promise<void> {
 export interface DesktopProgress { id: number; projectId: number; projectName?: string; planItemId: string | null; title: string; percentage: number; note: string; reportedBy: string; matchStatus: 'matched'|'unmatched'; createdAt: string; }
 export async function fetchProgressList(projectName: string): Promise<DesktopProgress[]> {
   const res = await fetch(`${API_BASE}/mobile/progress/list?projectName=${encodeURIComponent(projectName)}`, { headers: headers() });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+// ===== 审计日志 (P0-4) =====
+export interface AuditLogEntry {
+  id: number;
+  projectName: string;
+  userId: string;
+  action: string;       // create/update/delete/view/export/import
+  targetType: string;   // project/objective/baseline/document/work-item/form/configuration
+  targetId: string;
+  detail: string;
+  ipAddress: string;
+  createdAt: string;
+}
+export async function fetchAuditLogs(opts?: { projectName?: string; limit?: number }): Promise<AuditLogEntry[]> {
+  const params = new URLSearchParams();
+  if (opts?.projectName) params.set('project', opts.projectName);
+  if (opts?.limit) params.set('limit', String(opts.limit));
+  const res = await fetch(`${API_BASE}/audit?${params}`, { headers: headers() });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+// ===== 全局问题聚合（跨项目） =====
+export async function fetchAllIssues(): Promise<DesktopIssue[]> {
+  const res = await fetch(`${API_BASE}/mobile/issue/list`, { headers: headers() });
   if (!res.ok) return [];
   return await res.json();
 }

@@ -103,7 +103,7 @@ const DashboardChartPanel: React.FC<Props> = ({ reports, dark }) => {
     <div className="space-y-6">
       {/* 图1: 施工资源投入趋势 */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
-        <h3 className="text-sm font-bold text-gray-800 dark:text-slate-100 mb-2">施工资源投入趋势</h3>
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">施工资源投入趋势</h3>
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-3 italic">
           分包活跃指数 = 该单位(机械总数 + 任务工人数) / 日报天数
         </div>
@@ -128,7 +128,7 @@ const DashboardChartPanel: React.FC<Props> = ({ reports, dark }) => {
         {/* 图2: 分包进度对比 */}
         {contractorData.length > 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-sm font-bold text-gray-800 dark:text-slate-100 mb-4">📋 分包单位活跃度</h3>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">📋 分包单位活跃度</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={contractorData} layout="vertical" margin={{ top: 0, right: 20, left: 60, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
@@ -146,7 +146,7 @@ const DashboardChartPanel: React.FC<Props> = ({ reports, dark }) => {
         {/* 图3: 施工区域分布 */}
         {areaData.length > 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
-            <h3 className="text-sm font-bold text-gray-800 dark:text-slate-100 mb-4">🏗️ 施工区域分布</h3>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">🏗️ 施工区域分布</h3>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie data={areaData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}>
@@ -162,7 +162,7 @@ const DashboardChartPanel: React.FC<Props> = ({ reports, dark }) => {
       {/* 图4: 安全问题影响分析 */}
       {issueData.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
-          <h3 className="text-sm font-bold text-gray-800 dark:text-slate-100 mb-4">⚠️ 安全问题分布</h3>
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">⚠️ 安全问题分布</h3>
           <ResponsiveContainer width="100%" height={200}>
             <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />

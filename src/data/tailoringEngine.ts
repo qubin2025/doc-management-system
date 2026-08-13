@@ -16,6 +16,11 @@ export interface ProjectProfile {
   stakeholderCount: number;
   hasDesignManagement: boolean;
   hasBiddingAgency: boolean;
+  hasCostConsulting: boolean;
+  hasConstructionSupervision: boolean;
+  hasConstructionUnit: boolean;
+  hasProjectManagement: boolean;
+  hasSupplier: boolean;
 }
 
 export type WorkItemStatus = 'required' | 'recommended' | 'optional' | 'excluded';

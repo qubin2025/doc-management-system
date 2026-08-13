@@ -110,16 +110,16 @@ const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleThem
         <div className={`text-center py-1.5 text-xs font-bold ${currentProject ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}`}>
           {currentProject ? `当前项目：${currentProject}` : '全局模式 — 未进入具体项目，AI将回答全局信息'}
         </div>
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between h-[65px]">
           <div className="flex items-center gap-3">
             <img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />
             <div>
-              <h1 className="text-xl font-bold text-gray-800">中航建科 · 工程咨询管理平台</h1>
-              <p className="text-xs text-gray-600">项目全过程数智化管理</p>
+              <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">中航建科 · 工程咨询管理平台</h1>
+              <p className="text-xs text-slate-600 dark:text-slate-400">项目全过程数智化管理</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => onNavigate('dashboard')} className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+            <button onClick={() => onNavigate('dashboard')} className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
               <ArrowLeft className="w-3.5 h-3.5" /> 项目看板
             </button>
             <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${isAdmin ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>

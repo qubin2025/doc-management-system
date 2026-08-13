@@ -4,7 +4,7 @@ import {
   CheckSquare, FileText, GitBranch, Plus, Upload,
   X, Edit3, Sparkles, Lightbulb, Loader, Undo2, BookOpen, Paperclip
 } from 'lucide-react';
-import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink, GuideSubTask, GuideForm } from '../types';
+import { GuideChapter as GuideChapterType, GuideSubModule, GuideWorkItem, GuideLink, GuideSubTask, GuideForm, FormSampleFile, FormArtifact } from '../types';
 import * as api from '../data/api';
 import { toast } from './Toast';
 import { parseDocument } from '../data/documentParser';
@@ -121,6 +121,70 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   const [formEditContent, setFormEditContent] = useState('');
   const [aiFillLoading, setAiFillLoading] = useState(false);
 
+  // 样本/成果/AI提示词管理（按 formCode 分组）— 优先 API，降级 localStorage
+  const FORMS_PREFIX = projectName ? `guide-forms-${projectName}-${initialChapter.id}` : `guide-forms-default-${initialChapter.id}`;
+  const SAMPLE_FILES_KEY = `${FORMS_PREFIX}-sample-files`;
+  const ARTIFACTS_KEY = `${FORMS_PREFIX}-artifacts`;
+  const AI_PROMPTS_KEY = `${FORMS_PREFIX}-ai-prompts`;
+
+  const safeLoadJson = <T,>(key: string, fallback: T): T => {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback; }
+    catch { return fallback; }
+  };
+  const safeSaveJson = (key: string, value: unknown, label: string) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e: unknown) {
+      const quotaErr = e as { name?: string };
+      if (quotaErr?.name === 'QuotaExceededError') {
+        console.error(`[guide] ${label} localStorage 配额已满（5MB）`);
+        toast(`${label}本地存储已满（5MB 上限），请删除旧文件或使用文件下载备份`, 'error');
+      } else {
+        console.error(`[guide] ${label} localStorage 保存异常:`, e);
+        toast(`${label}本地保存失败: ${(e as Error)?.message || '未知错误'}`, 'error');
+      }
+    }
+  };
+
+  // 初始化先用 localStorage 数据（避免 API 加载前的空窗），随后异步从 API 同步
+  const [sampleFilesMap, setSampleFilesMap] = useState<Record<string, FormSampleFile[]>>(() => safeLoadJson(SAMPLE_FILES_KEY, {}));
+  const [artifactsMap, setArtifactsMap] = useState<Record<string, FormArtifact[]>>(() => safeLoadJson(ARTIFACTS_KEY, {}));
+  const [aiPromptsMap, setAiPromptsMap] = useState<Record<string, string>>(() => safeLoadJson(AI_PROMPTS_KEY, {}));
+  const [formsApiLoaded, setFormsApiLoaded] = useState(false);
+
+  // 异步从后端加载本章节全部表单数据（含样本/成果/AI提示词），覆盖 localStorage
+  useEffect(() => {
+    if (!projectName || formsApiLoaded) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        console.log(`[guide] 初始化加载 → backend: project=${projectName} chapter=${initialChapter.id}`);
+        const result = await api.fetchAllGuideForms(projectName, initialChapter.id);
+        if (cancelled) return;
+        const forms = result?.forms || {};
+        const apiSample: Record<string, FormSampleFile[]> = {};
+        const apiArtifact: Record<string, FormArtifact[]> = {};
+        const apiPrompt: Record<string, string> = {};
+        let totalCount = 0;
+        Object.entries(forms).forEach(([code, f]) => {
+          if (f.sampleFiles && f.sampleFiles.length > 0) { apiSample[code] = f.sampleFiles as FormSampleFile[]; totalCount += f.sampleFiles.length; }
+          if (f.artifacts && f.artifacts.length > 0) { apiArtifact[code] = f.artifacts as FormArtifact[]; totalCount += f.artifacts.length; }
+          if (f.aiPrompt) { apiPrompt[code] = f.aiPrompt; }
+        });
+        console.log(`[guide] 初始化加载完成: 共 ${Object.keys(forms).length} 个表单，${totalCount} 个文件，${Object.keys(apiPrompt).length} 个自定义提示词`);
+        // 只覆盖 API 中有数据的字段，避免清空本地尚未同步的数据
+        setSampleFilesMap(prev => ({ ...prev, ...apiSample }));
+        setArtifactsMap(prev => ({ ...prev, ...apiArtifact }));
+        setAiPromptsMap(prev => ({ ...prev, ...apiPrompt }));
+      } catch (e) {
+        console.warn('[guide] 初始化加载失败，使用 localStorage 数据:', e);
+      } finally {
+        if (!cancelled) setFormsApiLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [projectName, initialChapter.id, formsApiLoaded]);
+
   // 撤销
   const [undoStack, setUndoStack] = useState<GuideSubModule[][]>([]);
   const pushUndoHistory = () => { setUndoStack(prev => [JSON.parse(JSON.stringify(subModules)), ...prev].slice(0, 5)); };
@@ -138,6 +202,46 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedItems])); }, [checkedItems]);
   useEffect(() => { localStorage.setItem(`${STORAGE_KEY}-done`, JSON.stringify([...completedItems])); }, [completedItems]);
   useEffect(() => { localStorage.setItem(LINKS_KEY, JSON.stringify(links)); }, [links]);
+
+  // 样本/成果/AI提示词 → 双写持久化（localStorage 即时 + API 异步）
+  // 仅在 API 初始加载完成后才向 backend 同步，避免初始化阶段把空数据写回后端
+  const syncToBackend = async (formCode: string, kind: 'sample' | 'artifact' | 'prompt') => {
+    if (!projectName || !formsApiLoaded) return;
+    try {
+      if (kind === 'sample') {
+        const list = sampleFilesMap[formCode] || [];
+        await api.saveGuideSampleFiles(projectName, initialChapter.id, formCode, list);
+      } else if (kind === 'artifact') {
+        const list = artifactsMap[formCode] || [];
+        await api.saveGuideArtifacts(projectName, initialChapter.id, formCode, list);
+      } else {
+        const prompt = aiPromptsMap[formCode] || '';
+        await api.saveGuideAiPrompt(projectName, initialChapter.id, formCode, prompt);
+      }
+    } catch (e) {
+      console.error(`[guide] ${kind} 后端同步异常 formCode=${formCode}:`, e);
+    }
+  };
+
+  useEffect(() => {
+    safeSaveJson(SAMPLE_FILES_KEY, sampleFilesMap, '样本文件');
+    // 仅对发生变化的 formCode 同步到后端（简化：全部同步，依赖 React 18 批处理）
+    if (formsApiLoaded && projectName) {
+      Object.keys(sampleFilesMap).forEach(code => syncToBackend(code, 'sample'));
+    }
+  }, [sampleFilesMap, formsApiLoaded, projectName]);
+  useEffect(() => {
+    safeSaveJson(ARTIFACTS_KEY, artifactsMap, '成果文件');
+    if (formsApiLoaded && projectName) {
+      Object.keys(artifactsMap).forEach(code => syncToBackend(code, 'artifact'));
+    }
+  }, [artifactsMap, formsApiLoaded, projectName]);
+  useEffect(() => {
+    safeSaveJson(AI_PROMPTS_KEY, aiPromptsMap, 'AI提示词');
+    if (formsApiLoaded && projectName) {
+      Object.keys(aiPromptsMap).forEach(code => syncToBackend(code, 'prompt'));
+    }
+  }, [aiPromptsMap, formsApiLoaded, projectName]);
 
   // ===== 工作项操作 =====
   const toggleItem = (itemId: string) => {
@@ -362,11 +466,136 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
     setAiFillLoading(true);
     try {
       const fields = initialChapter.forms.find(f => f.code === formEditModal.code)?.fields || [];
-      const result = await api.aiFillForm(formEditModal.code, formEditModal.name, fields, { name: initialChapter.title });
+      const form = initialChapter.forms.find(f => f.code === formEditModal.code);
+      const projectInfo = getProjectInfoForAi();
+      const customPrompt = aiPromptsMap[formEditModal.code] || form?.aiPrompt || '';
+      const projectContext = {
+        name: projectInfo.name,
+        details: {
+          area: projectInfo.area,
+          scale: projectInfo.level,
+          investment: '',
+          overview: `项目编号: ${projectInfo.code}\n项目经理: ${projectInfo.manager}\n计划工期: ${projectInfo.startDate} ~ ${projectInfo.endDate}\n项目类型: ${projectInfo.type}`,
+        } as any,
+      };
+      let result: string;
+      if (customPrompt) {
+        let finalPrompt = customPrompt;
+        Object.entries(projectInfo).forEach(([k, v]) => {
+          finalPrompt = finalPrompt.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        });
+        const fieldListText = fields.map(f => `- ${f.label} (${f.type})`).join('\n');
+        finalPrompt += `\n\n## 表单字段\n${fieldListText}\n\n## 请输出\n请以Markdown表格格式输出完整的${formEditModal.name}，表头为各字段标签，下方附加填写说明。`;
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(localStorage.getItem('doc-system-auth') ? { Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('doc-system-auth')!).token } : {}) },
+          body: JSON.stringify({ messages: [{ role: 'user', content: finalPrompt }], context: 'form-fill' }),
+        });
+        if (res.ok) { const d = await res.json(); result = d.reply || d.message || ''; }
+        else {
+          result = await api.aiFillForm(formEditModal.code, formEditModal.name, fields, projectContext, undefined);
+        }
+      } else {
+        result = await api.aiFillForm(formEditModal.code, formEditModal.name, fields, projectContext, undefined);
+      }
       setFormEditContent(result || formEditContent);
-      toast('AI填写完成', 'success');
+      toast('AI填写完成，已抓取项目信息自动生成计划表', 'success');
     } catch (e: any) { toast('AI填写失败: ' + (e.message || ''), 'error'); }
     finally { setAiFillLoading(false); }
+  };
+
+  const getProjectInfoForAi = () => {
+    const info: Record<string, string> = { name: projectName || '', code: '', manager: '', startDate: '', endDate: '', area: '', level: '', type: '' };
+    if (projectName) {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('doc-mgmt-projects-'));
+      for (const k of keys) {
+        try {
+          const arr = JSON.parse(localStorage.getItem(k) || '[]');
+          const found = arr.find((p: any) => p.name === projectName);
+          if (found) {
+            info.name = found.name || projectName;
+            info.code = found.code || '';
+            info.manager = found.manager || '';
+            info.startDate = found.startDate || '';
+            info.endDate = found.endDate || '';
+            info.area = found.area || '';
+            info.level = found.level || '';
+            info.type = found.type || '';
+            break;
+          }
+        } catch {}
+      }
+    }
+    return info;
+  };
+
+  // === 样本文件操作 ===
+  const handleUploadSample = async (formCode: string, fileName: string, fileData: string) => {
+    const fileSizeKB = Math.round(fileData.length / 1024);
+    console.log(`[guide] 样本上传开始: formCode=${formCode} fileName=${fileName} size=${fileSizeKB}KB (base64)`);
+    const newFile: FormSampleFile = {
+      id: `sample-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      fileName, fileData,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: localStorage.getItem('doc-system-user') || 'unknown',
+    };
+    setSampleFilesMap(prev => {
+      const updated = { ...prev, [formCode]: [...(prev[formCode] || []), newFile] };
+      console.log(`[guide] 样本上传 → state 更新: formCode=${formCode} 总数=${updated[formCode].length}`);
+      return updated;
+    });
+    // 持久化由 useEffect 自动触发；这里仅给用户即时反馈
+    toast(`样本文件已添加（${fileSizeKB}KB），正在同步到服务器`, 'success');
+  };
+  const handleDeleteSample = (formCode: string, fileId: string) => {
+    console.log(`[guide] 样本删除: formCode=${formCode} fileId=${fileId}`);
+    setSampleFilesMap(prev => ({ ...prev, [formCode]: (prev[formCode] || []).filter(f => f.id !== fileId) }));
+    toast('样本文件已删除', 'success');
+  };
+  const handleSampleDownload = (file: FormSampleFile) => {
+    console.log(`[guide] 样本下载: fileName=${file.fileName}`);
+    const a = document.createElement('a');
+    a.href = file.fileData;
+    a.download = file.fileName;
+    a.click();
+  };
+
+  // === 成果文件操作（自动版本号） ===
+  const handleUploadArtifact = async (formCode: string, fileName: string, fileData: string) => {
+    const fileSizeKB = Math.round(fileData.length / 1024);
+    const existing = artifactsMap[formCode] || [];
+    const version = existing.length > 0 ? Math.max(...existing.map(a => a.version)) + 1 : 1;
+    console.log(`[guide] 成果上传开始: formCode=${formCode} fileName=${fileName} size=${fileSizeKB}KB version=V${version}`);
+    const newArtifact: FormArtifact = {
+      id: `artifact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      fileName, fileData, version,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: localStorage.getItem('doc-system-user') || 'unknown',
+    };
+    setArtifactsMap(prev => {
+      const updated = { ...prev, [formCode]: [...(prev[formCode] || []), newArtifact] };
+      console.log(`[guide] 成果上传 → state 更新: formCode=${formCode} version=V${version} 总数=${updated[formCode].length}`);
+      return updated;
+    });
+    toast(`成果文件已添加 V${version}（${fileSizeKB}KB），正在同步到服务器`, 'success');
+  };
+  const handleDeleteArtifact = (formCode: string, fileId: string) => {
+    console.log(`[guide] 成果删除: formCode=${formCode} fileId=${fileId}`);
+    setArtifactsMap(prev => ({ ...prev, [formCode]: (prev[formCode] || []).filter(f => f.id !== fileId) }));
+    toast('成果文件已删除', 'success');
+  };
+  const handleArtifactDownload = (file: FormArtifact) => {
+    console.log(`[guide] 成果下载: fileName=${file.fileName} version=V${file.version}`);
+    const a = document.createElement('a');
+    a.href = file.fileData;
+    a.download = `V${file.version}_${file.fileName}`;
+    a.click();
+  };
+
+  // === AI 提示词操作 ===
+  const handleUpdateAiPrompt = (formCode: string, prompt: string) => {
+    console.log(`[guide] AI提示词更新: formCode=${formCode} length=${prompt.length}`);
+    setAiPromptsMap(prev => ({ ...prev, [formCode]: prompt }));
   };
 
   const totalItems = subModules.reduce((s, sm) => s + sm.workItems.length, 0);
@@ -376,18 +605,18 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
     <div className="min-h-screen bg-gray-100">
       {/* 头部 */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4 h-[65px]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={onBack} className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
+              <button onClick={onBack} className="flex items-center gap-1 px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
                 <ArrowLeft className="w-4 h-4" /> 返回首页
               </button>
               <div className={`w-12 h-12 rounded-xl ${colors.light} flex items-center justify-center`}>
                 {iconMap[initialChapter.icon]}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">第{initialChapter.number}章 {initialChapter.title}</h1>
-                <p className="text-sm text-gray-500">{initialChapter.subtitle}</p>
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">第{initialChapter.number}章 {initialChapter.title}</h1>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{initialChapter.subtitle}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -472,6 +701,10 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
             onFormEditContentChange={setFormEditContent}
             onOpenFormEdit={handleOpenFormEdit} onCloseFormEdit={() => setFormEditModal(null)}
             onAiFillForm={handleAiFillForm} onSaveFormEdit={handleSaveFormEdit}
+            sampleFilesMap={sampleFilesMap} artifactsMap={artifactsMap} aiPromptsMap={aiPromptsMap}
+            onUploadSample={handleUploadSample} onDeleteSample={handleDeleteSample} onDownloadSample={handleSampleDownload}
+            onUploadArtifact={handleUploadArtifact} onDeleteArtifact={handleDeleteArtifact} onDownloadArtifact={handleArtifactDownload}
+            onUpdateAiPrompt={handleUpdateAiPrompt}
           />
         )}
       </div>

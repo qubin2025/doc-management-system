@@ -7,6 +7,7 @@ import {
   ExperienceItem,
   AggregatedPattern,
 } from '../data/api';
+import { logColorConfig } from '../data/colorDebug';
 
 interface Props {
   projectName: string;
@@ -68,6 +69,9 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
   useEffect(() => {
     loadExperiences();
   }, []);
+
+  // 颜色调试日志：记录当前颜色配置与变更历史（仅开发模式）
+  useEffect(() => { logColorConfig('ExperiencePanel'); }, []);
 
   const handleExtract = async () => {
     setExtracting(true);
@@ -136,13 +140,13 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/zhjk-logo.png" alt="中航建科" className="h-9 w-auto" />
-            <h1 className="text-base font-bold text-gray-800 dark:text-slate-200">项目经验库</h1>
-            <span className="text-xs text-gray-600 dark:text-slate-400">{projectName}</span>
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-200">项目经验库</h1>
+            <span className="text-xs text-slate-600 dark:text-slate-400">{projectName}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onBack}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> 返回
             </button>
@@ -180,16 +184,16 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
         {items.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-3">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 mb-1">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-1">
                 <BarChart3 className="w-3.5 h-3.5" /> 经验总数
               </div>
-              <div className="text-lg font-bold text-gray-800 dark:text-slate-200">{stats.totalPatterns}</div>
+              <div className="text-lg font-bold text-slate-800 dark:text-slate-200">{stats.totalPatterns}</div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-3">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 mb-1">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-1">
                 <Target className="w-3.5 h-3.5" /> 来源项目
               </div>
-              <div className="text-lg font-bold text-gray-800 dark:text-slate-200">{stats.projectCount}</div>
+              <div className="text-lg font-bold text-slate-800 dark:text-slate-200">{stats.projectCount}</div>
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 p-3">
               <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 mb-1">
@@ -222,7 +226,7 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
               onChange={e => setSearchKeyword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="搜索经验关键词..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
             />
           </div>
           <select
@@ -231,7 +235,7 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
               setFilterCategory(e.target.value);
               loadExperiences({ category: e.target.value !== 'all' ? e.target.value : undefined, keyword: searchKeyword || undefined });
             }}
-            className="px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+            className="px-3 py-2 text-sm border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
           >
             <option value="all">全部分类</option>
             {categories.map(cat => (
@@ -273,7 +277,7 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
         {/* Aggregated patterns (cross-project) */}
         {aggregated.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-sm font-bold text-gray-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-purple-600" />
               跨项目聚合模式
             </h2>
@@ -291,12 +295,12 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
                       <span className={`text-xs font-bold ${sev.color}`}>
                         {agg.title}
                       </span>
-                      <span className="text-xs text-gray-400 dark:text-slate-500 ml-auto">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
                         {agg.projects?.length || agg.count || 0} 项目
                       </span>
                     </div>
                     {agg.description && (
-                      <p className="text-xs text-gray-600 dark:text-slate-400 mb-2">{agg.description}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{agg.description}</p>
                     )}
                     {agg.agentHint && (
                       <div className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 rounded-lg px-3 py-2 mt-2 flex items-start gap-1.5">
@@ -314,7 +318,7 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
         {/* Experience items list */}
         {filteredItems.length > 0 && (
           <>
-            <h2 className="text-sm font-bold text-gray-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
               <Clock className="w-4 h-4 text-purple-600" />
               经验详情 ({filteredItems.length})
             </h2>
@@ -350,12 +354,12 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200 mb-1.5">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5">
                       {item.title}
                     </h3>
 
                     {/* Description */}
-                    <p className="text-xs text-gray-600 dark:text-slate-400 mb-3 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
                       {item.description}
                     </p>
 
@@ -373,16 +377,16 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
                     {item.metrics && (
                       <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-slate-700">
                         {item.metrics.avgDurationDays > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-slate-400 inline-flex items-center gap-1">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 inline-flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {item.metrics.avgDurationDays}天
                           </span>
                         )}
-                        <span className="text-xs text-gray-500 dark:text-slate-400 inline-flex items-center gap-1">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 inline-flex items-center gap-1">
                           <Target className="w-3 h-3" />
                           {item.metrics.completedCount}/{item.metrics.totalItems} 项
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-slate-400 inline-flex items-center gap-1">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 inline-flex items-center gap-1">
                           <BarChart3 className="w-3 h-3" />
                           {item.metrics.avgProgress}% 进度
                         </span>
@@ -390,7 +394,7 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
                     )}
 
                     {/* Project name */}
-                    <div className="text-xs text-gray-400 dark:text-slate-500 mt-2">
+                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-2">
                       来源: {item.projectName}
                     </div>
                   </div>
@@ -401,7 +405,7 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
         )}
 
         {/* Summary footer */}
-        <div className="mt-8 text-xs text-gray-400 dark:text-slate-500 text-center pb-8">
+        <div className="mt-8 text-xs text-slate-400 dark:text-slate-500 text-center pb-8">
           共 {total} 条经验记录 · 覆盖 {aggregated.length} 种模式类型 · 来源于 {stats.projectCount} 个项目
         </div>
       </div>

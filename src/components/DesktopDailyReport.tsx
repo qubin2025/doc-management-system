@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Sparkles, Trash2, ChevronDown, ChevronUp } from 'l
 import { fetchDailyReports, DesktopDailyReport } from '../data/api';
 import { deleteDailyReport } from '../mobile/data/mobileApi';
 import PromptConfigDialog from './PromptConfigDialog';
+import { logColorConfig } from '../data/colorDebug';
 
 interface Props { onBack: () => void; }
 
@@ -21,6 +22,9 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => { fetchDailyReports().then(d => setReports(d || [])).catch(() => setReports([])).finally(() => setLoading(false)); }, []);
+
+  // 颜色调试日志：记录当前颜色配置与变更历史（仅开发模式）
+  useEffect(() => { logColorConfig('DesktopDailyReportView'); }, []);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('确认删除？手机端将标注为已失效。')) return;
@@ -108,21 +112,21 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
             <button onClick={onBack} className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
               <ArrowLeft className="w-3.5 h-3.5" /> 返回
             </button>
-            <h1 className="text-lg font-bold text-gray-800 dark:text-slate-100">项目日报管理</h1>
-            <span className="text-xs text-slate-400">{list.length}篇 · {names.length}个项目</span>
+            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-200">项目日报管理</h1>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{list.length}篇 · {names.length}个项目</span>
           </div>
           <div className="flex items-center gap-2">
             {/* CHANGE 8: Date range inputs */}
-            <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
+            <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <Calendar className="w-3.5 h-3.5" />
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200" />
+                className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200" />
             </label>
-            <span className="text-xs text-slate-400">至</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">至</span>
             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-              className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200" />
+              className="h-9 px-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200" />
             <select value={projectFilter} onChange={e => setProjectFilter(e.target.value)}
-              className="h-9 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-slate-200">
+              className="h-9 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200">
               <option value="">全部项目</option>
               {names.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
@@ -148,14 +152,14 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 text-center">
             <div className="flex items-baseline justify-center gap-1">
               <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">{maxWorkers}</span>
-              <span className="text-sm text-slate-400">/</span>
+              <span className="text-sm text-slate-400 dark:text-slate-500">/</span>
               <span className="text-xl font-bold text-orange-500 dark:text-orange-300">{avgWorkers}</span>
             </div>
             <div className="text-xs text-slate-400 mt-1">高峰/平均人数</div>
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 text-center">
             {machineryStats.items.length === 0 ? (
-              <div className="text-sm text-slate-400">-</div>
+              <div className="text-sm text-slate-400 dark:text-slate-500">-</div>
             ) : (
               <div className="space-y-1">
                 {machineryStats.items.map(m => (
@@ -179,7 +183,7 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
               <h3 className="text-sm font-bold text-purple-700 dark:text-purple-300">AI分析结果</h3>
               <button onClick={() => setAiResult(null)} className="ml-auto text-xs text-gray-400">关闭</button>
             </div>
-            <div className="text-sm text-gray-700 dark:text-slate-200">{aiResult}</div>
+            <div className="text-sm text-slate-700 dark:text-slate-200">{aiResult}</div>
           </div>
         )}
 
@@ -198,7 +202,7 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-bold text-gray-800 dark:text-slate-100">{r.reportDate}</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{r.reportDate}</span>
                         {/* CHANGE 7: Expand toggle button */}
                         <button onClick={() => setExpandedId(isExpanded ? null : r.id)}
                           className="p-1 text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors">
@@ -214,7 +218,7 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <span className="text-xs text-slate-400">{r.projectName || ''}</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{r.projectName || ''}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -237,32 +241,32 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                         <table className="w-full text-xs border-collapse mb-4 table-fixed">
                           <tbody>
                             <tr>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-gray-700 dark:text-slate-300 w-16">日期</td>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-gray-800 dark:text-slate-200">{r.reportDate}</td>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-gray-700 dark:text-slate-300 w-16">天气</td>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-gray-800 dark:text-slate-200">
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-slate-600 dark:text-slate-400 w-16">日期</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-slate-800 dark:text-slate-200">{r.reportDate}</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-slate-600 dark:text-slate-400 w-16">天气</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-slate-800 dark:text-slate-200">
                                 白天: {r.weatherDay || '-'} / 夜间: {r.weatherNight || '-'}
                                 {r.weatherAlert && <span className="ml-2 text-red-500">{r.weatherAlert}({r.weatherAlertLevel || '-'})</span>}
-                              </td>                            </tr>                            <tr>                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-gray-700 dark:text-slate-300">天气预警</td>                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5" colSpan={3}>                                {(r.weatherAlert && r.weatherAlert.trim() && r.weatherAlert.trim() !== '无' && r.weatherAlert.trim() !== '-') ? (                                  <span className="text-red-600 dark:text-red-400 font-medium text-xs">                                    ⚠ {r.weatherAlert}{r.weatherAlertLevel ? `（${r.weatherAlertLevel}级）` : ''}                                  </span>                                ) : (                                  <span className="text-emerald-600 dark:text-emerald-400 text-xs">✓ 无预警</span>                                )}
+                              </td>                            </tr>                            <tr>                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-slate-600 dark:text-slate-400">天气预警</td>                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5" colSpan={3}>                                {(r.weatherAlert && r.weatherAlert.trim() && r.weatherAlert.trim() !== '无' && r.weatherAlert.trim() !== '-') ? (                                  <span className="text-red-600 dark:text-red-400 font-medium text-xs">                                    ⚠ {r.weatherAlert}{r.weatherAlertLevel ? `（${r.weatherAlertLevel}级）` : ''}                                  </span>                                ) : (                                  <span className="text-emerald-600 dark:text-emerald-400 text-xs">✓ 无预警</span>                                )}
                               </td>
                             </tr>
                             <tr>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-gray-700 dark:text-slate-300">填报人</td>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-gray-800 dark:text-slate-200">{r.reportedBy || '-'}</td>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-gray-700 dark:text-slate-300">项目</td>
-                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-gray-800 dark:text-slate-200">{r.projectName || '-'}</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-slate-600 dark:text-slate-400">填报人</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-slate-800 dark:text-slate-200">{r.reportedBy || '-'}</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 font-medium text-slate-600 dark:text-slate-400">项目</td>
+                              <td className="border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-slate-800 dark:text-slate-200">{r.projectName || '-'}</td>
                             </tr>
                           </tbody>
                         </table>
 
                         {/* Personnel breakdown */}
-                        <h3 className="text-xs font-bold text-gray-700 dark:text-slate-300 mb-2">人员情况</h3>
+                        <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">人员情况</h3>
                         <table className="w-full text-xs border-collapse mb-4 table-fixed">
                           <colgroup><col style={{width:"60%"}} /><col style={{width:"40%"}} /></colgroup>
                           <thead>
                             <tr className="bg-slate-100 dark:bg-slate-700">
-                              <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left text-gray-600 dark:text-slate-300">类别</th>
-                              <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-gray-600 dark:text-slate-300">人数</th>
+                              <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left text-slate-500 dark:text-slate-400">类别</th>
+                              <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-slate-500 dark:text-slate-400">人数</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -277,8 +281,8 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                               { label: '合计', value: r.workersTotal, bold: true },
                             ].filter(p => p.value > 0 || p.label === '合计').map(p => (
                               <tr key={p.label} className={p.bold ? 'font-bold bg-slate-50 dark:bg-slate-700' : ''}>
-                                <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{p.label}</td>
-                                <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-gray-800 dark:text-slate-200">{p.value || 0}</td>
+                                <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{p.label}</td>
+                                <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-slate-800 dark:text-slate-200">{p.value || 0}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -287,23 +291,23 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                         {/* <table className="w-full text-xs border-collapse mb-4 table-fixed">
                               <thead>
                                 <tr className="bg-slate-100 dark:bg-slate-700">
-                                  <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left text-gray-600 dark:text-slate-300">名称</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left text-gray-600 dark:text-slate-300">规格</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-gray-600 dark:text-slate-300">数量</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left text-slate-500 dark:text-slate-400">名称</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-left text-slate-500 dark:text-slate-400">规格</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-slate-500 dark:text-slate-400">数量</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {r.machinery.map((m, mi) => (
                                   <tr key={mi}>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{m.name || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{m.spec || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-gray-800 dark:text-slate-200">{m.count}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{m.name || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{m.spec || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-slate-800 dark:text-slate-200">{m.count}</td>
                                   </tr>
                                 ))}
                                 <tr className="font-bold bg-slate-50 dark:bg-slate-700">
-                                  <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">合计</td>
+                                  <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">合计</td>
                                   <td className="border border-slate-300 dark:border-slate-600 px-2 py-1"></td>
-                                  <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-gray-800 dark:text-slate-200">{r.machineryTotal}</td>
+                                  <td className="border border-slate-300 dark:border-slate-600 px-2 py-1 text-right text-slate-800 dark:text-slate-200">{r.machineryTotal}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -313,7 +317,7 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                         {/* Task progress table — A4 width, word-wrap, auto-height */}
                         {r.tasks && r.tasks.length > 0 && (
                           <>
-                            <h3 className="text-xs font-bold text-gray-700 dark:text-slate-300 mb-2">施工任务进度</h3>
+                            <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">施工任务进度</h3>
                             <table className="w-full text-xs border-collapse mb-4 table-fixed">
                               <colgroup>
                                 <col style={{width:'10%'}} /><col style={{width:'35%'}} />
@@ -322,23 +326,23 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                               </colgroup>
                               <thead>
                                 <tr className="bg-slate-100 dark:bg-slate-700">
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-gray-600 dark:text-slate-300 align-top">区域</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-gray-600 dark:text-slate-300 align-top">施工内容</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-600 dark:text-slate-300 align-top">工人</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-600 dark:text-slate-300 align-top">今日</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-600 dark:text-slate-300 align-top">累计</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-gray-600 dark:text-slate-300 align-top">分包单位</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-slate-500 dark:text-slate-400 align-top">区域</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-slate-500 dark:text-slate-400 align-top">施工内容</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-500 dark:text-slate-400 align-top">工人</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-500 dark:text-slate-400 align-top">今日</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-500 dark:text-slate-400 align-top">累计</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-slate-500 dark:text-slate-400 align-top">分包单位</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {r.tasks.map((t, ti) => (
                                   <tr key={ti}>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{t.area || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{t.description || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-800 dark:text-slate-200 align-top">{t.workers || 0}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-800 dark:text-slate-200 align-top">{t.todayPct || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-800 dark:text-slate-200 align-top">{t.totalPct || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{t.contractor || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{t.area || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{t.description || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-800 dark:text-slate-200 align-top">{t.workers || 0}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-800 dark:text-slate-200 align-top">{t.todayPct || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-800 dark:text-slate-200 align-top">{t.totalPct || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{t.contractor || '-'}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -349,7 +353,7 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                         {/* Issues list — A4 width, word-wrap, auto-height */}
                         {r.issues && r.issues.length > 0 && (
                           <>
-                            <h3 className="text-xs font-bold text-gray-700 dark:text-slate-300 mb-2">存在问题与措施</h3>
+                            <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">存在问题与措施</h3>
                             <table className="w-full text-xs border-collapse mb-4 table-fixed">
                               <colgroup>
                                 <col style={{width:'28%'}} /><col style={{width:'28%'}} />
@@ -357,19 +361,19 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
                               </colgroup>
                               <thead>
                                 <tr className="bg-slate-100 dark:bg-slate-700">
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-gray-600 dark:text-slate-300 align-top">问题</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-gray-600 dark:text-slate-300 align-top">原因</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-600 dark:text-slate-300 align-top">延误</th>
-                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-gray-600 dark:text-slate-300 align-top">已采取措施</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-slate-500 dark:text-slate-400 align-top">问题</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-slate-500 dark:text-slate-400 align-top">原因</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-500 dark:text-slate-400 align-top">延误</th>
+                                  <th className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-left text-slate-500 dark:text-slate-400 align-top">已采取措施</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {r.issues.map((iss, ii) => (
                                   <tr key={ii}>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{iss.problem || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{iss.cause || '-'}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-gray-800 dark:text-slate-200 align-top">{iss.delayDays || 0}</td>
-                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-gray-700 dark:text-slate-300 align-top break-all">{iss.measures || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{iss.problem || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{iss.cause || '-'}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1 py-1 text-center text-slate-800 dark:text-slate-200 align-top">{iss.delayDays || 0}</td>
+                                    <td className="border border-slate-300 dark:border-slate-600 px-1.5 py-1 text-slate-600 dark:text-slate-400 align-top break-all">{iss.measures || '-'}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -379,7 +383,7 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
 
                         {/* Notes */}
                         {r.notes && (
-                          <div className="text-xs text-gray-600 dark:text-slate-400 mt-3 pt-3 border-t border-slate-300 dark:border-slate-600">
+                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-3 pt-3 border-t border-slate-300 dark:border-slate-600">
                             <span className="font-medium">备注：</span>{r.notes}
                           </div>
                         )}

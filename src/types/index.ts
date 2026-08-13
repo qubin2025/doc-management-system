@@ -164,6 +164,29 @@ export interface GuideForm {
   description?: string;
   fields?: FormField[];          // 模板字段结构
   sampleContent?: string;        // 示例内容（Markdown格式）
+  aiPrompt?: string;             // AI填写提示词（可编辑）
+  sampleFiles?: FormSampleFile[];   // 样本文件
+  artifacts?: FormArtifact[];        // 成果文件（带版本号）
+}
+
+// 样本文件
+export interface FormSampleFile {
+  id: string;
+  fileName: string;
+  fileData: string;             // Base64
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+// 成果文件（自动版本号）
+export interface FormArtifact {
+  id: string;
+  fileName: string;
+  fileData: string;             // Base64
+  version: number;              // 自动版本号
+  uploadedAt: string;
+  uploadedBy: string;
+  note?: string;                // 版本备注
 }
 
 // 附表内容（持久化存储）
@@ -174,6 +197,7 @@ export interface FormContent {
   filledByAi: boolean;          // 是否AI填写
   lastModified: string;         // 最后修改时间（ISO）
   version: number;              // 版本号
+  aiPrompt?: string;            // 保存的AI提示词
 }
 
 // 附件的文件记录

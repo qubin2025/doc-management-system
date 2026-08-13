@@ -299,6 +299,9 @@ function initSchema(db) {
       chapter_id TEXT NOT NULL,
       form_code TEXT NOT NULL,
       content TEXT DEFAULT '',
+      sample_files TEXT DEFAULT '[]',
+      artifacts TEXT DEFAULT '[]',
+      ai_prompt TEXT DEFAULT '',
       updated_at TEXT DEFAULT (datetime('now')),
       UNIQUE(project_name, chapter_id, form_code)
     );
@@ -310,8 +313,22 @@ function initSchema(db) {
       file_name TEXT DEFAULT '',
       results TEXT DEFAULT '[]',
       report TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    -- v5.2: 项目级配置通用存储（替代 sync.js 静默丢弃的 6 类 localStorage 数据）
+    -- config_type: tailoring | stakeholders | risks | resources | raci | guide_progress
+    CREATE TABLE IF NOT EXISTS project_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_name TEXT NOT NULL,
+      config_type TEXT NOT NULL,
+      data TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(project_name, config_type),
+      FOREIGN KEY (project_name) REFERENCES projects(name) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_project_config_project ON project_config(project_name);
+    CREATE INDEX IF NOT EXISTS idx_project_config_type ON project_config(project_name, config_type);
   `);
 
   // 迁移：旧 daily_reports 表添加 deleted 列
@@ -342,6 +359,18 @@ function migrateSchema(db) {
   const docCols = db.prepare("PRAGMA table_info(documents)").all().map(c => c.name);
   if (!docCols.includes('file_path')) {
     try { db.exec("ALTER TABLE documents ADD COLUMN file_path TEXT"); } catch {}
+  }
+
+  // 迁移：旧 guide_forms 表添加 sample_files/artifacts/ai_prompt 列
+  const guideFormCols = db.prepare("PRAGMA table_info(guide_forms)").all().map(c => c.name);
+  if (!guideFormCols.includes('sample_files')) {
+    try { db.exec("ALTER TABLE guide_forms ADD COLUMN sample_files TEXT DEFAULT '[]'"); } catch {}
+  }
+  if (!guideFormCols.includes('artifacts')) {
+    try { db.exec("ALTER TABLE guide_forms ADD COLUMN artifacts TEXT DEFAULT '[]'"); } catch {}
+  }
+  if (!guideFormCols.includes('ai_prompt')) {
+    try { db.exec("ALTER TABLE guide_forms ADD COLUMN ai_prompt TEXT DEFAULT ''"); } catch {}
   }
 }
 

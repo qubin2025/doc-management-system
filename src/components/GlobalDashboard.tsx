@@ -8,6 +8,12 @@ import { computeIndicators, ProjectIndicators } from '../data/indicatorEngine';
 import { getTheme, setTheme, type ThemeMode } from '../data/themeEngine';
 import { extractAllPhotos, extractRecentDocUpdates, extractProjectDeadlines, getProjectPhotoCount, getProjectDocCount, countNewThisMonth, countNewThisWeek, fetchMobilePhotoStats, fetchMobilePhotosPreview, ProjectInfo, MobilePhotoStat } from '../data/projectAggregator';
 import { getUnreadCount, getAllNotifications, markRead, markAllRead, deleteNotification, MobileNotification } from '../data/mobileNotifications';
+import { logColorConfig } from '../data/colorDebug';
+import GlobalComparisonCharts from './charts/GlobalComparisonCharts';
+import GlobalAnalysisCharts from './charts/GlobalAnalysisCharts';
+import AiCapabilityCharts from './charts/AiCapabilityCharts';
+import GlobalOperationCharts from './charts/GlobalOperationCharts';
+import GlobalAdvancedCharts from './charts/GlobalAdvancedCharts';
 
 // ========== 类型 ==========
 interface Props {
@@ -44,7 +50,7 @@ function formatTime(iso: string): string {
 const NotificationBadge: React.FC<{ count: number; onClick: () => void }> = ({ count, onClick }) => (
   <button onClick={onClick} className="relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors
     bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-500
-    text-gray-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400">
+    text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400">
     <Bell className="w-3.5 h-3.5" />
     <span>消息</span>
     {count > 0 && (
@@ -73,7 +79,7 @@ const NotificationPanel: React.FC<{ onClose: () => void; onMarkAllRead: () => vo
       <div className="absolute inset-0 bg-black/20" onClick={onClose} />
       <div className="relative w-full max-w-sm h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col mt-0 ml-auto">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700 shrink-0">
-          <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">现场消息</h3>
+          <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">现场消息</h3>
           <div className="flex items-center gap-2">
             <button onClick={onMarkAllRead} className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400">全部已读</button>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded"><X className="w-4 h-4 text-gray-400" /></button>
@@ -81,7 +87,7 @@ const NotificationPanel: React.FC<{ onClose: () => void; onMarkAllRead: () => vo
         </div>
         <div className="flex-1 overflow-y-auto">
           {notifs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 py-12">
+            <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 py-12">
               <Bell className="w-12 h-12 mb-3 opacity-20" />
               <p className="text-sm">暂无消息</p>
             </div>
@@ -91,15 +97,15 @@ const NotificationPanel: React.FC<{ onClose: () => void; onMarkAllRead: () => vo
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-1.5 mb-1">
                     {typeIcon(n.type)}
-                    <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{typeLabel(n.type)}</span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{typeLabel(n.type)}</span>
                     {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-slate-700 shrink-0">{formatTime(n.timestamp)}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400 shrink-0">{formatTime(n.timestamp)}</span>
                 </div>
-                <p className="text-sm text-gray-700 dark:text-slate-300 mb-1.5">{n.message}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1.5">{n.message}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600 dark:text-slate-700">{n.projectName || '全局'} · {n.fromUser}</span>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">{n.projectName || '全局'} · {n.fromUser}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     {!n.read && (
@@ -191,6 +197,9 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // 颜色调试日志：记录当前颜色配置与变更历史（仅开发模式）
+  useEffect(() => { logColorConfig('GlobalDashboard', themeMode); }, [themeMode]);
+
   const refresh = async () => {
     setRefreshing(true);
     loadData();
@@ -257,8 +266,8 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
           <div className="flex items-center gap-3">
             <img src="/zhjk-logo.png" alt="中航建科" className="h-8 w-auto" />
             <div>
-              <h1 className="text-sm font-bold text-gray-800 dark:text-slate-200 leading-tight">中航建科 · 工程咨询管理平台</h1>
-              <p className="text-xs text-gray-600 dark:text-slate-700">AI+知识图谱驱动 · 全过程数智化 · 50+功能模块 · 移动端现场联动</p>
+              <h1 className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-tight">中航建科 · 全过程工程咨询管理平台</h1>
+              <p className="text-xs text-slate-600 dark:text-slate-400">AI赋能 提升效率 功能模块化 双端协同</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -266,7 +275,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
             <button onClick={refresh}
               className={`px-2.5 py-1.5 text-xs rounded-lg border transition-colors
                 ${refreshing ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' :
-                'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-blue-300'}`}>
+                'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-blue-300'}`}>
               {refreshing ? '刷新中...' : '刷新'}
             </button>
             {/* 主题切换 */}
@@ -282,7 +291,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
             {onLogout && (
               <button onClick={onLogout}
                 className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-slate-600
-                  bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400
+                  bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400
                   hover:text-red-500 hover:border-red-200 dark:hover:text-red-400 dark:hover:border-red-800 transition-colors">
                 退出
               </button>
@@ -305,11 +314,11 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
               <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700 p-3 shadow-sm">
                 <div className="flex items-center gap-2 mb-1.5">
                   {card.icon}
-                  <span className="text-xs text-gray-500 dark:text-slate-400">{card.label}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{card.label}</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl font-bold text-gray-800 dark:text-slate-200">{card.value}</span>
-                  <span className="text-xs text-gray-600 dark:text-slate-700">{card.sub}</span>
+                  <span className="text-xl font-bold text-slate-800 dark:text-slate-200">{card.value}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-400">{card.sub}</span>
                 </div>
               </div>
             ))}
@@ -338,7 +347,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="搜索项目名称..."
                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-lg
-                  bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 placeholder:text-gray-400
+                  bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-gray-400
                   focus:border-blue-400 dark:focus:border-blue-500 outline-none" />
               {search && (
                 <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600">
@@ -351,14 +360,14 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
                 <button key={s} onClick={() => setFilterStatus(s)}
                   className={`px-2.5 py-1 text-xs rounded-md transition-colors ${filterStatus === s
                     ? 'bg-blue-500 text-white shadow-sm'
-                    : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}>
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`}>
                   {s === 'all' ? '全部' : s === 'normal' ? '正常' : s === 'warning' ? '关注' : '风险'}
                 </button>
               ))}
             </div>
             <select value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}
               className="px-2.5 py-1.5 text-xs border border-gray-200 dark:border-slate-600 rounded-lg
-                bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 outline-none">
+                bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 outline-none">
               <option value="risk">风险优先</option>
               <option value="progress">进度倒序</option>
               <option value="recent">最近活跃</option>
@@ -368,7 +377,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
 
           {/* 项目卡片网格 */}
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-slate-500">
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500">
               <Search className="w-16 h-16 mb-4 opacity-20" />
               <p className="text-sm">{search ? '没有匹配的项目' : '暂无项目，点击"新建项目"开始'}</p>
             </div>
@@ -395,8 +404,8 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
                     {/* 项目名称行 */}
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate">{proj.name}</h3>
-                        <span className="text-xs text-gray-600 dark:text-slate-700">
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{proj.name}</h3>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
                           {proj.standard || standard || ''} · 创建于 {proj.createdAt ? new Date(proj.createdAt).toLocaleDateString('zh-CN') : '未知'}
                         </span>
                       </div>
@@ -406,8 +415,8 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
                     {/* 进度条 */}
                     <div className="mb-2.5">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-500 dark:text-slate-400">综合进度</span>
-                        <span className="text-xs font-medium text-gray-600 dark:text-slate-300">{Math.round(spi * 100)}%</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">综合进度</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{Math.round(spi * 100)}%</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
                         <div className={`h-full rounded-full transition-all ${barColor(spi * 100)}`} style={{ width: `${Math.min(spi * 100, 100)}%` }} />
@@ -427,12 +436,12 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
                         </span>
                       ))}
                       {dangerAlerts.length === 0 && warningAlerts.length === 0 && (
-                        <span className="text-xs text-gray-600 dark:text-slate-700">无预警</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">无预警</span>
                       )}
                     </div>
 
                     {/* 底部信息行 */}
-                    <div className="flex items-center justify-between text-xs text-gray-600 dark:text-slate-700">
+                    <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1">
                           <Image className="w-3 h-3" /> {projPhotoCount}张
@@ -460,13 +469,13 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
           {/* 最新现场照片 */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 dark:text-slate-300">现场掠影</span>
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">现场掠影</span>
               <button onClick={() => { setShowPhotos(true); setLightboxIdx(0); }}
                 className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400">查看全部</button>
             </div>
             {/* 合并 localStorage 和手机端照片 */}
             {(() => { const allPhotos = [...photos, ...mobilePhotos]; return allPhotos.length; })() === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 text-gray-400 dark:text-slate-500">
+              <div className="flex flex-col items-center justify-center py-6 text-slate-400 dark:text-slate-500">
                 <Camera className="w-10 h-10 mb-2 opacity-20" />
                 <p className="text-xs">暂无现场照片</p>
                 <p className="text-xs mt-0.5">通过手机APP拍摄上传</p>
@@ -479,7 +488,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
                     {p.dataUrl ? (
                       <img src={p.dataUrl} alt={p.fileName} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-slate-600">
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600">
                         <Image className="w-6 h-6" />
                       </div>
                     )}
@@ -494,17 +503,17 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
 
           {/* 最近文档更新 */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700 p-3 shadow-sm">
-            <span className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-2 block">文档动态</span>
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2 block">文档动态</span>
             {docUpdates.length === 0 ? (
-              <p className="text-xs text-gray-600 dark:text-slate-700 py-4 text-center">暂无最近更新</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">暂无最近更新</p>
             ) : (
               <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
                 {docUpdates.map((d, i) => (
                   <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-50 dark:border-slate-800 last:border-0">
                     <FileText className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-700 dark:text-slate-300 truncate">{d.fileName}</p>
-                      <p className="text-xs text-gray-600 dark:text-slate-700">{d.projectName} · {formatTime(d.uploadTime)}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{d.fileName}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">{d.projectName} · {formatTime(d.uploadTime)}</p>
                     </div>
                   </div>
                 ))}
@@ -515,23 +524,23 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
           {/* 到期提醒 */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 dark:text-slate-300">到期提醒</span>
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">到期提醒</span>
               <button onClick={() => setShowDeadlines(!showDeadlines)}
-                className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
+                className="p-0.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
                 {showDeadlines ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
             {showDeadlines && (
               deadlines.length === 0 ? (
-                <p className="text-xs text-gray-600 dark:text-slate-700 py-3 text-center">暂无近期到期事项</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 py-3 text-center">暂无近期到期事项</p>
               ) : (
                 <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
                   {deadlines.map((d, i) => (
                     <div key={i} className="flex items-center gap-2 py-1.5 border-b border-gray-50 dark:border-slate-800 last:border-0">
                       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${d.daysLeft < 0 ? 'bg-red-500' : d.daysLeft <= 3 ? 'bg-amber-500' : 'bg-green-500'}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-700 dark:text-slate-300 truncate">{d.projectName} · {d.title}</p>
-                        <p className={`text-xs ${d.daysLeft < 0 ? 'text-red-500 font-medium' : d.daysLeft <= 3 ? 'text-amber-500' : 'text-gray-400 dark:text-slate-500'}`}>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{d.projectName} · {d.title}</p>
+                        <p className={`text-xs ${d.daysLeft < 0 ? 'text-red-500 font-medium' : d.daysLeft <= 3 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
                           {d.daysLeft < 0 ? `已逾期${Math.abs(d.daysLeft)}天` : `剩余${d.daysLeft}天`}
                         </p>
                       </div>
@@ -553,22 +562,22 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
         return (
           <div className="max-w-[1600px] mx-auto w-full px-4 pb-6">
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700 p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-slate-200 mb-4">多项目对比</h3>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">多项目对比</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b dark:border-slate-700 text-left text-xs text-gray-500 dark:text-slate-400 uppercase">
-                      <th className="pb-2">项目</th><th className="pb-2 text-center">CPI</th><th className="pb-2 text-center">SPI</th><th className="pb-2 text-center">完整度</th><th className="pb-2 text-center">质量</th><th className="pb-2">风险</th>
+                    <tr className="border-b dark:border-slate-700 text-left text-xs text-slate-500 dark:text-slate-400 uppercase">
+                      <th className="pb-2">项目名称</th><th className="pb-2 text-center">CPI（成本绩效）</th><th className="pb-2 text-center">SPI（进度绩效）</th><th className="pb-2 text-center">完整度</th><th className="pb-2 text-center">质量</th><th className="pb-2">安全监控</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allIndicators.map(ind => (
                       <tr key={ind.projectName} className="border-b dark:border-slate-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-slate-800">
-                        <td className="py-2 font-medium text-gray-700 dark:text-slate-300">{ind.projectName}</td>
+                        <td className="py-2 font-medium text-slate-600 dark:text-slate-400">{ind.projectName}</td>
                         <td className={`py-2 text-center font-bold ${ind.cpi > 1.05 ? 'text-red-500' : ind.cpi > 0.95 ? 'text-amber-500' : 'text-green-500'}`}>{ind.cpi}</td>
                         <td className={`py-2 text-center font-bold ${gaugeColor(ind.spi, [0.5, 0.8])}`}>{ind.spi}</td>
                         <td className={`py-2 text-center font-bold ${gaugeColor(ind.completeness / 100, [0.3, 0.6])}`}>{ind.completeness}%</td>
-                        <td className="py-2 text-center font-bold text-gray-700 dark:text-slate-300">{ind.qualityScore || '-'}</td>
+                        <td className="py-2 text-center font-bold text-slate-600 dark:text-slate-400">{ind.qualityScore || '-'}</td>
                         <td className="py-2">
                           {ind.alerts.filter(a => a.level === 'danger').length > 0 && <span className="text-xs text-red-500">危{ind.alerts.filter(a => a.level === 'danger').length}</span>}
                           {ind.alerts.filter(a => a.level === 'danger').length === 0 && <span className="text-xs text-green-500">正常</span>}
@@ -578,10 +587,72 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
                   </tbody>
                 </table>
               </div>
+              <details
+                className="mt-3 group"
+                onToggle={(e) => {
+                  const el = e.currentTarget;
+                  console.log(
+                    '[GlobalDashboard] 指标说明面板 ' + (el.open ? '展开' : '收起'),
+                    { timestamp: new Date().toISOString(), open: el.open }
+                  );
+                }}
+              >
+                <summary className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 select-none flex items-center gap-1">
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-90" viewBox="0 0 12 12" fill="none">
+                    <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  指标计算说明
+                </summary>
+                <div className="mt-2 pl-4 text-xs text-slate-600 dark:text-slate-400 space-y-1.5 leading-relaxed">
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">CPI（成本绩效指数）</span>＝ 挣值(BCWP) ÷ 实际成本(ACWP)。CPI &gt; 1 表示成本节约，&lt; 1 表示成本超支。</p>
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">SPI（进度绩效指数）</span>＝ 挣值(BCWP) ÷ 计划价值(BCWS)。SPI &gt; 1 表示进度超前，&lt; 1 表示进度滞后。</p>
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">完整度</span>＝ 已完成工作项数 ÷ 总工作项数 × 100%。反映项目整体完成进度。</p>
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">质量</span>＝ 质量检查综合评分（0–100 分），由数据完整性、规范性、及时性等多维度加权得出。</p>
+                  <p><span className="font-medium text-slate-700 dark:text-slate-300">安全监控</span>＝ 危险等级告警数量。「正常」表示无危险级告警，「危N」表示存在 N 条危险级告警。</p>
+                </div>
+              </details>
             </div>
           </div>
         )}
       )()}
+
+      {/* ===== 图表分析区块 ===== */}
+      <div className="max-w-[1600px] mx-auto w-full px-4 py-4 space-y-8">
+        {/* 项目分析（项目类图表） */}
+        <section>
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">📊 项目分析</h2>
+          <GlobalComparisonCharts
+            projects={projects}
+            indicators={indicators}
+            dark={themeMode === 'dark'}
+          />
+          <div className="mt-6">
+            <GlobalAnalysisCharts
+              projects={projects}
+              indicators={indicators}
+              dark={themeMode === 'dark'}
+            />
+          </div>
+        </section>
+
+        {/* AI 能力分析（AI类图表） */}
+        <section>
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">🤖 AI 能力分析</h2>
+          <AiCapabilityCharts dark={themeMode === 'dark'} />
+        </section>
+
+        {/* 运营分析（运营类图表） */}
+        <section>
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">🔧 运营分析</h2>
+          <GlobalOperationCharts dark={themeMode === 'dark'} />
+        </section>
+
+        {/* 高级分析（经验库+Agent深度） */}
+        <section>
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">🛤️ 高级分析</h2>
+          <GlobalAdvancedCharts dark={themeMode === 'dark'} />
+        </section>
+      </div>
 
       {/* 通知面板 */}
       {notifPanel && (

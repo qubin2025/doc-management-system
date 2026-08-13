@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, FolderOpen, ArrowRight, Send, User, Sparkles, Plus, Settings, Paperclip, Image, BarChart3, ChevronDown, Edit3, Download, X, Loader, Upload, Trash2 } from 'lucide-react';
 import { ProjectInfo } from '../types';
 import * as api from '../data/api';
+import { fetchAllIssues, DesktopIssue } from '../data/api';
 import { toast } from './Toast';
 
 interface ProjectEntryPageProps {
@@ -23,7 +24,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   projects, currentUser, userDisplay, isAdmin, userRole,
   onSelectProject, onLogout, onAiSubmit, onCreateProject, onRenameProject, onUpdateProject, onBack
 }) => {
-  const light = true; // 固定浅色模式
+  const light = typeof document !== 'undefined' && document.documentElement.dataset.theme !== 'dark';
   const [search, setSearch] = useState('');
   const [aiQuery, setAiQuery] = useState('');
   const [showMore, setShowMore] = useState(false);
@@ -37,6 +38,34 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   const [editForm, setEditForm] = useState({ overview: '', area: '', scale: '', investment: '', pipeline: '', aiReport: '', custom: [] as {key:string;value:string}[] });
   const [projectDocs, setProjectDocs] = useState<{ fileName: string; data: string; size: number }[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+  // 项目未解决问题计数（从后端真实数据聚合，替代原基于名称哈希的模拟告警数）
+  const [projectAlerts, setProjectAlerts] = useState<Record<string, number>>({});
+
+  // 加载各项目未解决问题数（无 mock 兜底，加载失败不显示告警角标）
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        console.log('[ProjectEntry] 加载项目告警计数 → backend: /api/mobile/issue/list');
+        const issues: DesktopIssue[] = await fetchAllIssues();
+        if (cancelled || !Array.isArray(issues)) return;
+        // 聚合各项目未关闭问题数（status 不属于已解决/已关闭视为未解决）
+        const CLOSED_STATUSES = ['resolved', 'closed', '已完成', '已解决', '关闭', 'done'];
+        const counts: Record<string, number> = {};
+        for (const iss of issues) {
+          if (!iss.projectName) continue;
+          const st = (iss.status || '').toLowerCase();
+          if (CLOSED_STATUSES.some(s => st === s)) continue;
+          counts[iss.projectName] = (counts[iss.projectName] || 0) + 1;
+        }
+        console.log('[ProjectEntry] 告警计数加载完成', { totalIssues: issues.length, projectsWithAlerts: Object.keys(counts).length });
+        if (!cancelled) setProjectAlerts(counts);
+      } catch (e: any) {
+        console.warn('[ProjectEntry] 告警计数加载失败（不注入 mock，隐藏告警角标）:', e?.message || e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleDeleteProject = async (projectName: string) => {
     if (!confirm('确定删除项目"' + projectName + '"？此操作将彻底清除该项目全部数据，不可恢复。')) return;
@@ -91,54 +120,31 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
   const displayed = showMore ? filtered : filtered.slice(0, 10);
 
-  // 模拟项目阶段和健康度（基于项目名称哈希）
-  const getProjectMeta = (name: string) => {
-    let h = 0; for (let i = 0; i < name.length; i++) h = ((h << 5) - h) + name.charCodeAt(i);
-    const phases = ['前期阶段', '招标阶段', '施工阶段', '竣工结算阶段'];
-    const pi = Math.abs(h) % 4;
-    const healthLevel = Math.abs(h * 7) % 5 + 1; // 1-5
-    const alertCount = Math.abs(h * 3) % 3; // 0-2 (0=无告警)
-    return { phase: phases[pi], health: healthLevel, alerts: alertCount };
-  };
-
   // 主题样式
   const t = {
     bg: light ? 'bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 m-0 p-0' : 'bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 m-0 p-0',
-    hdr: light ? 'backdrop-blur-md' : 'backdrop-blur-xl',
-    hdrBg: 'bg-[url(/project-header-bg.png)] bg-cover bg-center',
-    hdrOverlay: light ? 'bg-white/65' : 'bg-blue-950/65',
-    logoBg: light ? 'bg-blue-600' : 'bg-blue-600',
-    logoShadow: light ? '' : 'shadow-lg shadow-blue-600/30',
-    h1Text: light ? 'text-gray-800' : 'text-white',
-    subText: light ? 'text-gray-400' : 'text-blue-300/70',
-    userText: light ? 'text-gray-600' : 'text-blue-100',
-    roleAdmin: light ? 'bg-red-100 text-red-700' : 'bg-red-500/30 text-red-200',
-    roleUser: light ? 'bg-blue-100 text-blue-700' : 'bg-blue-500/30 text-blue-200',
-    logout: light ? 'text-gray-600 hover:text-red-600 hover:bg-red-50' : 'text-blue-200/70 hover:text-white hover:bg-white/10',
-    searchBg: light ? 'bg-blue-50/30 border-2 border-blue-300 text-gray-800 shadow-sm' : 'bg-blue-900/20 backdrop-blur-xl border-2 border-blue-400/30 text-white placeholder:text-blue-300 shadow-lg',
+    searchBg: light ? 'bg-blue-50/30 border-2 border-blue-300 text-slate-800 shadow-sm' : 'bg-blue-900/20 backdrop-blur-xl border-2 border-blue-400/30 text-white placeholder:text-blue-300 shadow-lg',
     searchPh: light ? 'placeholder:text-blue-400 placeholder:font-medium' : 'placeholder:text-blue-300',
     card: light ? 'bg-white shadow-md border border-gray-200 hover:shadow-lg hover:border-gray-300' : 'bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-white/10',
-    cardTitle: light ? 'text-gray-800' : 'text-white',
-    cardDate: light ? 'text-gray-400' : 'text-blue-300/50',
+    cardTitle: light ? 'text-slate-800' : 'text-white',
+    cardDate: light ? 'text-slate-400' : 'text-blue-300/50',
     cardIconBg: light ? 'bg-blue-50 group-hover:bg-blue-100' : 'bg-blue-500/20 group-hover:bg-blue-500/30',
     cardIcon: light ? 'text-blue-500' : 'text-blue-400',
-    cardArrow: light ? 'text-gray-300 group-hover:text-blue-500' : 'text-blue-400/30 group-hover:text-blue-400',
-    moreBtn: light ? 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-blue-300 hover:bg-white/10 hover:border-blue-400/30 shadow-lg',
-    emptyIcon: light ? 'text-gray-300' : 'text-blue-400/30',
-    emptyTitle: light ? 'text-gray-600' : 'text-blue-200',
-    emptyDesc: light ? 'text-gray-400' : 'text-blue-300/50',
+    cardArrow: light ? 'text-slate-300 group-hover:text-blue-500' : 'text-blue-400/30 group-hover:text-blue-400',
+    moreBtn: light ? 'bg-white border border-gray-200 text-slate-600 hover:bg-gray-50 shadow-sm' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-blue-300 hover:bg-white/10 hover:border-blue-400/30 shadow-lg',
+    emptyIcon: light ? 'text-slate-300' : 'text-blue-400/30',
+    emptyTitle: light ? 'text-slate-600' : 'text-blue-200',
+    emptyDesc: light ? 'text-slate-400' : 'text-blue-300/50',
     aiBar: light ? 'bg-gradient-to-r from-blue-100 via-slate-200 to-blue-100' : 'bg-white/5 backdrop-blur-xl',
-    aiBarBg: 'bg-[url(/project-header-bg.png)] bg-cover bg-center',
-    aiBarOverlay: light ? 'bg-white/65' : 'bg-blue-950/65',
     aiLabel: light ? 'text-blue-700 font-semibold' : 'text-blue-300',
     aiIcon: light ? 'text-sky-500' : 'text-blue-400',
-    aiInput: light ? 'bg-white border-transparent text-gray-800 focus:border-blue-400/50' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10',
+    aiInput: light ? 'bg-white border-transparent text-slate-800 focus:border-blue-400/50' : 'bg-white/5 backdrop-blur-xl border border-white/10 text-white placeholder:text-blue-300/40 focus:bg-white/10',
     aiBtn: light ? 'bg-sky-500 hover:bg-sky-600' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30',
     aiBtnDisabled: light ? 'bg-gray-300' : 'bg-white/10 text-blue-300/30',
-    filterCount: light ? 'text-gray-500' : 'text-blue-300',
+    filterCount: light ? 'text-slate-500' : 'text-blue-300',
     filterIcon: light ? 'text-blue-500' : 'text-blue-400',
     createBtn: light ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30',
-    toggleBtn: light ? 'text-gray-500 hover:text-gray-700 hover:bg-gray-100' : 'text-blue-300/70 hover:text-white hover:bg-white/10',
+    toggleBtn: light ? 'text-slate-500 hover:text-slate-700 hover:bg-gray-100' : 'text-blue-300/70 hover:text-white hover:bg-white/10',
   };
 
   const handleSend = () => {
@@ -157,34 +163,30 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
   return (
     <div className={`min-h-screen flex flex-col ${t.bg}`}>
-      {/* 顶部导航 — 毛玻璃悬浮+背景图 */}
-      <header className={`sticky top-0 z-30 w-full ${t.hdr}`}
-        style={{ backgroundImage: 'url(/project-header-bg.png)', backgroundSize: 'cover', backgroundPosition: 'top', filter: 'brightness(0.9)', margin: 0 }}>
+      {/* 顶部导航 — 与全局顶栏统一样式 */}
+      <header className="bg-slate-300/70 backdrop-blur-md shadow-sm border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 ${t.logoBg} flex items-center justify-center rounded-lg ${t.logoShadow}`}>
-              <span className="text-white font-black text-xs">ZHJK</span>
-            </div>
+            <img src="/zhjk-logo.png" alt="中航建科" className="h-9 w-auto" />
             <div>
-              <h1 className={`text-lg font-bold ${t.h1Text}`}>全过程工程咨询管理服务平台</h1>
-              <p className={`text-[11px] ${t.subText}`}>项目管理入口 · 全局模式 — 选择项目进入详情</p>
+              <h1 className="text-lg font-bold text-[var(--text-primary)]">全过程工程咨询管理服务平台</h1>
+              <p className="text-xs text-[var(--text-secondary)]">项目管理入口 · 全局模式 — 选择项目进入详情</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* 日月切换 */}
             {/* 管理入口 */}
             <button onClick={() => { if (isAdmin) toast('管理后台功能开发中', 'info'); }}
-              className={`p-2 rounded-lg transition-colors ${isAdmin ? (light ? 'text-gray-500 hover:text-gray-700 hover:bg-gray-100' : 'text-blue-300/70 hover:text-white hover:bg-white/10') : 'text-gray-300 cursor-not-allowed opacity-40'}`}
+              className={`p-2 rounded-lg transition-colors ${isAdmin ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/10' : 'text-slate-300 cursor-not-allowed opacity-40'}`}
               title={isAdmin ? '系统管理' : '仅管理员可用'}>
               <Settings className="w-4 h-4" />
             </button>
-            <span className={`flex items-center gap-1 text-sm ${t.userText}`}>
+            <span className="flex items-center gap-1 text-sm text-[var(--text-secondary)]">
               <User className="w-4 h-4" /> {userDisplay || currentUser}
             </span>
-            <span className={`px-2 py-0.5 text-xs rounded-full font-medium backdrop-blur-sm ${isAdmin ? t.roleAdmin : t.roleUser}`}>
+            <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${isAdmin ? (light ? 'bg-red-100 text-red-700' : 'bg-red-500/30 text-red-200') : (light ? 'bg-blue-100 text-blue-700' : 'bg-blue-500/30 text-blue-200')}`}>
               {isAdmin ? '管理员' : userRole === 'project_manager' ? '项目经理' : userRole === 'construction_unit' ? '建设单位' : '用户'}
             </span>
-            <button onClick={() => onBack ? onBack() : onLogout()} className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${t.logout}`}>
+            <button onClick={() => onBack ? onBack() : onLogout()} className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${light ? 'text-slate-600 hover:text-red-600 hover:bg-red-50' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}>
               <ArrowRight className="w-4 h-4" /> 返回
             </button>
           </div>
@@ -196,7 +198,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
         {/* 搜索栏 + 项目总数 */}
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               value={search}
@@ -218,7 +220,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
         {/* 项目卡片列表 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {displayed.map(proj => {
-            const meta = getProjectMeta(proj.name);
+            const alertCount = projectAlerts[proj.name] || 0;
             const progress = getProjectProgress(proj.name);
             const pct = progress.total > 0 ? Math.round(progress.done / progress.total * 100) : 0;
             return (
@@ -227,9 +229,9 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               className={`rounded-xl p-5 text-left hover:-translate-y-0.5 transition-all duration-200 group relative cursor-pointer ${t.card}`}
               onClick={() => onSelectProject(proj.name)}
             >
-              {meta.alerts > 0 && (
+              {alertCount > 0 && (
                 <span className="absolute -top-2 -right-2 min-w-[22px] h-[22px] bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse px-1.5">
-                  {meta.alerts}
+                  {alertCount}
                 </span>
               )}
               <div className="flex items-start justify-between">
@@ -243,7 +245,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                         onKeyDown={e => { if (e.key === 'Enter') { onRenameProject(proj.name, editProjName); setEditingProj(''); } if (e.key === 'Escape') setEditingProj(''); }}
                         onBlur={() => { onRenameProject(proj.name, editProjName); setEditingProj(''); }}
                         onClick={e => e.stopPropagation()}
-                        className={`text-sm font-semibold border-b-2 border-blue-400 bg-transparent outline-none px-1 w-40 ${light ? 'text-gray-800' : 'text-white'}`} autoFocus />
+                        className={`text-sm font-semibold border-b-2 border-blue-400 bg-transparent outline-none px-1 w-40 ${light ? 'text-slate-800' : 'text-white'}`} autoFocus />
                     ) : (
                       <h3 className={`font-semibold truncate ${t.cardTitle}`}
                         onDoubleClick={e => { e.stopPropagation(); setEditingProj(proj.name); setEditProjName(proj.name); }}>
@@ -255,11 +257,11 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                   {progress.total > 0 && (
                     <div className="ml-10 mt-1.5 mb-1">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[11px] ${light ? 'text-gray-500' : 'text-blue-300/60'}`}>指南 {progress.done}/{progress.total}</span>
+                        <span className={`text-[11px] ${light ? 'text-slate-500' : 'text-blue-300/60'}`}>指南 {progress.done}/{progress.total}</span>
                         <div className={`flex-1 h-1.5 rounded-full ${light ? 'bg-gray-200' : 'bg-white/10'}`}>
                           <div className="h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all" style={{ width: `${pct}%` }} />
                         </div>
-                        <span className={`text-[10px] font-medium ${pct >= 80 ? 'text-green-500' : pct >= 40 ? 'text-blue-500' : 'text-gray-400'}`}>{pct}%</span>
+                        <span className={`text-[10px] font-medium ${pct >= 80 ? 'text-green-500' : pct >= 40 ? 'text-blue-500' : 'text-slate-400'}`}>{pct}%</span>
                       </div>
                     </div>
                   )}
@@ -268,7 +270,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 <div className="flex items-center gap-1 mt-2">
                 {isAdmin && (
                   <button onClick={e => { e.stopPropagation(); handleDeleteProject(proj.name); }}
-                    className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="删除项目">
+                    className="p-1 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition" title="删除项目">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -284,7 +286,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                 setProjectDocs((d.projectDocs || []).map((doc: any) => ({ fileName: doc.fileName, data: '', size: 0 })));
                 setShowEditModal(true);
               }}
-                className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-60 hover:!opacity-100 p-1.5 rounded-lg bg-gray-100 hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-all"
+                className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-60 hover:!opacity-100 p-1.5 rounded-lg bg-gray-100 hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-all"
                 title="编辑项目信息">
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
@@ -325,25 +327,25 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             <div className="flex items-center gap-2">
               <Sparkles className={`w-4 h-4 ${t.aiIcon}`} />
               <span className={`text-xs font-medium ${t.aiLabel}`}>全过程工程咨询 AI 助手</span>
-              <span className="text-[10px] text-gray-400">| DeepSeek v4.0 Pro</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">| DeepSeek v4.0 Pro</span>
             </div>
             {/* 模型选择 */}
             <div className="relative">
               <button onClick={() => setShowModelMenu(!showModelMenu)}
-                className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${light ? 'border-gray-300 text-gray-500' : 'border-white/20 text-blue-300'}`}>
+                className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${light ? 'border-gray-300 text-slate-500' : 'border-white/20 text-blue-300'}`}>
                 {aiModel} <ChevronDown className="w-3 h-3" />
               </button>
               {showModelMenu && (
                 <div className={`absolute right-0 top-full mt-1 rounded-lg shadow-xl border z-50 p-1 min-w-[160px] ${light ? 'bg-white border-gray-200' : 'bg-gray-800 border-white/10'}`}>
                   {['deepseek-v4-pro', 'deepseek-v3', 'gpt-4o', 'qwen-max'].map(m => (
                     <button key={m} onClick={() => { setAiModel(m); localStorage.setItem('ai-model', m); setShowModelMenu(false); }}
-                      className={`block w-full text-left px-3 py-1.5 text-xs rounded ${aiModel === m ? (light ? 'bg-blue-50 text-blue-600' : 'bg-blue-500/20 text-blue-300') : (light ? 'text-gray-600 hover:bg-gray-50' : 'text-gray-300 hover:bg-white/5')}`}>
+                      className={`block w-full text-left px-3 py-1.5 text-xs rounded ${aiModel === m ? (light ? 'bg-blue-50 text-blue-600' : 'bg-blue-500/20 text-blue-300') : (light ? 'text-slate-600 hover:bg-gray-50' : 'text-slate-300 hover:bg-white/5')}`}>
                       {m}
                     </button>
                   ))}
                   <div className={`border-t my-1 ${light ? 'border-gray-100' : 'border-white/10'}`} />
                   <button onClick={() => { setShowModelMenu(false); toast('模型通过 /login 命令配置', 'info'); }}
-                    className={`block w-full text-left px-3 py-1.5 text-xs rounded ${light ? 'text-gray-400' : 'text-gray-500'}`}>
+                    className={`block w-full text-left px-3 py-1.5 text-xs rounded ${light ? 'text-slate-400' : 'text-slate-500'}`}>
                     /login 配置...
                   </button>
                 </div>
@@ -362,20 +364,20 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             {/* 底部工具栏 */}
             <div className="absolute left-3 bottom-2 flex items-center gap-3">
               {/* 上传文件/图片 */}
-              <label className={`cursor-pointer p-1 rounded hover:bg-white/10 transition-colors ${light ? 'text-gray-400 hover:text-blue-500' : 'text-blue-300/60 hover:text-blue-300'}`} title="上传文件">
+              <label className={`cursor-pointer p-1 rounded hover:bg-white/10 transition-colors ${light ? 'text-slate-400 hover:text-blue-500' : 'text-blue-300/60 hover:text-blue-300'}`} title="上传文件">
                 <Paperclip className="w-3.5 h-3.5" />
                 <input type="file" className="hidden" multiple onChange={(e) => {
                   if (e.target.files) setAiFiles(prev => [...prev, ...Array.from(e.target.files!)]);
                 }} />
               </label>
-              <label className={`cursor-pointer p-1 rounded hover:bg-white/10 transition-colors ${light ? 'text-gray-400 hover:text-blue-500' : 'text-blue-300/60 hover:text-blue-300'}`} title="上传图片">
+              <label className={`cursor-pointer p-1 rounded hover:bg-white/10 transition-colors ${light ? 'text-slate-400 hover:text-blue-500' : 'text-blue-300/60 hover:text-blue-300'}`} title="上传图片">
                 <Image className="w-3.5 h-3.5" />
                 <input type="file" className="hidden" multiple accept="image/*" onChange={(e) => {
                   if (e.target.files) setAiFiles(prev => [...prev, ...Array.from(e.target.files!)]);
                 }} />
               </label>
               {/* 上下文长度 */}
-              <span className={`flex items-center gap-1 text-[10px] ${light ? 'text-gray-400' : 'text-blue-300/50'}`} title={`上下文长度：${aiQuery.length} 字符`}>
+              <span className={`flex items-center gap-1 text-[10px] ${light ? 'text-slate-400' : 'text-blue-300/50'}`} title={`上下文长度：${aiQuery.length} 字符`}>
                 <BarChart3 className="w-3 h-3" /> {aiQuery.length > 1000 ? `${(aiQuery.length/1000).toFixed(1)}k` : aiQuery.length}
               </span>
               {/* 已选文件数 */}
@@ -408,7 +410,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
               {/* 项目概况文件上传 */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-gray-700">项目概况文件</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">项目概况文件</label>
                   <label className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-blue-300 bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer transition-colors">
                     <Upload className="w-3.5 h-3.5" /> 上传文件
                     <input type="file" className="hidden" multiple onChange={(e) => {
@@ -432,9 +434,9 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                     {projectDocs.filter(d => !d.data).map((doc, idx) => {
                       const originalIdx = idx;
                       return (
-                        <div key={`old-${originalIdx}`} className="flex items-center gap-2 text-[11px] text-gray-500 bg-gray-50 rounded px-2 py-1.5">
-                          <Paperclip className="w-3 h-3 text-gray-400" /> {doc.fileName}
-                          <span className="text-[10px] text-gray-400">（已有文件）</span>
+                        <div key={`old-${originalIdx}`} className="flex items-center gap-2 text-[11px] text-slate-500 bg-gray-50 rounded px-2 py-1.5">
+                          <Paperclip className="w-3 h-3 text-slate-400 dark:text-slate-500" /> {doc.fileName}
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500">（已有文件）</span>
                         </div>
                       );
                     })}
@@ -446,9 +448,9 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                     {projectDocs.map((doc, idx) => {
                       if (!doc.data) return null;
                       return (
-                        <div key={`new-${idx}`} className="flex items-center gap-2 text-[11px] text-gray-600 bg-blue-50 rounded px-2 py-1.5 group/att">
+                        <div key={`new-${idx}`} className="flex items-center gap-2 text-[11px] text-slate-600 bg-blue-50 rounded px-2 py-1.5 group/att">
                           <Paperclip className="w-3 h-3 text-blue-500" /> {doc.fileName}
-                          <span className="text-[10px] text-gray-400">({(doc.size / 1024).toFixed(0)}KB) · {currentUser} · {new Date().toLocaleDateString('zh-CN')}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500">({(doc.size / 1024).toFixed(0)}KB) · {currentUser} · {new Date().toLocaleDateString('zh-CN')}</span>
                           <button onClick={() => setProjectDocs(prev => prev.filter((_, i) => i !== idx))}
                             className="ml-auto opacity-0 group-hover/att:opacity-100 p-0.5 text-red-400 hover:text-red-600 rounded transition-opacity">
                             <Trash2 className="w-3 h-3" />
@@ -459,7 +461,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                   </div>
                 )}
                 {projectDocs.length === 0 && (
-                  <p className="text-[10px] text-gray-400 pl-0.5">上传项目概况文档后，AI 可根据文档内容自动填充下方字段</p>
+                  <p className="text-[10px] text-slate-400 pl-0.5">上传项目概况文档后，AI 可根据文档内容自动填充下方字段</p>
                 )}
               </div>
 
@@ -511,7 +513,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
                     a.download = `${editTarget.name}_AI分析报告.txt`; a.click();
                   }}
-                    className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">
+                    className="flex items-center gap-1 px-3 py-2 text-slate-500 hover:text-slate-700 text-sm">
                     <Download className="w-4 h-4" /> 下载报告
                   </button>
                 )}
@@ -519,7 +521,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
 
               {/* 项目概况 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">项目概况</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">项目概况</label>
                 <textarea value={editForm.overview} onChange={e => setEditForm(p => ({ ...p, overview: e.target.value }))}
                   rows={3} placeholder="项目简介、地点、类型..."
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none 500" />
@@ -534,7 +536,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
                   { key: 'pipeline', label: '市政管线', placeholder: '如 给排水/电力/燃气' },
                 ].map(field => (
                   <div key={field.key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{field.label}</label>
                     <input type="text" value={(editForm as any)[field.key]} onChange={e => setEditForm(p => ({ ...p, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm 500" />
@@ -576,7 +578,7 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             </div>
             <div className="flex justify-end gap-3 p-5 border-t bg-gray-50">
               <button onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">取消</button>
+                className="px-4 py-2 text-slate-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">取消</button>
               <button onClick={() => {
                 // 合并新上传文档到已有文档
                 const existingDocs = editTarget.details?.projectDocs || [];

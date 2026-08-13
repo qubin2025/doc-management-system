@@ -14,7 +14,7 @@ router.get('/tools/list', requireAuth, (_req, res) => {
       },
       {
         name: 'compute_kpi',
-        description: '计算项目KPI指标（CPI/SPI/完整度/质量分）',
+        description: '计算项目KPI指标（/SPI/完整度/质量分）',
         inputSchema: { type: 'object', properties: { projectName: { type: 'string' } }, required: ['projectName'] },
       },
       {

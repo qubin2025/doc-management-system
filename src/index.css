@@ -186,6 +186,7 @@ th, td { white-space: nowrap; }
 .dark .bg-white { background-color: #1e293b; }
 .dark .bg-gray-50 { background-color: #0f172a; }
 .dark .bg-gradient-to-br.from-gray-50 { background-image: linear-gradient(to bottom right, #0f172a, #1e293b); }
+.dark .text-gray-900 { color: #f1f5f9; }
 .dark .text-gray-800 { color: #e2e8f0; }
 .dark .text-gray-700 { color: #cbd5e1; }
 .dark .text-gray-600 { color: #94a3b8; }

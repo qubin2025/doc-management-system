@@ -31,8 +31,8 @@ const MobileLogin: React.FC<{ onLogin: (u: UserInfo) => void }> = ({ onLogin }) 
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/15 backdrop-blur mb-4">
           <Camera className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-white">工程水印相机</h1>
-        <p className="text-blue-200 text-sm mt-2">全过程工程咨询管理系统 · 移动端</p>
+        <h1 className="text-2xl font-bold text-white">全过程工程咨询管理平台</h1>
+        <p className="text-blue-200 text-sm mt-2">移动端</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-xl space-y-4">

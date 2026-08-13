@@ -146,7 +146,7 @@ export const guideChapters: GuideChapter[] = [
         { key: 'planStart', label: '计划开始', type: 'date' },
         { key: 'planEnd', label: '计划完成', type: 'date' },
         { key: 'remark', label: '备注', type: 'text' },
-      ], sampleContent: '| 序号 | 工作内容 | 责任单位 | 计划开始 | 计划完成 | 备注 |\n|------|----------|----------|----------|----------|------|\n| 1 | 项目建议书编制 | 咨询单位 | __ | __ | |\n| 2 | 可行性研究 | 咨询单位 | __ | __ | |' },
+      ], aiPrompt: '请为项目《{name}》生成前期工作计划表，包含项目建议书、可行性研究、勘察设计等关键阶段的工作内容安排，总工期参考 {startDate} 至 {endDate}。', sampleContent: '| 序号 | 工作内容 | 责任单位 | 计划开始 | 计划完成 | 备注 |\n|------|----------|----------|----------|----------|------|\n| 1 | 项目建议书编制 | 咨询单位 | __ | __ | |\n| 2 | 可行性研究 | 咨询单位 | __ | __ | |' },
       { code: '表1.3-2', name: '项目立项审批申报记录单', fields: [
         { key: 'projectName', label: '项目名称', type: 'text' },
         { key: 'owner', label: '建设单位', type: 'text' },

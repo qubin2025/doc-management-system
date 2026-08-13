@@ -11,8 +11,16 @@ router.post('/', requireAuth, (req, res) => {
   if (!projectName || !data) return res.status(400).json({ error: '缺少 projectName 或 data' });
 
   const db = getDb();
-  const results = { objectives: 0, documents: 0, baselines: 0, artifacts: 0 };
+  const results = { objectives: 0, documents: 0, baselines: 0, artifacts: 0, tailoring: 0, stakeholders: 0, risks: 0, resources: 0, raci: 0, guideProgress: 0 };
   const username = req.user?.username || 'unknown';
+
+  // v5.2: 将 6 类配置数据 upsert 到 project_config 表（替代原先静默丢弃）
+  const CONFIG_TYPES = ['tailoring', 'stakeholders', 'risks', 'resources', 'raci', 'guideProgress'];
+  const upsertConfig = db.prepare(`
+    INSERT INTO project_config (project_name, config_type, data, updated_at)
+    VALUES (?, ?, ?, datetime('now'))
+    ON CONFLICT(project_name, config_type) DO UPDATE SET data=excluded.data, updated_at=datetime('now')
+  `);
 
   try {
     const tx = db.transaction(() => {
@@ -64,6 +72,16 @@ router.post('/', requireAuth, (req, res) => {
           results.artifacts++;
         }
       }
+
+      // v5.2: 同步 6 类配置数据到 project_config 表（原先被静默丢弃）
+      for (const type of CONFIG_TYPES) {
+        const payload = data[type];
+        if (payload === undefined || payload === null) continue;
+        // tailoring 是单个对象包在数组里 [cfg]；其余是数组；统一序列化
+        const jsonData = JSON.stringify(payload);
+        upsertConfig.run(projectName, type, jsonData);
+        results[type] = Array.isArray(payload) ? payload.length : 1;
+      }
     });
 
     tx();
@@ -79,11 +97,24 @@ router.post('/', requireAuth, (req, res) => {
 router.get('/:projectName', requireAuth, (req, res) => {
   const { projectName } = req.params;
   const db = getDb();
+  // 读取 project_config 表中的 6 类配置数据
+  const configRows = db.prepare('SELECT config_type, data FROM project_config WHERE project_name = ?').all(projectName);
+  const configData = {};
+  for (const row of configRows) {
+    try { configData[row.config_type] = JSON.parse(row.data); } catch { configData[row.config_type] = null; }
+  }
   res.json({
     objectives: db.prepare('SELECT * FROM objectives WHERE project_name = ?').all(projectName),
     baselines: db.prepare('SELECT * FROM baselines WHERE project_name = ?').all(projectName),
     artifacts: db.prepare('SELECT * FROM knowledge_artifacts WHERE project_name = ?').all(projectName),
     docs: db.prepare('SELECT d.* FROM documents d JOIN projects p ON d.project_id = p.id WHERE p.name = ?').all(projectName),
+    // v5.2: 返回 6 类配置数据
+    tailoring: configData.tailoring || null,
+    stakeholders: configData.stakeholders || [],
+    risks: configData.risks || [],
+    resources: configData.resources || [],
+    raci: configData.raci || [],
+    guideProgress: configData.guideProgress || [],
   });
 });
 
