@@ -62,12 +62,12 @@ function collectProjectData(proj: string): Record<string, any[]> {
     if (rc) data.raci = JSON.parse(rc);
   } catch {}
 
-  // 指南进度（四章）
+  // 指南进度（四章）— v5.2: done/modules 键名均带项目名，与 GuideChapter 写入方一致
   try {
     const chapters: any[] = [];
     for (let ch = 1; ch <= 4; ch++) {
       const done = localStorage.getItem(`guide-${proj}-chapter-ch${ch}-done`);
-      const modules = localStorage.getItem(`guide-chapter-ch${ch}-modules`);
+      const modules = localStorage.getItem(`guide-${proj}-chapter-ch${ch}-modules`);
       if (done || modules) {
         chapters.push({ chapter: ch, done: done ? JSON.parse(done) : [], modules: modules ? JSON.parse(modules) : [] });
       }

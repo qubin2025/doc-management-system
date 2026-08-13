@@ -35,8 +35,25 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   const tailoringConfig = projectName ? loadTailoringConfig(projectName) : null;
   const tailoringStatus = tailoringConfig?.result?.workItemStatus;
   const colors = colorMap[initialChapter.color] || colorMap.blue;
-  const STORAGE_KEY = `guide-chapter-${initialChapter.id}`;
-  const LINKS_KEY = `guide-item-links-${initialChapter.id}`;
+  // v5.2: 键名带项目名，与 ProjectEntryPage/syncService 读取方一致（修复键名不一致 Bug）
+  const STORAGE_KEY = projectName ? `guide-${projectName}-chapter-${initialChapter.id}` : `guide-chapter-${initialChapter.id}`;
+  const LINKS_KEY = projectName ? `guide-${projectName}-item-links-${initialChapter.id}` : `guide-item-links-${initialChapter.id}`;
+
+  // 一次性迁移：旧键名（无项目名）→ 新键名（带项目名），避免历史数据丢失
+  if (projectName && typeof window !== 'undefined') {
+    const oldSk = `guide-chapter-${initialChapter.id}`;
+    const oldLk = `guide-item-links-${initialChapter.id}`;
+    ([
+      [STORAGE_KEY, oldSk],
+      [`${STORAGE_KEY}-done`, `${oldSk}-done`],
+      [`${STORAGE_KEY}-modules`, `${oldSk}-modules`],
+      [LINKS_KEY, oldLk],
+    ] as [string, string][]).forEach(([newKey, oldKey]) => {
+      if (!localStorage.getItem(newKey) && localStorage.getItem(oldKey)) {
+        localStorage.setItem(newKey, localStorage.getItem(oldKey)!);
+      }
+    });
+  }
 
   // ===== 状态管理 =====
   const [subModules, setSubModules] = useState<GuideSubModule[]>(() =>
