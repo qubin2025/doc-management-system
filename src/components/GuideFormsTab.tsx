@@ -21,7 +21,7 @@ interface GuideFormsTabProps {
   onFormEditContentChange: (v: string) => void;
   onOpenFormEdit: (f: GuideForm) => void;
   onCloseFormEdit: () => void;
-  onAiFillForm: () => void;
+  onAiFillForm: (formCode?: string) => void;
   onSaveFormEdit: () => void;
   onUploadSample: (formCode: string, fileName: string, fileData: string) => void;
   onDeleteSample: (formCode: string, fileId: string) => void;
@@ -257,7 +257,7 @@ const GuideFormsTab: React.FC<GuideFormsTabProps> = ({
                               {(aiPromptsMap[f.code] || f.aiPrompt || AI_PROMPT_TEMPLATE).slice(0, 120)}
                               {(aiPromptsMap[f.code] || f.aiPrompt || AI_PROMPT_TEMPLATE).length > 120 ? '...' : ''}
                             </div>
-                            <button onClick={onAiFillForm}
+                            <button onClick={() => onAiFillForm(f.code)}
                               disabled={aiFillLoading}
                               className={`mt-2 w-full py-1.5 text-xs rounded-lg flex items-center justify-center gap-1 ${
                                 aiFillLoading ? 'bg-gray-200 text-gray-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed' :
@@ -309,7 +309,7 @@ const GuideFormsTab: React.FC<GuideFormsTabProps> = ({
               </div>
             </div>
             <div className="px-5 py-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex justify-between items-center shrink-0 rounded-b-2xl">
-              <button onClick={onAiFillForm} disabled={aiFillLoading}
+              <button onClick={() => onAiFillForm()} disabled={aiFillLoading}
                 className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${
                   aiFillLoading ? 'bg-gray-200 text-gray-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed' :
                   'bg-purple-50 text-purple-600 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800 hover:bg-purple-100'

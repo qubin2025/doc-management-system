@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft, ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   CheckSquare, FileText, GitBranch, Plus, Upload,
@@ -495,14 +495,48 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
       setFormEditModal(null);
     }
   };
-  const handleAiFillForm = async () => {
-    if (!formEditModal) return;
+  // v5.2: 暂存待执行的 AI 填写请求（用于表格行按钮的"打开弹窗后自动填写"链路）
+  const pendingAiFillCodeRef = useRef<string | null>(null);
+
+  // 监听 formEditModal 变化：当由表格行按钮触发打开弹窗时，自动执行 AI 填写
+  useEffect(() => {
+    if (pendingAiFillCodeRef.current && formEditModal?.code === pendingAiFillCodeRef.current) {
+      const code = pendingAiFillCodeRef.current;
+      pendingAiFillCodeRef.current = null;
+      doAiFill(code);
+    }
+  }, [formEditModal?.code]);
+
+  const handleAiFillForm = async (formCode?: string) => {
+    // 支持两种调用路径：
+    //   1. 表格行按钮传入 formCode → 先打开编辑弹窗，等弹窗就绪后再 AI 填写
+    //   2. 弹窗内按钮无参 → 直接用 formEditModal 执行 AI 填写
+    let targetCode = formEditModal?.code || formCode;
+    if (!targetCode) return;
+
+    // 表格行按钮点击 → 先打开编辑弹窗，记录待执行的填写任务
+    if (formCode && formEditModal?.code !== formCode) {
+      const form = initialChapter.forms.find(f => f.code === formCode);
+      if (form) {
+        pendingAiFillCodeRef.current = formCode;
+        handleOpenFormEdit(form);
+      }
+      return; // 等 useEffect 检测到弹窗打开后自动触发
+    }
+
+    // 弹窗内直接调用 → 立即执行 AI 填写
+    await doAiFill(targetCode);
+  };
+
+  // 实际执行 AI 填写的内部函数
+  const doAiFill = async (targetCode: string) => {
     setAiFillLoading(true);
     try {
-      const fields = initialChapter.forms.find(f => f.code === formEditModal.code)?.fields || [];
-      const form = initialChapter.forms.find(f => f.code === formEditModal.code);
+      const fields = initialChapter.forms.find(f => f.code === targetCode)?.fields || [];
+      const form = initialChapter.forms.find(f => f.code === targetCode);
+      const formName = form?.name || targetCode;
       const projectInfo = getProjectInfoForAi();
-      const customPrompt = aiPromptsMap[formEditModal.code] || form?.aiPrompt || '';
+      const customPrompt = aiPromptsMap[targetCode] || form?.aiPrompt || '';
       const projectContext = {
         name: projectInfo.name,
         details: {
@@ -519,7 +553,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
           finalPrompt = finalPrompt.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
         });
         const fieldListText = fields.map(f => `- ${f.label} (${f.type})`).join('\n');
-        finalPrompt += `\n\n## 表单字段\n${fieldListText}\n\n## 请输出\n请以Markdown表格格式输出完整的${formEditModal.name}，表头为各字段标签，下方附加填写说明。`;
+        finalPrompt += `\n\n## 表单字段\n${fieldListText}\n\n## 请输出\n请以Markdown表格格式输出完整的${formName}，表头为各字段标签，下方附加填写说明。`;
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(localStorage.getItem('doc-system-auth') ? { Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('doc-system-auth')!).token } : {}) },
@@ -527,10 +561,10 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
         });
         if (res.ok) { const d = await res.json(); result = d.reply || d.message || ''; }
         else {
-          result = await api.aiFillForm(formEditModal.code, formEditModal.name, fields, projectContext, undefined);
+          result = await api.aiFillForm(targetCode, formName, fields, projectContext, undefined);
         }
       } else {
-        result = await api.aiFillForm(formEditModal.code, formEditModal.name, fields, projectContext, undefined);
+        result = await api.aiFillForm(targetCode, formName, fields, projectContext, undefined);
       }
       setFormEditContent(result || formEditContent);
       toast('AI填写完成，已抓取项目信息自动生成计划表', 'success');
