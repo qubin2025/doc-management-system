@@ -1,5 +1,6 @@
 // 项目信息
 export interface ProjectInfo {
+  id?: number;               // v5.2: 后端项目 ID（用于 DELETE/PUT 操作）
   name: string;
   createdAt: string;
   details?: {

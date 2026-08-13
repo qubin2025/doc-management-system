@@ -692,18 +692,49 @@ const App: React.FC = () => {
         onCreateProject={() => { setShowProjectDialog(true); }}
         onRenameProject={(oldName, newName) => {
           if (!newName.trim() || oldName === newName) return;
-          setProjects(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
-          if (currentProject === oldName) setCurrentProject(newName);
+          // v5.2: 同步到后端（含子表级联更新 project_name）
+          if (apiAvailable) {
+            api.updateProject(oldName, { newName: newName.trim() }).then(ok => {
+              if (!ok) toast('后端同步失败，项目名仅本地更新', 'warning');
+            });
+          }
+          // v5.2: 迁移 localStorage 中所有项目相关键（避免 syncService 用空数据覆盖后端）
+          const prefixes = ['guide-', 'stakeholder-', 'risk-', 'resources-', 'raci-',
+            'tailoring-config-', 'project-objectives-', 'schedule-',
+            'knowledge-artifacts-', 'guide-forms-', 'guide-item-links-'];
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            for (const prefix of prefixes) {
+              if (key.startsWith(prefix + oldName)) {
+                const newKey = key.replace(prefix + oldName, prefix + newName.trim());
+                localStorage.setItem(newKey, localStorage.getItem(key)!);
+                localStorage.removeItem(key);
+                break;
+              }
+            }
+          }
+          setProjects(prev => prev.map(p => p.name === oldName ? { ...p, name: newName.trim() } : p));
+          if (currentProject === oldName) setCurrentProject(newName.trim());
           // 同步更新 allUploadInfo 中的项目名
           setAllUploadInfo(prev => {
             const next = { ...prev };
-            if (next[oldName]) { next[newName] = next[oldName]; delete next[oldName]; }
+            if (next[oldName]) { next[newName.trim()] = next[oldName]; delete next[oldName]; }
             return next;
           });
         }}
         onUpdateProject={(name, details) => {
-          setProjects(prev => prev.map(p => p.name === name ? { ...p, details } : p));
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects.map(p => p.name === name ? { ...p, details } : p)));
+          // v5.2: 同步到后端
+          if (apiAvailable) {
+            api.updateProject(name, { details }).then(ok => {
+              if (!ok) toast('详情后端同步失败，仅本地保存', 'warning');
+            });
+          }
+          setProjects(prev => {
+            const updated = prev.map(p => p.name === name ? { ...p, details } : p);
+            localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
+            return updated;
+          });
         }}
         onBack={() => setView('dashboard-global')}
         onAiSubmit={(query) => {

@@ -107,7 +107,13 @@ export async function fetchProjects(): Promise<ProjectInfo[]> {
   const res = await fetch(`${API_BASE}/projects`, { headers: headers() });
   if (!res.ok) throw new Error('获取项目列表失败');
   const data = await res.json();
-  return data.map((p: any) => ({ name: p.name, createdAt: p.created_at }));
+  // v5.2: 返回 id + details（后端新增字段）
+  return data.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    createdAt: p.created_at,
+    details: p.details || undefined,
+  }));
 }
 
 export async function createProject(name: string): Promise<any> {
@@ -117,11 +123,33 @@ export async function createProject(name: string): Promise<any> {
   return data;
 }
 
+// v5.2: 更新项目（重命名 + 更新详情）— 修复原 onRenameProject/onUpdateProject 仅写 localStorage 的持久化缺口
+export async function updateProject(projectName: string, payload: { newName?: string; details?: any }): Promise<boolean> {
+  try {
+    console.log(`[api] 更新项目 → backend: ${projectName}` + (payload.newName ? ` → ${payload.newName}` : '') + (payload.details ? ' +详情' : ''));
+    const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(projectName)}`, {
+      method: 'PUT',
+      headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      console.log(`[api] 项目更新成功 ✓ ${projectName}`);
+      return true;
+    }
+    const err = await res.json().catch(() => ({}));
+    console.error(`[api] 项目更新失败 HTTP ${res.status}:`, (err as any).error);
+    return false;
+  } catch (e) {
+    console.error(`[api] 项目更新异常:`, e);
+    return false;
+  }
+}
+
 export async function deleteProjectApi(projectName: string): Promise<void> {
   const projects = await fetchProjects();
   const proj = projects.find(p => p.name === projectName);
   if (!proj) throw new Error('项目不存在');
-  const res = await fetch(`${API_BASE}/projects/${(proj as any).id}`, { method: 'DELETE', headers: headers() });
+  const res = await fetch(`${API_BASE}/projects/${proj.id}`, { method: 'DELETE', headers: headers() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).error || `删除失败(HTTP ${res.status})`);

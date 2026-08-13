@@ -372,6 +372,12 @@ function migrateSchema(db) {
   if (!guideFormCols.includes('ai_prompt')) {
     try { db.exec("ALTER TABLE guide_forms ADD COLUMN ai_prompt TEXT DEFAULT ''"); } catch {}
   }
+
+  // v5.2: projects 表添加 details 列（项目详情 JSON：概况/面积/投资/管线/AI报告等）
+  const projCols = db.prepare("PRAGMA table_info(projects)").all().map(c => c.name);
+  if (!projCols.includes('details')) {
+    try { db.exec("ALTER TABLE projects ADD COLUMN details TEXT DEFAULT '{}'"); } catch {}
+  }
 }
 
 function seedUsers(db) {
