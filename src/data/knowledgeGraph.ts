@@ -1,4 +1,7 @@
 // 知识图谱 — 节点+边，JSON序列化到localStorage
+// v5.2: 项目/文档数据通过 projectDataCache 读取（API-backed）
+
+import { getCachedProjects, getCachedUploads } from './projectDataCache';
 
 export interface GraphNode {
   id: string;
@@ -94,9 +97,8 @@ export function buildGraph(): KnowledgeGraph {
 
   // ===== 1. 项目节点（根节点） =====
   try {
-    const p695 = JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T695-2025') || '[]');
-    const p808 = JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T808-2020') || '[]');
-    for (const p of [...p695, ...p808]) {
+    // v5.2: 从 API-backed 缓存读取项目列表
+    for (const p of getCachedProjects()) {
       if (!p.name) continue;
       const pid = 'proj-' + p.name;
       addNode({ id: pid, type: 'project', label: p.name, props: { createdAt: p.createdAt } });
@@ -156,7 +158,7 @@ export function buildGraph(): KnowledgeGraph {
   // ===== 3. 功能维度 =====
   // 3a. 文档节点（从上传记录读取）
   try {
-    const uploads = JSON.parse(localStorage.getItem('doc-mgmt-upload-DB11/T695-2025') || '{}');
+    const uploads = getCachedUploads();  // v5.2: API-backed 缓存
     for (const [proj, docMap] of Object.entries(uploads)) {
       if (!docMap || typeof docMap !== 'object') continue;
       for (const [docId, files] of Object.entries(docMap as Record<string, any[]>)) {

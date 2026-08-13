@@ -1,4 +1,7 @@
 // 指标引擎 — 工程KPI计算（CPI/SPI/完整度/质量分/趋势）
+// v5.2: 项目列表通过 projectDataCache 读取（API-backed），不再直读 localStorage
+
+import { getCachedProjects, getCachedUploads } from './projectDataCache';
 
 export interface ProjectIndicators {
   projectName: string;
@@ -23,9 +26,8 @@ export function computeIndicators(projectName: string): ProjectIndicators {
   // 1. CPI — 成本绩效指数（真实数据：造价合计数 / 项目概算）
   let cpi = 1.0;
   try {
-    // 获取项目概算
-    const projects = JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T695-2025') || '[]')
-      .concat(JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T808-2020') || '[]'));
+    // 获取项目概算 — v5.2: 从 API-backed 缓存读取
+    const projects = getCachedProjects();
     const proj = projects.find((p: any) => p.name === projectName);
     const investment = proj?.details?.investment
       ? parseFloat(proj.details.investment.replace(/[^0-9.]/g, '')) || 0
@@ -77,8 +79,7 @@ export function computeIndicators(projectName: string): ProjectIndicators {
   // 3. 资料完整度
   let completeness = 0;
   try {
-    const stdKey = `doc-mgmt-upload-DB11/T695-2025`;
-    const uploads = JSON.parse(localStorage.getItem(stdKey) || '{}');
+    const uploads = getCachedUploads();  // v5.2: API-backed 缓存
     const projectUploads = uploads[projectName] || {};
     const uploadedCount = Object.values(projectUploads).filter((v: any) => Array.isArray(v) && v.length > 0).length;
     // 附录A文档总数约400项, 按20%抽样基准
@@ -122,8 +123,7 @@ export function computeIndicators(projectName: string): ProjectIndicators {
 export function getAllProjectIndicators(): ProjectIndicators[] {
   const results: ProjectIndicators[] = [];
   try {
-    const projects = JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T695-2025') || '[]')
-      .concat(JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T808-2020') || '[]'));
+    const projects = getCachedProjects();
     const seen = new Set<string>();
     for (const p of projects) {
       if (p.name && !seen.has(p.name)) {

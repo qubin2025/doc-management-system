@@ -54,6 +54,7 @@ import { appendixAData as buildingData } from './data/appendixA';
 import { appendixAData_municipal as municipalData } from './data/appendixA_municipal';
 import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType, AuthState, Permissions } from './types';
 import * as api from './data/api';
+import { setCachedProjects, setCachedUploads } from './data/projectDataCache';
 import { setGlobalProject, setGlobalAuth } from './data/ProjectContext';
 import JSZip from 'jszip';
 
@@ -132,6 +133,7 @@ const App: React.FC = () => {
         try {
           const list = await api.fetchProjects();
           setProjects(list);
+          setCachedProjects(list);  // v5.2: 填充 API-backed 缓存供数据模块同步读取
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
         } catch {
           // API失败但有token → token可能过期 → 清除重新登录
@@ -192,6 +194,13 @@ const App: React.FC = () => {
   // 同步 App state → ProjectContext 全局状态
   useEffect(() => { setGlobalProject(currentProject); }, [currentProject]);
   useEffect(() => { setGlobalAuth(auth); }, [auth]);
+
+  // v5.2: 同步上传记录 → API-backed 缓存，供 indicatorEngine/knowledgeGraph/projectAggregator 同步读取
+  useEffect(() => {
+    if (Object.keys(allUploadInfo).length > 0) {
+      setCachedUploads(allUploadInfo);
+    }
+  }, [allUploadInfo]);
 
   // ===== View 路由 =====
   const [showAiChat, setShowAiChat] = useState(false);

@@ -1,12 +1,14 @@
 /**
- * 资金指标计算引擎 — 从 localStorage 提取项目财务数据
+ * 资金指标计算引擎 — v5.2: 通过 projectDataCache 读取项目数据（API-backed）
  *
  * 数据来源：
- *   - 审批概算：proj.details.investment（doc-mgmt-projects-*）
+ *   - 审批概算：proj.details.investment（getCachedProjects）
  *   - 合同金额：cost-data 的 costItems.total 合计
  *   - 产值：合同金额 × SPI（进度绩效指数）
  *   - 预计结算：暂用合同金额近似（未来从 FormContent 提取 settlementAmount）
  */
+
+import { getCachedProjects } from './projectDataCache';
 
 export interface ProjectFinance {
   projectName: string;
@@ -19,13 +21,10 @@ export interface ProjectFinance {
   deviation: number;          // 偏差 = 合同 - 概算（正=超支，负=节约）
 }
 
-/** 从 localStorage 获取项目概算 */
+/** 从 API-backed 缓存获取项目概算 */
 function getProjectInvestment(projectName: string): number {
   try {
-    const projects = [
-      ...JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T695-2025') || '[]'),
-      ...JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T808-2020') || '[]'),
-    ];
+    const projects = getCachedProjects();
     const proj = projects.find((p: any) => p.name === projectName);
     return proj?.details?.investment
       ? parseFloat(proj.details.investment.replace(/[^0-9.]/g, '')) || 0
@@ -82,10 +81,7 @@ function getProjectSPI(projectName: string): number {
 /** 获取全部项目名称列表 */
 function getAllProjectNames(): string[] {
   try {
-    const projects = [
-      ...JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T695-2025') || '[]'),
-      ...JSON.parse(localStorage.getItem('doc-mgmt-projects-DB11/T808-2020') || '[]'),
-    ];
+    const projects = getCachedProjects();
     return projects.map((p: any) => p.name).filter(Boolean);
   } catch {
     return [];

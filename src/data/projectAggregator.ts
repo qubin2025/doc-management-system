@@ -1,6 +1,7 @@
 // 项目聚合器 — 全局看板数据源（照片/文档/截止日期聚合）
-// 设计原则：所有函数接收已加载的项目数组作为输入，不自行读取 localStorage。
-// 单一真相源：由调用方（GlobalDashboard）统一加载项目数据后传入。
+// v5.2: 通过 projectDataCache 读取 API-backed 数据，不再直读 localStorage
+
+import { getCachedProjects, getCachedUploads } from './projectDataCache';
 
 export interface ProjectPhoto {
   fileName: string;
@@ -34,32 +35,19 @@ export interface ProjectInfo {
   details?: any;
 }
 
-const STANDARDS = ['DB11/T695-2025', 'DB11/T808-2020'] as const;
-
-// ===== 项目列表加载（唯一的 localStorage 读取入口） =====
+// ===== 项目列表加载（通过 API-backed 缓存读取） =====
 
 export function loadAllProjects(): ProjectInfo[] {
+  // v5.2: 优先从 API-backed 缓存读取，降级到 localStorage（由 getCachedProjects 内部处理）
+  const cached = getCachedProjects();
   const seen = new Set<string>();
   const results: ProjectInfo[] = [];
-  try {
-    for (const std of STANDARDS) {
-      const raw = localStorage.getItem(`doc-mgmt-projects-${std}`);
-      if (!raw) continue;
-      const list = JSON.parse(raw);
-      if (!Array.isArray(list)) continue;
-      for (const p of list) {
-        if (p.name && !seen.has(p.name)) {
-          seen.add(p.name);
-          results.push({
-            name: p.name,
-            createdAt: p.createdAt || '',
-            standard: std,
-            details: p.details,
-          });
-        }
-      }
+  for (const p of cached) {
+    if (p.name && !seen.has(p.name)) {
+      seen.add(p.name);
+      results.push({ name: p.name, createdAt: p.createdAt || '', details: p.details });
     }
-  } catch {}
+  }
   return results;
 }
 
@@ -88,30 +76,25 @@ export function extractAllPhotos(projects: ProjectInfo[]): ProjectPhoto[] {
   }
 
   // 来源2: upload 缓存 — { [项目名]: { [文档编号]: UploadInfo[] } }
-  for (const std of STANDARDS) {
-    try {
-      const raw = localStorage.getItem(`doc-mgmt-upload-${std}`);
-      if (!raw) continue;
-      const uploads = JSON.parse(raw);
-      for (const [projName, docMap] of Object.entries(uploads)) {
-        if (!docMap || typeof docMap !== 'object') continue;
-        for (const entries of Object.values(docMap as Record<string, any>)) {
-          if (!Array.isArray(entries)) continue;
-          for (const entry of entries) {
-            if (!entry?.fileName) continue;
-            if (!isImageFile(entry.fileName)) continue;
-            photos.push({
-              fileName: entry.fileName,
-              dataUrl: entry.fileData || '',
-              projectName: projName,
-              uploadTime: entry.uploadTime || '',
-              source: 'upload',
-              size: entry.fileSize,
-            });
-          }
-        }
+  // v5.2: 通过 API-backed 缓存读取（getCachedUploads 内部降级 localStorage）
+  const uploads = getCachedUploads();
+  for (const [projName, docMap] of Object.entries(uploads)) {
+    if (!docMap || typeof docMap !== 'object') continue;
+    for (const entries of Object.values(docMap as Record<string, any>)) {
+      if (!Array.isArray(entries)) continue;
+      for (const entry of entries) {
+        if (!entry?.fileName) continue;
+        if (!isImageFile(entry.fileName)) continue;
+        photos.push({
+          fileName: entry.fileName,
+          dataUrl: entry.fileData || '',
+          projectName: projName,
+          uploadTime: entry.uploadTime || '',
+          source: 'upload',
+          size: entry.fileSize,
+        });
       }
-    } catch {}
+    }
   }
 
   return photos.sort((a, b) => sortByTime(b.uploadTime, a.uploadTime));
@@ -143,29 +126,23 @@ export function extractRecentDocUpdates(projects: ProjectInfo[]): ProjectDocUpda
     }
   }
 
-  // 从 upload 缓存提取
-  for (const std of STANDARDS) {
-    try {
-      const raw = localStorage.getItem(`doc-mgmt-upload-${std}`);
-      if (!raw) continue;
-      const uploads = JSON.parse(raw);
-      for (const [projName, docMap] of Object.entries(uploads)) {
-        if (!docMap || typeof docMap !== 'object') continue;
-        for (const [code, entries] of Object.entries(docMap as Record<string, any>)) {
-          if (!Array.isArray(entries)) continue;
-          for (const entry of entries) {
-            if (!entry?.fileName) continue;
-            updates.push({
-              fileName: entry.fileName,
-              projectName: projName,
-              uploadTime: entry.uploadTime || '',
-              uploader: entry.uploader || '',
-              category: code,
-            });
-          }
-        }
+  // 从 upload 缓存提取 — v5.2: 通过 API-backed 缓存读取
+  const uploads = getCachedUploads();
+  for (const [projName, docMap] of Object.entries(uploads)) {
+    if (!docMap || typeof docMap !== 'object') continue;
+    for (const [code, entries] of Object.entries(docMap as Record<string, any>)) {
+      if (!Array.isArray(entries)) continue;
+      for (const entry of entries) {
+        if (!entry?.fileName) continue;
+        updates.push({
+          fileName: entry.fileName,
+          projectName: projName,
+          uploadTime: entry.uploadTime || '',
+          uploader: entry.uploader || '',
+          category: code,
+        });
       }
-    } catch {}
+    }
   }
 
   return updates.sort((a, b) => sortByTime(b.uploadTime, a.uploadTime));
