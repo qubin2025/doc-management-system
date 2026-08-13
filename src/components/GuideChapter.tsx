@@ -99,14 +99,31 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   const [zoomLevel, setZoomLevel] = useState(1);
   const [expandedAttachments, setExpandedAttachments] = useState<Set<string>>(new Set());
 
-  // 指南进度 → API 持久化
+  // 指南进度 → 初始化从后端加载（合并 localStorage + API，避免换浏览器丢失）
+  useEffect(() => {
+    if (!projectName) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const apiItems = await api.fetchGuideProgress(projectName, initialChapter.id);
+        if (cancelled || !apiItems || apiItems.length === 0) return;
+        setCheckedItems(prev => {
+          const merged = new Set(prev);
+          apiItems.forEach(id => merged.add(id));
+          return merged;
+        });
+        console.log(`[guide] 进度从后端加载: chapter=${initialChapter.id} count=${apiItems.length}`);
+      } catch (e) {
+        console.warn('[guide] 进度后端加载失败，使用 localStorage 数据:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [projectName, initialChapter.id]);
+
+  // 指南进度 → API 持久化（checkedItems 变更时同步到后端 + localStorage）
   useEffect(() => {
     if (!projectName || checkedItems.size === 0) return;
-    const token = JSON.parse(localStorage.getItem('doc-system-auth') || '{}')?.token;
-    fetch('/api/guide/progress', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (token || '') },
-      body: JSON.stringify({ projectName, chapterId: initialChapter.id, completedItems: [...checkedItems] }),
-    }).catch(() => {});
+    api.saveGuideProgress(projectName, initialChapter.id, [...checkedItems]).catch(() => {});
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedItems]));
   }, [checkedItems]);
 
