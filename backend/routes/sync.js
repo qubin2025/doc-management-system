@@ -11,11 +11,11 @@ router.post('/', requireAuth, (req, res) => {
   if (!projectName || !data) return res.status(400).json({ error: '缺少 projectName 或 data' });
 
   const db = getDb();
-  const results = { objectives: 0, documents: 0, baselines: 0, artifacts: 0, tailoring: 0, stakeholders: 0, risks: 0, resources: 0, raci: 0, guideProgress: 0 };
+  const results = { objectives: 0, documents: 0, baselines: 0, artifacts: 0, tailoring: 0, stakeholders: 0, risks: 0, resources: 0, raci: 0, guideProgress: 0, knowledgeArtifacts: 0 };
   const username = req.user?.username || 'unknown';
 
-  // v5.2: 将 6 类配置数据 upsert 到 project_config 表（替代原先静默丢弃）
-  const CONFIG_TYPES = ['tailoring', 'stakeholders', 'risks', 'resources', 'raci', 'guideProgress'];
+  // v5.2: 将配置数据 upsert 到 project_config 表（替代原先静默丢弃）
+  const CONFIG_TYPES = ['tailoring', 'stakeholders', 'risks', 'resources', 'raci', 'guideProgress', 'knowledgeArtifacts'];
   const upsertConfig = db.prepare(`
     INSERT INTO project_config (project_name, config_type, data, updated_at)
     VALUES (?, ?, ?, datetime('now'))
@@ -108,13 +108,14 @@ router.get('/:projectName', requireAuth, (req, res) => {
     baselines: db.prepare('SELECT * FROM baselines WHERE project_name = ?').all(projectName),
     artifacts: db.prepare('SELECT * FROM knowledge_artifacts WHERE project_name = ?').all(projectName),
     docs: db.prepare('SELECT d.* FROM documents d JOIN projects p ON d.project_id = p.id WHERE p.name = ?').all(projectName),
-    // v5.2: 返回 6 类配置数据
+    // v5.2: 返回配置数据
     tailoring: configData.tailoring || null,
     stakeholders: configData.stakeholders || [],
     risks: configData.risks || [],
     resources: configData.resources || [],
     raci: configData.raci || [],
     guideProgress: configData.guideProgress || [],
+    knowledgeArtifacts: configData.knowledgeArtifacts || [],
   });
 });
 

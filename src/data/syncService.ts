@@ -75,6 +75,12 @@ function collectProjectData(proj: string): Record<string, any[]> {
     if (chapters.length > 0) data.guideProgress = chapters;
   } catch {}
 
+  // v5.2: 工作流知识产物（项目级）
+  try {
+    const ka = localStorage.getItem(`knowledge-artifacts-${proj}`);
+    if (ka) data.knowledgeArtifacts = JSON.parse(ka);
+  } catch {}
+
   return data;
 }
 

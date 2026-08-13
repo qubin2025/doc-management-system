@@ -453,7 +453,11 @@ const App: React.FC = () => {
 
   const handleDeleteProject = (projName: string) => {
     if (!confirm(`确定要删除项目"${projName}"及其所有数据吗？此操作不可撤销。`)) return;
-    if (apiAvailable) { api.deleteProjectApi(projName).catch(() => {}); }
+    if (apiAvailable) {
+      api.deleteProjectApi(projName).catch(() => {
+        toast(`后端删除失败，项目"${projName}"仅从本地移除，重启后可能重新出现`, 'warning');
+      });
+    }
     setProjects(prev => prev.filter(p => p.name !== projName));
     setAllUploadInfo(prev => { const next = { ...prev }; delete next[projName]; return next; });
     if (currentProject === projName) {
