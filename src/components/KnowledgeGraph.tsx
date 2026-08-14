@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } fr
 import { ArrowLeft, Search, X, Plus, Link2, Save, Users, Cpu, Palette, ChevronDown, RotateCcw, Download, Edit2, Trash2, Camera, Type } from 'lucide-react';
 import * as THREE from 'three';
 import { buildGraph, KnowledgeGraph as KGType, getParentChain, TYPE_NAMES, TYPE_EDGE_NAMES } from '../data/knowledgeGraph';
+import { getCachedProjects } from '../data/projectDataCache';
 import * as api from '../data/api';
 
 const ForceGraph3D = React.lazy(() => import('react-force-graph-3d'));
@@ -312,8 +313,41 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
 
   const loadGraph = async () => {
     const kg = await api.fetchKnowledgeGraph(typeFilter);
-    if (kg.available && kg.nodes.length > 0) { setApiAvailable(true); setGraph(kg as KGType); }
-    else { setApiAvailable(false); setGraph(buildGraph()); }
+    if (kg.available && kg.nodes.length > 0) {
+      // v5.3: 过滤 Neo4j 数据，只保留属于当前存在项目的节点
+      // 防止已删除项目（如 test-project、项目x、测试2）残留图谱中
+      const currentProjects = new Set(getCachedProjects().map(p => 'proj-' + p.name));
+      // 收集需要保留的节点ID
+      const keepIds = new Set<string>();
+      for (const n of kg.nodes) {
+        if (n.type === 'project') {
+          // 项目节点：只保留当前存在的项目
+          if (currentProjects.has(n.id)) keepIds.add(n.id);
+        } else {
+          // 非项目节点（章节/子模块/工作项/文档/Agent等）：默认保留
+          keepIds.add(n.id);
+        }
+      }
+      // 额外检查：非项目节点如果有 parentId 指向已删除项目，也移除
+      const filteredNodes = kg.nodes.filter(n => {
+        if (n.type === 'project') return keepIds.has(n.id);
+        // 检查是否属于已删除项目（通过 parentId 或 props.project）
+        const parentProjId = n.parentId?.startsWith('proj-') ? n.parentId : null;
+        const projInProps = n.props?.project ? 'proj-' + n.props.project : null;
+        if ((parentProjId && !currentProjects.has(parentProjId)) ||
+            (projInProps && !currentProjects.has(projInProps))) {
+          return false;
+        }
+        return true;
+      });
+      const filteredIds = new Set(filteredNodes.map(n => n.id));
+      const filteredEdges = kg.edges.filter(e => filteredIds.has(e.from) && filteredIds.has(e.to));
+      setApiAvailable(true);
+      setGraph({ ...kg, nodes: filteredNodes, edges: filteredEdges } as KGType);
+    } else {
+      setApiAvailable(false);
+      setGraph(buildGraph());
+    }
   };
   useEffect(() => { loadGraph(); }, [typeFilter]);
 

@@ -125,4 +125,23 @@ router.delete('/nodes/:id', requireAuth, async (req, res) => {
   finally { await s.close(); }
 });
 
+/** DELETE /api/kg/project/:name — 清理指定项目的所有图谱节点（项目节点+子模块+工作项+计划文档等） */
+router.delete('/project/:name', requireAuth, async (req, res) => {
+  await initDriver();
+  if (!driver) return res.status(503).json({ error: 'Neo4j 未配置' });
+  const projectName = decodeURIComponent(req.params.name);
+  const s = driver.session();
+  try {
+    // 1. 删除项目节点本身
+    await s.run('MATCH (n:Node {id: $pid}) DETACH DELETE n', { pid: 'proj-' + projectName });
+    // 2. 删除 props.project 指向该项目的节点（文档/表单/计划等）
+    await s.run('MATCH (n:Node) WHERE n.props CONTAINS $pname DETACH DELETE n', { pname: projectName });
+    // 3. 删除 parentId 指向该项目的子模块/工作项节点
+    await s.run('MATCH (n:Node) WHERE n.parentId = $pid DETACH DELETE n', { pid: 'proj-' + projectName });
+    res.json({ success: true, project: projectName });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  } finally { await s.close(); }
+});
+
 export default router;

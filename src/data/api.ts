@@ -481,6 +481,15 @@ export async function syncKnowledgeGraph(nodes: any[], edges: any[]): Promise<vo
   } catch {}
 }
 
+/** 删除指定项目在 Neo4j 知识图谱中的所有节点 */
+export async function deleteProjectKGNodes(projectName: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/kg/project/${encodeURIComponent(projectName)}`, {
+      method: 'DELETE', headers: headers(),
+    });
+  } catch {}
+}
+
 // ========== LightRAG 微服务（方案B） ==========
 const LIGHTRAG_BASE = import.meta.env.VITE_LIGHTRAG_URL || 'http://localhost:8000/api/lightrag';
 

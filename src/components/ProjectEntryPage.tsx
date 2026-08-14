@@ -71,8 +71,10 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
   const handleDeleteProject = async (projectName: string) => {
     if (!confirm('确定删除项目"' + projectName + '"？此操作将彻底清除该项目全部数据，不可恢复。')) return;
     try {
-      // 先调后端API
+      // 先调后端API + 清理 Neo4j 知识图谱
       await api.deleteProjectApi(projectName);
+      // v5.3: 同步清理 Neo4j 中的已删除项目节点（防止知识图谱残留历史数据）
+      await api.deleteProjectKGNodes(projectName);
       // API成功 → 清除本地缓存
       // v5.3: 使用精确前缀匹配替代 k.includes(projectName)，避免子串误伤
       // （删除"桥"项目时不再误删"天桥改造"项目的键）
