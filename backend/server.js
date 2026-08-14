@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { spawn } from 'child_process';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: resolve(__dirname, '.env') });
 
@@ -330,7 +331,7 @@ process.on('uncaughtException', (err) => {
     restarting = true;
     console.log('[守护] 3秒后自动重启…');
     setTimeout(() => {
-      const { spawn } = require('child_process');
+      // v5.3: ESM 模块不支持 require，spawn 已在文件顶部 import
       const child = spawn(process.argv[0], process.argv.slice(1), { detached: true, stdio: 'inherit' });
       child.unref();
       process.exit(1);
