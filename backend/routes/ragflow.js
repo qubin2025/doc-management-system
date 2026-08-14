@@ -6,19 +6,27 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-const RAGFLOW_BASE = process.env.RAGFLOW_URL || 'http://localhost:9380';
-const RAGFLOW_KEY = process.env.RAGFLOW_API_KEY || '';
+
+// 注意：ESM 模块中 import 会在 dotenv.config() 之前执行，
+// 因此不能在模块级读取 process.env，必须在函数内动态读取
+function getRagflowConfig() {
+  return {
+    base: process.env.RAGFLOW_URL || 'http://localhost:9380',
+    key: process.env.RAGFLOW_API_KEY || '',
+  };
+}
 
 // 通用代理函数
 async function ragflowProxy(method, path, body, res) {
   try {
+    const { base, key } = getRagflowConfig();
     const headers = { 'Content-Type': 'application/json' };
-    if (RAGFLOW_KEY) headers['Authorization'] = `Bearer ${RAGFLOW_KEY}`;
+    if (key) headers['Authorization'] = `Bearer ${key}`;
 
     const opts = { method, headers };
     if (body && method !== 'GET') opts.body = JSON.stringify(body);
 
-    const resp = await fetch(`${RAGFLOW_BASE}${path}`, opts);
+    const resp = await fetch(`${base}${path}`, opts);
     const data = await resp.json().catch(() => ({ raw: resp.statusText }));
     res.status(resp.status).json(data);
   } catch (e) {
@@ -30,7 +38,8 @@ async function ragflowProxy(method, path, body, res) {
 // GET /api/ragflow/health — 检查 RAGFlow 可用性
 router.get('/health', requireAuth, async (req, res) => {
   try {
-    const resp = await fetch(`${RAGFLOW_BASE}/api/v1/version`);
+    const { base } = getRagflowConfig();
+    const resp = await fetch(`${base}/api/v1/version`);
     if (resp.ok) {
       const data = await resp.json();
       return res.json({ available: true, version: data?.version || 'unknown' });
