@@ -634,7 +634,7 @@ const App: React.FC = () => {
 
   // ===== 现场问题管理 =====
   if (view === 'issue-manager') {
-    return <IssueManager onBack={() => setView('homepage')} />;
+    return <IssueManager onBack={() => setView('homepage')} projectName={currentProject} />;
   }
 
   // ===== 项目日报管理 =====

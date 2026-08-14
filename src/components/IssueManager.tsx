@@ -5,6 +5,7 @@ import { fetchProjectIssues, updateIssueStatusDesktop, DesktopIssue } from '../d
 
 interface Props {
   onBack: () => void;
+  projectName?: string;
 }
 
 const SEVERITY_LABEL: Record<string, string> = {
@@ -26,7 +27,7 @@ const STATUS_COLOR: Record<string, string> = {
   closed: 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400',
 };
 
-const IssueManager: React.FC<Props> = ({ onBack }) => {
+const IssueManager: React.FC<Props> = ({ onBack, projectName: propProjectName }) => {
   const [issues, setIssues] = useState<DesktopIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectFilter, setProjectFilter] = useState('');
@@ -35,7 +36,8 @@ const IssueManager: React.FC<Props> = ({ onBack }) => {
 
   const loadAll = () => {
     setLoading(true);
-    fetchProjectIssues('') // empty = all projects
+    const target = propProjectName || projectFilter || '';
+    fetchProjectIssues(target)
       .then(data => {
         setIssues(data || []);
         const names = [...new Set((data || []).map(i => i.projectName).filter(Boolean))].sort();
@@ -45,7 +47,10 @@ const IssueManager: React.FC<Props> = ({ onBack }) => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (propProjectName) setProjectFilter(propProjectName);
+    loadAll();
+  }, [propProjectName]);
 
   const filtered = issues.filter(i => {
     if (projectFilter && i.projectName !== projectFilter) return false;
@@ -97,11 +102,18 @@ const IssueManager: React.FC<Props> = ({ onBack }) => {
 
         {/* 筛选栏 */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
-          <select value={projectFilter} onChange={e => setProjectFilter(e.target.value)}
-            className="h-9 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-[var(--text-primary,#1e293b)] focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">全部项目</option>
-            {projectNames.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
+          {propProjectName ? (
+            <div className="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 text-sm">
+              <span className="text-indigo-600 dark:text-indigo-400 font-medium">项目：</span>
+              <span className="text-[var(--text-primary,#1e293b)]">{propProjectName}</span>
+            </div>
+          ) : (
+            <select value={projectFilter} onChange={e => { setProjectFilter(e.target.value); loadAll(); }}
+              className="h-9 px-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-[var(--text-primary,#1e293b)] focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">全部项目</option>
+              {projectNames.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          )}
           <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-0.5">
             {[
               { value: 'all', label: '全部状态' },
