@@ -723,6 +723,8 @@ const App: React.FC = () => {
               localStorage.removeItem(key);
             }
           }
+          // v5.3: 清除知识图谱缓存，确保下次访问时用新项目名重建
+          localStorage.removeItem('knowledge-graph');
           setProjects(prev => prev.map(p => p.name === oldName ? { ...p, name: newName.trim() } : p));
           if (currentProject === oldName) setCurrentProject(newName.trim());
           // 同步更新 allUploadInfo 中的项目名

@@ -84,6 +84,8 @@ const LocalStoragePanel: React.FC = () => {
       }
     }
     toRemove.forEach(k => localStorage.removeItem(k));
+    // v5.3: 清除知识图谱缓存，确保下次访问时重建（不含已清理项目）
+    localStorage.removeItem('knowledge-graph');
     window.location.reload();
   };
 

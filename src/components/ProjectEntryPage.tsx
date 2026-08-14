@@ -88,6 +88,8 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
         }
       }
       keysToRemove.forEach(k => localStorage.removeItem(k));
+      // v5.3: 清除知识图谱缓存，确保下次访问时重建（不含已删除项目）
+      localStorage.removeItem('knowledge-graph');
       toast('项目已彻底删除', 'success');
       setTimeout(() => window.location.reload(), 300);
     } catch (e: any) {

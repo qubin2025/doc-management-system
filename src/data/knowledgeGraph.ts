@@ -106,6 +106,8 @@ export function buildGraph(): KnowledgeGraph {
   } catch {}
 
   // ===== 2. 指南维度：章节 → 子模块 → 工作项 =====
+  // v5.3: 从全局裸键改为遍历项目级键，确保删除项目后图谱不含残留数据
+  const projectList = getCachedProjects();
   for (const ch of ['ch1', 'ch2', 'ch3', 'ch4']) {
     const chId = 'chapter-' + ch;
     const chName = CHAPTER_NAMES[ch] || ch;
@@ -116,43 +118,50 @@ export function buildGraph(): KnowledgeGraph {
       if (n.type === 'project') addEdge(chId, n.id, 'belongs-to', '所属项目');
     });
 
-    try {
-      const modules = JSON.parse(localStorage.getItem(`guide-chapter-${ch}-modules`) || '[]');
-      const done = new Set(JSON.parse(localStorage.getItem(`guide-chapter-${ch}-done`) || '[]') as string[]);
+    // v5.3: 遍历每个项目的指南模块数据（项目级键），而非全局裸键
+    for (const p of projectList) {
+      if (!p.name) continue;
+      try {
+        const modules = JSON.parse(localStorage.getItem(`guide-${p.name}-chapter-${ch}`) || '[]');
+        const done = new Set(JSON.parse(localStorage.getItem(`guide-${p.name}-chapter-${ch}-done`) || '[]') as string[]);
 
-      if (Array.isArray(modules)) {
-        for (const sm of modules) {
-          if (!sm.id || !sm.workItems) continue;
+        if (Array.isArray(modules)) {
+          for (const sm of modules) {
+            if (!sm.id || !sm.workItems) continue;
 
-          // 子模块节点
-          const smId = 'sm-' + sm.id;
-          addNode({ id: smId, type: 'sub-module', label: sm.name, parentId: chId });
+            // 子模块节点（带项目名前缀避免跨项目ID冲突）
+            const smId = `sm-${p.name}-${sm.id}`;
+            addNode({ id: smId, type: 'sub-module', label: sm.name, parentId: chId });
 
-          // 子模块→章节
-          addEdge(smId, chId, 'belongs-to', '所属章节');
+            // 子模块→章节
+            addEdge(smId, chId, 'belongs-to', '所属章节');
+            // 子模块→项目
+            addEdge(smId, 'proj-' + p.name, 'belongs-to', '所属项目');
 
-          for (const wi of sm.workItems) {
-            if (!wi.id) continue;
-            // 工作项节点
-            const wiId = 'wi-' + wi.id;
-            const completed = done.has(wi.id);
-            addNode({
-              id: wiId, type: 'work-item', label: wi.name,
-              parentId: smId,
-              props: {
-                completed: String(completed),
-                chapter: ch,
-                duration: wi.duration || '',
-                subModule: sm.name,
-              },
-            });
+            for (const wi of sm.workItems) {
+              if (!wi.id) continue;
+              // 工作项节点（带项目名前缀）
+              const wiId = `wi-${p.name}-${wi.id}`;
+              const completed = done.has(wi.id);
+              addNode({
+                id: wiId, type: 'work-item', label: wi.name,
+                parentId: smId,
+                props: {
+                  completed: String(completed),
+                  chapter: ch,
+                  duration: wi.duration || '',
+                  subModule: sm.name,
+                  project: p.name,
+                },
+              });
 
-            // 工作项→子模块
-            addEdge(wiId, smId, 'belongs-to', '所属子模块');
+              // 工作项→子模块
+              addEdge(wiId, smId, 'belongs-to', '所属子模块');
+            }
           }
         }
-      }
-    } catch {}
+      } catch {}
+    }
   }
 
   // ===== 3. 功能维度 =====
@@ -247,16 +256,18 @@ export function buildGraph(): KnowledgeGraph {
   });
 
   // 3e. 计划管理节点（甘特图/网络图）
+  // v5.3: 从全局键 plan-files 改为遍历项目级键 plan-files-${projectName}
   try {
-    const planFiles = JSON.parse(localStorage.getItem('plan-files') || '[]');
-    if (Array.isArray(planFiles)) {
-      for (const f of planFiles) {
-        if (!f.name) continue;
-        const pid = 'plan-' + f.name;
-        addNode({ id: pid, type: 'document', label: f.name, props: { type: 'plan', project: f.project || '' } });
-        if (f.project) addEdge(pid, 'proj-' + f.project, 'belongs-to', '计划文档');
-        // 关联到所有项目
-        nodeMap.forEach(n => { if (n.type === 'project') addEdge(pid, n.id, 'belongs-to', '计划文档'); });
+    for (const p of projectList) {
+      if (!p.name) continue;
+      const planFiles = JSON.parse(localStorage.getItem(`plan-files-${p.name}`) || '[]');
+      if (Array.isArray(planFiles)) {
+        for (const f of planFiles) {
+          if (!f.name) continue;
+          const pid = `plan-${p.name}-${f.name}`;
+          addNode({ id: pid, type: 'document', label: f.name, props: { type: 'plan', project: p.name } });
+          addEdge(pid, 'proj-' + p.name, 'belongs-to', '计划文档');
+        }
       }
     }
   } catch {}

@@ -105,6 +105,18 @@ router.delete('/:id', requireRole('admin'), (req, res) => {
   db.prepare('DELETE FROM mobile_progress WHERE project_id = ?').run(req.params.id);
   db.prepare('DELETE FROM project_experiences WHERE project_name = (SELECT name FROM projects WHERE id = ?)').run(req.params.id);
   db.prepare('DELETE FROM stakeholders WHERE project_name = (SELECT name FROM projects WHERE id = ?)').run(req.params.id);
+  // v5.3: 补充清理指南进度/表单/知识产物/审计日志（修复知识图谱残留已删除项目数据）
+  // 使用 try-catch 包裹：表可能因版本差异不存在，不应阻断删除流程
+  const projNameRow = db.prepare('SELECT name FROM projects WHERE id = ?').get(req.params.id);
+  const projName = projNameRow ? projNameRow.name : null;
+  if (projName) {
+    const safeDelete = (sql) => { try { db.prepare(sql).run(projName); } catch (e) { /* 表不存在，忽略 */ } };
+    safeDelete('DELETE FROM guide_progress WHERE project_name = ?');
+    safeDelete('DELETE FROM guide_forms WHERE project_name = ?');
+    safeDelete('DELETE FROM knowledge_artifacts WHERE project_name = ?');
+    // 注：audit_log 保留历史记录以满足审计合规要求，不随项目删除而清理
+  }
+  try { db.prepare('DELETE FROM progress_reports WHERE project_id = ?').run(req.params.id); } catch (e) { /* 表不存在，忽略 */ }
   // 删除项目本身
   const result = db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
   if (result.changes === 0) {
