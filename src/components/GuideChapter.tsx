@@ -39,20 +39,38 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   const STORAGE_KEY = projectName ? `guide-${projectName}-chapter-${initialChapter.id}` : `guide-chapter-${initialChapter.id}`;
   const LINKS_KEY = projectName ? `guide-${projectName}-item-links-${initialChapter.id}` : `guide-item-links-${initialChapter.id}`;
 
-  // 一次性迁移：旧键名（无项目名）→ 新键名（带项目名），避免历史数据丢失
-  if (projectName && typeof window !== 'undefined') {
-    const oldSk = `guide-chapter-${initialChapter.id}`;
-    const oldLk = `guide-item-links-${initialChapter.id}`;
-    ([
-      [STORAGE_KEY, oldSk],
-      [`${STORAGE_KEY}-done`, `${oldSk}-done`],
-      [`${STORAGE_KEY}-modules`, `${oldSk}-modules`],
-      [LINKS_KEY, oldLk],
-    ] as [string, string][]).forEach(([newKey, oldKey]) => {
-      if (!localStorage.getItem(newKey) && localStorage.getItem(oldKey)) {
-        localStorage.setItem(newKey, localStorage.getItem(oldKey)!);
+  // v5.3 防污染：禁用"全局旧键→项目新键"的模糊迁移。
+  // 全局匿名键（无项目名）是 v2.x/v3.x "未关联项目时的演示模式"遗留，
+  // 新建命名项目（如天宝北街）不应继承其他项目留下的数据。
+  // 如需精确迁移，请在特定项目之间显式拷贝（通过 sync 导出/导入功能）。
+
+  // v5.3 数据补救：浏览器一次性修复历史迁移污染。
+  // 逻辑：如果任何带项目名的键内容与全局旧键完全相同（高置信度说明是误迁移产生），
+  // 则清除该项目级键的疑似污染数据。仅执行一次（通过 cleanup-v2 旗标控制）。
+  if (projectName && typeof window !== 'undefined' && !localStorage.getItem('guide-cleanup-v2')) {
+    try {
+      const chapterIds: string[] = [];
+      for (const k of Object.keys(localStorage)) {
+        const m = k.match(/^guide-chapter-(ch\d+)(-done|-modules)?$/);
+        if (m) chapterIds.push(m[1]);
       }
-    });
+      // 同时覆盖 API 数据中可能的 ch1~ch4
+      for (const chId of new Set([...chapterIds, 'ch1', 'ch2', 'ch3', 'ch4'])) {
+        const globals = [
+          [`guide-chapter-${chId}`, `guide-${projectName}-chapter-${chId}`],
+          [`guide-chapter-${chId}-done`, `guide-${projectName}-chapter-${chId}-done`],
+          [`guide-chapter-${chId}-modules`, `guide-${projectName}-chapter-${chId}-modules`],
+          [`guide-item-links-${chId}`, `guide-${projectName}-item-links-${chId}`],
+        ] as [string, string][];
+        globals.forEach(([globKey, projKey]) => {
+          const gv = localStorage.getItem(globKey), pv = localStorage.getItem(projKey);
+          if (gv && pv && gv === pv) {
+            localStorage.removeItem(projKey);
+          }
+        });
+      }
+    } catch {}
+    localStorage.setItem('guide-cleanup-v2', '1');
   }
 
   // ===== 状态管理 =====

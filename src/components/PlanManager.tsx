@@ -12,11 +12,10 @@ const PlanManager: React.FC<Props> = ({ onBack, projectName }) => {
   const [cpmResult, setCpmResult] = useState<any>(null);
   // v5.2: plan-files 改为项目级键，与 syncService 收集方一致
   const PLAN_FILES_KEY = projectName ? `plan-files-${projectName}` : 'plan-files';
+  // v5.3 防污染：移除"全局 plan-files → 新项目键"的迁移。
+  // 全局匿名键属于未命名项目，新建命名项目不应继承其他项目的进度计划文件。
+  // 精确迁移应使用 sync 导出/导入功能。
   const [planFiles, setPlanFiles] = useState<PlanFile[]>(() => {
-    // 一次性迁移：旧全局键 plan-files → 新项目级键
-    if (projectName && !localStorage.getItem(PLAN_FILES_KEY) && localStorage.getItem('plan-files')) {
-      localStorage.setItem(PLAN_FILES_KEY, localStorage.getItem('plan-files')!);
-    }
     try { return JSON.parse(localStorage.getItem(PLAN_FILES_KEY) || '[]'); } catch { return []; }
   });
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
