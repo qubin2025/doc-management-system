@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { collectKeysForTarget } from '../data/projectKeyUtils';
 
 interface KeyInfo { key: string; size: number; category: string; relatedProjects: string[]; value: string; }
 
@@ -73,14 +74,14 @@ const LocalStoragePanel: React.FC = () => {
 
   const handleCleanProject = (name: string) => {
     if (!confirm('确定删除项目"' + name + '"的全部 localStorage 数据？')) return;
-    const toRemove: string[] = [];
+    // v5.3: 精确前缀匹配替代 k.includes(name)，避免子串误伤
+    const toRemove = collectKeysForTarget(name);
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (!k) continue;
       if (k.startsWith('doc-mgmt-projects-')) {
         try { const v = JSON.parse(localStorage.getItem(k) || '[]'); if (Array.isArray(v)) { localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || '') !== name))); } } catch {}
       }
-      if (k.includes(name)) toRemove.push(k);
     }
     toRemove.forEach(k => localStorage.removeItem(k));
     window.location.reload();
@@ -89,13 +90,12 @@ const LocalStoragePanel: React.FC = () => {
   const handleCleanOrphan = () => {
     if (!confirm('确定清除全部孤立数据？')) return;
     let count = 0;
-    const os = new Set(orphans);
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (!k) continue;
-      for (const o of os) { if (k.includes(o)) { localStorage.removeItem(k); count++; break; } }
-    }
-    window.location.reload();
+    // v5.3: 精确前缀匹配替代 k.includes(o)，避免子串误伤
+    // 预先收集所有孤立目标的键集合，避免循环内重复遍历 localStorage
+    const keysToRemove = new Set<string>();
+    for (const o of orphans) { collectKeysForTarget(o).forEach(k => keysToRemove.add(k)); }
+    keysToRemove.forEach(k => { localStorage.removeItem(k); count++; });
+    if (count > 0) window.location.reload();
   };
 
   const handleCleanAll = () => {

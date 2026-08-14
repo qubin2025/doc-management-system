@@ -55,6 +55,7 @@ import { appendixAData_municipal as municipalData } from './data/appendixA_munic
 import { UploadInfo, FilterOptions, CategoryStats, ProjectInfo, StandardType, AuthState, Permissions } from './types';
 import * as api from './data/api';
 import { setCachedProjects, setCachedUploads } from './data/projectDataCache';
+import { migrateKeyOnRename } from './data/projectKeyUtils';
 import { setGlobalProject, setGlobalAuth } from './data/ProjectContext';
 import JSZip from 'jszip';
 
@@ -711,20 +712,15 @@ const App: React.FC = () => {
               if (!ok) toast('后端同步失败，项目名仅本地更新', 'warning');
             });
           }
-          // v5.2: 迁移 localStorage 中所有项目相关键（避免 syncService 用空数据覆盖后端）
-          const prefixes = ['guide-', 'stakeholder-', 'risk-', 'resources-', 'raci-',
-            'tailoring-config-', 'project-objectives-', 'schedule-',
-            'knowledge-artifacts-', 'guide-forms-', 'guide-item-links-'];
+          // v5.3: 迁移 localStorage 中所有项目相关键（精确边界匹配，避免前缀混淆）
+          // 使用 migrateKeyOnRename 替代 startsWith，确保"测试"重命名不误迁移"测试1"的键
           for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
             if (!key) continue;
-            for (const prefix of prefixes) {
-              if (key.startsWith(prefix + oldName)) {
-                const newKey = key.replace(prefix + oldName, prefix + newName.trim());
-                localStorage.setItem(newKey, localStorage.getItem(key)!);
-                localStorage.removeItem(key);
-                break;
-              }
+            const newKey = migrateKeyOnRename(key, oldName, newName.trim());
+            if (newKey) {
+              localStorage.setItem(newKey, localStorage.getItem(key)!);
+              localStorage.removeItem(key);
             }
           }
           setProjects(prev => prev.map(p => p.name === oldName ? { ...p, name: newName.trim() } : p));

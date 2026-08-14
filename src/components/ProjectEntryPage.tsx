@@ -4,6 +4,7 @@ import { ProjectInfo } from '../types';
 import * as api from '../data/api';
 import { fetchAllIssues, DesktopIssue } from '../data/api';
 import { toast } from './Toast';
+import { collectKeysForTarget } from '../data/projectKeyUtils';
 
 interface ProjectEntryPageProps {
   projects: ProjectInfo[];
@@ -73,7 +74,9 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
       // 先调后端API
       await api.deleteProjectApi(projectName);
       // API成功 → 清除本地缓存
-      const keysToRemove: string[] = [];
+      // v5.3: 使用精确前缀匹配替代 k.includes(projectName)，避免子串误伤
+      // （删除"桥"项目时不再误删"天桥改造"项目的键）
+      const keysToRemove = collectKeysForTarget(projectName);
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (!k) continue;
@@ -83,7 +86,6 @@ const ProjectEntryPage: React.FC<ProjectEntryPageProps> = ({
             if (Array.isArray(v)) localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || '') !== projectName)));
           } catch {}
         }
-        if (k.includes(projectName)) keysToRemove.push(k);
       }
       keysToRemove.forEach(k => localStorage.removeItem(k));
       toast('项目已彻底删除', 'success');
