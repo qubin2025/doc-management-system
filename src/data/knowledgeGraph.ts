@@ -2,6 +2,7 @@
 // v5.2: 项目/文档数据通过 projectDataCache 读取（API-backed）
 
 import { getCachedProjects, getCachedUploads } from './projectDataCache';
+import { vectorStore } from './vectorStore';
 
 export interface GraphNode {
   id: string;
@@ -66,11 +67,34 @@ export const TYPE_NAMES: Record<string, string> = {
   agent: 'Agent智能体',
 };
 
-// ===== 边类型 → 中文名称映射 =====
+// ===== 边类型 → 中文名称映射（含 Neo4j 大写变体）=====
 export const TYPE_EDGE_NAMES: Record<string, string> = {
-  'belongs-to': '所属', references: '引用', produces: '产出', reviews: '审查',
-  'assigned-to': '服务于', precedes: '前置', supplements: '补充', refers_to: '参考',
+  // 标准小写（下划线/连字符）
+  'belongs-to': '所属', 'belongs_to': '所属',
+  references: '引用', produces: '产出', reviews: '审查',
+  'assigned-to': '服务于', 'assigned_to': '服务于',
+  precedes: '前置', supplements: '补充', refers_to: '参考',
   'parent_of': '父级', 'child_of': '子级', 'conflicts_with': '冲突', collaborates: '协作',
+  // Neo4j 大写变体
+  'BELONGS_TO': '所属',
+  'REFERENCES': '引用',
+  'PRODUCES': '产出',
+  'REVIEWS': '审查',
+  'ASSIGNED_TO': '服务于',
+  'PRECEDES': '前置',
+  'SUPPLEMENTS': '补充',
+  'REFERS_TO': '参考',
+  'PARENT_OF': '父级',
+  'CHILD_OF': '子级',
+  'CONFLICTS_WITH': '冲突',
+  'COLLABORATES': '协作',
+  // Neo4j 特有关系
+  'HAS_REFERENCE': '引用',
+  'HAS_DOCUMENT': '包含文档',
+  'HAS_FORM': '包含表单',
+  'HAS_VIEW': '包含视图',
+  'IMPLEMENTED_BY': '实现方式',
+  'BASED_ON': '依据',
 };
 
 // ================================================================
@@ -338,41 +362,83 @@ export function buildGraph(): KnowledgeGraph {
   }
 
   // 4. 业务实体节点 (v4.4+)
-  // 4a. 日报节点
+  // v5.4: 改为从 vectorStore 反查（由 kbSyncService 同步写入），保证图谱与向量库一致
+  // 4a. 日报节点（从向量库 daily-*-seg* 文档反查，合并同一日报的多段）
   try {
-    const drKey = 'desktop-daily-reports';
-    const drData = JSON.parse(localStorage.getItem(drKey) || '[]');
-    if (Array.isArray(drData)) {
-      for (const dr of drData) {
-        if (dr.projectId) {
-          addNode({ id: `daily-${dr.id || dr.reportDate}`, type: 'daily-report', label: `${dr.projectName || ''} ${dr.reportDate || ''}`.trim(), parentId: dr.projectId, props: { reportDate: dr.reportDate, weatherDay: dr.weatherDay } });
-          addEdge(`daily-${dr.id || dr.reportDate}`, dr.projectId, 'belongs-to', '日报→项目');
-        }
+    const allDocs = vectorStore.getAllDocs();
+    const dailyMap = new Map<string, { projectName: string; reportDate: string }>();
+    for (const d of allDocs) {
+      const m = d.id && typeof d.id === 'string' ? d.id.match(/^daily-(\d+)-seg\d+$/) : null;
+      if (!m) continue;
+      if (d.metadata?.fileType !== 'daily-segment') continue;
+      const fileName = d.metadata?.fileName || '';
+      const dateMatch = fileName.match(/日报-(\d{4}-\d{2}-\d{2})/);
+      if (dateMatch) {
+        dailyMap.set(m[1], {
+          projectName: d.metadata?.projectName || '',
+          reportDate: dateMatch[1],
+        });
       }
     }
-  } catch {}
-  // 4b. 现场问题节点
-  try {
-    const issueKey = 'desktop-issues';
-    const issueData = JSON.parse(localStorage.getItem(issueKey) || '[]');
-    if (Array.isArray(issueData)) {
-      for (const iss of issueData) {
-        if (iss.projectId) {
-          addNode({ id: `issue-${iss.id}`, type: 'issue', label: iss.title || iss.description?.slice(0, 40) || '', parentId: iss.projectId, props: { status: iss.status, severity: iss.severity } });
-          addEdge(`issue-${iss.id}`, iss.projectId, 'belongs-to', '问题→项目');
-        }
-      }
+    for (const [id, info] of dailyMap) {
+      if (!info.projectName) continue;
+      const nid = `daily-${id}`;
+      addNode({
+        id: nid, type: 'daily-report',
+        label: `${info.projectName} ${info.reportDate}`.trim(),
+        parentId: 'proj-' + info.projectName,
+        props: { reportDate: info.reportDate, project: info.projectName, source: 'kbSync' },
+      });
+      addEdge(nid, 'proj-' + info.projectName, 'belongs-to', '日报');
     }
   } catch {}
-  // 4c. 经验节点
+  // 4b. 现场问题节点（从向量库 issue-* 反查）
   try {
-    const expKey = 'experience-items';
-    const expData = JSON.parse(localStorage.getItem(expKey) || '[]');
-    if (Array.isArray(expData)) {
-      for (const exp of expData) {
-        addNode({ id: `exp-${exp.id}`, type: 'experience', label: exp.title || '', parentId: exp.projectName, props: { category: exp.category, patterns: String(exp.patterns?.length || 0) } });
-        if (exp.projectName) addEdge(`exp-${exp.id}`, exp.projectName, 'belongs-to', '经验→项目');
-      }
+    const allDocs = vectorStore.getAllDocs();
+    const issueMap = new Map<string, { projectName: string; title: string }>();
+    for (const d of allDocs) {
+      const m = d.id && typeof d.id === 'string' ? d.id.match(/^issue-(\d+)$/) : null;
+      if (!m) continue;
+      if (d.metadata?.fileType !== 'issue') continue;
+      issueMap.set(m[1], {
+        projectName: d.metadata?.projectName || '',
+        title: (d.metadata?.fileName || '').replace(/^问题-/, ''),
+      });
+    }
+    for (const [id, info] of issueMap) {
+      if (!info.projectName) continue;
+      const nid = `issue-${id}`;
+      addNode({
+        id: nid, type: 'issue',
+        label: info.title || '未命名问题',
+        parentId: 'proj-' + info.projectName,
+        props: { project: info.projectName, source: 'kbSync' },
+      });
+      addEdge(nid, 'proj-' + info.projectName, 'belongs-to', '现场问题');
+    }
+  } catch {}
+  // 4c. 经验节点（从向量库 exp-* 反查）
+  try {
+    const allDocs = vectorStore.getAllDocs();
+    const expMap = new Map<string, { projectName: string; title: string }>();
+    for (const d of allDocs) {
+      const m = d.id && typeof d.id === 'string' ? d.id.match(/^exp-(.+)$/) : null;
+      if (!m) continue;
+      if (d.metadata?.fileType !== 'experience') continue;
+      expMap.set(m[1], {
+        projectName: d.metadata?.projectName || '',
+        title: (d.metadata?.fileName || '').replace(/^经验-/, ''),
+      });
+    }
+    for (const [id, info] of expMap) {
+      const nid = `exp-${id}`;
+      addNode({
+        id: nid, type: 'experience',
+        label: info.title || '未命名经验',
+        parentId: info.projectName ? 'proj-' + info.projectName : undefined,
+        props: { project: info.projectName, source: 'kbSync' },
+      });
+      if (info.projectName) addEdge(nid, 'proj-' + info.projectName, 'belongs-to', '项目经验');
     }
   } catch {}
   // 4d. 干系人节点
