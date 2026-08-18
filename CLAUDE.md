@@ -202,6 +202,7 @@ Agent智能体 — ReAct推理循环 (规划→观察→推理→执行→恢复
 | `/api/export` | export.js | 2 | requireAuth |
 | `/api/baselines` | baselines.js | 3 | requireAuth/Role |
 | `/api/audit` | audit.js | 1 | requireAuth |
+| `/api/kb` | kbSync.js (v5.4) | 4 (sync/status, sync/daily, sync/issues, sync/experiences) | requireAuth |
 
 ## 六、数据库Schema (21张表)
 
@@ -374,6 +375,38 @@ if (老旧破损文件) → 永久禁用自动化注入 → 仅手动规范开�
 | **v4.4** | 2026-07-21 | 手机UI重设计·日报体系(8段模板)·Recharts图表·PWA安装·DesktopDailyReport·知识图谱25节点·代码健康评估 |
 | **v5.0** | 2026-07-27 | Ollama本地AI(qwen2.5:7b)·Docker健康检查·GraphRAG图检索(9端点)·Multi-Agent协作(5角色) |
 | **v5.1** | 2026-07-27 | 还债止血: App.tsx 1373→934行·HomePage/StandardSelect组件化·kg.js 579→125行·ai.js 536→451行·门禁收紧250行 |
+| **v5.4** | 2026-08-18 | 知识库方案A: 后端业务表(日报/问题/经验)自动入库向量库+知识图谱·kbSync.js路由(4端点)·kbSyncService.ts(4段拆块/去重写入/容量预警/并发嵌入)·vectorStore批量API·buildGraph反查向量构建节点·UI同步按钮+进度展示 |
+
+### v5.4 知识库同步机制（方案A）
+
+**目标**：将后端三张高价值业务表自动入库到向量库+知识图谱，实现"项目运行沉淀即知识"。
+
+**数据流**:
+```
+后端 SQLite 业务表 (daily_reports / mobile_issues / project_experiences)
+    ↓ kbSync.js 路由 (4 端点)
+    /api/kb/sync/status  → 各项目最后更新时间（供增量同步判断）
+    /api/kb/sync/daily   → 日报列表（含子表 JSON）
+    /api/kb/sync/issues  → 问题列表
+    /api/kb/sync/experiences → 经验列表
+    ↓ kbSyncService.ts (前端入库服务)
+    1. 文本化：日报按 4 段拆块（进度/质量风险/现场问题/原文备注）
+    2. 去重：vectorStore.removeByPrefix(prefix, project) 按前缀删旧向量
+    3. 嵌入：api.embedText 并发 5 条降低延迟
+    4. 入库：vectorStore.addDocuments 批量写入（一次保存）
+    5. 容量预警：单项目 >4MB 时只写 IndexedDB（跳过 localStorage 避免误删）
+    ↓ buildGraph() 同步构建节点
+    daily-{id} / issue-{id} / exp-{id} 节点反查向量库生成
+    ↓ 用户触发
+    KnowledgeBase 顶栏"同步业务数据"按钮（手动触发增量，可选全量重同步）
+```
+
+**关键约束**:
+- 项目隔离：metadata.projectName 作为分区键，向量库按项目分键
+- 去重前缀：`daily-{reportId}-seg{1-4}` / `issue-{issueId}` / `exp-{experienceId}`
+- 容量上限：IndexedDB 200MB 软上限 + LRU 85% 淘汰
+- 同步状态持久化：localStorage 键 `kb-sync-state` 存各项目最后同步时间
+- 增量同步：按 `created_at` (日报) / `updated_at` (问题/经验) 过滤
 
 ### Git提交记录
 ```
