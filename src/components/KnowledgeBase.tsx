@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Search, X, Sparkles, FileText, Loader2, BookOpen } from 'lucide-react';
+import { Search, X, Sparkles, FileText, Loader2, BookOpen, RefreshCw } from 'lucide-react';
 import { vectorStore, VectorDoc } from '../data/vectorStore';
 import * as api from '../data/api';
 import { toast } from './Toast';
 import lunr from 'lunr';
+import ModuleHeader from './ModuleHeader';
+import { kbSyncService, SyncResult } from '../data/kbSyncService';
 
 interface Props { onBack: () => void; }
 
@@ -23,6 +25,9 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [lifecycle, setLifecycle] = useState(0);
   const [profession, setProfession] = useState(0);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
+  const [lastSync, setLastSync] = useState<SyncResult | null>(null);
 
   // 方案模板库 → 读取 contract_templates
   useEffect(() => {
@@ -102,20 +107,61 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const handleShowAll = () => { setResults(allDocs); setSearch(''); };
   const handleClear = () => { setResults([]); setSearch(''); };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center rounded-lg"><BookOpen className="w-5 h-5 text-white" /></div>
-            <h1 className="text-lg font-bold text-gray-800">知识库</h1>
-            <span className="text-sm text-gray-400">{allDocs.length}条索引</span>
-          </div>
-        </div>
-      </header>
+  const handleSync = async (forceFull: boolean) => {
+    if (syncing) return;
+    setSyncing(true); setSyncMsg('开始同步业务数据...');
+    try {
+      const result = await kbSyncService.syncAll(forceFull, (msg) => setSyncMsg(msg));
+      setLastSync(result);
+      if (result.success) {
+        toast(`同步完成：日报 ${result.daily.synced} 段 / 问题 ${result.issues.synced} 条 / 经验 ${result.experiences.synced} 条，耗时 ${(result.duration / 1000).toFixed(1)}s`, 'success');
+        setAllDocs(vectorStore.getAllDocs()); // 刷新列表
+      } else {
+        toast(`同步失败：${result.error || '未知错误'}`, 'error');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast('同步异常: ' + msg, 'error');
+    } finally {
+      setSyncing(false);
+      setSyncMsg('');
+    }
+  };
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <ModuleHeader
+        title="知识库"
+        subtitle={`${allDocs.length} 条索引 · 全文/语义/混合检索`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        colorClass="blue"
+        onBack={onBack}
+        backLabel="返回首页"
+        actions={
+          <button
+            onClick={() => handleSync(false)}
+            disabled={syncing}
+            title="增量同步：日报/问题/经验 → 向量库"
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? (syncMsg || '同步中...') : '同步业务数据'}
+          </button>
+        }
+      />
+      {syncing && syncMsg && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800 px-4 py-1.5 text-xs text-emerald-700 dark:text-emerald-300">
+          {syncMsg}
+        </div>
+      )}
+      {lastSync && !syncing && (
+        <div className="bg-gray-50 dark:bg-slate-900/40 border-b border-gray-200 dark:border-slate-800 px-4 py-1.5 text-xs text-gray-600 dark:text-slate-400 flex items-center gap-4">
+          <span>最近同步：日报 {lastSync.daily.synced} 段 · 问题 {lastSync.issues.synced} 条 · 经验 {lastSync.experiences.synced} 条 · 耗时 {(lastSync.duration / 1000).toFixed(1)}s</span>
+          <button onClick={() => handleSync(true)} className="text-emerald-600 dark:text-emerald-400 hover:underline">全量重同步</button>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 py-6 w-full">
         {/* 5大知识库选项卡 */}
         <div className="flex gap-1 mb-3 bg-white rounded-xl border p-1 overflow-x-auto">
           {LIBS.map((lib, i) => (
@@ -128,10 +174,10 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
         {/* 三维筛选 */}
         <div className="flex gap-2 mb-4 text-xs">
           <select value={lifecycle} onChange={e => setLifecycle(Number(e.target.value))} className="px-2 py-1.5 border border-gray-200 rounded-lg bg-white">
-            {LIFECYCLES.map((l, i) => <option key={l} value={i}>{i === 0 ? '生命周期▼' : l}</option>)}
+            {LIFECYCLES.map((l, i) => <option key={l} value={i}>{i === 0 ? '生命周期' : l}</option>)}
           </select>
           <select value={profession} onChange={e => setProfession(Number(e.target.value))} className="px-2 py-1.5 border border-gray-200 rounded-lg bg-white">
-            {PROFESSIONS.map((p, i) => <option key={p} value={i}>{i === 0 ? '专业▼' : p}</option>)}
+            {PROFESSIONS.map((p, i) => <option key={p} value={i}>{i === 0 ? '专业' : p}</option>)}
           </select>
           {libFilter > 0 && <span className="px-2 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs">{LIBS[libFilter]} · {LIFECYCLES[lifecycle] !== '全部' ? LIFECYCLES[lifecycle] + ' · ' : ''}{PROFESSIONS[profession] !== '全部' ? PROFESSIONS[profession] : '全部专业'}</span>}
         </div>
