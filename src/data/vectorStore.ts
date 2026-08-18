@@ -166,6 +166,36 @@ export class LocalVectorStore {
     }
   }
 
+  /** 获取指定项目的全部文档（按项目隔离读取） */
+  getByProject(project: string): VectorDoc[] {
+    return this.vectors.get(project) || [];
+  }
+
+  /** 按 ID 前缀批量删除（用于知识库同步去重，一次保存避免性能瓶颈） */
+  removeByPrefix(prefix: string, project: string): number {
+    if (!this.vectors.has(project)) return 0;
+    const docs = this.vectors.get(project)!;
+    const before = docs.length;
+    const filtered = docs.filter(d => !d.id.startsWith(prefix));
+    const removed = before - filtered.length;
+    if (removed > 0) {
+      this.vectors.set(project, filtered);
+      this.saveProject(project);
+    }
+    return removed;
+  }
+
+  /** 批量添加文档（一次保存，避免多次 saveProject） */
+  addDocuments(docs: VectorDoc[]): number {
+    if (docs.length === 0) return 0;
+    const project = docs[0].metadata?.projectName || 'default';
+    if (!this.vectors.has(project)) this.vectors.set(project, []);
+    const existing = this.vectors.get(project)!;
+    for (const d of docs) existing.push(d);
+    this.saveProject(project);
+    return docs.length;
+  }
+
   /** 清空项目 */
   clearProject(project: string): void {
     this.vectors.delete(project);
@@ -247,6 +277,25 @@ export const vectorStore = {
   stats(project?: string): any { return this._store.stats(project || 'default'); },
   projects(): string[] { return this._store.projects(); },
   remove(id: string, project?: string): void { this._store.remove(id, project); },
+  getByProject(project: string): any[] { return this._store.getByProject(project); },
+  removeByPrefix(prefix: string, project: string): number {
+    const removed = this._store.removeByPrefix(prefix, project);
+    // IndexedDB 暂不同步删除（按前缀删除 IndexedDB 留待后续优化）
+    // 残留旧数据不影响 localStorage 检索与 getAllDocs 显示，仅影响 searchAsync
+    return removed;
+  },
+  addDocuments(docs: any[]): number {
+    const n = this._store.addDocuments(docs);
+    ensureIDB().then(ok => {
+      if (ok && n > 0) {
+        const project = docs[0]?.metadata?.projectName || 'default';
+        for (const d of docs) {
+          idb.addDocument(d, project).catch(() => {});
+        }
+      }
+    });
+    return n;
+  },
   clearProject(project: string): void {
     this._store.clearProject(project);
     ensureIDB().then(ok => { if (ok) idb.clearProject(project); });
