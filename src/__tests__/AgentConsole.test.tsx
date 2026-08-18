@@ -77,8 +77,14 @@ describe('AgentConsole', () => {
 
   it('calls onBack when back button clicked', () => {
     render(<AgentConsole {...defaultProps} />);
-    const buttons = screen.getAllByRole('button');
-    buttons[0].click(); // first button is back arrow
+    // 顶栏含多个按钮，按文本定位返回按钮避免按钮顺序变化导致测试脆弱
+    const backText = screen.getAllByText(/返回/);
+    if (backText.length > 0) {
+      (backText[0].closest('button') as HTMLButtonElement).click();
+    } else {
+      // 兜底：若找不到文本按钮，点击第一个按钮
+      screen.getAllByRole('button')[0].click();
+    }
     expect(defaultProps.onBack).toHaveBeenCalled();
   });
 });

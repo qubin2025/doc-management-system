@@ -23,6 +23,11 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 function openDB(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
+    // 兼容性：jsdom/Node 环境下 indexedDB 可能未定义
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB not available'));
+      return;
+    }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
@@ -207,7 +212,8 @@ export async function clearProject(project: string): Promise<void> {
 
 /** 清除全部 */
 export async function clearAll(): Promise<void> {
-  const db = await openDB();
+  let db: IDBDatabase;
+  try { db = await openDB(); } catch { return; }
   return new Promise((resolve) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     tx.objectStore(STORE_NAME).clear();

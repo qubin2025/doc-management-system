@@ -3,7 +3,11 @@ import { render, screen } from '@testing-library/react';
 import KnowledgeBase from '../components/KnowledgeBase';
 
 vi.mock('../data/vectorStore', () => ({
-  vectorStore: { getAllDocs: () => [], searchAll: () => [] },
+  vectorStore: { getAllDocs: () => [], searchAll: () => [], addDocuments: () => 0, removeByPrefix: () => 0, getByProject: () => [], stats: () => ({ count: 0, sizeKB: 0 }) },
+}));
+vi.mock('../data/kbSyncService', () => ({
+  kbSyncService: { syncAll: vi.fn().mockResolvedValue({ success: false, error: 'mock', totalSynced: 0, totalSkipped: 0, daily: { synced: 0, skipped: 0 }, issues: { synced: 0, skipped: 0 }, experiences: { synced: 0, skipped: 0 }, duration: 0 }), getLocalSyncState: () => ({}) },
+  SyncResult: {},
 }));
 
 describe('KnowledgeBase', () => {
@@ -35,7 +39,9 @@ describe('KnowledgeBase', () => {
   it('calls onBack when back clicked', () => {
     const onBack = vi.fn();
     render(<KnowledgeBase onBack={onBack} />);
-    screen.getAllByRole('button')[0].click();
+    // v5.4 顶栏含"同步业务数据"按钮，返回按钮需按文本定位
+    const backBtn = screen.getAllByText(/返回首页/)[0];
+    (backBtn.closest('button') as HTMLButtonElement).click();
     expect(onBack).toHaveBeenCalled();
   });
 });
