@@ -24,8 +24,9 @@ function authHeader(): Record<string, string> {
 
 // ========== 连接检查 ==========
 export async function checkConnection(): Promise<boolean> {
+  // v5.7: 使用 /api/health 端点替代 / (根路径返回 404 会导致误判离线)
   try {
-    const res = await fetch(`${API_BASE}/`, { method: 'GET', signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${API_BASE}/api/health`, { method: 'GET', signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch { return false; }
 }
@@ -124,7 +125,8 @@ export async function createProject(name: string): Promise<any> {
 }
 
 // v5.2: 更新项目（重命名 + 更新详情）— 修复原 onRenameProject/onUpdateProject 仅写 localStorage 的持久化缺口
-export async function updateProject(projectName: string, payload: { newName?: string; details?: any }): Promise<boolean> {
+// v5.5: 返回 { ok, error } 对象,传递后端具体错误信息(如 409 重名)
+export async function updateProject(projectName: string, payload: { newName?: string; details?: any }): Promise<{ ok: boolean; error?: string }> {
   try {
     console.log(`[api] 更新项目 → backend: ${projectName}` + (payload.newName ? ` → ${payload.newName}` : '') + (payload.details ? ' +详情' : ''));
     const res = await fetch(`${API_BASE}/projects/${encodeURIComponent(projectName)}`, {
@@ -134,26 +136,121 @@ export async function updateProject(projectName: string, payload: { newName?: st
     });
     if (res.ok) {
       console.log(`[api] 项目更新成功 ✓ ${projectName}`);
-      return true;
+      return { ok: true };
     }
     const err = await res.json().catch(() => ({}));
-    console.error(`[api] 项目更新失败 HTTP ${res.status}:`, (err as any).error);
-    return false;
-  } catch (e) {
+    const msg = (err as any).error || `HTTP ${res.status}`;
+    console.error(`[api] 项目更新失败 HTTP ${res.status}:`, msg);
+    return { ok: false, error: msg };
+  } catch (e: any) {
     console.error(`[api] 项目更新异常:`, e);
-    return false;
+    return { ok: false, error: e?.message || '网络错误' };
   }
 }
 
-export async function deleteProjectApi(projectName: string): Promise<void> {
+export async function deleteProjectApi(projectName: string): Promise<{ success: boolean; deletedProjectId: number; deletedProjectName: string; deletedCounts?: Record<string, number | string>; phantom?: boolean }> {
   const projects = await fetchProjects();
   const proj = projects.find(p => p.name === projectName);
-  if (!proj) throw new Error('项目不存在');
+  if (!proj) {
+    // v5.6 FIX: 项目仅存在于前端 localStorage 缓存（后端已无此记录 = 幽灵项目）
+    // 不再 throw 阻断，返回 phantom 标记让调用方执行纯本地清理
+    return { success: true, deletedProjectId: 0, deletedProjectName: projectName, deletedCounts: {}, phantom: true };
+  }
   const res = await fetch(`${API_BASE}/projects/${proj.id}`, { method: 'DELETE', headers: headers() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as any).error || `删除失败(HTTP ${res.status})`);
   }
+  return await res.json();
+}
+
+// ========== v5.7 迭代4: 项目成员与权限管理 ==========
+export interface ProjectMember {
+  id: number;
+  username: string;
+  displayName?: string;
+  role: 'admin' | 'manager' | 'member' | 'viewer';
+  sensitivity: 0 | 1 | 2;  // 0=公开 1=内部 2=机密
+  joinedAt?: string;
+}
+
+/** 获取项目成员列表 */
+export async function fetchProjectMembers(projectId: number | string): Promise<ProjectMember[]> {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/members`, { headers: headers() });
+  if (!res.ok) throw new Error('获取项目成员失败');
+  const data = await res.json();
+  return (data.members || []).map((m: any) => ({
+    id: m.id,
+    username: m.username,
+    displayName: m.display_name,
+    role: m.role,
+    sensitivity: m.sensitivity ?? 0,
+    joinedAt: m.joined_at,
+  }));
+}
+
+/** 添加项目成员 */
+export async function addProjectMember(
+  projectId: number | string,
+  payload: { username: string; role?: string; sensitivity?: number }
+): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/members`, {
+    method: 'POST',
+    headers: { ...headers(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) return { success: false, error: data.error || '添加成员失败' };
+  return { success: true };
+}
+
+/** 更新成员角色/敏感度 */
+export async function updateProjectMember(
+  projectId: number | string,
+  username: string,
+  payload: { role?: string; sensitivity?: number }
+): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/members/${encodeURIComponent(username)}`, {
+    method: 'PUT',
+    headers: { ...headers(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) return { success: false, error: data.error || '更新成员失败' };
+  return { success: true };
+}
+
+/** 删除项目成员 */
+export async function removeProjectMember(
+  projectId: number | string,
+  username: string
+): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/members/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    headers: headers(),
+  });
+  const data = await res.json();
+  if (!res.ok) return { success: false, error: data.error || '删除成员失败' };
+  return { success: true };
+}
+
+/** 获取当前用户参与的项目（含权限信息） */
+export interface MyProjectAccess {
+  id: number;
+  name: string;
+  role: 'admin' | 'manager' | 'member' | 'viewer';
+  sensitivity: 0 | 1 | 2;
+}
+export async function fetchMyProjects(): Promise<MyProjectAccess[]> {
+  const res = await fetch(`${API_BASE}/projects/my-projects`, { headers: headers() });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.projects || []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    role: p.role,
+    sensitivity: p.sensitivity ?? 0,
+  }));
 }
 
 // ========== 文档 ==========
@@ -235,7 +332,9 @@ export async function visionChat(imageBase64: string, prompt: string, model = 'a
   return d.reply || '';
 }
 
-/** 前端脱敏 — 与后端sanitize.js一致，确保直连API时也脱敏 */
+/** 前端脱敏 — 与后端sanitize.js一致，确保直连API时也脱敏
+ *  v5.7: 修复金额/地址脱敏过度的问题 —— 仅脱敏个人敏感信息，保留项目技术数据(金额/面积/投资等)
+ */
 function sanitizeForAI(text: string): string {
   if (!text) return text;
   return text
@@ -243,15 +342,17 @@ function sanitizeForAI(text: string): string {
     .replace(/\b1[3-9]\d{9}\b/g, '[手机号已脱敏]')
     .replace(/\b[\w.-]+@[\w.-]+\.\w{2,}\b/g, '[邮箱已脱敏]')
     .replace(/\b(?:\d{3}-\d{8}|\d{4}-\d{7,8}|\d{4}-\d{3}-\d{3})\b/g, '[固定电话已脱敏]')
-    .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:万|亿|元|USD|CNY)\b/g, '[金额已脱敏]')
-    .replace(/(?:北京市?|上海市?|广东省?|深圳市?|广州市?|成都市?|杭州市?)\S{0,20}(?:路|街|道|巷|号|楼|室|层|座|单元|栋|幢)\S{0,10}/g, '[地址已脱敏]')
+    // 详细地址脱敏(仅限个人住宅地址,保留项目地址)
+    .replace(/(?:北京市?|上海市?|广东省?|深圳市?|广州市?|成都市?|杭州市?|江苏省?|浙江省?|山东省?|河北省?|河南省?|湖北省?|湖南省?|安徽省?|福建省?|四川省?|陕西省?|辽宁省?|吉林省?|黑龙江省?|江西省?|云南省?|贵州省?|山西省?|甘肃省?|海南省?|青海省?|台湾省?|内蒙古自治区?|广西壮族自治区?|西藏自治区?|宁夏回族自治区?|新疆维吾尔自治区?)\S{0,15}(?:小区|花园|公寓|住宅|家园|苑|庭|阁|轩)\S{0,10}(?:\d{1,3}号楼?|\d{1,3}栋?|\d{1,3}幢?|\d{1,3}单元?)?\S{0,10}(?:\d{1,3}室|\d{1,3}层)?/g, '[地址已脱敏]')
     .replace(/\b[0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10}\b/g, '[统一信用代码已脱敏]');
+  // 注意: 金额/投资/面积等技术数据不脱敏,AI提取需要这些数据
+  // 注意: 项目地址(如"建华区文化路")不脱敏,避免AI无法定位项目
 }
 
 export async function aiChat(
   messages: { role: string; content: string }[],
   context?: string,
-  opts?: { projectName?: string; standard?: string; model?: string; images?: string[] }
+  opts?: { projectName?: string; standard?: string; model?: string; images?: string[]; temperature?: number }
 ): Promise<string> {
   const images = opts?.images || [];
   // 脱敏所有消息内容
@@ -268,6 +369,7 @@ export async function aiChat(
           projectName: opts?.projectName || '',
           standard: opts?.standard || '',
           model: opts?.model || 'auto',
+          temperature: opts?.temperature,
         }), headers: headers(),
       });
       if (res.ok) {

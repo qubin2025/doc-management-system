@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, Sparkles, FileText, Loader2, BookOpen, RefreshCw } from 'lucide-react';
+import { Search, X, Sparkles, FileText, Loader2, BookOpen, RefreshCw, Zap, Play, Pause } from 'lucide-react';
 import { vectorStore, VectorDoc } from '../data/vectorStore';
 import * as api from '../data/api';
 import { toast } from './Toast';
 import lunr from 'lunr';
 import ModuleHeader from './ModuleHeader';
 import { kbSyncService, SyncResult } from '../data/kbSyncService';
+import { processQueueOnce, startQueuePoller, stopQueuePoller, getQueueStats } from '../data/kbQueueProcessor';
 
 interface Props { onBack: () => void; }
 
@@ -28,6 +29,37 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
   const [lastSync, setLastSync] = useState<SyncResult | null>(null);
+  const [polling, setPolling] = useState(false);
+  const [queueStats, setQueueStats] = useState({pending:0, processing:0, done:0, failed:0, total:0});
+  const [pollMsg, setPollMsg] = useState('');
+
+  // v5.7 迭代4: 用户权限感知 — 加载当前用户可访问项目 + 最高敏感等级
+  const [myProjects, setMyProjects] = useState<api.MyProjectAccess[]>([]);
+  const [maxSensitivity, setMaxSensitivity] = useState<number>(2);  // 默认 2=机密（全局 admin 或未登录时）
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  useEffect(() => {
+    // 读取当前用户信息判断是否 admin
+    try {
+      const auth = JSON.parse(localStorage.getItem('doc-system-auth') || '{}');
+      const user = auth?.user;
+      if (user?.role === 'admin') {
+        setIsAdmin(true);
+        setMaxSensitivity(2);
+        return;  // 全局 admin 不需要拉取 my-projects（拥有全部权限）
+      }
+    } catch {}
+    // 非 admin 用户：拉取 my-projects 计算 maxSensitivity
+    api.fetchMyProjects().then(projects => {
+      setMyProjects(projects);
+      // 取用户在所有项目中的最高敏感等级
+      const maxSens = projects.length > 0 ? Math.max(...projects.map(p => p.sensitivity)) : 0;
+      setMaxSensitivity(maxSens);
+    }).catch(() => {
+      // 拉取失败：保守起见设为 0（仅公开）
+      setMaxSensitivity(0);
+    });
+  }, []);
 
   // 方案模板库 → 读取 contract_templates
   useEffect(() => {
@@ -38,8 +70,24 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   }, [libFilter]);
 
   useEffect(() => {
-    setAllDocs(vectorStore.getAllDocs());
-  }, []);
+    // v5.7 迭代4: 加载文档时按用户权限过滤（admin 不过滤，非 admin 按 maxSensitivity 过滤）
+    const all = vectorStore.getAllDocs();
+    if (isAdmin) {
+      setAllDocs(all);
+    } else {
+      const allowed = new Set((myProjects.length > 0 ? myProjects : []).map(p => p.name));
+      setAllDocs(all.filter(d => {
+        const sens = d.metadata?.sensitivity ?? 0;
+        if (sens > maxSensitivity) return false;
+        // 有项目权限列表时，仅显示用户有访问权的项目文档
+        if (myProjects.length > 0) {
+          const projName = d.metadata?.projectName;
+          return !projName || allowed.has(projName);
+        }
+        return true;
+      }));
+    }
+  }, [isAdmin, myProjects, maxSensitivity]);
 
   // Lunr 全文索引
   const lunrIdx = useMemo(() => {
@@ -74,12 +122,32 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
         const fulltext: VectorDoc[] = lunrIdx ? lunrIdx.search(search.trim()).map((h:any)=>allDocs.find(d=>d.id===h.ref)!).filter(Boolean) : [];
         const qEmbed = await api.embedText(search.trim(), 'query');
         const vecHits = vectorStore.searchAll(qEmbed, 10);
+        // v5.7 迭代4: 向量结果二次按 sensitivity 过滤（非 admin 用户）
+        const filteredVecHits = isAdmin ? vecHits : vecHits.filter(d => {
+          const sens = d.metadata?.sensitivity ?? 0;
+          if (sens > maxSensitivity) return false;
+          if (myProjects.length > 0) {
+            const projName = d.metadata?.projectName;
+            return !projName || myProjects.some(p => p.name === projName);
+          }
+          return sens <= 0;  // 无项目权限用户仅看公开
+        });
         const ids = new Set<string>(); const merged: VectorDoc[] = [];
-        for (const d of [...fulltext.slice(0,5), ...vecHits]) { if(!ids.has(d.id)){ids.add(d.id);merged.push(d);} }
+        for (const d of [...fulltext.slice(0,5), ...filteredVecHits]) { if(!ids.has(d.id)){ids.add(d.id);merged.push(d);} }
         setResults(merged.slice(0,15));
       } else if (searchMode === 'semantic') {
         const qEmbed = await api.embedText(search.trim(), 'query');
-        setResults(vectorStore.searchAll(qEmbed, 10));
+        const hits = vectorStore.searchAll(qEmbed, 10);
+        // v5.7 迭代4: 按 sensitivity 过滤
+        setResults(isAdmin ? hits : hits.filter(d => {
+          const sens = d.metadata?.sensitivity ?? 0;
+          if (sens > maxSensitivity) return false;
+          if (myProjects.length > 0) {
+            const projName = d.metadata?.projectName;
+            return !projName || myProjects.some(p => p.name === projName);
+          }
+          return sens <= 0;
+        }));
       } else {
         if (!lunrIdx) { setResults([]); setLoading(false); return; }
         setResults(lunrIdx.search(search.trim()).map((h: any) => allDocs.find(d => d.id === h.ref)!).filter(Boolean));
@@ -128,6 +196,38 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  // 队列轮询：组件卸载时自动停止
+  useEffect(() => () => stopQueuePoller(), []);
+
+  // 轮询中：每 3s 刷新队列统计
+  useEffect(() => {
+    if (!polling) return;
+    const t = setInterval(() => { getQueueStats().then(setQueueStats); }, 3000);
+    return () => clearInterval(t);
+  }, [polling]);
+
+  const handleTogglePoll = () => {
+    if (polling) {
+      stopQueuePoller();
+      setPolling(false);
+      setPollMsg('已停止轮询');
+    } else {
+      startQueuePoller((msg) => setPollMsg(msg));
+      setPolling(true);
+      setPollMsg('轮询已启动');
+      getQueueStats().then(setQueueStats);
+    }
+  };
+
+  const handleProcessOnce = async () => {
+    setPollMsg('手动处理一批...');
+    const r = await processQueueOnce((msg) => setPollMsg(msg));
+    setQueueStats(await getQueueStats());
+    setAllDocs(vectorStore.getAllDocs());
+    if (r.synced > 0) toast(`处理完成：${r.succeeded}/${r.processed} 成功，入库 ${r.synced} 块`, 'success');
+    else if (r.processed > 0) toast(`处理完成：${r.succeeded}/${r.processed} 成功，无新数据入库`, 'info');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ModuleHeader
@@ -138,15 +238,38 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
         onBack={onBack}
         backLabel="返回首页"
         actions={
-          <button
-            onClick={() => handleSync(false)}
-            disabled={syncing}
-            title="增量同步：日报/问题/经验 → 向量库"
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? (syncMsg || '同步中...') : '同步业务数据'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleSync(false)}
+              disabled={syncing}
+              title="增量同步：日报/问题/经验 → 向量库"
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? (syncMsg || '同步中...') : '同步业务数据'}
+            </button>
+            <button
+              onClick={handleProcessOnce}
+              disabled={syncing || polling}
+              title="手动处理一批队列任务（拉取 → 入库 → 标记完成）"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              处理队列
+            </button>
+            <button
+              onClick={handleTogglePoll}
+              title={polling ? '停止自动轮询（10s 间隔）' : '启动自动轮询（10s 间隔，后台入库）'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                polling
+                  ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40'
+                  : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+              }`}
+            >
+              {polling ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              {polling ? '停止轮询' : '启动轮询'}
+            </button>
+          </div>
         }
       />
       {syncing && syncMsg && (
@@ -158,6 +281,21 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
         <div className="bg-gray-50 dark:bg-slate-900/40 border-b border-gray-200 dark:border-slate-800 px-4 py-1.5 text-xs text-gray-600 dark:text-slate-400 flex items-center gap-4">
           <span>最近同步：日报 {lastSync.daily.synced} 段 · 问题 {lastSync.issues.synced} 条 · 经验 {lastSync.experiences.synced} 条 · 耗时 {(lastSync.duration / 1000).toFixed(1)}s</span>
           <button onClick={() => handleSync(true)} className="text-emerald-600 dark:text-emerald-400 hover:underline">全量重同步</button>
+        </div>
+      )}
+      {(polling || queueStats.total > 0) && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-4 py-1.5 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-4 flex-wrap">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span className={`w-2 h-2 rounded-full ${polling ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+            {polling ? '队列轮询中' : '队列已停止'}
+          </span>
+          <span>待处理 <strong className="text-blue-900 dark:text-blue-100">{queueStats.pending}</strong></span>
+          <span>处理中 <strong className="text-blue-900 dark:text-blue-100">{queueStats.processing}</strong></span>
+          <span>已完成 <strong className="text-blue-900 dark:text-blue-100">{queueStats.done}</strong></span>
+          <span className={queueStats.failed > 0 ? 'text-red-600 dark:text-red-400' : ''}>
+            失败 <strong>{queueStats.failed}</strong>
+          </span>
+          {pollMsg && <span className="ml-auto truncate max-w-md text-blue-500 dark:text-blue-400">{pollMsg}</span>}
         </div>
       )}
 
