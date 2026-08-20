@@ -363,10 +363,35 @@ function initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id);
     CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(username);
     CREATE INDEX IF NOT EXISTS idx_project_members_role ON project_members(project_id, role);
+
+    -- v5.7 迭代5: 向量嵌入存储表 — 后端 Worker 入库 + 应用层相似度计算
+    -- 数据量 ≤10 万条可接受，超过后迁移 pgvector/Qdrant/RAGFlow
+    CREATE TABLE IF NOT EXISTS vector_embeddings (
+      id          TEXT PRIMARY KEY,        -- chunk唯一id（{source}-{recordId}-seg{N}）
+      project     TEXT NOT NULL,           -- 项目隔离
+      doc_id      TEXT NOT NULL,           -- 源文档id / 业务记录id
+      doc_name    TEXT,                    -- 源文档名 / 业务标题
+      chunk_index INTEGER,                 -- 分块序号（0-based）
+      text        TEXT NOT NULL,           -- 原文
+      embedding   BLOB NOT NULL,           -- 向量二进制（Float32Array.buffer）
+      dimension   INTEGER NOT NULL,        -- 向量维度（DashScope text-embedding-v1 = 1536）
+      sensitivity INTEGER NOT NULL DEFAULT 0,  -- 敏感度分级（0公开/1内部/2机密）
+      metadata    TEXT,                    -- JSON: 页码/章节/文件类型/上传时间等
+      created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_vec_project ON vector_embeddings(project);
+    CREATE INDEX IF NOT EXISTS idx_vec_doc ON vector_embeddings(project, doc_id);
+    CREATE INDEX IF NOT EXISTS idx_vec_sens ON vector_embeddings(project, sensitivity);
+    CREATE INDEX IF NOT EXISTS idx_vec_proj_sens ON vector_embeddings(project, sensitivity);
   `);
 
   // 迁移：旧 daily_reports 表添加 deleted 列
   try { db.exec('ALTER TABLE daily_reports ADD COLUMN deleted INTEGER DEFAULT 0'); } catch {}
+
+  // v5.7 迭代5: 迁移 kb_sync_queue 表添加任务锁字段（5.4 任务锁+超时回收需要）
+  try { db.exec("ALTER TABLE kb_sync_queue ADD COLUMN locked_by TEXT"); } catch {}
+  try { db.exec("ALTER TABLE kb_sync_queue ADD COLUMN locked_at TEXT"); } catch {}
 
   // 迁移：给旧 users 表添加缺失列（如果旧表已存在则 ALTER）
   migrateSchema(db);
