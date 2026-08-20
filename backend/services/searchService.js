@@ -241,7 +241,77 @@ export async function searchHybrid(queryEmbedding, query, opts = {}) {
   results.sort((a, b) => b.score - a.score);
   const top = results.slice(0, topK);
   logger.info(`混合检索完成: merged=${results.length}, top=${top.length}, best score=${top[0]?.score?.toFixed(4) || 'N/A'} (vec=${top[0]?.vecScore?.toFixed(4)}, bm25=${top[0]?.bm25Score?.toFixed(4)})`);
-  return top;
+
+  // 5.10: 对 Top-K 结果重排序（多因子加权优化精度）
+  return rerankResults(query, top, alpha);
+}
+
+// ========== 5.10: 检索结果重排序（Rerank） ==========
+
+/**
+ * 中文分词（简易版：按 2 字符 bigram 提取关键词）
+ * 用于计算查询与文档的关键词重叠率
+ */
+function extractBigrams(text) {
+  const cleaned = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, ' ').trim();
+  const words = cleaned.split(/\s+/).filter(w => w.length > 0);
+  const bigrams = new Set();
+  for (const w of words) {
+    if (w.length >= 2) {
+      for (let i = 0; i <= w.length - 2; i++) {
+        bigrams.add(w.substring(i, i + 2));
+      }
+    } else {
+      bigrams.add(w);
+    }
+  }
+  return bigrams;
+}
+
+/**
+ * 计算查询与文档的关键词重叠率（Jaccard 相似度）
+ */
+function keywordOverlap(queryText, docText) {
+  const qBi = extractBigrams(queryText);
+  const dBi = extractBigrams(docText);
+  if (qBi.size === 0 || dBi.size === 0) return 0;
+  let intersection = 0;
+  for (const bi of qBi) {
+    if (dBi.has(bi)) intersection++;
+  }
+  const union = qBi.size + dBi.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+/**
+ * 重排序：多因子加权优化 Top 结果
+ * 因子：vec_score(向量) + bm25_score(全文) + overlap_score(关键词重叠率)
+ * 默认权重：vec=0.4, bm25=0.3, overlap=0.3
+ *
+ * @param {string} queryText - 原始查询文本
+ * @param {Array} results - 混合检索的 Top-K 结果
+ * @param {number} alpha - 向量权重（用于调整 rerank 中的 vec 权重）
+ * @returns {Array} 重排序后的结果
+ */
+function rerankResults(queryText, results, alpha = 0.7) {
+  if (!results || results.length === 0) return results;
+  const rerankWeight = { vec: 0.4, bm25: 0.3, overlap: 0.3 };
+  // 根据 alpha 动态调整 vec/bm25 权重
+  rerankWeight.vec = alpha * 0.5 + 0.15;      // alpha=0.7 → 0.5
+  rerankWeight.bm25 = (1 - alpha) * 0.5 + 0.15; // alpha=0.7 → 0.3
+  rerankWeight.overlap = 1 - rerankWeight.vec - rerankWeight.bm25;
+
+  for (const r of results) {
+    const overlap = keywordOverlap(queryText, r.text);
+    r.overlapScore = overlap;
+    r.originalScore = r.score;
+    r.score = rerankWeight.vec * (r.vecScore || 0)
+            + rerankWeight.bm25 * (r.bm25Score || 0)
+            + rerankWeight.overlap * overlap;
+  }
+  results.sort((a, b) => b.score - a.score);
+  logger.info(`重排序完成: ${results.length} 条, 权重 vec=${rerankWeight.vec.toFixed(2)}/bm25=${rerankWeight.bm25.toFixed(2)}/overlap=${rerankWeight.overlap.toFixed(2)}, best=${results[0]?.score?.toFixed(4)} (overlap=${results[0]?.overlapScore?.toFixed(4)})`);
+  return results;
 }
 
 /**
