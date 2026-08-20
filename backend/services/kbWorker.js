@@ -176,10 +176,20 @@ class KbWorker {
       queue = db.prepare(`SELECT status, COUNT(*) as cnt FROM kb_sync_queue GROUP BY status`).all()
         .reduce((acc, r) => { acc[r.status] = r.cnt; return acc; }, {});
     } catch {}
+    // 5.5: 暴露 inFlightTasks 数量 + 退避中的任务数（供前端健康监控）
+    let pendingBackoff = 0;
+    try {
+      pendingBackoff = db.prepare(
+        `SELECT COUNT(*) as c FROM kb_sync_queue WHERE status='pending' AND next_run_at IS NOT NULL AND next_run_at > datetime('now')`
+      ).get().c;
+    } catch {}
     return {
       workerId: this.workerId,
       state: this.state,
+      isRunning: this.state === WorkerState.RUNNING,
       uptime: this.stats.startedAt ? (Date.now() - new Date(this.stats.startedAt).getTime()) : 0,
+      inFlightTasks: this.inFlightTasks.size,
+      pendingBackoff,
       stats: this.stats,
       queue,
     };

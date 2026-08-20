@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { kbWorker } from '../services/kbWorker.js';
 import {
   getPendingTasks,
   markTaskDone,
@@ -365,6 +366,94 @@ router.post('/sync/queue/cleanup', requireAuth, (req, res) => {
   } catch (e) {
     console.error('[kbSync/queue/cleanup] error:', e.message);
     res.status(500).json({ success: false, error: '清理失败' });
+  }
+});
+
+// ========== v5.8 迭代5.5: Worker 启动/停止/状态 API ==========
+
+// POST /api/kb/worker/start
+// 启动 Worker（仅 admin/manager 可操作）
+router.post('/worker/start', requireRole('admin', 'project_manager'), (req, res) => {
+  try {
+    const before = kbWorker.state;
+    kbWorker.start();
+    const after = kbWorker.state;
+    const action = before === 'stopped' ? 'started' : 'already_running';
+    const stats = kbWorker.getStats();
+    console.log(`[kbWorker/start] by user=${req.user.username}, action=${action}`);
+    res.json({
+      success: true,
+      action,
+      message: action === 'started' ? 'Worker 已启动' : 'Worker 已在运行中',
+      worker: {
+        workerId: stats.workerId,
+        state: stats.state,
+        isRunning: stats.isRunning,
+      },
+    });
+  } catch (e) {
+    console.error('[kbWorker/start] error:', e.message);
+    res.status(500).json({ success: false, error: '启动失败: ' + e.message });
+  }
+});
+
+// POST /api/kb/worker/stop
+// 停止 Worker（仅 admin/manager 可操作）— 异步等待优雅退出完成
+router.post('/worker/stop', requireRole('admin', 'project_manager'), async (req, res) => {
+  try {
+    const before = kbWorker.state;
+    if (before === 'stopped') {
+      return res.json({
+        success: true,
+        action: 'already_stopped',
+        message: 'Worker 已处于停止状态',
+        worker: { state: 'stopped', isRunning: false },
+      });
+    }
+    console.log(`[kbWorker/stop] by user=${req.user.username}, waiting for graceful shutdown...`);
+    const t0 = Date.now();
+    await kbWorker.stop();
+    const elapsedMs = Date.now() - t0;
+    const stats = kbWorker.getStats();
+    res.json({
+      success: true,
+      action: 'stopped',
+      message: `Worker 已停止（耗时 ${elapsedMs}ms）`,
+      elapsedMs,
+      worker: {
+        workerId: stats.workerId,
+        state: stats.state,
+        isRunning: stats.isRunning,
+      },
+    });
+  } catch (e) {
+    console.error('[kbWorker/stop] error:', e.message);
+    res.status(500).json({ success: false, error: '停止失败: ' + e.message });
+  }
+});
+
+// GET /api/kb/worker/status
+// 查询 Worker 状态（所有登录用户可查看，用于前端健康监控）
+router.get('/worker/status', requireAuth, (req, res) => {
+  try {
+    const stats = kbWorker.getStats();
+    res.json({
+      success: true,
+      worker: {
+        workerId: stats.workerId,
+        state: stats.state,
+        isRunning: stats.isRunning,
+        uptime: stats.uptime,
+        inFlightTasks: stats.inFlightTasks,
+        pendingBackoff: stats.pendingBackoff,
+      },
+      stats: stats.stats,
+      queue: stats.queue,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error('[kbWorker/status] error:', e.message);
+    res.status(500).json({ success: false, error: '状态查询失败' });
   }
 });
 
