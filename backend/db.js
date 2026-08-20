@@ -329,6 +329,40 @@ function initSchema(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_project_config_project ON project_config(project_name);
     CREATE INDEX IF NOT EXISTS idx_project_config_type ON project_config(project_name, config_type);
+
+    -- v5.7: 知识库同步队列 — 业务数据提交后异步触发向量化入库
+    CREATE TABLE IF NOT EXISTS kb_sync_queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_name TEXT NOT NULL,
+      source TEXT NOT NULL CHECK(source IN ('daily','issue','experience','document')),
+      record_id TEXT NOT NULL,
+      action TEXT NOT NULL DEFAULT 'upsert' CHECK(action IN ('upsert','delete')),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','processing','done','failed')),
+      priority INTEGER DEFAULT 0,
+      retry_count INTEGER DEFAULT 0,
+      max_retries INTEGER DEFAULT 3,
+      error_msg TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      processed_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_kb_sync_queue_status ON kb_sync_queue(status, priority DESC, created_at);
+    CREATE INDEX IF NOT EXISTS idx_kb_sync_queue_project ON kb_sync_queue(project_name, source);
+    CREATE INDEX IF NOT EXISTS idx_kb_sync_queue_pending ON kb_sync_queue(status) WHERE status = 'pending';
+
+    -- v5.7 迭代4: 项目成员权限表 — 实现项目级数据隔离和角色权限控制
+    CREATE TABLE IF NOT EXISTS project_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      username TEXT NOT NULL,
+      display_name TEXT DEFAULT '',
+      role TEXT NOT NULL DEFAULT 'member' CHECK(role IN ('admin','manager','member','viewer')),
+      sensitivity INTEGER NOT NULL DEFAULT 0 CHECK(sensitivity IN (0,1,2)),
+      joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(project_id, username)
+    );
+    CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id);
+    CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(username);
+    CREATE INDEX IF NOT EXISTS idx_project_members_role ON project_members(project_id, role);
   `);
 
   // 迁移：旧 daily_reports 表添加 deleted 列
@@ -339,6 +373,37 @@ function initSchema(db) {
 
   // 插入默认用户
   seedUsers(db);
+
+  // 插入默认项目成员（为每个现有项目添加 admin 作为成员）
+  seedProjectMembers(db);
+}
+
+function seedProjectMembers(db) {
+  // 检查是否已有成员数据
+  const existing = db.prepare('SELECT COUNT(*) as c FROM project_members').get();
+  if (existing.c > 0) return;
+
+  const projects = db.prepare('SELECT id, name FROM projects').all();
+  const users = db.prepare('SELECT username, role FROM users').all();
+
+  const insert = db.prepare(
+    'INSERT OR IGNORE INTO project_members (project_id, username, display_name, role, sensitivity) VALUES (?, ?, ?, ?, ?)'
+  );
+
+  for (const proj of projects) {
+    // admin 用户自动成为所有项目的管理员
+    insert.run(proj.id, 'admin', '系统管理员', 'admin', 2);
+    insert.run(proj.id, '管理员', '系统管理员', 'admin', 2);
+
+    // project_manager 角色用户自动成为项目成员
+    for (const user of users) {
+      if (user.username !== 'admin' && user.username !== '管理员') {
+        const displayName = db.prepare('SELECT display_name FROM users WHERE username = ?').get(user.username);
+        const pjRole = user.role === 'admin' ? 'admin' : user.role === 'project_manager' ? 'manager' : 'member';
+        insert.run(proj.id, user.username, displayName?.display_name || user.username, pjRole, 0);
+      }
+    }
+  }
 }
 
 function migrateSchema(db) {
@@ -377,6 +442,24 @@ function migrateSchema(db) {
   const projCols = db.prepare("PRAGMA table_info(projects)").all().map(c => c.name);
   if (!projCols.includes('details')) {
     try { db.exec("ALTER TABLE projects ADD COLUMN details TEXT DEFAULT '{}'"); } catch {}
+  }
+
+  // v5.7 迭代4: 文档和业务表添加 sensitivity 字段（0公开/1内部/2机密）
+  const docSensCols = db.prepare("PRAGMA table_info(documents)").all().map(c => c.name);
+  if (!docSensCols.includes('sensitivity')) {
+    try { db.exec("ALTER TABLE documents ADD COLUMN sensitivity INTEGER DEFAULT 0"); } catch {}
+  }
+  const issueCols = db.prepare("PRAGMA table_info(mobile_issues)").all().map(c => c.name);
+  if (!issueCols.includes('sensitivity')) {
+    try { db.exec("ALTER TABLE mobile_issues ADD COLUMN sensitivity INTEGER DEFAULT 0"); } catch {}
+  }
+  const dailyCols = db.prepare("PRAGMA table_info(daily_reports)").all().map(c => c.name);
+  if (!dailyCols.includes('sensitivity')) {
+    try { db.exec("ALTER TABLE daily_reports ADD COLUMN sensitivity INTEGER DEFAULT 0"); } catch {}
+  }
+  const expCols = db.prepare("PRAGMA table_info(project_experiences)").all().map(c => c.name);
+  if (!expCols.includes('sensitivity')) {
+    try { db.exec("ALTER TABLE project_experiences ADD COLUMN sensitivity INTEGER DEFAULT 0"); } catch {}
   }
 }
 

@@ -1,6 +1,15 @@
 import { Router } from 'express';
 import { getDb } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import {
+  getPendingTasks,
+  markTaskDone,
+  markTaskFailed,
+  getQueueStats,
+  cleanupStaleTasks,
+  filterTasksByPermission,
+  canAccessProject,
+} from '../middleware/kbSyncTrigger.js';
 
 const router = Router();
 
@@ -200,5 +209,163 @@ function safeParse(s, fallback) {
   if (!s) return fallback;
   try { return JSON.parse(s); } catch { return fallback; }
 }
+
+// ========== v5.7 迭代1第3条: 按队列任务拉取单条业务记录 ==========
+
+// GET /api/kb/sync/task/:source/:recordId
+// 队列处理器调用 — 按 source + recordId 拉取单条业务记录（含 projectName）
+// 返回 record 字段格式与 /sync/daily|issues|experiences 的 items 元素一致，前端可复用 buildChunk
+// v5.7 迭代4: 拉取前校验项目访问权限
+router.get('/sync/task/:source/:recordId', requireAuth, (req, res) => {
+  const db = getDb();
+  const { source, recordId } = req.params;
+  const username = req.user?.username;
+
+  try {
+    // 先获取记录以确定 projectName
+    let projectName = null;
+    let record = null;
+
+    if (source === 'daily') {
+      const r = db.prepare(`
+        SELECT p.name as project_name, dr.id, dr.report_date, dr.weather_day, dr.weather_night, dr.weather_alert, dr.weather_alert_level,
+               dr.managers_main, dr.managers_labor, dr.managers_specialty,
+               dr.workers_main, dr.workers_labor, dr.workers_specialty, dr.workers_special, dr.workers_total,
+               dr.machinery, dr.machinery_total, dr.materials,
+               dr.tasks, dr.quality_risks, dr.issues, dr.photos,
+               dr.original_text, dr.notes, dr.reported_by, dr.created_at
+        FROM daily_reports dr JOIN projects p ON dr.project_id = p.id
+        WHERE dr.id = ? AND (dr.deleted = 0 OR dr.deleted IS NULL)
+      `).get(Number(recordId));
+      if (!r) return res.status(404).json({ success: false, error: '日报不存在或已删除', task: null });
+      projectName = r.project_name;
+      record = {
+        ...r,
+        machinery: safeParse(r.machinery, []),
+        materials: safeParse(r.materials, []),
+        tasks: safeParse(r.tasks, []),
+        quality_risks: safeParse(r.quality_risks, []),
+        issues: safeParse(r.issues, []),
+        photos: safeParse(r.photos, []),
+      };
+    } else if (source === 'issue') {
+      const r = db.prepare(`
+        SELECT p.name as project_name, mi.id, mi.title, mi.description, mi.severity, mi.status, mi.assignee,
+               mi.photo_path, mi.reported_by, mi.created_at, mi.updated_at
+        FROM mobile_issues mi JOIN projects p ON mi.project_id = p.id
+        WHERE mi.id = ?
+      `).get(Number(recordId));
+      if (!r) return res.status(404).json({ success: false, error: '问题不存在', task: null });
+      projectName = r.project_name;
+      record = r;
+    } else if (source === 'experience') {
+      const r = db.prepare(`
+        SELECT id, project_name, category, title, description, patterns, metrics,
+               reference_count, created_at, updated_at
+        FROM project_experiences WHERE id = ?
+      `).get(recordId);
+      if (!r) return res.status(404).json({ success: false, error: '经验不存在', task: null });
+      projectName = r.project_name;
+      record = { ...r, patterns: safeParse(r.patterns, []), metrics: safeParse(r.metrics, {}) };
+    } else if (source === 'document') {
+      const r = db.prepare(`
+        SELECT d.id, d.doc_id, d.file_name, d.upload_time, d.version, d.standard,
+               p.name as project_name
+        FROM documents d LEFT JOIN projects p ON d.project_id = p.id
+        WHERE d.id = ?
+      `).get(Number(recordId));
+      if (!r) return res.status(404).json({ success: false, error: '文档不存在', task: null });
+      projectName = r.project_name || '未知项目';
+      record = r;
+    } else {
+      return res.status(400).json({ success: false, error: `不支持的 source: ${source}` });
+    }
+
+    // v5.7 迭代4: 校验项目访问权限
+    if (projectName && username) {
+      const access = canAccessProject(username, projectName);
+      if (!access.allowed && username !== 'admin') {
+        console.log(`[kbSync/task] 权限拒绝: user=${username} project=${projectName} reason=${access.reason}`);
+        return res.status(403).json({
+          success: false,
+          error: `无权访问项目 ${projectName}`,
+          reason: access.reason,
+          task: null,
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      task: { source, recordId: String(recordId), projectName, record },
+    });
+  } catch (e) {
+    console.error('[kbSync/task] error:', e.message);
+    res.status(500).json({ success: false, error: '任务记录查询失败', task: null });
+  }
+});
+
+// ========== v5.7 迭代1: 同步队列端点 ==========
+
+// GET /api/kb/sync/queue?limit=20
+// 前端轮询获取待处理同步任务（原子标记为 processing 并返回）
+// v5.7 迭代4: 按用户权限过滤，仅返回用户有权访问的项目任务
+router.get('/sync/queue', requireAuth, (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const tasks = getPendingTasks(limit);
+    // 按权限过滤
+    const { filtered, skipped } = filterTasksByPermission(tasks, req.user?.username);
+    if (skipped > 0) {
+      console.log(`[kbSync/queue] 权限过滤: ${skipped} 条任务因权限不足被过滤`);
+    }
+    res.json({ success: true, tasks: filtered, count: filtered.length, skipped });
+  } catch (e) {
+    console.error('[kbSync/queue] error:', e.message);
+    res.status(500).json({ success: false, error: '获取队列失败', tasks: [] });
+  }
+});
+
+// GET /api/kb/sync/queue/stats[?projectName=xxx]
+// 返回队列统计（供前端状态指示器展示）
+router.get('/sync/queue/stats', requireAuth, (req, res) => {
+  try {
+    const stats = getQueueStats(req.query.projectName);
+    res.json({ success: true, ...stats });
+  } catch (e) {
+    console.error('[kbSync/queue/stats] error:', e.message);
+    res.status(500).json({ success: false, error: '统计失败' });
+  }
+});
+
+// POST /api/kb/sync/queue/done  body: { taskId }
+// 标记任务完成
+router.post('/sync/queue/done', requireAuth, (req, res) => {
+  const { taskId } = req.body;
+  if (!taskId) return res.status(400).json({ error: '缺少 taskId' });
+  const result = markTaskDone(Number(taskId));
+  res.json(result);
+});
+
+// POST /api/kb/sync/queue/failed  body: { taskId, error }
+// 标记任务失败（支持自动重试）
+router.post('/sync/queue/failed', requireAuth, (req, res) => {
+  const { taskId, error } = req.body;
+  if (!taskId) return res.status(400).json({ error: '缺少 taskId' });
+  const result = markTaskFailed(Number(taskId), error || 'unknown');
+  res.json(result);
+});
+
+// POST /api/kb/sync/queue/cleanup
+// 清理卡住的 processing 任务（定时调用或手动触发）
+router.post('/sync/queue/cleanup', requireAuth, (req, res) => {
+  try {
+    const resetCount = cleanupStaleTasks();
+    res.json({ success: true, resetCount });
+  } catch (e) {
+    console.error('[kbSync/queue/cleanup] error:', e.message);
+    res.status(500).json({ success: false, error: '清理失败' });
+  }
+});
 
 export default router;

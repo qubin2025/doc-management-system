@@ -7,19 +7,19 @@ import { vectorStore, VectorDoc } from './vectorStore';
 import * as api from './api';
 
 // ===== 类型 =====
-interface DailyReportRaw {
+export interface DailyReportRaw {
   id: number; project_name: string; report_date: string;
   tasks: Array<{ area?: string; description?: string; workers?: number; todayPct?: string; totalPct?: string; schedule?: string; contractor?: string }>;
   quality_risks: Array<{ name?: string; inspected?: string; hazard?: string }>;
   issues: Array<{ problem?: string; cause?: string; measures?: string; delayDays?: number }>;
   original_text: string; notes: string; reported_by: string; created_at: string;
 }
-interface IssueRaw {
+export interface IssueRaw {
   id: number; project_name: string; title: string; description: string;
   severity: string; status: string; assignee: string; reported_by: string;
   created_at: string; updated_at: string;
 }
-interface ExperienceRaw {
+export interface ExperienceRaw {
   id: string; project_name: string; category: string; title: string;
   description: string; patterns: unknown; metrics: unknown;
   reference_count: number; created_at: string; updated_at: string;
@@ -92,9 +92,9 @@ async function fetchExperiences(since?: string): Promise<ExperienceRaw[]> {
 }
 
 // ===== 文本拼接 =====
-type Chunk = { id: string; text: string; fileName: string; fileType: string; chunkIndex: number; chunkCount: number };
+export type Chunk = { id: string; text: string; fileName: string; fileType: string; chunkIndex: number; chunkCount: number };
 
-function buildDailyChunks(r: DailyReportRaw): Chunk[] {
+export function buildDailyChunks(r: DailyReportRaw): Chunk[] {
   const proj = r.project_name, date = r.report_date;
   const chunks: Chunk[] = [];
 
@@ -126,21 +126,23 @@ function buildDailyChunks(r: DailyReportRaw): Chunk[] {
   return chunks;
 }
 
-function buildIssueChunk(i: IssueRaw): Chunk {
+export function buildIssueChunk(i: IssueRaw): Chunk {
   const text = `【现场问题】项目: ${i.project_name} 标题: ${i.title}\n描述: ${i.description || '无描述'}\n严重等级: ${i.severity} 状态: ${i.status} 责任人: ${i.assignee || '未分配'}\n报告人: ${i.reported_by} 创建时间: ${i.created_at}`;
   return { id: `issue-${i.id}`, text, fileName: `问题-${i.title}`, fileType: 'issue', chunkIndex: 0, chunkCount: 1 };
 }
 
-function buildExperienceChunk(e: ExperienceRaw): Chunk {
+export function buildExperienceChunk(e: ExperienceRaw): Chunk {
   const text = `【项目经验】项目: ${e.project_name} 分类: ${e.category}\n标题: ${e.title}\n描述: ${e.description}\n模式: ${JSON.stringify(e.patterns)}\n指标: ${JSON.stringify(e.metrics)}\n引用次数: ${e.reference_count}`;
   return { id: `exp-${e.id}`, text, fileName: `经验-${e.title}`, fileType: 'experience', chunkIndex: 0, chunkCount: 1 };
 }
 
 // ===== 并发嵌入 + 批量入库 =====
-async function embedAndStore(projectName: string, chunks: Chunk[], onProgress?: (msg: string) => void): Promise<{ synced: number; skipped: number }> {
+// v5.7 迭代4: 添加 sensitivity 参数 — 入库时标记敏感等级，支持检索过滤
+export async function embedAndStore(projectName: string, chunks: Chunk[], onProgress?: (msg: string) => void, sensitivity?: number): Promise<{ synced: number; skipped: number }> {
   let synced = 0, skipped = 0;
   const stats = vectorStore.stats(projectName);
   const skipLS = stats.sizeKB > LOCAL_STORAGE_WARN_KB; // 容量预警：单项目 > 4MB 时只写 IndexedDB
+  const sens = sensitivity ?? 0; // 默认 0=公开
 
   for (let i = 0; i < chunks.length; i += EMBED_CONCURRENCY) {
     const batch = chunks.slice(i, i + EMBED_CONCURRENCY);
@@ -156,7 +158,7 @@ async function embedAndStore(projectName: string, chunks: Chunk[], onProgress?: 
       if (r) {
         docs.push({
           id: r.chunk.id, text: r.chunk.text, embedding: r.emb,
-          metadata: { projectName, fileName: r.chunk.fileName, fileType: r.chunk.fileType, uploadTime: new Date().toISOString(), chunkIndex: r.chunk.chunkIndex, chunkCount: r.chunk.chunkCount },
+          metadata: { projectName, fileName: r.chunk.fileName, fileType: r.chunk.fileType, uploadTime: new Date().toISOString(), chunkIndex: r.chunk.chunkIndex, chunkCount: r.chunk.chunkCount, sensitivity: sens },
         });
         synced++;
       } else { skipped++; }

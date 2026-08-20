@@ -12,6 +12,7 @@ export interface VectorDoc {
     uploadTime?: string;
     chunkIndex?: number;
     chunkCount?: number;
+    sensitivity?: number;  // v5.7 迭代4: 敏感等级 0=公开 1=内部 2=机密
   };
 }
 
@@ -126,6 +127,20 @@ export class LocalVectorStore {
     const docs = this.vectors.get(project) || [];
     if (docs.length === 0) return [];
     const scored = docs.map(d => ({ doc: d, score: cosineSimilarity(queryEmbedding, d.embedding) }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.doc);
+  }
+
+  /** v5.7 迭代4: 按 sensitivity 过滤搜索 — 仅返回用户有权访问的敏感等级数据
+   * @param maxSensitivity 用户可访问的最高敏感等级（0=公开,1=内部,2=机密）
+   */
+  searchWithSensitivity(queryEmbedding: number[], project: string, topK = 5, maxSensitivity = 2): VectorDoc[] {
+    const docs = this.vectors.get(project) || [];
+    if (docs.length === 0) return [];
+    // 过滤：仅返回 sensitivity <= maxSensitivity 的文档
+    const filtered = docs.filter(d => (d.metadata?.sensitivity ?? 0) <= maxSensitivity);
+    if (filtered.length === 0) return [];
+    const scored = filtered.map(d => ({ doc: d, score: cosineSimilarity(queryEmbedding, d.embedding) }));
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, topK).map(s => s.doc);
   }
@@ -271,6 +286,10 @@ export const vectorStore = {
   search(queryEmbedding: number[], project: string, topK?: number): any[] {
     return this._store.search(queryEmbedding, project, topK);
   },
+  // v5.7 迭代4: 按 sensitivity 过滤搜索
+  searchWithSensitivity(queryEmbedding: number[], project: string, topK?: number, maxSensitivity?: number): any[] {
+    return this._store.searchWithSensitivity(queryEmbedding, project, topK, maxSensitivity);
+  },
   searchAll(queryEmbedding: number[], topK?: number): any[] {
     return this._store.searchAll(queryEmbedding, topK);
   },
@@ -310,6 +329,15 @@ export const vectorStore = {
   async searchAsync(queryEmbedding: number[], project: string, topK = 5) {
     if (await ensureIDB()) return idb.searchByProject(queryEmbedding, project, topK);
     return this._store.search(queryEmbedding, project, topK).map((d: any) => ({ ...d, score: 0.5 }));
+  },
+  // v5.7 迭代4: 异步按 sensitivity 过滤搜索
+  async searchWithSensitivityAsync(queryEmbedding: number[], project: string, topK = 5, maxSensitivity = 2) {
+    if (await ensureIDB()) {
+      // IndexedDB 暂不支持 sensitivity 过滤，返回全部后在前端过滤
+      const results = await idb.searchByProject(queryEmbedding, project, topK * 3);
+      return results.filter((d: any) => (d.metadata?.sensitivity ?? 0) <= maxSensitivity).slice(0, topK);
+    }
+    return this._store.searchWithSensitivity(queryEmbedding, project, topK, maxSensitivity).map((d: any) => ({ ...d, score: 0.5 }));
   },
   async searchAllAsync(queryEmbedding: number[], topK = 5) {
     if (await ensureIDB()) return idb.searchAll(queryEmbedding, topK);
