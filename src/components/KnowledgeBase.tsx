@@ -6,7 +6,8 @@ import { toast } from './Toast';
 import lunr from 'lunr';
 import ModuleHeader from './ModuleHeader';
 import { kbSyncService, SyncResult } from '../data/kbSyncService';
-import { processQueueOnce, startQueuePoller, stopQueuePoller, getQueueStats } from '../data/kbQueueProcessor';
+// 5.6: 前端改为调用后端 Worker API（kbQueueProcessor 保留作为降级方案）
+import { kbWorkerStart, kbWorkerStop, kbWorkerStatus, KbWorkerStatus } from '../data/api';
 
 interface Props { onBack: () => void; }
 
@@ -29,9 +30,10 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
   const [lastSync, setLastSync] = useState<SyncResult | null>(null);
-  const [polling, setPolling] = useState(false);
-  const [queueStats, setQueueStats] = useState({pending:0, processing:0, done:0, failed:0, total:0});
-  const [pollMsg, setPollMsg] = useState('');
+  // 5.6: 改为后端 Worker 状态（替代本地 polling/queueStats）
+  const [workerStatus, setWorkerStatus] = useState<KbWorkerStatus | null>(null);
+  const [workerBusy, setWorkerBusy] = useState(false);  // 操作中（启动/停止/处理）
+  const [workerMsg, setWorkerMsg] = useState('');  // 操作反馈消息
 
   // v5.7 迭代4: 用户权限感知 — 加载当前用户可访问项目 + 最高敏感等级
   const [myProjects, setMyProjects] = useState<api.MyProjectAccess[]>([]);
@@ -184,6 +186,19 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
       if (result.success) {
         toast(`同步完成：日报 ${result.daily.synced} 段 / 问题 ${result.issues.synced} 条 / 经验 ${result.experiences.synced} 条，耗时 ${(result.duration / 1000).toFixed(1)}s`, 'success');
         setAllDocs(vectorStore.getAllDocs()); // 刷新列表
+        // 5.6: 同步成功后触发后端 Worker 处理队列
+        setSyncMsg('触发后端 Worker 处理队列...');
+        try {
+          const r = await kbWorkerStart();
+          if (r.success && r.action === 'started') {
+            toast('Worker 已启动处理队列', 'info');
+          }
+          const status = await kbWorkerStatus();
+          setWorkerStatus(status);
+        } catch (e: unknown) {
+          // Worker 触发失败不影响同步结果
+          console.warn('Worker 启动失败（不影响同步结果）:', e);
+        }
       } else {
         toast(`同步失败：${result.error || '未知错误'}`, 'error');
       }
@@ -196,36 +211,70 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
     }
   };
 
-  // 队列轮询：组件卸载时自动停止
-  useEffect(() => () => stopQueuePoller(), []);
-
-  // 轮询中：每 3s 刷新队列统计
+  // 5.6: 组件挂载时获取后端 Worker 状态
   useEffect(() => {
-    if (!polling) return;
-    const t = setInterval(() => { getQueueStats().then(setQueueStats); }, 3000);
-    return () => clearInterval(t);
-  }, [polling]);
+    kbWorkerStatus().then(setWorkerStatus).catch(() => {});
+  }, []);
 
-  const handleTogglePoll = () => {
-    if (polling) {
-      stopQueuePoller();
-      setPolling(false);
-      setPollMsg('已停止轮询');
-    } else {
-      startQueuePoller((msg) => setPollMsg(msg));
-      setPolling(true);
-      setPollMsg('轮询已启动');
-      getQueueStats().then(setQueueStats);
+  // 5.6: Worker 运行中：每 3s 刷新 Worker 状态
+  useEffect(() => {
+    if (!workerStatus?.worker.isRunning) return;
+    const t = setInterval(() => { kbWorkerStatus().then(setWorkerStatus).catch(() => {}); }, 3000);
+    return () => clearInterval(t);
+  }, [workerStatus?.worker.isRunning]);
+
+  // 5.6: 启动/停止后端 Worker
+  const handleToggleWorker = async () => {
+    if (workerBusy) return;
+    setWorkerBusy(true);
+    try {
+      if (workerStatus?.worker.isRunning) {
+        setWorkerMsg('正在停止 Worker（等待优雅退出）...');
+        const r = await kbWorkerStop();
+        if (r.success) { toast(`Worker 已停止（${r.elapsedMs}ms）`, 'info'); setWorkerMsg(''); }
+        else { toast('停止失败: ' + r.message, 'error'); }
+      } else {
+        setWorkerMsg('正在启动 Worker...');
+        const r = await kbWorkerStart();
+        if (r.success) { toast(r.message, 'success'); setWorkerMsg(''); }
+        else { toast('启动失败: ' + r.message, 'error'); }
+      }
+      const status = await kbWorkerStatus();
+      setWorkerStatus(status);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast('Worker 操作异常: ' + msg, 'error');
+    } finally {
+      setWorkerBusy(false);
+      setWorkerMsg('');
     }
   };
 
-  const handleProcessOnce = async () => {
-    setPollMsg('手动处理一批...');
-    const r = await processQueueOnce((msg) => setPollMsg(msg));
-    setQueueStats(await getQueueStats());
-    setAllDocs(vectorStore.getAllDocs());
-    if (r.synced > 0) toast(`处理完成：${r.succeeded}/${r.processed} 成功，入库 ${r.synced} 块`, 'success');
-    else if (r.processed > 0) toast(`处理完成：${r.succeeded}/${r.processed} 成功，无新数据入库`, 'info');
+  // 5.6: 触发后端 Worker 处理一批（如果未运行则启动）
+  const handleTriggerWorker = async () => {
+    if (workerBusy) return;
+    setWorkerBusy(true);
+    setWorkerMsg('触发后端处理...');
+    try {
+      const r = await kbWorkerStart();
+      if (r.success) {
+        toast(r.action === 'started' ? 'Worker 已启动，开始处理队列' : 'Worker 已在运行中', 'success');
+      } else {
+        toast('触发失败: ' + r.message, 'error');
+      }
+      // 等待 2s 让 Worker 跑一轮，然后刷新状态
+      setTimeout(async () => {
+        const status = await kbWorkerStatus();
+        setWorkerStatus(status);
+        setAllDocs(vectorStore.getAllDocs());
+      }, 2000);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast('触发处理异常: ' + msg, 'error');
+    } finally {
+      setWorkerBusy(false);
+      setWorkerMsg('');
+    }
   };
 
   return (
@@ -249,25 +298,26 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
               {syncing ? (syncMsg || '同步中...') : '同步业务数据'}
             </button>
             <button
-              onClick={handleProcessOnce}
-              disabled={syncing || polling}
-              title="手动处理一批队列任务（拉取 → 入库 → 标记完成）"
+              onClick={handleTriggerWorker}
+              disabled={syncing || workerBusy}
+              title="5.6: 触发后端 Worker 处理队列（如未运行则启动）"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <Zap className="w-3.5 h-3.5" />
-              处理队列
+              <Zap className={`w-3.5 h-3.5 ${workerBusy ? 'animate-pulse' : ''}`} />
+              {workerBusy ? '处理中...' : '处理队列'}
             </button>
             <button
-              onClick={handleTogglePoll}
-              title={polling ? '停止自动轮询（10s 间隔）' : '启动自动轮询（10s 间隔，后台入库）'}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                polling
+              onClick={handleToggleWorker}
+              disabled={workerBusy}
+              title={workerStatus?.worker.isRunning ? '5.6: 停止后端 Worker（优雅退出，15s 强制超时）' : '5.6: 启动后端 Worker（自动轮询处理队列）'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                workerStatus?.worker.isRunning
                   ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40'
                   : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40'
               }`}
             >
-              {polling ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              {polling ? '停止轮询' : '启动轮询'}
+              {workerStatus?.worker.isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              {workerStatus?.worker.isRunning ? '停止 Worker' : '启动 Worker'}
             </button>
           </div>
         }
@@ -283,19 +333,25 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
           <button onClick={() => handleSync(true)} className="text-emerald-600 dark:text-emerald-400 hover:underline">全量重同步</button>
         </div>
       )}
-      {(polling || queueStats.total > 0) && (
+      {(workerStatus?.worker.isRunning || (workerStatus?.queue && Object.values(workerStatus.queue).reduce((a: number, b: number) => a + b, 0) > 0)) && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-4 py-1.5 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5 font-medium">
-            <span className={`w-2 h-2 rounded-full ${polling ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-            {polling ? '队列轮询中' : '队列已停止'}
+            <span className={`w-2 h-2 rounded-full ${workerStatus?.worker.isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+            {workerStatus?.worker.isRunning ? `Worker 运行中 (in-flight: ${workerStatus.worker.inFlightTasks})` : 'Worker 已停止'}
           </span>
-          <span>待处理 <strong className="text-blue-900 dark:text-blue-100">{queueStats.pending}</strong></span>
-          <span>处理中 <strong className="text-blue-900 dark:text-blue-100">{queueStats.processing}</strong></span>
-          <span>已完成 <strong className="text-blue-900 dark:text-blue-100">{queueStats.done}</strong></span>
-          <span className={queueStats.failed > 0 ? 'text-red-600 dark:text-red-400' : ''}>
-            失败 <strong>{queueStats.failed}</strong>
+          <span>待处理 <strong className="text-blue-900 dark:text-blue-100">{workerStatus?.queue?.pending || 0}</strong></span>
+          <span>处理中 <strong className="text-blue-900 dark:text-blue-100">{workerStatus?.queue?.processing || 0}</strong></span>
+          <span>已完成 <strong className="text-blue-900 dark:text-blue-100">{workerStatus?.queue?.done || 0}</strong></span>
+          <span className={(workerStatus?.queue?.failed || 0) > 0 ? 'text-red-600 dark:text-red-400' : ''}>
+            失败 <strong>{workerStatus?.queue?.failed || 0}</strong>
           </span>
-          {pollMsg && <span className="ml-auto truncate max-w-md text-blue-500 dark:text-blue-400">{pollMsg}</span>}
+          {(workerStatus?.worker.pendingBackoff || 0) > 0 && (
+            <span className="text-amber-600 dark:text-amber-400">退避中 {workerStatus?.worker.pendingBackoff}</span>
+          )}
+          {(workerStatus?.stats.skipped || 0) > 0 && (
+            <span className="text-amber-600 dark:text-amber-400">已跳过 {workerStatus?.stats.skipped}</span>
+          )}
+          {workerMsg && <span className="ml-auto truncate max-w-md text-blue-500 dark:text-blue-400">{workerMsg}</span>}
         </div>
       )}
 

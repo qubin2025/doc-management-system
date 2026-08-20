@@ -555,6 +555,56 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
   return results;
 }
 
+// ========== 迭代5.6: 后端 Worker 控制 API ==========
+// 前端不再本地处理队列，改为调用后端 Worker（kbWorker.js）处理
+// 本地 kbQueueProcessor.ts 保留作为降级方案（5.13 双跑期保留）
+
+export interface KbWorkerInfo {
+  workerId: string;
+  state: string;  // stopped / running / stopping
+  isRunning: boolean;
+}
+
+export interface KbWorkerStatus {
+  success: boolean;
+  worker: KbWorkerInfo & {
+    uptime: number;
+    inFlightTasks: number;
+    pendingBackoff: number;
+  };
+  stats: {
+    processed: number;
+    failed: number;
+    retried: number;
+    recovered: number;
+    cycles: number;
+    lastError: string | null;
+    startedAt: string | null;
+    lastCycleAt: string | null;
+    skipped?: number;
+  };
+  queue: Record<string, number>;
+  timestamp: string;
+}
+
+/** 启动后端 Worker（admin/manager 权限） */
+export async function kbWorkerStart(): Promise<{ success: boolean; action: string; message: string; worker: KbWorkerInfo }> {
+  const res = await fetch(`${API_BASE}/kb/worker/start`, { method: 'POST', headers: headers() });
+  return safeJson(res);
+}
+
+/** 停止后端 Worker（admin/manager 权限，异步等待优雅退出） */
+export async function kbWorkerStop(): Promise<{ success: boolean; action: string; message: string; elapsedMs?: number; worker: KbWorkerInfo }> {
+  const res = await fetch(`${API_BASE}/kb/worker/stop`, { method: 'POST', headers: headers() });
+  return safeJson(res);
+}
+
+/** 查询后端 Worker 状态（所有登录用户可查看） */
+export async function kbWorkerStatus(): Promise<KbWorkerStatus> {
+  const res = await fetch(`${API_BASE}/kb/worker/status`, { headers: headers() });
+  return safeJson(res);
+}
+
 // ========== 备份 ==========
 export function getBackupUrl(projectId?: number | string): string {
   const base = `${API_BASE}/backup`;
