@@ -15,6 +15,8 @@
  *   - embedBatch(texts, textType='document') → Promise<number[][]>
  */
 import { Buffer } from 'buffer';
+import crypto from 'crypto';
+import { getDb } from '../db.js';
 
 // ========== 配置 ==========
 const DASHSCOPE_URL = 'https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding';
@@ -25,6 +27,9 @@ const TIMEOUT_MS = 30000;       // 单批超时 30s
 const MAX_RETRIES = 3;          // 重试次数
 const EMBEDDING_DIM = 1536;      // text-embedding-v1 维度
 
+// 5.8: Embedding 缓存开关（默认开启，环境变量 KB_EMBEDDING_CACHE=0 可关闭）
+const CACHE_ENABLED = process.env.KB_EMBEDDING_CACHE !== '0';
+
 // 日志器
 const logger = {
   info:  (...a) => console.log('[embed]', new Date().toISOString(), ...a),
@@ -32,6 +37,179 @@ const logger = {
   error: (...a) => console.error('[embed]', new Date().toISOString(), ...a),
   debug: (...a) => { if (process.env.KB_WORKER_DEBUG === '1') console.debug('[embed]', new Date().toISOString(), ...a); },
 };
+
+// ========== 5.8 Embedding 缓存 ==========
+
+function sha256(text) {
+  return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+function getCacheKey(text, textType) {
+  return sha256(text + '|' + textType + '|' + MODEL);
+}
+
+/**
+ * 查询缓存中的 embedding
+ * @returns {number[]|null} — 命中返回向量数组，未命中返回 null
+ */
+function getCachedEmbedding(cacheKey) {
+  if (!CACHE_ENABLED) return null;
+  try {
+    const db = getDb();
+    const row = db.prepare('SELECT embedding, dimension, hit_count FROM embedding_cache WHERE cache_key = ?').get(cacheKey);
+    if (!row) return null;
+    const buf = Buffer.from(row.embedding);
+    const dim = row.dimension;
+    if (buf.length !== dim * 4) {
+      logger.warn(`缓存向量维度不匹配: ${buf.length} bytes vs dim=${dim}`);
+      return null;
+    }
+    const float32 = new Float32Array(buf.buffer, buf.byteOffset, dim);
+    // 转为普通数组返回
+    const arr = new Array(dim);
+    for (let i = 0; i < dim; i++) arr[i] = float32[i];
+    // 异步更新 hit_count 和 last_hit_at（不阻塞）
+    db.prepare("UPDATE embedding_cache SET hit_count = hit_count + 1, last_hit_at = datetime('now') WHERE cache_key = ?").run(cacheKey);
+    return arr;
+  } catch (e) {
+    logger.warn(`缓存查询失败: ${e.message}`);
+    return null;
+  }
+}
+
+/**
+ * 批量查询缓存
+ * @param {Array<{text, idx, cacheKey}>} items
+ * @returns {Map<number, number[]>} — idx → embedding
+ */
+function batchGetCachedEmbeddings(items) {
+  const hits = new Map();
+  if (!CACHE_ENABLED || items.length === 0) return hits;
+  try {
+    const db = getDb();
+    const placeholders = items.map(() => '?').join(',');
+    const keys = items.map(it => it.cacheKey);
+    const rows = db.prepare(`SELECT cache_key, embedding, dimension FROM embedding_cache WHERE cache_key IN (${placeholders})`).all(...keys);
+    const keyToItem = new Map(items.map(it => [it.cacheKey, it]));
+    const now = new Date().toISOString();
+    const updateStmt = db.prepare("UPDATE embedding_cache SET hit_count = hit_count + 1, last_hit_at = datetime('now') WHERE cache_key = ?");
+    for (const row of rows) {
+      const it = keyToItem.get(row.cache_key);
+      if (!it) continue;
+      const buf = Buffer.from(row.embedding);
+      const dim = row.dimension;
+      if (buf.length !== dim * 4) continue;
+      const float32 = new Float32Array(buf.buffer, buf.byteOffset, dim);
+      const arr = new Array(dim);
+      for (let i = 0; i < dim; i++) arr[i] = float32[i];
+      hits.set(it.idx, arr);
+    }
+    // 批量更新 hit_count（事务）
+    if (rows.length > 0) {
+      const tx = db.transaction((keysToUpdate) => {
+        for (const k of keysToUpdate) updateStmt.run(k);
+      });
+      tx(rows.map(r => r.cache_key));
+    }
+  } catch (e) {
+    logger.warn(`批量缓存查询失败: ${e.message}`);
+  }
+  return hits;
+}
+
+/**
+ * 存入缓存
+ */
+function setCachedEmbedding(text, textType, embedding) {
+  if (!CACHE_ENABLED || !embedding || embedding.length === 0) return;
+  try {
+    const db = getDb();
+    const cacheKey = getCacheKey(text, textType);
+    const textHash = sha256(text);
+    const buf = Buffer.from(new Float32Array(embedding).buffer);
+    db.prepare(
+      `INSERT OR REPLACE INTO embedding_cache (cache_key, text_hash, text_type, model, embedding, dimension, hit_count, created_at, last_hit_at)
+       VALUES (?, ?, ?, ?, ?, ?, 0, datetime('now'), NULL)`
+    ).run(cacheKey, textHash, textType, MODEL, buf, embedding.length);
+  } catch (e) {
+    logger.warn(`缓存存入失败: ${e.message}`);
+  }
+}
+
+/**
+ * 批量存入缓存
+ */
+function batchSetCachedEmbeddings(items, embeddings, textType) {
+  if (!CACHE_ENABLED || items.length === 0) return;
+  try {
+    const db = getDb();
+    const stmt = db.prepare(
+      `INSERT OR REPLACE INTO embedding_cache (cache_key, text_hash, text_type, model, embedding, dimension, hit_count, created_at, last_hit_at)
+       VALUES (?, ?, ?, ?, ?, ?, 0, datetime('now'), NULL)`
+    );
+    const tx = db.transaction(() => {
+      for (let i = 0; i < items.length; i++) {
+        const emb = embeddings[i];
+        if (!emb || emb.length === 0) continue;
+        const it = items[i];
+        const buf = Buffer.from(new Float32Array(emb).buffer);
+        stmt.run(it.cacheKey, it.textHash, textType, MODEL, buf, emb.length);
+      }
+    });
+    tx();
+  } catch (e) {
+    logger.warn(`批量缓存存入失败: ${e.message}`);
+  }
+}
+
+/**
+ * 获取缓存统计
+ */
+export function getCacheStats() {
+  try {
+    const db = getDb();
+    const total = db.prepare('SELECT COUNT(*) as c FROM embedding_cache').get().c;
+    const totalHits = db.prepare('SELECT COALESCE(SUM(hit_count), 0) as s FROM embedding_cache').get().s;
+    const byType = db.prepare('SELECT text_type, COUNT(*) as c FROM embedding_cache GROUP BY text_type').all();
+    const recentlyUsed = db.prepare("SELECT COUNT(*) as c FROM embedding_cache WHERE last_hit_at IS NOT NULL").get().c;
+    const oldestAt = db.prepare('SELECT MIN(created_at) as d FROM embedding_cache').get().d;
+    return {
+      enabled: CACHE_ENABLED,
+      totalCached: total,
+      totalHits,
+      recentlyUsed,
+      oldestAt,
+      byType: byType.reduce((acc, r) => { acc[r.text_type] = r.c; return acc; }, {}),
+    };
+  } catch (e) {
+    return { enabled: CACHE_ENABLED, error: e.message };
+  }
+}
+
+/**
+ * 清空缓存
+ */
+export function clearCache() {
+  const db = getDb();
+  const r = db.prepare('DELETE FROM embedding_cache').run();
+  logger.info(`缓存已清空: ${r.changes} 条`);
+  return { deleted: r.changes };
+}
+
+/**
+ * 清理长期未使用的缓存（默认 30 天）
+ */
+export function pruneCache(daysOld = 30) {
+  const db = getDb();
+  const r = db.prepare(
+    `DELETE FROM embedding_cache WHERE last_hit_at IS NULL AND created_at < datetime('now', ?)`
+  ).run(`-${daysOld} days`);
+  const r2 = db.prepare(
+    `DELETE FROM embedding_cache WHERE last_hit_at IS NOT NULL AND last_hit_at < datetime('now', ?)`
+  ).run(`-${daysOld} days`);
+  logger.info(`缓存清理: 未使用 ${r.changes} 条, 过期 ${r2.changes} 条`);
+  return { unused: r.changes, expired: r2.changes };
+}
 
 function getApiKey() {
   const key = process.env.DASHSCOPE_API_KEY;
@@ -123,8 +301,21 @@ export async function embedText(text, textType = 'document') {
   if (!text || !text.trim()) {
     throw new Error('嵌入文本不能为空');
   }
+  // 5.8: 先查缓存
+  if (CACHE_ENABLED) {
+    const cacheKey = getCacheKey(text, textType);
+    const cached = getCachedEmbedding(cacheKey);
+    if (cached) {
+      logger.debug(`缓存命中: ${cacheKey.slice(0, 16)}...`);
+      return cached;
+    }
+  }
+  // 未命中：调用 API
   const embeddings = await embedBatchWithRetry([text], textType);
-  return embeddings[0];
+  const result = embeddings[0];
+  // 存入缓存
+  setCachedEmbedding(text, textType, result);
+  return result;
 }
 
 /**
@@ -141,39 +332,63 @@ export async function embedBatch(texts, textType = 'document') {
   const valid = indexed.filter(x => x.text && x.text.trim().length > 0);
   if (valid.length === 0) return texts.map(() => null);
 
-  // 分批（每 BATCH_SIZE 条）
-  const batches = [];
-  for (let i = 0; i < valid.length; i += BATCH_SIZE) {
-    batches.push(valid.slice(i, i + BATCH_SIZE));
-  }
-  logger.debug(`Embedding ${valid.length} texts in ${batches.length} batch(es), concurrency=${MAX_CONCURRENT}`);
+  // 5.8: 批量查缓存
+  const validWithKey = valid.map(v => ({ ...v, cacheKey: getCacheKey(v.text, textType), textHash: sha256(v.text) }));
+  const cacheHits = batchGetCachedEmbeddings(validWithKey);
+  if (cacheHits.size > 0) logger.info(`缓存命中 ${cacheHits.size}/${valid.length}`);
 
-  // 并发执行（每批一次 embedBatchWithRetry）
-  const batchTasks = batches.map(b => embedBatchWithRetry(b.map(x => x.text), textType));
-  const batchResults = await runWithConcurrency(batchTasks, MAX_CONCURRENT);
-
-  // 合并结果
+  // 未命中的文本需要调用 API
+  const missed = validWithKey.filter(v => !cacheHits.has(v.idx));
   const finalResults = new Array(texts.length).fill(null);
-  for (let bi = 0; bi < batches.length; bi++) {
-    const batch = batches[bi];
-    const result = batchResults[bi];
-    if (!result.ok) {
-      // 批失败 → 降级为逐条嵌入
-      logger.warn(`Batch ${bi + 1} failed (${result.err.message}), falling back to single embed`);
-      for (const item of batch) {
-        try {
-          const emb = await embedText(item.text, textType);
-          finalResults[item.idx] = emb;
-        } catch (e) {
-          logger.error(`Single embed failed for idx=${item.idx}: ${e.message}`);
-          finalResults[item.idx] = null;
+
+  // 放入缓存命中的结果
+  for (const [idx, emb] of cacheHits) {
+    finalResults[idx] = emb;
+  }
+
+  if (missed.length > 0) {
+    // 分批（每 BATCH_SIZE 条）
+    const batches = [];
+    for (let i = 0; i < missed.length; i += BATCH_SIZE) {
+      batches.push(missed.slice(i, i + BATCH_SIZE));
+    }
+    logger.debug(`Embedding ${missed.length} missed texts in ${batches.length} batch(es), concurrency=${MAX_CONCURRENT}`);
+
+    // 并发执行（每批一次 embedBatchWithRetry）
+    const batchTasks = batches.map(b => embedBatchWithRetry(b.map(x => x.text), textType));
+    const batchResults = await runWithConcurrency(batchTasks, MAX_CONCURRENT);
+
+    // 合并结果 + 批量存入缓存
+    const cacheItems = [];
+    const cacheEmbeddings = [];
+    for (let bi = 0; bi < batches.length; bi++) {
+      const batch = batches[bi];
+      const result = batchResults[bi];
+      if (!result.ok) {
+        // 批失败 → 降级为逐条嵌入
+        logger.warn(`Batch ${bi + 1} failed (${result.err.message}), falling back to single embed`);
+        for (const item of batch) {
+          try {
+            const emb = await embedText(item.text, textType);
+            finalResults[item.idx] = emb;
+          } catch (e) {
+            logger.error(`Single embed failed for idx=${item.idx}: ${e.message}`);
+            finalResults[item.idx] = null;
+          }
+        }
+      } else {
+        const embs = result.value;
+        for (let j = 0; j < batch.length; j++) {
+          finalResults[batch[j].idx] = embs[j];
+          cacheItems.push(batch[j]);
+          cacheEmbeddings.push(embs[j]);
         }
       }
-    } else {
-      const embs = result.value;
-      for (let j = 0; j < batch.length; j++) {
-        finalResults[batch[j].idx] = embs[j];
-      }
+    }
+    // 批量存入缓存
+    if (cacheItems.length > 0) {
+      batchSetCachedEmbeddings(cacheItems, cacheEmbeddings, textType);
+      logger.info(`缓存存入 ${cacheItems.length} 条`);
     }
   }
   return finalResults;
@@ -194,5 +409,5 @@ export async function checkEmbeddingService() {
   }
 }
 
-export const config = { MODEL, BATCH_SIZE, MAX_CONCURRENT, TIMEOUT_MS, MAX_RETRIES, EMBEDDING_DIM };
-export default { embedText, embedBatch, checkEmbeddingService, config };
+export const config = { MODEL, BATCH_SIZE, MAX_CONCURRENT, TIMEOUT_MS, MAX_RETRIES, EMBEDDING_DIM, CACHE_ENABLED };
+export default { embedText, embedBatch, checkEmbeddingService, getCacheStats, clearCache, pruneCache, config };

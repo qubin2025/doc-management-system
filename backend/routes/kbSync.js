@@ -3,6 +3,7 @@ import { getDb } from '../db.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { kbWorker } from '../services/kbWorker.js';
 import { searchVectors, getSearchStats } from '../services/searchService.js';
+import { getCacheStats, clearCache, pruneCache } from '../services/embeddingService.js';
 import {
   getPendingTasks,
   markTaskDone,
@@ -426,6 +427,42 @@ router.get('/search/stats', requireAuth, (req, res) => {
     res.json({ success: true, ...stats });
   } catch (e) {
     res.status(500).json({ success: false, error: '统计查询失败' });
+  }
+});
+
+// ========== v5.10 迭代5.8: Embedding 缓存管理 ==========
+
+// GET /api/kb/embedding-cache/stats
+// 缓存统计（总数/命中次数/各 type 分布/最旧记录时间）
+router.get('/embedding-cache/stats', requireAuth, (req, res) => {
+  try {
+    const stats = getCacheStats();
+    res.json({ success: true, ...stats });
+  } catch (e) {
+    res.status(500).json({ success: false, error: '缓存统计失败' });
+  }
+});
+
+// POST /api/kb/embedding-cache/clear
+// 清空缓存（仅 admin/manager 可操作）
+router.post('/embedding-cache/clear', requireRole('admin', 'project_manager'), (req, res) => {
+  try {
+    const r = clearCache();
+    res.json({ success: true, ...r, message: `已清空 ${r.deleted} 条缓存` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: '清空失败' });
+  }
+});
+
+// POST /api/kb/embedding-cache/prune
+// 清理过期缓存（仅 admin/manager，可选参数 days=30）
+router.post('/embedding-cache/prune', requireRole('admin', 'project_manager'), (req, res) => {
+  try {
+    const days = parseInt(req.query.days || req.body?.days || '30', 10);
+    const r = pruneCache(days);
+    res.json({ success: true, ...r, message: `清理完成：未使用 ${r.unused} 条 + 过期 ${r.expired} 条` });
+  } catch (e) {
+    res.status(500).json({ success: false, error: '清理失败' });
   }
 });
 

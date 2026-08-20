@@ -397,6 +397,23 @@ function initSchema(db) {
   try { db.exec("ALTER TABLE kb_sync_queue ADD COLUMN next_run_at TEXT"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_kb_queue_next_run ON kb_sync_queue(status, next_run_at)"); } catch {}
 
+  // v5.9 迭代5.8: Embedding 缓存表 — 避免对相同文本重复调用 DashScope API
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS embedding_cache (
+      cache_key TEXT PRIMARY KEY,
+      text_hash TEXT NOT NULL,
+      text_type TEXT NOT NULL,
+      model TEXT NOT NULL,
+      embedding BLOB NOT NULL,
+      dimension INTEGER NOT NULL,
+      hit_count INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_hit_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_emb_cache_text_hash ON embedding_cache(text_hash);
+    CREATE INDEX IF NOT EXISTS idx_emb_cache_last_hit ON embedding_cache(last_hit_at);
+  `);
+
   // 迁移：给旧 users 表添加缺失列（如果旧表已存在则 ALTER）
   migrateSchema(db);
 
