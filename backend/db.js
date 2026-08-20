@@ -414,6 +414,28 @@ function initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_emb_cache_last_hit ON embedding_cache(last_hit_at);
   `);
 
+  // v5.10 迭代5.9: FTS5 全文索引表 — 用于 BM25 全文检索（trigram 分词器对中文友好）
+  // 如果旧表用 unicode61 创建，先删除重建
+  try {
+    db.exec('DROP TABLE IF EXISTS vector_embeddings_fts');
+    db.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS vector_embeddings_fts USING fts5(
+        text,
+        external_id UNINDEXED,
+        tokenize='trigram'
+      );
+    `);
+  } catch (e) {
+    // trigram 不支持时降级为默认
+    console.warn('trigram 分词器不可用，降级为 unicode61:', e.message);
+    db.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS vector_embeddings_fts USING fts5(
+        text,
+        external_id UNINDEXED
+      );
+    `);
+  }
+
   // 迁移：给旧 users 表添加缺失列（如果旧表已存在则 ALTER）
   migrateSchema(db);
 

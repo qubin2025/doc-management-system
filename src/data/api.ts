@@ -660,6 +660,51 @@ export async function kbSearchStats(): Promise<{
   return safeJson(res);
 }
 
+// ========== 迭代5.9: 混合检索（向量 + BM25 全文） ==========
+
+/** 后端混合检索：融合向量搜索 + BM25 全文检索 */
+export async function kbSearchHybrid(
+  queryEmbedding: number[],
+  query: string,
+  opts?: { project?: string; topK?: number; alpha?: number }
+): Promise<KbSearchResponse & { query: { alpha: number } }> {
+  const res = await fetch(`${API_BASE}/kb/search/hybrid`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      queryEmbedding,
+      query,
+      project: opts?.project,
+      topK: opts?.topK,
+      alpha: opts?.alpha,
+    }),
+  });
+  return safeJson(res);
+}
+
+/** 纯 BM25 全文检索（无需 embedding，适合快速关键词搜索） */
+export async function kbSearchBM25(
+  query: string,
+  opts?: { project?: string; topK?: number }
+): Promise<KbSearchResponse> {
+  const res = await fetch(`${API_BASE}/kb/search/bm25`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      query,
+      project: opts?.project,
+      topK: opts?.topK,
+    }),
+  });
+  return safeJson(res);
+}
+
+/** 重建 FTS5 全文索引（admin/manager） */
+export async function kbFtsRebuild(): Promise<{ success: boolean; total: number; message: string }> {
+  const res = await fetch(`${API_BASE}/kb/fts/rebuild`, { method: 'POST', headers: headers() });
+  return safeJson(res);
+}
+
 // ========== 备份 ==========
 export function getBackupUrl(projectId?: number | string): string {
   const base = `${API_BASE}/backup`;

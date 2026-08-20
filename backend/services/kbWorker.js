@@ -387,12 +387,19 @@ class KbWorker {
     const sensitivity = record.sensitivity || 0;
     // 去重：删旧向量（同 project + doc_id）
     db.prepare('DELETE FROM vector_embeddings WHERE project=? AND doc_id=?').run(projectName, docId);
+    // 5.9: 同步删除 FTS5 索引（同 doc_id 的 external_id）
+    db.prepare('DELETE FROM vector_embeddings_fts WHERE external_id LIKE ?').run(`${docId}%`);
     // 批量 INSERT（事务）
     const insert = db.prepare(
       `INSERT INTO vector_embeddings (id, project, doc_id, doc_name, chunk_index, text, embedding, dimension, sensitivity, metadata)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
+    // 5.9: 同步插入 FTS5 全文索引
+    const insertFts = db.prepare(
+      `INSERT INTO vector_embeddings_fts (text, external_id) VALUES (?, ?)`
+    );
     const rows = [];
+    const ftsRows = [];
     for (let i = 0; i < chunks.length; i++) {
       const c = chunks[i];
       const emb = embeddings[i];
@@ -412,11 +419,13 @@ class KbWorker {
           endChar: c.endChar,
         }),
       ]);
+      ftsRows.push([c.text, id]);
     }
-    const tx = db.transaction((items) => {
-      for (const r of items) insert.run(...r);
+    const tx = db.transaction(() => {
+      for (const r of rows) insert.run(...r);
+      for (const f of ftsRows) insertFts.run(...f);
     });
-    tx(rows);
+    tx();
     return rows.length;
   }
 

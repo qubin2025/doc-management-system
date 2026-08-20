@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getDb } from '../db.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { kbWorker } from '../services/kbWorker.js';
-import { searchVectors, getSearchStats } from '../services/searchService.js';
+import { searchVectors, getSearchStats, searchBM25, searchHybrid, rebuildFtsIndex } from '../services/searchService.js';
 import { getCacheStats, clearCache, pruneCache } from '../services/embeddingService.js';
 import {
   getPendingTasks,
@@ -427,6 +427,80 @@ router.get('/search/stats', requireAuth, (req, res) => {
     res.json({ success: true, ...stats });
   } catch (e) {
     res.status(500).json({ success: false, error: '统计查询失败' });
+  }
+});
+
+// ========== v5.11 迭代5.9: 混合检索（向量 + BM25） ==========
+
+// POST /api/kb/search/hybrid
+// 混合检索：融合向量搜索 + BM25 全文检索
+router.post('/search/hybrid', requireAuth, async (req, res) => {
+  try {
+    const { queryEmbedding, query, project, topK, alpha } = req.body || {};
+    if (!queryEmbedding || !Array.isArray(queryEmbedding) || queryEmbedding.length === 0) {
+      return res.status(400).json({ success: false, error: 'queryEmbedding 不能为空' });
+    }
+    const maxSensitivity = getUserMaxSensitivity(req);
+    const results = await searchHybrid(queryEmbedding, query || '', {
+      project: project || null,
+      topK: topK || 10,
+      alpha: alpha != null ? alpha : 0.7,
+      maxSensitivity,
+    });
+    res.json({
+      success: true,
+      results,
+      total: results.length,
+      query: {
+        dimension: queryEmbedding.length,
+        text: query || '',
+        project: project || 'all',
+        topK: topK || 10,
+        alpha: alpha != null ? alpha : 0.7,
+        maxSensitivity,
+      },
+    });
+  } catch (e) {
+    console.error('[kb/search/hybrid] error:', e.message);
+    res.status(500).json({ success: false, error: '混合检索失败: ' + e.message });
+  }
+});
+
+// POST /api/kb/search/bm25
+// 纯 BM25 全文检索（无需 embedding，适合快速关键词搜索）
+router.post('/search/bm25', requireAuth, async (req, res) => {
+  try {
+    const { query, project, topK } = req.body || {};
+    if (!query || !query.trim()) {
+      return res.status(400).json({ success: false, error: 'query 不能为空' });
+    }
+    const maxSensitivity = getUserMaxSensitivity(req);
+    const results = await searchBM25(query, {
+      project: project || null,
+      topK: topK || 10,
+      maxSensitivity,
+    });
+    res.json({
+      success: true,
+      results,
+      total: results.length,
+      query: { text: query, project: project || 'all', topK: topK || 10, maxSensitivity },
+    });
+  } catch (e) {
+    console.error('[kb/search/bm25] error:', e.message);
+    res.status(500).json({ success: false, error: 'BM25 检索失败: ' + e.message });
+  }
+});
+
+// POST /api/kb/fts/rebuild
+// 重建 FTS5 全文索引（仅 admin/manager）
+router.post('/fts/rebuild', requireRole('admin', 'project_manager'), (req, res) => {
+  try {
+    const r = rebuildFtsIndex();
+    res.json({ success: true, ...r, message: `FTS5 索引重建完成: ${r.total} 条` });
+  } catch (e) {
+    console.error('[kb/fts/rebuild] error:', e.message);
+    res.status(500).json({ success: false, error: '索引重建失败: ' + e.message });
   }
 });
 

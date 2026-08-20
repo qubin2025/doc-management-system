@@ -107,7 +107,7 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
     setLoading(true); setGraphResults(null);
     try {
       if (searchMode === 'hybrid') {
-        // 混合检索：优先LightRAG，降级本地
+        // 混合检索：优先LightRAG，降级后端混合检索
         try {
           const r = await api.lightragSearch(search.trim(), 10, 'hybrid');
           if (r?.results) {
@@ -120,12 +120,10 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
             return;
           }
         } catch {}
-        // 降级：本地全文 + 后端向量融合
-        const fulltext: VectorDoc[] = lunrIdx ? lunrIdx.search(search.trim()).map((h:any)=>allDocs.find(d=>d.id===h.ref)!).filter(Boolean) : [];
+        // 5.9: 改为调用后端混合检索（向量+BM25 融合在后端完成）
         const qEmbed = await api.embedText(search.trim(), 'query');
-        // 5.7: 改为调用后端检索 API（后端自动处理 sensitivity 过滤）
-        const searchResp = await api.kbSearch(qEmbed, { topK: 10 });
-        const vecHits: VectorDoc[] = (searchResp.results || []).map(r => ({
+        const hybridResp = await api.kbSearchHybrid(qEmbed, search.trim(), { topK: 15 });
+        const hits: VectorDoc[] = (hybridResp.results || []).map(r => ({
           id: r.id,
           text: r.text,
           embedding: [],
@@ -135,20 +133,19 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
             projectName: r.project,
             sensitivity: r.sensitivity,
             score: r.score,
+            vecScore: (r as any).vecScore,
+            bm25Score: (r as any).bm25Score,
             ...(r.metadata || {}),
           },
         }));
-        // 5.7: 后端已做 sensitivity 过滤，前端仅做项目权限过滤（非 admin）
-        const filteredVecHits = isAdmin ? vecHits : vecHits.filter(d => {
+        // 5.9: 后端已做 sensitivity 过滤，前端仅做项目权限过滤（非 admin）
+        setResults(isAdmin ? hits : hits.filter(d => {
           if (myProjects.length > 0) {
             const projName = d.metadata?.projectName;
             return !projName || myProjects.some(p => p.name === projName);
           }
           return (d.metadata?.sensitivity ?? 0) <= 0;
-        });
-        const ids = new Set<string>(); const merged: VectorDoc[] = [];
-        for (const d of [...fulltext.slice(0,5), ...filteredVecHits]) { if(!ids.has(d.id)){ids.add(d.id);merged.push(d);} }
-        setResults(merged.slice(0,15));
+        }));
       } else if (searchMode === 'semantic') {
         const qEmbed = await api.embedText(search.trim(), 'query');
         // 5.7: 改为调用后端检索 API（后端自动处理 sensitivity 过滤）
