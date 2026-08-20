@@ -393,6 +393,10 @@ function initSchema(db) {
   try { db.exec("ALTER TABLE kb_sync_queue ADD COLUMN locked_by TEXT"); } catch {}
   try { db.exec("ALTER TABLE kb_sync_queue ADD COLUMN locked_at TEXT"); } catch {}
 
+  // v5.8 迭代5.4: 失败退避 — 加 next_run_at 字段（30s/60s/120s 退避，NULL 表示可立即领取）
+  try { db.exec("ALTER TABLE kb_sync_queue ADD COLUMN next_run_at TEXT"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_kb_queue_next_run ON kb_sync_queue(status, next_run_at)"); } catch {}
+
   // 迁移：给旧 users 表添加缺失列（如果旧表已存在则 ALTER）
   migrateSchema(db);
 
