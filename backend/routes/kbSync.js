@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getDb } from '../db.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { kbWorker } from '../services/kbWorker.js';
+import { searchVectors, getSearchStats } from '../services/searchService.js';
 import {
   getPendingTasks,
   markTaskDone,
@@ -366,6 +367,65 @@ router.post('/sync/queue/cleanup', requireAuth, (req, res) => {
   } catch (e) {
     console.error('[kbSync/queue/cleanup] error:', e.message);
     res.status(500).json({ success: false, error: '清理失败' });
+  }
+});
+
+// ========== v5.9 迭代5.7: 后端语义检索 API ==========
+
+// 计算用户的最高敏感等级（admin=2, 非 admin 查 project_members）
+function getUserMaxSensitivity(req) {
+  if (req.user?.role === 'admin') return 2;
+  try {
+    const db = getDb();
+    const row = db.prepare(
+      'SELECT MAX(sensitivity) as max_sens FROM project_members WHERE user_id = ?'
+    ).get(req.user.id);
+    return row?.max_sens ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+// POST /api/kb/search
+// 语义检索：接收 query embedding，返回 Top-K 最相似文档
+router.post('/search', requireAuth, async (req, res) => {
+  try {
+    const { queryEmbedding, project, topK } = req.body || {};
+    if (!queryEmbedding || !Array.isArray(queryEmbedding) || queryEmbedding.length === 0) {
+      return res.status(400).json({ success: false, error: 'queryEmbedding 不能为空' });
+    }
+    // 5.7: 权限 — 后端自动计算 maxSensitivity，不信任前端传入
+    const maxSensitivity = getUserMaxSensitivity(req);
+    const results = await searchVectors(queryEmbedding, {
+      project: project || null,
+      topK: topK || 10,
+      maxSensitivity,
+    });
+    res.json({
+      success: true,
+      results,
+      total: results.length,
+      query: {
+        dimension: queryEmbedding.length,
+        project: project || 'all',
+        topK: topK || 10,
+        maxSensitivity,
+      },
+    });
+  } catch (e) {
+    console.error('[kb/search] error:', e.message);
+    res.status(500).json({ success: false, error: '检索失败: ' + e.message });
+  }
+});
+
+// GET /api/kb/search/stats
+// 检索服务统计（向量总数/项目分布/敏感等级分布）
+router.get('/search/stats', requireAuth, (req, res) => {
+  try {
+    const stats = getSearchStats();
+    res.json({ success: true, ...stats });
+  } catch (e) {
+    res.status(500).json({ success: false, error: '统计查询失败' });
   }
 });
 

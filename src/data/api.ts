@@ -605,6 +605,61 @@ export async function kbWorkerStatus(): Promise<KbWorkerStatus> {
   return safeJson(res);
 }
 
+// ========== 迭代5.7: 后端语义检索 API ==========
+// 前端不再本地计算余弦相似度，改为调用后端 searchService.js
+
+export interface KbSearchResult {
+  id: string;
+  project: string;
+  docId: string;
+  docName: string;
+  chunkIndex: number;
+  text: string;
+  score: number;
+  sensitivity: number;
+  metadata: any;
+}
+
+export interface KbSearchResponse {
+  success: boolean;
+  results: KbSearchResult[];
+  total: number;
+  query: {
+    dimension: number;
+    project: string;
+    topK: number;
+    maxSensitivity: number;
+  };
+}
+
+/** 后端语义检索：发送 query embedding，返回 Top-K 最相似文档 */
+export async function kbSearch(
+  queryEmbedding: number[],
+  opts?: { project?: string; topK?: number }
+): Promise<KbSearchResponse> {
+  const res = await fetch(`${API_BASE}/kb/search`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      queryEmbedding,
+      project: opts?.project,
+      topK: opts?.topK,
+    }),
+  });
+  return safeJson(res);
+}
+
+/** 检索服务统计 */
+export async function kbSearchStats(): Promise<{
+  success: boolean;
+  totalVectors: number;
+  projects: Record<string, number>;
+  bySensitivity: Record<string, number>;
+}> {
+  const res = await fetch(`${API_BASE}/kb/search/stats`, { headers: headers() });
+  return safeJson(res);
+}
+
 // ========== 备份 ==========
 export function getBackupUrl(projectId?: number | string): string {
   const base = `${API_BASE}/backup`;

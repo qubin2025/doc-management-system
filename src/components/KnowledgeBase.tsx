@@ -120,35 +120,59 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
             return;
           }
         } catch {}
-        // 降级：本地全文+向量融合
+        // 降级：本地全文 + 后端向量融合
         const fulltext: VectorDoc[] = lunrIdx ? lunrIdx.search(search.trim()).map((h:any)=>allDocs.find(d=>d.id===h.ref)!).filter(Boolean) : [];
         const qEmbed = await api.embedText(search.trim(), 'query');
-        const vecHits = vectorStore.searchAll(qEmbed, 10);
-        // v5.7 迭代4: 向量结果二次按 sensitivity 过滤（非 admin 用户）
+        // 5.7: 改为调用后端检索 API（后端自动处理 sensitivity 过滤）
+        const searchResp = await api.kbSearch(qEmbed, { topK: 10 });
+        const vecHits: VectorDoc[] = (searchResp.results || []).map(r => ({
+          id: r.id,
+          text: r.text,
+          embedding: [],
+          metadata: {
+            fileName: r.docName || r.docId,
+            source: r.docId,
+            projectName: r.project,
+            sensitivity: r.sensitivity,
+            score: r.score,
+            ...(r.metadata || {}),
+          },
+        }));
+        // 5.7: 后端已做 sensitivity 过滤，前端仅做项目权限过滤（非 admin）
         const filteredVecHits = isAdmin ? vecHits : vecHits.filter(d => {
-          const sens = d.metadata?.sensitivity ?? 0;
-          if (sens > maxSensitivity) return false;
           if (myProjects.length > 0) {
             const projName = d.metadata?.projectName;
             return !projName || myProjects.some(p => p.name === projName);
           }
-          return sens <= 0;  // 无项目权限用户仅看公开
+          return (d.metadata?.sensitivity ?? 0) <= 0;
         });
         const ids = new Set<string>(); const merged: VectorDoc[] = [];
         for (const d of [...fulltext.slice(0,5), ...filteredVecHits]) { if(!ids.has(d.id)){ids.add(d.id);merged.push(d);} }
         setResults(merged.slice(0,15));
       } else if (searchMode === 'semantic') {
         const qEmbed = await api.embedText(search.trim(), 'query');
-        const hits = vectorStore.searchAll(qEmbed, 10);
-        // v5.7 迭代4: 按 sensitivity 过滤
+        // 5.7: 改为调用后端检索 API（后端自动处理 sensitivity 过滤）
+        const searchResp = await api.kbSearch(qEmbed, { topK: 10 });
+        const hits: VectorDoc[] = (searchResp.results || []).map(r => ({
+          id: r.id,
+          text: r.text,
+          embedding: [],
+          metadata: {
+            fileName: r.docName || r.docId,
+            source: r.docId,
+            projectName: r.project,
+            sensitivity: r.sensitivity,
+            score: r.score,
+            ...(r.metadata || {}),
+          },
+        }));
+        // 5.7: 后端已做 sensitivity 过滤，前端仅做项目权限过滤（非 admin）
         setResults(isAdmin ? hits : hits.filter(d => {
-          const sens = d.metadata?.sensitivity ?? 0;
-          if (sens > maxSensitivity) return false;
           if (myProjects.length > 0) {
             const projName = d.metadata?.projectName;
             return !projName || myProjects.some(p => p.name === projName);
           }
-          return sens <= 0;
+          return (d.metadata?.sensitivity ?? 0) <= 0;
         }));
       } else {
         if (!lunrIdx) { setResults([]); setLoading(false); return; }
