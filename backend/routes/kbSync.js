@@ -605,8 +605,13 @@ router.post('/worker/stop', requireRole('admin', 'project_manager'), async (req,
 
 // GET /api/kb/worker/status
 // 查询 Worker 状态（所有登录用户可查看，用于前端健康监控）
+// 5.13 验证用：SIMULATE_WORKER_DOWN=1 时强制返回 503，模拟后端不可用
 router.get('/worker/status', requireAuth, (req, res) => {
   try {
+    if (process.env.SIMULATE_WORKER_DOWN === '1') {
+      console.warn('[kbWorker/status] SIMULATE_WORKER_DOWN=1, returning 503');
+      return res.status(503).json({ success: false, error: '模拟故障: Worker 不可用' });
+    }
     const stats = kbWorker.getStats();
     res.json({
       success: true,
@@ -625,6 +630,83 @@ router.get('/worker/status', requireAuth, (req, res) => {
   } catch (e) {
     console.error('[kbWorker/status] error:', e.message);
     res.status(500).json({ success: false, error: '状态查询失败' });
+  }
+});
+
+// ========== v5.12: localStorage 向量数据迁移到 SQLite ==========
+
+// POST /api/kb/migrate/local-vectors
+// 接收前端从 localStorage 读取的 VectorDoc 数组，批量入库到 vector_embeddings + FTS5
+// body: { docs: [{ id, text, embedding: number[], metadata: { projectName, fileName, ... } }] }
+// 限制：单批 ≤ 200 条（避免请求体过大，前端应分批调用）
+router.post('/migrate/local-vectors', requireRole('admin', 'project_manager'), (req, res) => {
+  try {
+    const { docs } = req.body || {};
+    if (!Array.isArray(docs) || docs.length === 0) {
+      return res.status(400).json({ success: false, error: 'docs 不能为空' });
+    }
+    if (docs.length > 200) {
+      return res.status(400).json({
+        success: false,
+        error: `单批最多 200 条，当前 ${docs.length} 条，请分批调用`,
+      });
+    }
+    const db = getDb();
+    const insertVec = db.prepare(
+      `INSERT OR REPLACE INTO vector_embeddings
+        (id, project, doc_id, doc_name, chunk_index, text, embedding, dimension, sensitivity, metadata, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    );
+    const insertFts = db.prepare(
+      `INSERT OR REPLACE INTO vector_embeddings_fts (text, external_id) VALUES (?, ?)`
+    );
+    // 先删除已有 FTS5 索引（同 external_id 前缀的旧记录）
+    const deleteFts = db.prepare(`DELETE FROM vector_embeddings_fts WHERE external_id = ?`);
+
+    let inserted = 0;
+    let skipped = 0;
+    const errors = [];
+    const tx = db.transaction((rows) => {
+      for (const d of rows) {
+        try {
+          if (!d || !d.id || !d.text || !Array.isArray(d.embedding) || d.embedding.length === 0) {
+            skipped++;
+            errors.push({ id: d?.id || 'unknown', reason: 'invalid fields' });
+            continue;
+          }
+          const projectName = d.metadata?.projectName || d.project || 'default';
+          const docId = d.metadata?.docId || d.id;
+          const docName = d.metadata?.fileName || d.metadata?.docName || d.id;
+          const chunkIndex = d.metadata?.chunkIndex ?? 0;
+          const sensitivity = d.metadata?.sensitivity ?? 0;
+          const buf = Buffer.from(new Float32Array(d.embedding).buffer);
+          insertVec.run(
+            d.id, projectName, docId, docName, chunkIndex,
+            String(d.text).slice(0, 8000), buf, d.embedding.length,
+            sensitivity, JSON.stringify(d.metadata || {})
+          );
+          deleteFts.run(d.id);
+          insertFts.run(String(d.text).slice(0, 8000), d.id);
+          inserted++;
+        } catch (err) {
+          skipped++;
+          errors.push({ id: d?.id || 'unknown', reason: err.message });
+        }
+      }
+    });
+    tx(docs);
+
+    console.log(`[kb/migrate] user=${req.user.username} batch=${docs.length} inserted=${inserted} skipped=${skipped}`);
+    res.json({
+      success: true,
+      inserted,
+      skipped,
+      errors: errors.slice(0, 10),  // 最多返回前 10 条错误
+      totalErrors: errors.length,
+    });
+  } catch (e) {
+    console.error('[kb/migrate/local-vectors] error:', e.message);
+    res.status(500).json({ success: false, error: '迁移失败: ' + e.message });
   }
 });
 

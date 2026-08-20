@@ -1,0 +1,13 @@
+const db = require('better-sqlite3')('data/planning.db');
+console.log('=== 表完整性 ===');
+console.log('vector_embeddings:', db.prepare("SELECT COUNT(*) as c FROM sqlite_master WHERE name='vector_embeddings'").get().c);
+console.log('vector_embeddings_fts:', db.prepare("SELECT COUNT(*) as c FROM sqlite_master WHERE name='vector_embeddings_fts'").get().c);
+console.log('');
+console.log('=== 现有数据 ===');
+console.log('vector_embeddings 行数:', db.prepare('SELECT COUNT(*) as c FROM vector_embeddings').get().c);
+console.log('vector_embeddings_fts 行数:', db.prepare('SELECT COUNT(*) as c FROM vector_embeddings_fts').get().c);
+console.log('');
+console.log('=== 按项目分布 ===');
+const projects = db.prepare('SELECT project, COUNT(*) as c FROM vector_embeddings GROUP BY project').all();
+if (projects.length === 0) console.log('(空表)');
+else projects.forEach(p => console.log(`  ${p.project}: ${p.c} 条`));

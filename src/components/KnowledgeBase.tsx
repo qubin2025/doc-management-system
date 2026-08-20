@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, Sparkles, FileText, Loader2, BookOpen, RefreshCw, Zap, Play, Pause } from 'lucide-react';
+import { Search, X, Sparkles, FileText, Loader2, BookOpen, RefreshCw, Zap, Play, Pause, Activity, Upload } from 'lucide-react';
 import { vectorStore, VectorDoc } from '../data/vectorStore';
 import * as api from '../data/api';
 import { toast } from './Toast';
@@ -7,7 +7,9 @@ import lunr from 'lunr';
 import ModuleHeader from './ModuleHeader';
 import { kbSyncService, SyncResult } from '../data/kbSyncService';
 // 5.6: 前端改为调用后端 Worker API（kbQueueProcessor 保留作为降级方案）
-import { kbWorkerStart, kbWorkerStop, kbWorkerStatus, KbWorkerStatus } from '../data/api';
+import { kbWorkerStart, kbWorkerStop, kbWorkerStatus, KbWorkerStatus, kbMigrateLocalVectors } from '../data/api';
+// 5.13: 双跑期保留 — 前端降级处理器（后端不可用时启用 / 双跑加速模式启用）
+import { startQueuePoller, stopQueuePoller, isPollerRunning } from '../data/kbQueueProcessor';
 
 interface Props { onBack: () => void; }
 
@@ -34,6 +36,15 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   const [workerStatus, setWorkerStatus] = useState<KbWorkerStatus | null>(null);
   const [workerBusy, setWorkerBusy] = useState(false);  // 操作中（启动/停止/处理）
   const [workerMsg, setWorkerMsg] = useState('');  // 操作反馈消息
+  const [workerDetailOpen, setWorkerDetailOpen] = useState(false);  // 5.11: Worker 健康监控详情面板开关
+  // 5.12: localStorage 向量迁移到 SQLite 状态
+  const [migrating, setMigrating] = useState(false);
+  const [migrateMsg, setMigrateMsg] = useState('');
+  const [migrateProgress, setMigrateProgress] = useState<{ done: number; total: number; inserted: number; skipped: number } | null>(null);
+  // 5.13: 双跑期保留 — Worker 模式 (backend 默认 / frontend 降级 / hybrid 双跑加速)
+  const [workerMode, setWorkerMode] = useState<'backend' | 'frontend' | 'hybrid'>('backend');
+  const [backendFailCount, setBackendFailCount] = useState(0);  // 连续失败次数（≥3 自动降级）
+  const [modeSwitchOpen, setModeSwitchOpen] = useState(false);  // 模式切换菜单
 
   // v5.7 迭代4: 用户权限感知 — 加载当前用户可访问项目 + 最高敏感等级
   const [myProjects, setMyProjects] = useState<api.MyProjectAccess[]>([]);
@@ -90,6 +101,27 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
       }));
     }
   }, [isAdmin, myProjects, maxSensitivity]);
+
+  // 5.11: Worker 健康监控辅助函数
+  const formatUptime = (ms: number): string => {
+    if (!ms || ms <= 0) return '0s';
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m${s % 60 > 0 ? ` ${s % 60}s` : ''}`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ${m % 60}m`;
+    const d = Math.floor(h / 24);
+    return `${d}d ${h % 24}h`;
+  };
+  const formatDateTime = (iso: string | null): string => {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    } catch { return iso; }
+  };
 
   // Lunr 全文索引
   const lunrIdx = useMemo(() => {
@@ -233,16 +265,74 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
   };
 
   // 5.6: 组件挂载时获取后端 Worker 状态
+  // 5.6 + 5.13: 后端健康检查轮询（挂载时立即检查一次 + 每 3s 持续检查）
+  // 失败计数 ≥3 自动降级到 frontend 模式；workerMode 切换时重启轮询
   useEffect(() => {
-    kbWorkerStatus().then(setWorkerStatus).catch(() => {});
-  }, []);
+    let active = true;
+    const checkHealth = () => {
+      kbWorkerStatus()
+        .then((s) => {
+          if (!active) return;
+          setWorkerStatus(s);
+          setBackendFailCount(0);
+        })
+        .catch(() => {
+          if (!active) return;
+          setBackendFailCount((c) => {
+            const next = c + 1;
+            if (next >= 3 && workerMode === 'backend') {
+              setWorkerMode('frontend');
+              toast('后端 Worker 连续 3 次无响应，已自动切换到前端降级模式', 'info');
+            }
+            return next;
+          });
+        });
+    };
+    checkHealth();  // 立即检查一次
+    const t = setInterval(checkHealth, 3000);
+    return () => { active = false; clearInterval(t); };
+  }, [workerMode]);
 
-  // 5.6: Worker 运行中：每 3s 刷新 Worker 状态
+  // 5.13: 根据 workerMode 启停前端轮询器
+  // backend: 不启动前端轮询（仅后端 Worker 处理）
+  // frontend: 启动前端轮询（后端不可用时的降级模式）
+  // hybrid: 启动前端轮询 + 同时启用后端 Worker（双跑加速，原子领取避免重复处理）
   useEffect(() => {
-    if (!workerStatus?.worker.isRunning) return;
-    const t = setInterval(() => { kbWorkerStatus().then(setWorkerStatus).catch(() => {}); }, 3000);
-    return () => clearInterval(t);
-  }, [workerStatus?.worker.isRunning]);
+    if (workerMode === 'frontend' || workerMode === 'hybrid') {
+      if (!isPollerRunning()) {
+        startQueuePoller((msg) => setWorkerMsg(msg));
+        console.log(`[5.13] 前端轮询已启动 (mode=${workerMode})`);
+      }
+    } else {
+      if (isPollerRunning()) {
+        stopQueuePoller();
+        console.log('[5.13] 前端轮询已停止 (mode=backend)');
+      }
+    }
+    return () => {
+      if (isPollerRunning()) stopQueuePoller();
+    };
+  }, [workerMode]);
+
+  // 5.13: hybrid 模式时自动启动后端 Worker（如未运行）
+  useEffect(() => {
+    if (workerMode === 'hybrid' && !workerStatus?.worker.isRunning && !workerBusy) {
+      kbWorkerStart()
+        .then((r) => {
+          if (r.success) toast('双跑模式：后端 Worker 已启动', 'success');
+        })
+        .catch((e) => console.warn('[5.13] 后端 Worker 启动失败（不影响前端轮询）:', e));
+    }
+  }, [workerMode, workerStatus?.worker.isRunning, workerBusy]);
+
+  // 5.13: 切换 Worker 模式
+  const handleSwitchWorkerMode = (mode: 'backend' | 'frontend' | 'hybrid') => {
+    if (mode === workerMode) { setModeSwitchOpen(false); return; }
+    setWorkerMode(mode);
+    setModeSwitchOpen(false);
+    const labels = { backend: '后端 Worker 模式', frontend: '前端降级模式', hybrid: '双跑加速模式' };
+    toast(`已切换到${labels[mode]}`, 'info');
+  };
 
   // 5.6: 启动/停止后端 Worker
   const handleToggleWorker = async () => {
@@ -298,6 +388,69 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
     }
   };
 
+  // 5.12: 把 localStorage 中的旧向量数据迁移到后端 SQLite vector_embeddings 表
+  const handleMigrateLocalVectors = async () => {
+    if (migrating) return;
+    setMigrating(true);
+    setMigrateProgress(null);
+    try {
+      // 1. 从 localStorage 读取所有 vector-store-* 数据
+      const allDocs: VectorDoc[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('vector-store-')) continue;
+        try {
+          const data = JSON.parse(localStorage.getItem(k) || '{}');
+          if (Array.isArray(data?.vectors)) {
+            for (const d of data.vectors) {
+              if (d && d.id && d.text && Array.isArray(d.embedding)) {
+                allDocs.push(d);
+              }
+            }
+          }
+        } catch {}
+      }
+      if (allDocs.length === 0) {
+        toast('localStorage 中无可迁移的向量数据', 'info');
+        return;
+      }
+      // 2. 分批迁移（每批 100 条）
+      const BATCH_SIZE = 100;
+      const totalBatches = Math.ceil(allDocs.length / BATCH_SIZE);
+      let totalInserted = 0;
+      let totalSkipped = 0;
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = allDocs.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+        setMigrateMsg(`迁移批次 ${i + 1}/${totalBatches}（${batch.length} 条）...`);
+        const r = await kbMigrateLocalVectors(batch);
+        if (!r.success) {
+          toast(`批次 ${i + 1} 迁移失败: ${r.error || '未知错误'}`, 'error');
+          break;
+        }
+        totalInserted += r.inserted || 0;
+        totalSkipped += r.skipped || 0;
+        setMigrateProgress({
+          done: (i + 1) * BATCH_SIZE,
+          total: allDocs.length,
+          inserted: totalInserted,
+          skipped: totalSkipped,
+        });
+      }
+      toast(`迁移完成：成功 ${totalInserted} 条 · 跳过 ${totalSkipped} 条 · 总计 ${allDocs.length} 条`, 'success');
+      // 3. 刷新 Worker 状态
+      const status = await kbWorkerStatus();
+      setWorkerStatus(status);
+      setAllDocs(vectorStore.getAllDocs());
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast('迁移异常: ' + msg, 'error');
+    } finally {
+      setMigrating(false);
+      setMigrateMsg('');
+      setTimeout(() => setMigrateProgress(null), 5000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <ModuleHeader
@@ -328,6 +481,15 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
               {workerBusy ? '处理中...' : '处理队列'}
             </button>
             <button
+              onClick={handleMigrateLocalVectors}
+              disabled={migrating || syncing || workerBusy}
+              title="5.12: 将浏览器 localStorage 中的旧向量数据迁移到后端 SQLite（保留原文+embedding）"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Upload className={`w-3.5 h-3.5 ${migrating ? 'animate-bounce' : ''}`} />
+              {migrating ? (migrateMsg || '迁移中...') : '迁移本机数据'}
+            </button>
+            <button
               onClick={handleToggleWorker}
               disabled={workerBusy}
               title={workerStatus?.worker.isRunning ? '5.6: 停止后端 Worker（优雅退出，15s 强制超时）' : '5.6: 启动后端 Worker（自动轮询处理队列）'}
@@ -340,6 +502,44 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
               {workerStatus?.worker.isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
               {workerStatus?.worker.isRunning ? '停止 Worker' : '启动 Worker'}
             </button>
+            {/* 5.13: Worker 模式切换菜单（不依赖 workerStatus，随时可切换） */}
+            <div className="relative">
+              <button
+                onClick={() => setModeSwitchOpen(!modeSwitchOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                title="5.13: 切换 Worker 处理模式（后端/前端降级/双跑加速）"
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  workerMode === 'backend' ? 'bg-blue-500' :
+                  workerMode === 'frontend' ? 'bg-amber-500' : 'bg-purple-500 animate-pulse'
+                }`} />
+                {workerMode === 'backend' ? '后端模式' : workerMode === 'frontend' ? '前端降级' : '双跑加速'}
+              </button>
+              {modeSwitchOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setModeSwitchOpen(false)} />
+                  <div className="absolute right-0 mt-1 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50">
+                    <div className="px-3 py-2 text-[12px] text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-700">
+                      Worker 处理模式 · 失败 {backendFailCount}/3
+                    </div>
+                    {([
+                      { key: 'backend', label: '后端 Worker 模式', desc: '默认 · 仅后端处理队列' },
+                      { key: 'frontend', label: '前端降级模式', desc: '后端不可用时启用 · 浏览器内处理' },
+                      { key: 'hybrid', label: '双跑加速模式', desc: '前后端同时处理 · 原子领取避免冲突' },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.key}
+                        onClick={() => handleSwitchWorkerMode(opt.key)}
+                        className={`w-full text-left px-3 py-2 text-[12px] hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors ${workerMode === opt.key ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-slate-300'}`}
+                      >
+                        <div className="font-medium">{opt.label}</div>
+                        <div className="text-[12px] text-gray-500 dark:text-slate-400">{opt.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         }
       />
@@ -354,7 +554,7 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
           <button onClick={() => handleSync(true)} className="text-emerald-600 dark:text-emerald-400 hover:underline">全量重同步</button>
         </div>
       )}
-      {(workerStatus?.worker.isRunning || (workerStatus?.queue && Object.values(workerStatus.queue).reduce((a: number, b: number) => a + b, 0) > 0)) && (
+      {workerStatus && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-4 py-1.5 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5 font-medium">
             <span className={`w-2 h-2 rounded-full ${workerStatus?.worker.isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
@@ -372,7 +572,144 @@ const KnowledgeBase: React.FC<Props> = ({ onBack }) => {
           {(workerStatus?.stats.skipped || 0) > 0 && (
             <span className="text-amber-600 dark:text-amber-400">已跳过 {workerStatus?.stats.skipped}</span>
           )}
-          {workerMsg && <span className="ml-auto truncate max-w-md text-blue-500 dark:text-blue-400">{workerMsg}</span>}
+          {workerMsg && <span className="truncate max-w-md text-blue-500 dark:text-blue-400">{workerMsg}</span>}
+          {/* 5.13: 当前模式徽章（只读展示，切换请用顶栏的下拉菜单） */}
+          <span
+            className={`ml-auto flex items-center gap-1 px-2 py-0.5 rounded border ${
+              workerMode === 'backend'
+                ? 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                : workerMode === 'frontend'
+                  ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                  : 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+            }`}
+            title={`5.13: 当前 Worker 模式 — ${workerMode === 'backend' ? '仅后端处理' : workerMode === 'frontend' ? '前端降级（后端不可用）' : '前后端双跑加速'}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              workerMode === 'backend' ? 'bg-blue-500' :
+              workerMode === 'frontend' ? 'bg-amber-500' : 'bg-purple-500 animate-pulse'
+            }`} />
+            {workerMode === 'backend' ? '后端模式' : workerMode === 'frontend' ? '前端降级' : '双跑加速'}
+          </span>
+          <button
+            onClick={() => setWorkerDetailOpen(!workerDetailOpen)}
+            className="flex items-center gap-1 px-2 py-0.5 rounded border border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+            title="5.11: 展开/收起 Worker 健康监控详情"
+          >
+            <Activity className="w-3 h-3" />
+            {workerDetailOpen ? '收起详情' : '查看详情'}
+          </button>
+        </div>
+      )}
+      {workerStatus && workerDetailOpen && (
+        <div className="bg-white dark:bg-slate-900/60 border-b border-gray-200 dark:border-slate-800 px-4 py-3 text-xs">
+          {/* 概览统计 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-3">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5 border border-blue-100 dark:border-blue-800">
+              <div className="text-[12px] text-blue-600 dark:text-blue-400">处理总数</div>
+              <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{workerStatus.stats.processed}</div>
+            </div>
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2.5 border border-emerald-100 dark:border-emerald-800">
+              <div className="text-[12px] text-emerald-600 dark:text-emerald-400">已恢复</div>
+              <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{workerStatus.stats.recovered}</div>
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-2.5 border border-amber-100 dark:border-amber-800">
+              <div className="text-[12px] text-amber-600 dark:text-amber-400">重试次数</div>
+              <div className="text-lg font-bold text-amber-700 dark:text-amber-300">{workerStatus.stats.retried}</div>
+            </div>
+            <div className={`rounded-lg p-2.5 border ${(workerStatus.stats.failed || 0) > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' : 'bg-gray-50 dark:bg-slate-800/40 border-gray-200 dark:border-slate-700'}`}>
+              <div className={`text-[12px] ${(workerStatus.stats.failed || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-slate-400'}`}>终态失败</div>
+              <div className={`text-lg font-bold ${(workerStatus.stats.failed || 0) > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-slate-300'}`}>{workerStatus.stats.failed}</div>
+            </div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2.5 border border-purple-100 dark:border-purple-800">
+              <div className="text-[12px] text-purple-600 dark:text-purple-400">轮询周期</div>
+              <div className="text-lg font-bold text-purple-700 dark:text-purple-300">{workerStatus.stats.cycles}</div>
+            </div>
+            <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-2.5 border border-cyan-100 dark:border-cyan-800">
+              <div className="text-[12px] text-cyan-600 dark:text-cyan-400">运行时长</div>
+              <div className="text-lg font-bold text-cyan-700 dark:text-cyan-300">{formatUptime(workerStatus.worker.uptime)}</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700">
+              <div className="text-[12px] text-slate-500 dark:text-slate-400">Worker ID</div>
+              <div className="text-[12px] font-mono text-slate-700 dark:text-slate-300 truncate" title={workerStatus.worker.workerId}>{workerStatus.worker.workerId}</div>
+            </div>
+          </div>
+          {/* 队列可视化 + 时间信息 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* 队列进度条 */}
+            <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2.5">
+              <div className="font-medium text-gray-700 dark:text-slate-300 mb-2">队列状态分布</div>
+              {(() => {
+                const q = workerStatus.queue || {};
+                const total = Object.values(q).reduce((a: number, b: number) => a + b, 0);
+                if (total === 0) return <div className="text-[12px] text-gray-400 dark:text-slate-500">队列为空</div>;
+                const segments = [
+                  { label: '待处理', value: q.pending || 0, color: 'bg-blue-500' },
+                  { label: '处理中', value: q.processing || 0, color: 'bg-amber-500' },
+                  { label: '已完成', value: q.done || 0, color: 'bg-emerald-500' },
+                  { label: '失败', value: q.failed || 0, color: 'bg-red-500' },
+                ].filter(s => s.value > 0);
+                return (
+                  <>
+                    <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 dark:bg-slate-700 mb-2">
+                      {segments.map(s => (
+                        <div key={s.label} className={s.color} style={{ width: `${(s.value / total) * 100}%` }} title={`${s.label}: ${s.value}`} />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      {segments.map(s => (
+                        <span key={s.label} className="flex items-center gap-1">
+                          <span className={`w-2 h-2 rounded-full ${s.color}`} />
+                          <span className="text-gray-600 dark:text-slate-400">{s.label}</span>
+                          <strong className="text-gray-800 dark:text-slate-200">{s.value}</strong>
+                          <span className="text-gray-400 dark:text-slate-500">({((s.value / total) * 100).toFixed(1)}%)</span>
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            {/* 时间信息 + 最近错误 */}
+            <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2.5">
+              <div className="font-medium text-gray-700 dark:text-slate-300 mb-2">运行时间线</div>
+              <div className="space-y-1 text-[12px]">
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-slate-400">启动时间</span>
+                  <span className="font-mono text-gray-800 dark:text-slate-200">{formatDateTime(workerStatus.stats.startedAt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-slate-400">最近周期</span>
+                  <span className="font-mono text-gray-800 dark:text-slate-200">{formatDateTime(workerStatus.stats.lastCycleAt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-slate-400">状态快照</span>
+                  <span className="font-mono text-gray-800 dark:text-slate-200">{formatDateTime(workerStatus.timestamp)}</span>
+                </div>
+                {workerStatus.stats.lastError && (
+                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                    <div className="text-red-600 dark:text-red-400 font-medium mb-1">最近错误</div>
+                    <div className="text-[12px] text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 rounded p-2 break-all">
+                      {workerStatus.stats.lastError}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {migrateProgress && (
+        <div className="bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 text-xs text-indigo-700 dark:text-indigo-300">
+          <div className="flex items-center justify-between mb-1">
+            <span>迁移进度：已处理 {Math.min(migrateProgress.done, migrateProgress.total)}/{migrateProgress.total} 条 · 成功 {migrateProgress.inserted} · 跳过 {migrateProgress.skipped}</span>
+            <span className="font-medium">{((migrateProgress.done / migrateProgress.total) * 100).toFixed(0)}%</span>
+          </div>
+          <div className="h-1.5 bg-indigo-100 dark:bg-indigo-900/40 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-indigo-500 transition-all duration-300"
+              style={{ width: `${Math.min(100, (migrateProgress.done / migrateProgress.total) * 100)}%` }}
+            />
+          </div>
         </div>
       )}
 

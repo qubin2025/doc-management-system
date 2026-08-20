@@ -605,6 +605,27 @@ export async function kbWorkerStatus(): Promise<KbWorkerStatus> {
   return safeJson(res);
 }
 
+// ========== v5.12: localStorage 向量数据迁移到 SQLite ==========
+
+export interface KbMigrateResult {
+  success: boolean;
+  inserted: number;
+  skipped: number;
+  errors: { id: string; reason: string }[];
+  totalErrors: number;
+  error?: string;
+}
+
+/** 把 localStorage 中的 VectorDoc 数组批量迁移到后端 SQLite（单批 ≤ 200 条） */
+export async function kbMigrateLocalVectors(docs: any[]): Promise<KbMigrateResult> {
+  const res = await fetch(`${API_BASE}/kb/migrate/local-vectors`, {
+    method: 'POST',
+    headers: { ...headers(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ docs }),
+  });
+  return safeJson(res);
+}
+
 // ========== 迭代5.7: 后端语义检索 API ==========
 // 前端不再本地计算余弦相似度，改为调用后端 searchService.js
 
