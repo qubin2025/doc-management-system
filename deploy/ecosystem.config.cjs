@@ -32,8 +32,10 @@ module.exports = {
       error_file: './logs/backend-error.log',
       out_file: './logs/backend-out.log',
       merge_logs: true,
+      // Node.js 参数：增大堆内存（大文件解析/CAD图纸需要）
+      node_args: '--max-old-space-size=4096',
       // 自动重启
-      max_memory_restart: '500M',
+      max_memory_restart: '2G',
       max_restarts: 10,
       restart_delay: 5000,
       autorestart: true,

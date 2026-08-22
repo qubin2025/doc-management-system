@@ -119,6 +119,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 const corsOrigin = process.env.CORS_ORIGIN;
 LOG.info('Runtime flags', `isProduction=${isProduction}  corsOrigin=${corsOrigin || '(not set)'}`);
 
+// 信任反向代理（生产环境 Nginx 前置，获取真实客户端IP和协议）
+if (isProduction) {
+  app.set('trust proxy', 1);
+  LOG.ok('Trust proxy enabled', 'level=1 (for Nginx reverse proxy)');
+}
+
 // 安全头（生产环境全面启用）
 LOG.info('Mounting Helmet security headers...', `isProduction=${isProduction}  CSP=${isProduction ? 'default' : 'disabled'}  HSTS=${isProduction ? '31536000' : 'off'}`);
 app.use(helmet({
@@ -343,6 +349,62 @@ app.get('/api/stats', async (req, res) => {
 
 // 启动时环境检查
 import { execSync } from 'child_process';
+
+// ═══════════════════════════════════════════════════════════
+// 安全兜底：API 404 + 全局错误处理（必须在所有路由之后、server.listen 之前）
+// ═══════════════════════════════════════════════════════════
+LOG.phase('5.5: ERROR HANDLERS');
+
+// API 404：未匹配的 /api/* 请求返回 JSON 404（而非 HTML）
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    error: '接口不存在',
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+  });
+});
+LOG.ok('API 404 handler mounted', 'path=/api/*');
+
+// 全局错误处理中间件（4参数签名，Express 识别为错误处理器）
+// 生产环境不泄露堆栈，开发环境返回详细错误便于调试
+app.use((err, req, res, _next) => {
+  const errId = 'ERR-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || '服务器内部错误';
+
+  // 记录错误日志（始终记录完整堆栈）
+  LOG.error(`[${errId}] ${req.method} ${req.path} → ${status}`, message);
+  if (err.stack) {
+    LOG.error(`[${errId}] Stack`, err.stack.split('\n').slice(0, 6).join(' | '));
+  }
+
+  // multer 文件上传错误（如文件过大、类型不支持）
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: '文件过大，超出大小限制', errId });
+  }
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ error: '不支持的文件字段', errId });
+  }
+
+  // 生产环境：不泄露堆栈和内部细节
+  if (isProduction) {
+    return res.status(status).json({
+      error: status >= 500 ? '服务器内部错误，请稍后重试' : message,
+      errId,
+    });
+  }
+
+  // 开发环境：返回详细信息便于调试
+  res.status(status).json({
+    error: message,
+    errId,
+    stack: err.stack?.split('\n').slice(0, 8),
+    path: req.path,
+    method: req.method,
+  });
+});
+LOG.ok('Global error handler mounted', `mode=${isProduction ? 'production(no stack leak)' : 'development(full stack)'}`);
 
 LOG.phase('6: PORT BIND');
 LOG.info('Calling app.listen()...', `port=${PORT}  host=0.0.0.0`);
