@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText, Plus, Search, Shield, Bookmark, Download } from 'lucide-react';
 import { toast } from './Toast';
 import ModuleHeader from './ModuleHeader';
+import StateView from './StateView';
 
 interface ContractItem {
   id: number; project_name: string; contract_name: string; contract_type: string;
@@ -138,7 +139,12 @@ const ContractManager: React.FC<{ projectName: string; onBack: () => void }> = (
               </div>
               <button onClick={fetchContracts} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg">刷新</button>
             </div>
-            {loading ? <p className="text-gray-400 text-sm">加载中…</p> : contracts.length === 0 ? <p className="text-gray-400 text-sm text-center py-8">暂无合同，点击"添加合同"开始</p> : (
+            <StateView
+              loading={loading}
+              empty={!loading && contracts.length === 0}
+              emptyTitle="暂无合同"
+              emptyDescription='点击"添加合同"开始管理合同'
+            >
               <div className="space-y-3">
                 {contracts.map(c => (
                   <div key={c.id} className="bg-white rounded-xl border p-5">
@@ -181,7 +187,7 @@ const ContractManager: React.FC<{ projectName: string; onBack: () => void }> = (
                   </div>
                 ))}
               </div>
-            )}
+            </StateView>
           </>
         )}
       </div>

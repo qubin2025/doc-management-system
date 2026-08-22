@@ -5,11 +5,53 @@ import FilterBar from './components/FilterBar';
 import GlobalSearch from './components/GlobalSearch';
 import StateView from './components/StateView';
 
+// 通用懒加载页面包装（统一 Suspense fallback）
+const LazyPage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Suspense fallback={
+    <div className="min-h-screen flex items-center justify-center text-[var(--text-muted)]">
+      <Loader2 className="w-6 h-6 animate-spin mr-2" /> 加载中...
+    </div>
+  }>
+    {children}
+  </Suspense>
+);
+
 // 大组件懒加载（减少首屏JS体积，按需加载）
 const KnowledgeGraphView = lazy(() => import('./components/KnowledgeGraph'));
 const PlanGenerator = lazy(() => import('./components/PlanGenerator'));
 const TailoringEngine = lazy(() => import('./components/TailoringEngine'));
 const AgentConsole = lazy(() => import('./components/AgentConsole'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
+const AnalysisCenter = lazy(() => import('./components/AnalysisCenter'));
+const CostManager = lazy(() => import('./components/CostManager'));
+const PlanManager = lazy(() => import('./components/PlanManager'));
+const SupplierManager = lazy(() => import('./components/SupplierManager'));
+const ContractManager = lazy(() => import('./components/ContractManager'));
+const KnowledgeBase = lazy(() => import('./components/KnowledgeBase'));
+const KnowledgeReview = lazy(() => import('./components/KnowledgeReview'));
+const IssueManager = lazy(() => import('./components/IssueManager'));
+const PortfolioManager = lazy(() => import('./components/PortfolioManager'));
+const WorkflowBuilder = lazy(() => import('./components/WorkflowBuilder'));
+const LandReserveArchive = lazy(() => import('./components/LandReserveArchive'));
+const ExperiencePanel = lazy(() => import('./components/ExperiencePanel'));
+const DesktopDailyReport = lazy(() => import('./components/DesktopDailyReport'));
+const DesktopProgressView = lazy(() => import('./components/DesktopProgressView'));
+const BaselineManager = lazy(() => import('./components/BaselineManager'));
+const TargetManager = lazy(() => import('./components/TargetManager'));
+const PMBOKFramework = lazy(() => import('./components/PMBOKFramework'));
+const PolicyLibrary = lazy(() => import('./components/PolicyLibrary'));
+const RegulationsLibrary = lazy(() => import('./components/RegulationsLibrary'));
+const ConstructionReview = lazy(() => import('./components/ConstructionReview'));
+const ContractReview = lazy(() => import('./components/ContractReview'));
+const BidReview = lazy(() => import('./components/BidReview'));
+const StakeholderManager = lazy(() => import('./components/StakeholderManager'));
+const RiskManager = lazy(() => import('./components/RiskManager'));
+const ResourceManager = lazy(() => import('./components/ResourceManager'));
+const MobilePhotoViewer = lazy(() => import('./components/MobilePhotoViewer'));
+const SkillPanel = lazy(() => import('./components/SkillPanel'));
+const AuditLogViewer = lazy(() => import('./components/AuditLogViewer'));
+
+// 高频/首屏组件保持静态导入
 import LoginPage from './components/LoginPage';
 import AiChat from './components/AiChat';
 import AiChatPage from './components/AiChatPage';
@@ -18,36 +60,7 @@ import BackupModal from './components/BackupModal';
 import GuideChapter from './components/GuideChapter';
 import ProjectEntryPage from './components/ProjectEntryPage';
 import Dashboard from './components/Dashboard';
-import PlanManager from './components/PlanManager';
-import SupplierManager from './components/SupplierManager';
-import CostManager from './components/CostManager';
-import AnalysisCenter from './components/AnalysisCenter';
-import AdminPanel from './components/AdminPanel';
-import LandReserveArchive from './components/LandReserveArchive';
-import KnowledgeBase from './components/KnowledgeBase';
-import PolicyLibrary from './components/PolicyLibrary';
-import RegulationsLibrary from './components/RegulationsLibrary';
-import ConstructionReview from './components/ConstructionReview';
-import ContractReview from './components/ContractReview';
-import BidReview from './components/BidReview';
-import TargetManager from './components/TargetManager';
-import SkillPanel from './components/SkillPanel';
-import PMBOKFramework from './components/PMBOKFramework';
-import BaselineManager from './components/BaselineManager';
-import AuditLogViewer from './components/AuditLogViewer';
-import StakeholderManager from './components/StakeholderManager';
-import RiskManager from './components/RiskManager';
-import ResourceManager from './components/ResourceManager';
-import WorkflowBuilder from './components/WorkflowBuilder';
-import MobilePhotoViewer from './components/MobilePhotoViewer';
-import PortfolioManager from './components/PortfolioManager';
 import GlobalDashboard from './components/GlobalDashboard';
-import IssueManager from './components/IssueManager';
-import DesktopDailyReport from './components/DesktopDailyReport';
-import DesktopProgressView from './components/DesktopProgressView';
-import ContractManager from './components/ContractManager';
-import KnowledgeReview from './components/KnowledgeReview';
-import ExperiencePanel from './components/ExperiencePanel';
 import HomePage from './components/HomePage';
 import StandardSelectPage from './components/StandardSelectPage';
 import { guideChapters } from './data/guideModules';
@@ -613,47 +626,43 @@ const App: React.FC = () => {
   }
 
   if (view === 'plan-manager') {
-    return <PlanManager onBack={() => setView('homepage')} projectName={currentProject || undefined} />;
+    return <LazyPage><PlanManager onBack={() => setView('homepage')} projectName={currentProject || undefined} /></LazyPage>;
   }
 
   if (view === 'supplier') {
-    return <SupplierManager onBack={() => setView('homepage')} />;
+    return <LazyPage><SupplierManager onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'cost') {
-    return <CostManager onBack={() => setView('homepage')} />;
+    return <LazyPage><CostManager onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'analysis' && currentProject) {
-    return <AnalysisCenter projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><AnalysisCenter projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'admin') {
-    return <AdminPanel onBack={() => setView('homepage')} />;
+    return <LazyPage><AdminPanel onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'land-reserve') {
-    return <LandReserveArchive onBack={() => setView('homepage')} />;
+    return <LazyPage><LandReserveArchive onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'knowledge-base') {
-    return <KnowledgeBase onBack={() => setView('homepage')} />;
+    return <LazyPage><KnowledgeBase onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'knowledge-graph') {
-    return (
-      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载知识图谱...</div>}>
-        <KnowledgeGraphView onBack={() => setView('homepage')} />
-      </Suspense>
-    );
+    return <LazyPage><KnowledgeGraphView onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'policy-library') {
-    return <PolicyLibrary onBack={() => setView('homepage')} />;
+    return <LazyPage><PolicyLibrary onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   if (view === 'regulations-library') {
-    return <RegulationsLibrary onBack={() => setView('homepage')} />;
+    return <LazyPage><RegulationsLibrary onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 指南章节详情页 =====
@@ -666,31 +675,27 @@ const App: React.FC = () => {
 
   // ===== 施工组织设计审查 =====
   if (view === 'construction-review' && currentProject) {
-    return <ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><ConstructionReview projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 合同管理 =====
   if (view === 'contract-manager') {
-    return <ContractManager projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><ContractManager projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 合同审查 =====
   if (view === 'contract-review' && currentProject) {
-    return <ContractReview projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><ContractReview projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 招投标文件审查 =====
   if (view === 'bid-review' && currentProject) {
-    return <BidReview projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><BidReview projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 方案生成 =====
   if (view === 'plan-generator' && currentProject) {
-    return (
-      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载方案生成器...</div>}>
-        <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />
-      </Suspense>
-    );
+    return <LazyPage><PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // 引导流程：从项目创建或项目选择进入时为true
@@ -698,106 +703,98 @@ const App: React.FC = () => {
 
   // ===== 模块裁剪引擎 (P0-3) =====
   if (view === 'tailoring-engine' && currentProject) {
-    return (
-      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载裁剪引擎...</div>}>
-        <TailoringEngine projectName={currentProject}
-          flowMode={onboardingFlow}
-          onNext={(nextView) => setView(nextView)}
-          onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
-          onBack={() => setView('homepage')} />
-      </Suspense>
-    );
+    return <LazyPage><TailoringEngine projectName={currentProject}
+      flowMode={onboardingFlow}
+      onNext={(nextView) => setView(nextView)}
+      onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
+      onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== Agent智能体 (P1-1) =====
   if (view === 'agent-console' && currentProject) {
-    return (
-      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载智能体控制台...</div>}>
-        <AgentConsole projectName={currentProject} onBack={() => setView('homepage')} />
-      </Suspense>
-    );
+    return <LazyPage><AgentConsole projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 技能面板 (P1-2) =====
   if (view === 'skill-panel' && currentProject) {
-    return <SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
+    return <LazyPage><SkillPanel projectName={currentProject} onBack={() => setView('homepage')} onNavigate={(v, params) => {
       if (params?.chapterId) { setGuideChapterId(params.chapterId); }
       setView(v);
-    }} />;
+    }} /></LazyPage>;
   }
 
   // ===== 项目组合管理 (P3) =====
   if (view === 'portfolio') {
-    return <PortfolioManager onBack={() => setView('homepage')} />;
+    return <LazyPage><PortfolioManager onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 工作流构建器 (Phase 5) =====
   if (view === 'workflow' && currentProject) {
-    return <WorkflowBuilder projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><WorkflowBuilder projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== PMBOK空白模块 (Phase 4) =====
   if (view === 'stakeholder' && currentProject) {
-    return <StakeholderManager projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><StakeholderManager projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
   if (view === 'risk' && currentProject) {
-    return <RiskManager projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><RiskManager projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
   if (view === 'resource' && currentProject) {
-    return <ResourceManager projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><ResourceManager projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 基线管理 (Phase 3) =====
   if (view === 'baseline' && currentProject) {
-    return <BaselineManager projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><BaselineManager projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 审计日志 (Phase 3) =====
   if (view === 'audit-log') {
-    return <AuditLogViewer projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><AuditLogViewer projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== PMBOK框架 (P1-4) =====
   if (view === 'pmbok' && currentProject) {
-    return <PMBOKFramework projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><PMBOKFramework projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 目标管理 (P0-1) =====
   if (view === 'target-manager' && currentProject) {
-    return <TargetManager projectName={currentProject} guideChapters={guideChapters}
+    return <LazyPage><TargetManager projectName={currentProject} guideChapters={guideChapters}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
-      onBack={() => setView('homepage')} />;
+      onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 手机水印照片 =====
   if (view === 'mobile-photos') {
-    return <MobilePhotoViewer projectName={currentProject || ''} onBack={() => setView('homepage')} />;
+    return <LazyPage><MobilePhotoViewer projectName={currentProject || ''} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 现场问题管理 =====
   if (view === 'issue-manager') {
-    return <IssueManager onBack={() => setView('homepage')} projectName={currentProject} />;
+    return <LazyPage><IssueManager onBack={() => setView('homepage')} projectName={currentProject} /></LazyPage>;
   }
 
   // ===== 项目日报管理 =====
   if (view === 'daily-report-manager') {
-    return <DesktopDailyReport onBack={() => setView('homepage')} />;
+    return <LazyPage><DesktopDailyReport onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 进度管理 =====
   if (view === 'progress-manager') {
-    return <DesktopProgressView onBack={() => setView('homepage')} />;
+    return <LazyPage><DesktopProgressView onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 知识审核 =====
   if (view === 'knowledge-review') {
-    return <KnowledgeReview onBack={() => setView('homepage')} />;
+    return <LazyPage><KnowledgeReview onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 项目经验库 =====
   if (view === 'experience') {
-    return <ExperiencePanel projectName={currentProject} onBack={() => setView('homepage')} />;
+    return <LazyPage><ExperiencePanel projectName={currentProject} onBack={() => setView('homepage')} /></LazyPage>;
   }
 
   // ===== 登录页 =====
