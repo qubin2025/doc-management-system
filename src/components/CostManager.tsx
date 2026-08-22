@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Calculator } from 'lucide-react';
+import { Plus, Trash2, Calculator } from 'lucide-react';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { onBack: () => void; }
 
@@ -32,16 +33,16 @@ const CostManager: React.FC<Props> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-[10px]">ZHJK</span></div>
-            <h1 className="text-lg font-bold text-gray-800">造价数据</h1>
-          </div>
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 text-sm"><Plus className="w-4 h-4" />添加条目</button>
-        </div>
-      </header>
+      <ModuleHeader
+        title="造价数据"
+        onBack={onBack}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        actions={
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 text-sm">
+            <Plus className="w-4 h-4" />添加条目
+          </button>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* 汇总 */}

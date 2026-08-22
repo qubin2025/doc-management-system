@@ -24,12 +24,13 @@ vi.mock('../components/GlobalSearch', () => ({
 vi.mock('../components/ModelAdmin', () => ({
   default: () => null,
 }));
+vi.mock('../components/ThemeSwitcher', () => ({
+  default: () => null,
+}));
 
 describe('HomePage', () => {
   const defaultProps = {
-    themeMode: 'light' as const,
     onNavigate: vi.fn(),
-    onToggleTheme: vi.fn(),
     onLogout: vi.fn(),
   };
 

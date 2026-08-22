@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { enqueueKbSync, SYNC_SOURCE, getQueueStats } from '../middleware/kbSyncTrigger.js';
 
 const router = Router();
 
@@ -218,6 +219,20 @@ router.post('/extract', requireAuth, (req, res) => {
           metrics: analysis.metrics,
           referenceCount: completedItems.length,
         });
+        // v5.7 迭代1: 触发知识库同步入队（异步向量化入库）
+        try {
+          const eq = enqueueKbSync(projectName, SYNC_SOURCE.EXPERIENCE, id, 'upsert', 0);
+          console.log(`[kbSync][experience] 入队: projectName=${projectName}, recordId=${id}, result=${JSON.stringify(eq)}`);
+        } catch (e) {
+          console.error(`[kbSync][experience] 入队异常: recordId=${id}, ${e.message}`);
+        }
+      }
+      // 项目级入队汇总
+      try {
+        const stats = getQueueStats(projectName);
+        console.log(`[kbSync][experience] 项目 ${projectName} 入队汇总: ${analysis.patterns.length} 条 pattern, 队列=${JSON.stringify(stats)}`);
+      } catch (e) {
+        console.error(`[kbSync][experience] 汇总异常: ${e.message}`);
       }
     }
 

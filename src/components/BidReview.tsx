@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Upload, FileText, Loader, Download, AlertTriangle, CheckCircle, X, FileSearch, GitBranch } from 'lucide-react';
+import { Upload, FileText, Loader, Download, AlertTriangle, CheckCircle, X, FileSearch, GitBranch, History } from 'lucide-react';
 import * as api from '../data/api';
 import { parseDocument } from '../data/documentParser';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { projectName: string; onBack: () => void; }
 const CHECK_ITEMS = ['投标人资格', '评标办法', '合同条款', '技术规范', '工程量清单', '投标保证金', '履约担保'];
@@ -145,34 +146,42 @@ ${fileContent}`;
         )}
       </div>
 
-      <div className="flex-1">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center"><FileSearch className="w-5 h-5 text-white"/></div>
-          <div className="flex items-center gap-3">
-            <div><h1 className="text-lg font-bold text-gray-800">招投标文件审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 合规性检查 · 异常条款识别</p></div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
-          </div>
-        </div>
-        {items.length > 0 && (
-          <button onClick={async () => {
-            const nodes = [
-              { id: 'bid-' + Date.now(), type: 'bid-document', label: file?.name || '招投标文件', props: { project: projectName, time: new Date().toLocaleString() } },
-              ...items.map((it, i) => ({ id: `bid-item-${Date.now()}-${i}`, type: it.status === 'fail' ? 'risk-point' : 'review-item', label: it.item, props: { status: it.status, regulation: it.regulation } })),
-            ];
-            const edges = [
-              { from: 'bid-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: '招投标文件' },
-              ...items.map((_, i) => ({ from: `bid-item-${Date.now()}-${i}`, to: 'bid-' + Date.now(), type: 'references', label: '审查' })),
-            ];
-            try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
-          }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>
-        )}
-          <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-blue-50 text-blue-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({bidHistory.length})</button>
-        {report && <><button onClick={() => exportReport('docx')} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>Word</button><button onClick={() => exportReport('txt')} className="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-1">TXT</button></>}
-      </div></header>
+      <div className="flex-1 flex flex-col min-h-screen">
+        <ModuleHeader
+          title="招投标文件审查"
+          subtitle={`项目: ${projectName} | 合规性检查 · 异常条款识别`}
+          icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+          colorClass="blue"
+          onBack={onBack}
+          actions={
+            <>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
+              <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
+              <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-blue-50 text-blue-600':'text-gray-500 hover:bg-gray-50'}`}><History className="w-3.5 h-3.5"/>历史({bidHistory.length})</button>
+              {items.length > 0 && (
+                <button onClick={async () => {
+                  const nodes = [
+                    { id: 'bid-' + Date.now(), type: 'bid-document', label: file?.name || '招投标文件', props: { project: projectName, time: new Date().toLocaleString() } },
+                    ...items.map((it, i) => ({ id: `bid-item-${Date.now()}-${i}`, type: it.status === 'fail' ? 'risk-point' : 'review-item', label: it.item, props: { status: it.status, regulation: it.regulation } })),
+                  ];
+                  const edges = [
+                    { from: 'bid-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: '招投标文件' },
+                    ...items.map((_, i) => ({ from: `bid-item-${Date.now()}-${i}`, to: 'bid-' + Date.now(), type: 'references', label: '审查' })),
+                  ];
+                  try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
+                }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>
+              )}
+              {report && (
+                <div className="flex rounded-lg border overflow-hidden">
+                  <button onClick={() => exportReport('docx')} className="px-2.5 py-1.5 text-xs bg-white text-blue-500 hover:bg-blue-50 flex items-center gap-1"><Download className="w-3 h-3"/>Word</button>
+                  <button onClick={() => exportReport('txt')} className="px-2.5 py-1.5 text-xs bg-white text-gray-500 hover:bg-gray-50 border-l">TXT</button>
+                </div>
+              )}
+            </>
+          }
+        />
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 w-full">
         {!file && (
           <div className="bg-white rounded-xl border-2 border-dashed border-indigo-300 p-12 text-center hover:border-indigo-400 transition-colors cursor-pointer" onClick={() => fileRef.current?.click()}>
             <Upload className="w-12 h-12 text-indigo-400 mx-auto mb-4"/>

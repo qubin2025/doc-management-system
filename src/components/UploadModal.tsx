@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { X, Upload, File, Search, Loader } from 'lucide-react';
+import { X, Upload, File, Search, Loader, FileArchive, Zap } from 'lucide-react';
 import { UploadInfo, DocumentItem } from '../types';
 import { toast } from './Toast';
 import { indexDocument } from '../data/ragService';
+import * as api from '../data/api';
+import { isCompressible, getCompressSuggestion, compressImage, formatFileSize, CompressResult } from '../utils/fileCompressor';
 
 interface UploadModalProps {
   docName: string;
@@ -13,7 +15,8 @@ interface UploadModalProps {
   matchData?: DocumentItem[];
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB（multipart 流式上传，支持 CAD 大图纸）
+const BASE64_THRESHOLD = 10 * 1024 * 1024; // >10MB 走 multipart，≤10MB 走 base64 兼容
 
 // 智能匹配函数（通用）
 const matchDocumentCategory = (fileName: string, data: DocumentItem[]): DocumentItem[] => {
@@ -55,12 +58,24 @@ const UploadModal: React.FC<UploadModalProps> = ({
   const [suggestions, setSuggestions] = useState<DocumentItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [sizeError, setSizeError] = useState('');
+  // v6.0: 压缩相关状态
+  const [compressResult, setCompressResult] = useState<CompressResult | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const [compressProgress, setCompressProgress] = useState(0);
+  const [useCompressed, setUseCompressed] = useState(false);
 
   const processFile = (selectedFile: File) => {
     setSizeError('');
+    // 重置压缩状态
+    setCompressResult(null);
+    setCompressing(false);
+    setCompressProgress(0);
+    setUseCompressed(false);
+
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setSizeError(`文件过大（${(selectedFile.size / 1024 / 1024).toFixed(1)}MB），限制50MB以内。请压缩后上传。`);
+      setSizeError(`文件过大（${(selectedFile.size / 1024 / 1024).toFixed(1)}MB），限制200MB以内。超大图纸请拆分后上传。`);
       setFile(null);
       return;
     }
@@ -83,31 +98,73 @@ const UploadModal: React.FC<UploadModalProps> = ({
     if (droppedFile) processFile(droppedFile);
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!file && !existingInfo?.fileName) return;
 
     if (file) {
       setUploading(true);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const info: UploadInfo = {
-          fileName: file.name,
-          uploadTime: new Date().toLocaleString('zh-CN'),
-          uploader: uploader || '未知',
-          version: version,
-          fileData: reader.result as string
-        };
-        onSubmit(info);
-        // AI索引 — 完全独立的 fire-and-forget，不阻塞上传、不依赖组件生命周期
-        indexDocument(file, projectName)
-          .then(result => toast(`AI已学习: ${file.name} (${result.chunks}段)`, 'success'))
-          .catch(() => {}); // 静默失败，不阻塞用户
+      setUploadProgress(0);
+
+      const uploadFile = getUploadFile();
+
+      const meta = {
+        uploadTime: new Date().toLocaleString('zh-CN'),
+        uploader: uploader || '未知',
+        version: version,
+        standard: 'DB11/T695-2025',
       };
-      reader.onerror = () => {
+
+      try {
+        if (uploadFile.size > BASE64_THRESHOLD) {
+          // 大文件：multipart 流式上传（支持进度）
+          await api.uploadDocumentMultipart(
+            projectName,
+            docName, // 使用 docName 作为 docId（与原逻辑一致）
+            uploadFile,
+            meta,
+            (percent) => setUploadProgress(percent)
+          );
+
+          // 上传成功后，通知父组件更新本地状态（不传 fileData，只传元信息）
+          const info: UploadInfo = {
+            fileName: uploadFile.name,
+            uploadTime: meta.uploadTime,
+            uploader: meta.uploader,
+            version: meta.version,
+          };
+          onSubmit(info);
+          toast(`上传成功: ${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)}MB)`, 'success');
+        } else {
+          // 小文件：保持原 base64 方式（兼容旧逻辑）
+          const reader = new FileReader();
+          reader.onload = () => {
+            const info: UploadInfo = {
+              fileName: uploadFile.name,
+              uploadTime: meta.uploadTime,
+              uploader: meta.uploader,
+              version: meta.version,
+              fileData: reader.result as string
+            };
+            onSubmit(info);
+          };
+          reader.onerror = () => {
+            toast('文件读取失败，请重试。', 'error');
+          };
+          reader.readAsDataURL(uploadFile);
+        }
+
+        // AI索引 — 完全独立的 fire-and-forget，不阻塞上传
+        indexDocument(uploadFile, projectName)
+          .then(result => toast(`AI已学习: ${uploadFile.name} (${result.chunks}段)`, 'success'))
+          .catch(() => {});
+
         setUploading(false);
-        toast('文件读取失败，请重试。', 'error');
-      };
-      reader.readAsDataURL(file);
+        onClose();
+      } catch (err: any) {
+        setUploading(false);
+        setUploadProgress(0);
+        toast(err.message || '上传失败，请重试', 'error');
+      }
     } else {
       const info: UploadInfo = {
         fileName: existingInfo?.fileName || '',
@@ -121,6 +178,40 @@ const UploadModal: React.FC<UploadModalProps> = ({
 
   const selectSuggestion = (_item: DocumentItem) => {
     setShowSuggestions(false);
+  };
+
+  // v6.0: 压缩图片
+  const handleCompress = async () => {
+    if (!file || !isCompressible(file)) return;
+    setCompressing(true);
+    setCompressProgress(0);
+    try {
+      const result = await compressImage(file, {
+        quality: 0.7,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        onProgress: (p) => setCompressProgress(p),
+      });
+      setCompressResult(result);
+      if (!result.skipped) {
+        setUseCompressed(true);
+        toast(`压缩完成: ${formatFileSize(result.originalSize)} → ${formatFileSize(result.compressedSize)} (减少${((1 - result.ratio) * 100).toFixed(0)}%)`, 'success');
+      } else {
+        toast('图片已足够小，无需压缩', 'info');
+      }
+    } catch (err: any) {
+      toast(err.message || '压缩失败', 'error');
+    } finally {
+      setCompressing(false);
+    }
+  };
+
+  // 获取实际上传的文件（压缩后或原文件）
+  const getUploadFile = (): File => {
+    if (useCompressed && compressResult && !compressResult.skipped) {
+      return compressResult.file;
+    }
+    return file!;
   };
 
   return (
@@ -162,31 +253,130 @@ const UploadModal: React.FC<UploadModalProps> = ({
               className="hidden"
               onChange={handleFileChange}
               disabled={uploading}
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.dwg,.jpg,.png,.zip,.rar,.7z,.gz,.tar"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.dwg,.dxf,.jpg,.jpeg,.png,.zip,.rar,.txt,.csv,.md,.json,.html"
             />
             <label htmlFor="file-upload" className={uploading ? 'cursor-not-allowed' : 'cursor-pointer'}>
               {uploading ? (
-                <div className="flex items-center justify-center gap-2 text-blue-600">
-                  <Loader className="w-8 h-8 animate-spin" />
-                  <span className="font-medium">正在处理文件...</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-blue-600">
+                    <Loader className="w-8 h-8 animate-spin" />
+                    <span className="font-medium">
+                      {uploadProgress > 0 ? `上传中 ${uploadProgress}%` : '正在处理文件...'}
+                    </span>
+                  </div>
+                  {uploadProgress > 0 && (
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : file ? (
-                <div className="flex items-center justify-center gap-2 text-green-600">
-                  <File className="w-8 h-8" />
-                  <span className="font-medium">{file.name}</span>
-                  {(file.size / 1024 / 1024).toFixed(1)}MB
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <File className="w-8 h-8" />
+                    <span className="font-medium">{file.name}</span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {(file.size / 1024 / 1024).toFixed(1)}MB
+                    {file.size > BASE64_THRESHOLD && (
+                      <span className="ml-2 text-blue-600">（将使用流式上传）</span>
+                    )}
+                  </span>
                 </div>
               ) : (
                 <>
                   <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                   <p className="text-gray-600">点击或拖拽文件到此处上传</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    支持 PDF、Word、Excel、CAD、图片、压缩包等格式（≤50MB）
+                    支持 PDF、Word、Excel、CAD(.dwg/.dxf)、图片、压缩包等格式（≤200MB）
                   </p>
                 </>
               )}
             </label>
           </div>
+
+          {/* v6.0: 压缩建议与操作 */}
+          {file && !sizeError && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <FileArchive className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 text-sm text-gray-600">
+                  {getCompressSuggestion(file) || '文件将直接上传'}
+                </div>
+              </div>
+
+              {/* 图片压缩按钮 */}
+              {isCompressible(file) && !compressResult && (
+                <button
+                  onClick={handleCompress}
+                  disabled={compressing || uploading}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                >
+                  {compressing ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      压缩中 {compressProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4" />
+                      压缩图片（推荐，可减少 50-70% 体积）
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* 压缩进度条 */}
+              {compressing && (
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div
+                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${compressProgress}%` }}
+                  />
+                </div>
+              )}
+
+              {/* 压缩结果 */}
+              {compressResult && !compressResult.skipped && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">
+                      {formatFileSize(compressResult.originalSize)} →{' '}
+                      <span className="text-green-600 font-medium">{formatFileSize(compressResult.compressedSize)}</span>
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      减少 {((1 - compressResult.ratio) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setUseCompressed(true)}
+                      className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        useCompressed
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      使用压缩版
+                    </button>
+                    <button
+                      onClick={() => setUseCompressed(false)}
+                      className={`flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        !useCompressed
+                          ? 'bg-gray-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      使用原图
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 文件大小错误提示 */}
           {sizeError && (

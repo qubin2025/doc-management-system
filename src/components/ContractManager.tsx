@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, FileText, Plus, Search, Shield, Bookmark, Download, BookOpen } from 'lucide-react';
+import { FileText, Plus, Search, Shield, Bookmark, Download } from 'lucide-react';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface ContractItem {
   id: number; project_name: string; contract_name: string; contract_type: string;
@@ -99,14 +100,12 @@ const ContractManager: React.FC<{ projectName: string; onBack: () => void }> = (
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <BookOpen className="w-6 h-6 text-violet-600" />
-            <h1 className="text-lg font-bold text-gray-800">合同管理</h1>
-            <span className="text-sm text-gray-400">{filterProject}</span>
-          </div>
+      <ModuleHeader
+        title="合同管理"
+        subtitle={filterProject || undefined}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
           <div className="flex items-center gap-2">
             <div className="flex bg-gray-100 rounded-lg p-0.5">
               <button onClick={() => setTab('contracts')} className={`px-3 py-1 text-xs rounded-md ${tab === 'contracts' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}>合同列表</button>
@@ -114,8 +113,8 @@ const ContractManager: React.FC<{ projectName: string; onBack: () => void }> = (
             </div>
             <button onClick={() => setShowAdd(true)} className="px-3 py-1.5 bg-violet-500 text-white rounded-lg text-xs flex items-center gap-1"><Plus size={12} />添加合同</button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {tab === 'templates' ? (

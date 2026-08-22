@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Zap, ExternalLink, Edit3, Save, Shield, RotateCcw, Eye, Power, PowerOff, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, Edit3, Save, Shield, RotateCcw, Eye, Power, PowerOff, Plus, Trash2 } from 'lucide-react';
 import { skillRegistry } from '../data/skillRegistry';
 import { getAllSkillConfigs, loadCustomSkills, saveCustomSkills, type SkillConfig } from '../data/skillConfig';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface SkillPanelProps { projectName: string; onBack: () => void; onNavigate?: (view: string, params?: Record<string, string>) => void; }
 
@@ -187,26 +188,22 @@ const SkillPanel: React.FC<SkillPanelProps> = ({ projectName, onBack, onNavigate
   const filtered = filterCategory ? skillConfigs.filter(s => s.category === filterCategory) : skillConfigs;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
-            <Zap size={24} className="text-amber-400" />
-            <div>
-              <h1 className="text-xl font-bold text-[var(--text-primary)]">
-                {isAdmin ? 'AI技能配置中台' : '技能面板'}
-              </h1>
-              <p className="text-sm text-[var(--text-muted)]">{projectName} — {skillConfigs.length} 个系统SKILL已部署</p>
-            </div>
-          </div>
-          {isAdmin && (
+    <div className="min-h-screen bg-[var(--bg-page)]">
+      <ModuleHeader
+        title={isAdmin ? 'AI技能配置中台' : '技能面板'}
+        subtitle={`${projectName} — ${skillConfigs.length} 个系统SKILL已部署`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
+          isAdmin && (
             <button onClick={() => setShowAddSkill(true)}
               className="px-3 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-white rounded-lg flex items-center gap-1">
               <Plus size={14} /> 添加技能
             </button>
-          )}
-        </div>
+          )
+        }
+      />
+      <div className="max-w-4xl mx-auto p-6">
 
         {/* 分类筛选 */}
         <div className="flex gap-2 mb-6">

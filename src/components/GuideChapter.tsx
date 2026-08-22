@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  ArrowLeft, ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   CheckSquare, FileText, GitBranch, Plus, Upload,
   X, Edit3, Sparkles, Lightbulb, Loader, Undo2, BookOpen, Paperclip
 } from 'lucide-react';
@@ -13,14 +12,15 @@ import GuideModulesTab from './GuideModulesTab';
 import { loadTailoringConfig } from '../data/tailoringEngine';
 import GuideFormsTab from './GuideFormsTab';
 import GuideLogicTab from './GuideLogicTab';
+import ModuleHeader from './ModuleHeader';
 
 interface GuideChapterProps { chapter: GuideChapterType; projectName?: string; onBack: () => void; }
 
 const iconMap: Record<string, React.ReactNode> = {
-  ClipboardCheck: <ClipboardCheck className="w-8 h-8 text-blue-600" />,
-  FileSearch: <FileSearch className="w-8 h-8 text-amber-600" />,
-  HardHat: <HardHat className="w-8 h-8 text-emerald-600" />,
-  CheckCircle2: <CheckCircle2 className="w-8 h-8 text-indigo-600" />,
+  ClipboardCheck: <img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />,
+  FileSearch: <img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />,
+  HardHat: <img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />,
+  CheckCircle2: <img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />,
 };
 
 const colorMap: Record<string, { bg: string; border: string; text: string; light: string; hover: string }> = {
@@ -690,35 +690,26 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   return (
     <div className="min-h-screen bg-gray-100">
       {/* 头部 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-4 h-[65px]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={onBack} className="flex items-center gap-1 px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
-                <ArrowLeft className="w-4 h-4" /> 返回首页
-              </button>
-              <div className={`w-12 h-12 rounded-xl ${colors.light} flex items-center justify-center`}>
-                {iconMap[initialChapter.icon]}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">第{initialChapter.number}章 {initialChapter.title}</h1>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{initialChapter.subtitle}</p>
-              </div>
+      <ModuleHeader
+        title={`第${initialChapter.number}章 ${initialChapter.title}`}
+        subtitle={initialChapter.subtitle}
+        icon={iconMap[initialChapter.icon]}
+        onBack={onBack}
+        backLabel="返回首页"
+        actions={
+          <>
+            {undoStack.length > 0 && (
+              <button onClick={handleUndo} className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                title="撤销（最近5步）"><Undo2 className="w-3 h-3" /> 撤销({undoStack.length})</button>
+            )}
+            <span className="text-sm text-gray-500">进度：{checkedCount}/{totalItems}</span>
+            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className={`h-full ${colors.bg} transition-all duration-300`}
+                style={{ width: `${totalItems > 0 ? (checkedCount / totalItems * 100) : 0}%` }} />
             </div>
-            <div className="flex items-center gap-3">
-              {undoStack.length > 0 && (
-                <button onClick={handleUndo} className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-                  title="撤销（最近5步）"><Undo2 className="w-3 h-3" /> 撤销({undoStack.length})</button>
-              )}
-              <span className="text-sm text-gray-500">进度：{checkedCount}/{totalItems}</span>
-              <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className={`h-full ${colors.bg} transition-all duration-300`}
-                  style={{ width: `${totalItems > 0 ? (checkedCount / totalItems * 100) : 0}%` }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-4">
         <p className="text-sm text-gray-600 mb-4">{initialChapter.description}</p>

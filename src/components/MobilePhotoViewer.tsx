@@ -124,12 +124,10 @@ const MobilePhotoViewer: React.FC<Props> = ({ projectName, onBack }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-20">
-        <button onClick={onBack} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-          <ArrowLeft className="w-4 h-4" /> 返回首页
-        </button>
+        <img src="/zhjk-logo.png" alt="中航建科" className="h-9 w-auto" />
         <div className="flex-1">
           <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Camera className="w-5 h-5 text-blue-600" /> 手机水印照片
+            手机水印照片
           </h1>
           <p className="text-xs text-gray-500">项目：{projectName} · 共 {photos.length} 张</p>
         </div>
@@ -139,6 +137,9 @@ const MobilePhotoViewer: React.FC<Props> = ({ projectName, onBack }) => {
             <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handleUpload} disabled={uploading} />
           </label>
         )}
+        <button onClick={onBack} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border border-gray-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50">
+          <ArrowLeft className="w-4 h-4" /> 返回首页
+        </button>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">

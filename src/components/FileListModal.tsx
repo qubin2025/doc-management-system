@@ -12,32 +12,89 @@ interface FileListModalProps {
   projectName: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 const FileListModal: React.FC<FileListModalProps> = ({
-  docName,
-  files,
-  onClose,
-  canDelete,
-  canDeleteAny,
-  onDelete,
-  projectName
+  docName, files, onClose, canDelete, canDeleteAny, onDelete, projectName
 }) => {
   const [downloadedSet, setDownloadedSet] = useState<Set<number>>(new Set());
+  const [downloadingIdx, setDownloadingIdx] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  const handleDownload = (file: UploadInfo, idx: number) => {
-    if (!file.fileData) return;
-    const a = document.createElement('a');
-    a.href = file.fileData;
-    a.download = file.fileName;
-    a.click();
-    setDownloadedSet(prev => new Set(prev).add(idx));
-    setTimeout(() => {
-      setDownloadedSet(prev => {
-        const next = new Set(prev);
-        next.delete(idx);
-        return next;
-      });
-    }, 2000);
+  // v6.0: 统一下载入口，支持 Base64 小文件 + 磁盘大文件两种模式
+  const handleDownload = async (file: UploadInfo, idx: number) => {
+    const meta = file as any;
+    const hasFile = meta.hasFile !== false; // 兼容旧数据：无 hasFile 字段时回退到 fileData 判断
+    const canDownload = hasFile && (file.fileData || meta.id);
+
+    if (!canDownload) return;
+    setDownloadingIdx(idx);
+
+    try {
+      // 模式 1: Base64 内联数据（小文件）
+      if (file.fileData && file.fileData.startsWith('data:')) {
+        const a = document.createElement('a');
+        a.href = file.fileData;
+        a.download = file.fileName;
+        a.click();
+      }
+      // 模式 2: 磁盘存储（大文件 / multipart）— 按需调用下载端点
+      else if (meta.id) {
+        const token = localStorage.getItem('doc-system-token') || '';
+        const resp = await fetch(`${API_BASE}/documents/download/${meta.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!resp.ok) throw new Error(`下载失败 (HTTP ${resp.status})`);
+
+        // 判断响应类型：JSON (Base64) 还是二进制流 (res.download)
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await resp.json();
+          if (data.fileData) {
+            const a = document.createElement('a');
+            a.href = data.fileData;
+            a.download = data.fileName || file.fileName;
+            a.click();
+          } else {
+            throw new Error('响应无文件数据');
+          }
+        } else {
+          // 二进制流 — 直接用 blob URL 触发下载
+          const blob = await resp.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+      }
+      // 模式 3: 有 fileData 但非 data: 前缀（历史遗留）
+      else if (file.fileData) {
+        const a = document.createElement('a');
+        a.href = file.fileData;
+        a.download = file.fileName;
+        a.click();
+      } else {
+        throw new Error('文件数据不可用');
+      }
+
+      setDownloadedSet(prev => new Set(prev).add(idx));
+      setTimeout(() => {
+        setDownloadedSet(prev => {
+          const next = new Set(prev);
+          next.delete(idx);
+          return next;
+        });
+      }, 2000);
+    } catch (e: any) {
+      console.error('Download failed:', e.message);
+      alert(`下载失败：${e.message}`);
+    } finally {
+      setDownloadingIdx(null);
+    }
   };
 
   const handleDelete = (idx: number) => {
@@ -78,8 +135,13 @@ const FileListModal: React.FC<FileListModalProps> = ({
           ) : (
             <div className="space-y-3">
               {files.map((file, idx) => {
+                const meta = file as any;
+                const hasFile = meta.hasFile !== false;
+                const canDownload = hasFile && (!!file.fileData || !!meta.id);
                 const isDownloaded = downloadedSet.has(idx);
+                const isDownloading = downloadingIdx === idx;
                 const deletable = fileCanDelete(file.uploader);
+
                 return (
                   <div
                     key={idx}
@@ -94,9 +156,11 @@ const FileListModal: React.FC<FileListModalProps> = ({
                         <div className="flex items-center gap-2 mb-1.5">
                           <File className="w-4 h-4 text-blue-500 shrink-0" />
                           <span
-                            className="font-medium text-sm truncate cursor-pointer hover:text-blue-600 hover:underline"
+                            className={`font-medium text-sm truncate cursor-pointer hover:underline ${
+                              canDownload ? 'text-blue-600' : 'text-gray-400'
+                            }`}
                             title={file.fileName}
-                            onClick={() => handleDownload(file, idx)}
+                            onClick={() => canDownload && handleDownload(file, idx)}
                           >
                             {file.fileName}
                           </span>
@@ -114,24 +178,34 @@ const FileListModal: React.FC<FileListModalProps> = ({
                             <User className="w-3 h-3" />
                             {file.uploader}
                           </span>
+                          {!file.fileData && meta.id && (
+                            <span className="flex items-center gap-1 text-gray-400">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400" />
+                              云端
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {/* 下载按钮 */}
                         <button
                           onClick={() => handleDownload(file, idx)}
-                          disabled={!file.fileData || isDownloaded}
-                          title="下载文件"
+                          disabled={!canDownload || isDownloading || isDownloaded}
+                          title={isDownloading ? '下载中…' : canDownload ? '下载文件' : '文件不可用'}
                           className={`p-1.5 text-white rounded transition-all ${
                             isDownloaded
                               ? 'bg-green-500 cursor-default'
-                              : file.fileData
-                                ? 'bg-blue-500 hover:bg-blue-600'
-                                : 'bg-gray-300 cursor-not-allowed'
+                              : isDownloading
+                                ? 'bg-blue-400 cursor-wait'
+                                : canDownload
+                                  ? 'bg-blue-500 hover:bg-blue-600'
+                                  : 'bg-gray-300 cursor-not-allowed'
                           }`}
                         >
                           {isDownloaded ? (
                             <Check className="w-3.5 h-3.5" />
+                          ) : isDownloading ? (
+                            <Download className="w-3.5 h-3.5 animate-pulse" />
                           ) : (
                             <Download className="w-3.5 h-3.5" />
                           )}

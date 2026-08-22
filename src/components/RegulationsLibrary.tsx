@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Search, X, Filter, ChevronRight, Shield, Edit3, Plus, Trash2, Upload, Save, Undo2, User, Download } from 'lucide-react';
+import { ArrowLeft, Search, X, Filter, ChevronRight, Edit3, Plus, Trash2, Upload, Save, Undo2, User, Download } from 'lucide-react';
 import * as documentParser from '../data/documentParser';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { onBack: () => void; }
 
@@ -82,22 +83,22 @@ const RegulationsLibrary: React.FC<Props> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-teal-600 flex items-center justify-center rounded-lg"><Shield className="w-5 h-5 text-white" /></div>
-            <div><h1 className="text-lg font-bold text-gray-800">制度规范库</h1><p className="text-[10px] text-gray-400">土储中心制度与规范文件{!admin && ' · 仅管理员可编辑'}</p></div>
-          </div>
-          <div className="flex items-center gap-2">
+      <ModuleHeader
+        title="制度规范库"
+        subtitle={`土储中心制度与规范文件${!admin && ' · 仅管理员可编辑'}`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        colorClass="teal"
+        actions={
+          <>
             <span className="text-xs text-gray-400 flex items-center gap-1"><User className="w-3.5 h-3.5" />{admin ? '管理员' : '访客'}</span>
             {admin && (<>
               <button onClick={addDoc} className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 flex items-center gap-1"><Plus className="w-3 h-3" />新增</button>
               {undoStack.length > 0 && <button onClick={undo} className="px-2 py-1 text-xs bg-amber-50 text-amber-600 rounded hover:bg-amber-100 flex items-center gap-1"><Undo2 className="w-3 h-3" />撤销</button>}
             </>)}
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">

@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, GitBranch, BarChart3, FileText, Trash2 } from 'lucide-react';
+import { GitBranch, BarChart3, FileText, Trash2 } from 'lucide-react';
 import { guideChapters } from '../data/guideModules';
 import GanttChart from './GanttChart';
 import NetworkDiagram from './NetworkDiagram';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface PlanFile { id: string; fileName: string; uploadTime: string; data: any; }
 
@@ -57,28 +58,28 @@ const PlanManager: React.FC<Props> = ({ onBack, projectName }) => {
   const tabTitle = tab === 'overview' ? '项目总体概览' : tab === 'gantt' ? '各子项推进计划（甘特图）' : '各子项工作计划（网络图）';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-[10px]">ZHJK</span></div>
-            <h1 className="text-lg font-bold text-gray-800">计划管理</h1>
-            <span className="text-sm text-gray-400">| {tabTitle}</span>
-          </div>
-          <div className="flex bg-gray-100 rounded-lg p-0.5">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <ModuleHeader
+        title="计划管理"
+        subtitle={tabTitle}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        colorClass="blue"
+        onBack={onBack}
+        backLabel="返回首页"
+        actions={
+          <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-0.5">
             {[
               { k: 'overview' as const, l: '项目总体概览' },
               { k: 'gantt' as const, l: '各子项推进计划' },
               { k: 'network' as const, l: '各子项工作计划' },
             ].map(t => (
-              <button key={t.k} onClick={() => setTab(t.k)} className={`px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${tab === t.k ? 'bg-white shadow text-gray-800 font-semibold' : 'text-gray-500'}`}>{t.l}</button>
+              <button key={t.k} onClick={() => setTab(t.k)} className={`px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${tab === t.k ? 'bg-white shadow text-gray-800 dark:text-slate-200 font-semibold' : 'text-gray-500 dark:text-slate-400'}`}>{t.l}</button>
             ))}
           </div>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 w-full">
         {/* ── 首页：计划文件列表 ── */}
         {tab === 'overview' && (
           <>

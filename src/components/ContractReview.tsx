@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Upload, FileText, Loader, Download, Shield, X, GitBranch, History, FolderOpen, Trash2, Eye, Clock, FileDown } from 'lucide-react';
+import { Upload, FileText, Loader, Download, Shield, X, GitBranch, History, FolderOpen, Trash2, Eye, Clock, FileDown } from 'lucide-react';
 import * as api from '../data/api';
 import { parseDocument } from '../data/documentParser';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { projectName: string; onBack: () => void; }
 const RISK_CLAUSES = ['违约责任', '工期延误', '付款条件', '争议解决', '不可抗力', '索赔', '变更', '解除合同'];
@@ -315,37 +316,38 @@ ${fileContent}`;
 
       {/* 主区域 */}
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-500 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-white"/></div>
-            <div className="flex items-center gap-2">
-              <div><h1 className="text-sm font-bold text-gray-800">合同审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 关键条款提取 · 风险识别</p></div>
+        <ModuleHeader
+          title="合同审查"
+          subtitle={`项目: ${projectName} | 关键条款提取 · 风险识别`}
+          icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+          colorClass="blue"
+          onBack={onBack}
+          actions={
+            <>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"><span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/><span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span></div>
               <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600"><option value="auto">自动</option>{availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}</select>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}><History className="w-3.5 h-3.5"/>历史({history.length})</button>
-            {clauses.length > 0 && (<>
-              <button onClick={async () => {
-                const nodes = [
-                  { id: 'contract-' + Date.now(), type: 'contract', label: file?.name || '合同文件', props: { project: projectName, time: new Date().toLocaleString() } },
-                  ...clauses.map((c, i) => ({ id: `risk-${Date.now()}-${i}`, type: c.risk === 'high' ? 'risk-point' : 'review-item', label: c.clause, props: { risk: c.risk, issue: c.issue } })),
-                ];
-                const edges = [
-                  { from: 'contract-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: '合同' },
-                  ...clauses.map((_, i) => ({ from: `risk-${Date.now()}-${i}`, to: 'contract-' + Date.now(), type: 'references', label: '审查' })),
-                ];
-                try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
-              }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/></button>
-              <div className="flex rounded-lg border overflow-hidden">
-                <button onClick={exportHTML} className="px-2.5 py-1.5 text-xs bg-white text-gray-500 hover:bg-gray-50 flex items-center gap-1" title="HTML报告"><FileDown className="w-3 h-3"/>HTML</button>
-                <button onClick={exportDOCX} className="px-2.5 py-1.5 text-xs bg-white text-blue-500 hover:bg-gray-50 border-l flex items-center gap-1" title="Word文档(.doc)"><Download className="w-3 h-3"/>DOC</button>
-                <button onClick={exportTXT} className="px-2.5 py-1.5 text-xs bg-white text-gray-500 hover:bg-gray-50 border-l" title="纯文本">TXT</button>
-              </div>
-            </>)}
-          </div>
-        </div></header>
+              <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}><History className="w-3.5 h-3.5"/>历史({history.length})</button>
+              {clauses.length > 0 && (<>
+                <button onClick={async () => {
+                  const nodes = [
+                    { id: 'contract-' + Date.now(), type: 'contract', label: file?.name || '合同文件', props: { project: projectName, time: new Date().toLocaleString() } },
+                    ...clauses.map((c, i) => ({ id: `risk-${Date.now()}-${i}`, type: c.risk === 'high' ? 'risk-point' : 'review-item', label: c.clause, props: { risk: c.risk, issue: c.issue } })),
+                  ];
+                  const edges = [
+                    { from: 'contract-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: '合同' },
+                    ...clauses.map((_, i) => ({ from: `risk-${Date.now()}-${i}`, to: 'contract-' + Date.now(), type: 'references', label: '审查' })),
+                  ];
+                  try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
+                }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/></button>
+                <div className="flex rounded-lg border overflow-hidden">
+                  <button onClick={exportHTML} className="px-2.5 py-1.5 text-xs bg-white text-gray-500 hover:bg-gray-50 flex items-center gap-1" title="HTML报告"><FileDown className="w-3 h-3"/>HTML</button>
+                  <button onClick={exportDOCX} className="px-2.5 py-1.5 text-xs bg-white text-blue-500 hover:bg-gray-50 border-l flex items-center gap-1" title="Word文档(.doc)"><Download className="w-3 h-3"/>DOC</button>
+                  <button onClick={exportTXT} className="px-2.5 py-1.5 text-xs bg-white text-gray-500 hover:bg-gray-50 border-l" title="纯文本">TXT</button>
+                </div>
+              </>)}
+            </>
+          }
+        />
 
         <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-6">
           {!file && !viewingHistory && (

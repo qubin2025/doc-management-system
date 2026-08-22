@@ -45,12 +45,20 @@ import rateLimit from 'express-rate-limit';
 LOG.ok('Middleware imports done', 'express|cors|helmet|morgan|rateLimit');
 
 // 简单内存缓存 (60s TTL, 用于高频只读API)
+// v6.0 FIX: 修复登录界面闪烁根因
+//   原实现缺陷：(1) 缓存键仅用 URL，未含认证信息 → 不同用户/未登录状态互相污染
+//               (2) 不分 2xx/4xx 全部缓存 → 401 错误响应被缓存后，命中时 res.json 默认重置为 200
+//               导致前端 res.ok=true 但 body 是 {"error":"未登录"}，解析失败清除 token，进入闪烁循环
 const apiCache = new Map();
 LOG.info('API memory cache initialized', 'mapSize=' + apiCache.size);
 function cacheMiddleware(ttlMs = 60000) {
   return (req, res, next) => {
     if (req.method !== 'GET') return next();
-    const key = req.originalUrl;
+    // v6.0 FIX-1: 缓存键包含认证信息尾段，避免不同用户/匿名请求互相污染缓存
+    //   取 token 末 16 位作为分区键（避免完整 token 落入日志，且不同 token 必然不同）
+    const auth = req.headers.authorization || 'anon';
+    const authKey = auth.length > 16 ? auth.slice(-16) : auth;
+    const key = `${req.originalUrl}::${authKey}`;
     const cached = apiCache.get(key);
     if (cached && Date.now() - cached.time < ttlMs) {
       res.setHeader('X-Cache', 'HIT');
@@ -58,8 +66,14 @@ function cacheMiddleware(ttlMs = 60000) {
     }
     const originalJson = res.json.bind(res);
     res.json = (data) => {
-      apiCache.set(key, { data, time: Date.now() });
-      res.setHeader('X-Cache', 'MISS');
+      // v6.0 FIX-2: 仅缓存 2xx 成功响应，4xx/5xx 错误响应一律不缓存
+      //   避免临时错误（401 未登录/403 权限不足）被缓存后以 200 状态码复用
+      if (res.statusCode < 400) {
+        apiCache.set(key, { data, time: Date.now() });
+        res.setHeader('X-Cache', 'MISS');
+      } else {
+        res.setHeader('X-Cache', 'NO-CACHE-ERROR');
+      }
       return originalJson(data);
     };
     next();
@@ -88,6 +102,7 @@ import mobileRouter from './routes/mobile.js';
 import dataRouter from './routes/data.js';
 import experienceRouter from './routes/experience.js';
 import contractsRouter from './routes/contracts.js';
+import downloadErrorMiddleware from './middleware/downloadErrorHandler.js';
 import guideRouter from './routes/guide.js';
 import stakeholdersRouter from './routes/stakeholders.js';
 import adminRouter from './routes/admin.js';
@@ -209,6 +224,13 @@ app.get('/api/health', async (_req, res) => {
 });
 
 LOG.phase('4: ROUTES');
+
+// v6.0: 下载接口专用错误处理中间件
+// 必须挂载在 documentsRouter **之前**，通过包装 res.json/res.download 拦截 4xx 响应和异常
+// 注意：路径要更具体（/api/documents/download），优先匹配子路径
+app.use('/api/documents/download', downloadErrorMiddleware);
+LOG.ok('Mounted download error handler', 'path=/api/documents/download');
+
 const routes = [
   ['/api/projects', projectsRouter, true, 60000],
   ['/api/kg',       kgRouter,       true, 30000],

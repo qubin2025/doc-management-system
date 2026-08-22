@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Upload, FileText, Loader, Download, Shield, AlertTriangle, CheckCircle, X, Search, GitBranch, BookOpen } from 'lucide-react';
+import { Upload, FileText, Loader, Download, Shield, AlertTriangle, CheckCircle, X, Search, GitBranch, BookOpen } from 'lucide-react';
 import * as api from '../data/api';
 import { parseDocument } from '../data/documentParser';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { projectName: string; onBack: () => void; }
 const STANDARDS = ['DB11/T695-2025', 'DB11/T808-2020', 'GB50300', 'JGJ59'];
@@ -334,11 +335,13 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
       </div>
 
       <div className="flex-1">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center"><Shield className="w-5 h-5 text-white"/></div>
-          <div className="flex items-center gap-2">
-            <div><h1 className="text-lg font-bold text-gray-800">施工组织设计审查</h1><p className="text-xs text-gray-500">项目: {projectName} | 含专项方案审查</p></div>
+      <ModuleHeader
+        title="施工组织设计审查"
+        subtitle={`项目: ${projectName} | 含专项方案审查`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
+          <>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线关键词分析':'检测中'}>
               <span className={`w-2 h-2 rounded-full ${aiStatus==='online'?'bg-green-500 animate-pulse':aiStatus==='offline'?'bg-amber-500':'bg-gray-400 animate-pulse'}`}/>
               <span className={`text-xs font-medium ${aiStatus==='online'?'text-green-600':aiStatus==='offline'?'text-amber-600':'text-gray-400'}`}>{aiStatus==='online'?'AI在线':aiStatus==='offline'?'离线分析':'检测中'}</span>
@@ -347,26 +350,24 @@ ${ragClauses.length > 0 ? `<h2>二、相关标准条款(RAG检索)</h2><table><t
               <option value="auto">自动</option>
               {availableModels.map(m=><option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌':''}{m.name}</option>)}
             </select>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {results.length > 0 && (
-            <button onClick={async () => {
-              const nodes = [
-                { id: 'plan-' + Date.now(), type: 'construction-plan', label: files[0]?.name || '施工方案', props: { project: projectName, time: new Date().toLocaleString() } },
-                ...results.map((r, i) => ({ id: `review-${Date.now()}-${i}`, type: r.status === 'fail' ? 'risk-point' : 'review-item', label: r.section, props: { status: r.status, standard: r.standard, comment: r.comment } })),
-              ];
-              const edges = [
-                { from: 'plan-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: '施工方案' },
-                ...results.map((_, i) => ({ from: `review-${Date.now()}-${i}`, to: 'plan-' + Date.now(), type: 'references', label: '审查结果' })),
-              ];
-              try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
-            }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>
-          )}
-          <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-amber-50 text-amber-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({reviewHistory.length})</button>
-          {report && <><button onClick={() => exportReport('docx')} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>Word</button><button onClick={() => exportReport('txt')} className="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-1">TXT</button></>}
-        </div>
-      </div></header>
+            {results.length > 0 && (
+              <button onClick={async () => {
+                const nodes = [
+                  { id: 'plan-' + Date.now(), type: 'construction-plan', label: files[0]?.name || '施工方案', props: { project: projectName, time: new Date().toLocaleString() } },
+                  ...results.map((r, i) => ({ id: `review-${Date.now()}-${i}`, type: r.status === 'fail' ? 'risk-point' : 'review-item', label: r.section, props: { status: r.status, standard: r.standard, comment: r.comment } })),
+                ];
+                const edges = [
+                  { from: 'plan-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: '施工方案' },
+                  ...results.map((_, i) => ({ from: `review-${Date.now()}-${i}`, to: 'plan-' + Date.now(), type: 'references', label: '审查结果' })),
+                ];
+                try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步到知识图谱', 'success'); } catch { toast('同步失败', 'error'); }
+              }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>
+            )}
+            <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-amber-50 text-amber-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({reviewHistory.length})</button>
+            {report && <><button onClick={() => exportReport('docx')} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 flex items-center gap-1"><Download className="w-3.5 h-3.5"/>Word</button><button onClick={() => exportReport('txt')} className="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-1">TXT</button></>}
+          </>
+        }
+      />
 
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* 上传区 */}

@@ -1,6 +1,6 @@
 import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Target, ChevronRight, ChevronDown, Edit2, Trash2, Home, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { Plus, Target, ChevronRight, ChevronDown, Edit2, Trash2, Home, ClipboardCheck, ArrowRight } from 'lucide-react';
 import type { ProjectObjective, GuideChapter } from '../types';
 import {
   buildObjectiveTree, recalculateAllProgress,
@@ -10,6 +10,7 @@ import {
 import * as api from '../data/api';
 import AddObjectiveModal from './AddObjectiveModal';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface TargetManagerProps {
   projectName: string;
@@ -179,21 +180,15 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
       {/* 头部 */}
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition">
-              <ArrowLeft size={20} />
-            </button>
-            <Target size={24} className="text-sky-400" />
-            <div>
-              <h1 className="text-xl font-bold">目标管理</h1>
-              <p className="text-sm text-[var(--text-muted)]">{projectName}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
+      <ModuleHeader
+        title="目标管理"
+        subtitle={projectName}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
+          <>
             <button onClick={collapseAll} className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition">
               折叠全部
             </button>
@@ -217,8 +212,10 @@ const TargetManager: React.FC<TargetManagerProps> = ({ projectName, guideChapter
                 <Home size={14} /> 进入工作首页 <ArrowRight size={14} />
               </button>
             )}
-          </div>
-        </div>
+          </>
+        }
+      />
+      <div className="max-w-6xl mx-auto p-6">
 
         {/* 引导流程指示器 */}
         {flowMode && (

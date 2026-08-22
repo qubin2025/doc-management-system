@@ -1,13 +1,92 @@
-import { defineConfig } from 'vite'
+import { defineConfig, Plugin, ResolvedConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import os from 'os'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+const TAG = '[FRONTEND-VITE]'
+const ts = () => new Date().toISOString().replace('T', ' ').replace('Z', '')
+const Log = {
+  info:  (m: string, d: string = '') => console.log (`${ts()} ${TAG} INFO  ${m}${d ? ' | ' + d : ''}`),
+  ok:    (m: string, d: string = '') => console.log (`${ts()} ${TAG} OK    ${m}${d ? ' | ' + d : ''}`),
+  warn:  (m: string, d: string = '') => console.warn(`${ts()} ${TAG} WARN  ${m}${d ? ' | ' + d : ''}`),
+  error: (m: string, d: string = '') => console.error(`${ts()} ${TAG} ERROR ${m}${d ? ' | ' + d : ''}`),
+  phase: (n: string)           => console.log (`\n${ts()} ${TAG} ===== PHASE ${n} =====`),
+}
+
+Log.phase('0: CONFIG FILE LOAD')
+Log.info('vite.config.ts loaded', `__dirname=${__dirname}`)
+Log.info('Node version', process.version)
+Log.info('Platform', `${os.platform()} ${os.arch()}  hostname=${os.hostname()}`)
+Log.info('CPUs', `${os.cpus().length} cores  totalMem=${Math.round(os.totalmem()/1024/1024)}MB`)
+Log.info('cwd', process.cwd())
+
+function bootLoggerPlugin(): Plugin {
+  let resolved: ResolvedConfig | null = null
+  return {
+    name: 'vite-boot-logger',
+    configResolved(cfg) {
+      resolved = cfg
+      Log.phase('1: CONFIG RESOLVED')
+      Log.info('Vite mode', cfg.mode)
+      Log.info('Root', cfg.root)
+      Log.info('Base', cfg.base)
+      Log.info('Public dir', cfg.publicDir || '(default: public/)')
+      const plugins = cfg.plugins.map(p => p.name)
+      Log.info('Plugins loaded', `${plugins.length}: ${plugins.join(', ')}`)
+      const server = cfg.server
+      Log.info('Server', `port=${server.port}  strictPort=${server.strictPort}  host=${JSON.stringify(server.host)}`)
+      if (server.proxy) {
+        Log.info('Proxy entries', Object.keys(server.proxy).join(', '))
+        for (const k of Object.keys(server.proxy)) {
+          const p: any = server.proxy[k]
+          Log.info('  proxy', `${k} → ${p.target || p}  changeOrigin=${p.changeOrigin}`)
+        }
+      }
+      Log.ok('Config resolved OK')
+    },
+    configureServer(server) {
+      Log.phase('2: DEV SERVER INIT')
+      Log.info('configureServer called', `httpServer=${server.httpServer ? 'exists' : 'not-yet'}`)
+      server.httpServer?.on('listening', () => {
+        Log.ok('HTTP server event: listening')
+      })
+      server.httpServer?.on('error', (err: any) => {
+        if (err?.code === 'EADDRINUSE') {
+          const port = resolved?.server.port
+          Log.error(`PORT ${port} ALREADY IN USE (EADDRINUSE)`, '→ 请先关闭占用进程: netstat -ano | findstr ' + port)
+        } else {
+          Log.error('HTTP server error', `${err?.code || 'UNKNOWN'}  ${err?.message}`)
+        }
+      })
+      server.httpServer?.on('close', () => { Log.info('HTTP server event: close') })
+      server.middlewares.use((req, _res, next) => {
+        if (!req.url || req.url.startsWith('/__vite_ping') || req.url.startsWith('/@')) return next()
+        next()
+      })
+      Log.ok('Dev server configured', 'middlewares + event handlers attached')
+    },
+    buildStart(options) {
+      Log.phase('2B: BUILD START')
+      Log.info('buildStart', `input=${JSON.stringify((options as any).input)}  rollupVersion=${(options as any).rollupVersion || 'n/a'}`)
+    },
+    configurePreviewServer(server) {
+      Log.phase('2C: PREVIEW SERVER INIT')
+      server.httpServer?.on('listening', () => { Log.ok('Preview server listening') })
+    },
+    closeBundle() {
+      const secs = Date.now() / 1000
+      Log.phase(`BUNDLE CLOSE @ ${secs.toFixed(0)}s`)
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
+    bootLoggerPlugin(),
     react(),
     // PWA 仅服务移动端入口(mobile.html)：injectRegister:false + 手动在 src/mobile/main.tsx 注册，
     // 桌面端 index.html 不注册 Service Worker，互不影响

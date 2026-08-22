@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, ChevronRight, Upload, Search, X, FileText, Check, Download, Package, Database } from 'lucide-react';
+import { ChevronDown, ChevronRight, Upload, Search, X, FileText, Check, Download, Package, Database } from 'lucide-react';
 import { landReserveArchive, LandReserveItem } from '../data/landReserveArchive';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { onBack: () => void; }
 const SK = 'land-reserve-data';
@@ -105,14 +106,11 @@ const LandReserveArchive: React.FC<Props> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ===== 顶栏 ===== */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-full mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-[10px]">ZHJK</span></div>
-            <h1 className="text-lg font-bold text-gray-800">土储中心归档移交资料</h1>
-          </div>
+      <ModuleHeader
+        title="土储中心归档移交资料"
+        onBack={onBack}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        actions={
           <div className="flex items-center gap-2">
             <button onClick={renumber} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">重编号</button>
             {undoStack.length > 0 && <button onClick={undo} className="px-3 py-1.5 text-xs bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100">↩ 撤销({undoStack.length})</button>}
@@ -138,8 +136,8 @@ const LandReserveArchive: React.FC<Props> = ({ onBack }) => {
               toast('备份已保存', 'success');
             }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 flex items-center gap-1"><Database className="w-3.5 h-3.5" />备份</button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-full mx-auto px-4 py-4">
         {/* ===== 统计栏 ===== */}

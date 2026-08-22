@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, X, Shield, BarChart3, HardDrive } from 'lucide-react';
+import { Plus, Trash2, Save, X, Shield, BarChart3, HardDrive } from 'lucide-react';
 import * as api from '../data/api';
 import { toast } from './Toast';
 import LocalStoragePanel from './LocalStoragePanel';
+import ModuleHeader from './ModuleHeader';
 
 interface User { id: number; username: string; display_name: string; role: string; permissions: string; is_active: number; created_at: string; }
 
@@ -94,20 +95,20 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-blue-600 flex items-center justify-center"><span className="text-white font-black text-xs">ZHJK</span></div>
-            <h1 className="text-lg font-bold text-gray-800">系统管理</h1>
-            <div className="flex bg-gray-100 rounded-lg p-0.5 ml-4">
+      <ModuleHeader
+        title="系统管理"
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
+          <>
+            <div className="flex bg-gray-100 rounded-lg p-0.5">
               <button onClick={() => setActiveTab('users')} className={`px-3 py-1 text-xs rounded-md ${activeTab === 'users' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}>用户管理</button>
               <button onClick={() => setActiveTab('storage')} className={`px-3 py-1 text-xs rounded-md flex items-center gap-1 ${activeTab === 'storage' ? 'bg-white shadow text-gray-800' : 'text-gray-500'}`}><HardDrive size={12} />存储诊断</button>
             </div>
-          </div>
-          {activeTab === 'users' && <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"><Plus className="w-4 h-4" />添加用户</button>}
-        </div>
-      </header>
+            {activeTab === 'users' && <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"><Plus className="w-4 h-4" />添加用户</button>}
+          </>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === 'storage' && <LocalStoragePanel />}

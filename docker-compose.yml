@@ -2,7 +2,7 @@
 # 一键启动: docker compose up -d
 # 最小部署: docker compose up -d backend nginx (无需Python/Docker依赖)
 # 完整部署: docker compose up -d (含Neo4j+LightRAG+PaddleOCR)
-version: '3.8'
+name: docmgmt
 
 services:
   # 后端 API 服务 (必选)
@@ -27,6 +27,14 @@ services:
       - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
       - QWEN_API_KEY=${QWEN_API_KEY:-}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      # v6.0: 日志前缀环境区分（PROD 标识会拼接到所有日志前缀）
+      - LOG_PREFIX_DOC_LIST=${LOG_PREFIX_DOC_LIST:-DOC-LIST}
+      - LOG_PREFIX_DOC_DOWNLOAD=${LOG_PREFIX_DOC_DOWNLOAD:-DOC-DL}
+      - LOG_ENV_TAG=${LOG_ENV_TAG:-PROD}
+      # Neo4j 连接（指向 compose 内的 neo4j 服务）
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-changeme123}
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api', r => process.exit(r.statusCode===200?0:1))"]
       interval: 30s

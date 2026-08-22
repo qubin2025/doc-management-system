@@ -7,3 +7,20 @@ dist/
 .DS_Store
 backend/data/
 backend/node_modules/
+
+# IDE 配置
+.trae/
+.vscode/
+.idea/
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+
+# 临时截图
+home_screenshot*.png
+login_screenshot.png
+
+# 临时数据
+data/

@@ -21,11 +21,11 @@
 
   --text-primary: #1f2937;
   --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
+  --text-muted: #6b7280;
   --text-inverse: #ffffff;
 
-  --accent-primary: #3b82f6;
-  --accent-hover: #2563eb;
+  --accent-primary: #2563eb;
+  --accent-hover: #1d4ed8;
   --accent-light: #eff6ff;
 
   --success: #22c55e;
@@ -62,11 +62,11 @@
 
   --text-primary: #4a3728;
   --text-secondary: #6b5a4a;
-  --text-muted: #9b8b7a;
-  --text-inverse: #fffbf5;
+  --text-muted: #8a7a6a;
+  --text-inverse: #ffffff;
 
-  --accent-primary: #c87941;
-  --accent-hover: #a85d2e;
+  --accent-primary: #b86a35;
+  --accent-hover: #9a5225;
   --accent-light: #fef3e7;
 
   --success: #4a9c5d;
@@ -82,7 +82,7 @@
   --gradient-start: #fefaf6;
   --gradient-end: #f5e6d3;
 
-  --bg-page: #faf3e8;
+  --bg-page: #f5ead8;
   --bg-component: #fffbf5;
 }
 
@@ -165,6 +165,20 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }
 ::-webkit-scrollbar-thumb { background: var(--border-secondary); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* 圆角容器内的滚动条：避免滚动条溢出圆角造成视觉不协调 */
+.rounded-2xl::-webkit-scrollbar-track,
+.rounded-xl::-webkit-scrollbar-track,
+.rounded-lg::-webkit-scrollbar-track,
+.rounded-md::-webkit-scrollbar-track {
+  margin: 8px 0;
+}
+.rounded-2xl::-webkit-scrollbar-thumb,
+.rounded-xl::-webkit-scrollbar-thumb,
+.rounded-lg::-webkit-scrollbar-thumb,
+.rounded-md::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+}
 
 /* ===== 表格 ===== */
 table { border-collapse: collapse; font-size: 12px; }
@@ -275,6 +289,7 @@ th, td { white-space: nowrap; }
 .dark .bg-red-50 { background-color: rgba(248,113,113,0.1); }
 .dark .text-red-700 { color: #fca5a5; }
 .dark .text-red-600 { color: #f87171; }
+.dark .text-red-400 { color: #fca5a5; }
 .dark .hover\:bg-red-50:hover { background-color: rgba(248,113,113,0.15); }
 .dark .hover\:text-red-600:hover { color: #f87171; }
 
@@ -374,6 +389,57 @@ th, td { white-space: nowrap; }
 .dark .bg-opacity-50 { background-color: rgba(0,0,0,0.7); }
 .dark .text-black { color: #e2e8f0; }
 
+/* 暗色下输入框样式 — 确保对比度 */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark input:not([type]),
+.dark textarea,
+.dark select {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+.dark input:focus,
+.dark textarea:focus {
+  border-color: #38bdf8 !important;
+  outline-color: #38bdf8 !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+
+/* 暗色下表格内输入框 — 更明确的对比度 */
+.dark table input[type="text"],
+.dark table input[type="number"] {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #475569 !important;
+}
+.dark table input::placeholder {
+  color: #64748b !important;
+}
+
+/* 暗色下表格样式增强 */
+.dark table {
+  color: #e2e8f0 !important;
+}
+.dark table th {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid #475569 !important;
+}
+.dark table td {
+  border-color: #334155 !important;
+}
+.dark table tbody tr {
+  background-color: #1e293b !important;
+}
+.dark table tbody tr:hover {
+  background-color: #334155 !important;
+}
+
 /* 暗色下分割线 */
 .dark .divide-gray-200 > * { border-color: #334155; }
 .dark .border-b { border-color: #334155; }
@@ -448,7 +514,6 @@ html {
   .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-7xl { padding-left: 0.5rem; padding-right: 0.5rem; }
   table { font-size: 10px; }
   th, td { padding: 0.25rem 0.4rem; white-space: normal; word-break: break-word; }
-  .sticky { position: relative; }
   .hidden.sm\:inline { display: none; }
 }
 

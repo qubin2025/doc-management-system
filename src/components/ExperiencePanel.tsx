@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Loader2, FlaskConical, Search, Trash2, ShieldAlert, ShieldCheck, ShieldX, Info, BarChart3, TrendingUp, Clock, Target, Lightbulb } from 'lucide-react';
+import { Loader2, FlaskConical, Search, Trash2, ShieldAlert, ShieldCheck, ShieldX, Info, BarChart3, TrendingUp, Clock, Target, Lightbulb } from 'lucide-react';
 import {
   extractExperiences,
   listExperiences,
@@ -8,6 +8,7 @@ import {
   AggregatedPattern,
 } from '../data/api';
 import { logColorConfig } from '../data/colorDebug';
+import ModuleHeader from './ModuleHeader';
 
 interface Props {
   projectName: string;
@@ -135,21 +136,13 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      {/* Header */}
-      <header className="shrink-0 bg-slate-300/70 backdrop-blur-md border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/zhjk-logo.png" alt="中航建科" className="h-9 w-auto" />
-            <h1 className="text-base font-bold text-slate-800 dark:text-slate-200">项目经验库</h1>
-            <span className="text-xs text-slate-600 dark:text-slate-400">{projectName}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> 返回
-            </button>
+      <ModuleHeader
+        title="项目经验库"
+        subtitle={projectName}
+        onBack={onBack}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        actions={
+          <>
             <button
               onClick={handleExtract}
               disabled={extracting}
@@ -162,9 +155,9 @@ const ExperiencePanel: React.FC<Props> = ({ projectName, onBack }) => {
               )}
               {extracting ? '提取中...' : '提取经验'}
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Status messages */}

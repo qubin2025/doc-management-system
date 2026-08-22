@@ -1,7 +1,8 @@
 import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
 import { toast } from './Toast';
-import { ArrowLeft, Plus, Edit2, Trash2, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users } from 'lucide-react';
+import ModuleHeader from './ModuleHeader';
 
 interface Stakeholder { id: string; name: string; role: string; org: string; power: 'high'|'low'; interest: 'high'|'low'; influence: string; strategy: string; contact: string; }
 
@@ -38,17 +39,19 @@ const StakeholderManager: React.FC<Props> = ({ projectName, onBack }) => {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
-            <Users size={24} className="text-orange-400" /><div><h1 className="text-xl font-bold text-[var(--text-primary)]">干系人管理</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
-          </div>
-          <button onClick={() => { setEditing(null); setForm({ name: '', power: 'high', interest: 'high' }); }}
-            className="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加干系人</button>
-        </div>
+        <ModuleHeader
+          title="干系人管理"
+          subtitle={projectName}
+          icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+          onBack={onBack}
+          actions={
+            <button onClick={() => { setEditing(null); setForm({ name: '', power: 'high', interest: 'high' }); }}
+              className="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加干系人</button>
+          }
+        />
 
         {/* 权力/利益矩阵 */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6 mt-6">
           <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-5">
             <h3 className="font-bold text-sm text-[var(--text-primary)] mb-3">权力/利益矩阵 (2x2)</h3>
             <div className="grid grid-cols-2 gap-1 text-center h-48 text-xs">

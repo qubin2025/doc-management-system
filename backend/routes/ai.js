@@ -312,7 +312,7 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
       const kgContext = await fetchGraphRAGContext(reviewKw);
       if (kgContext) {
         ctxMsgs.push({ role: 'system', content: kgContext });
-        logger.info(`[GraphRAG] 审查增强已激活，关键词: ${reviewKw}`);
+        console.log(`[GraphRAG] 审查增强已激活，关键词: ${reviewKw}`);
       }
     } catch (e) {
       // GraphRAG 不可用不影响主流程
@@ -322,12 +322,33 @@ router.post('/chat', requireAuth, requirePermission('can_use_ai'), async (req, r
 
   const userMsgs = (messages && Array.isArray(messages)) ? messages.map(m => ({ role: m.role, content: sanitizeText(m.content) })) : [];
 
+  // v5.7: 调试日志 — 显示发送给 AI 的用户消息摘要, 验证文档内容是否正确传递
+  const userMsgSummary = userMsgs.map((m, i) => {
+    const content = m.content || '';
+    // 只显示前 300 字符 + 关键信息(面积/投资/规模等)
+    const preview = content.slice(0, 300);
+    const hasArea = /\d+[,.\d]*\s*(?:平方米|㎡|m2|M2)/.test(content);
+    const hasInvestment = /(?:投资|估算|概算|造价)\s*[:：]?\s*\d/.test(content);
+    const hasScale = /(?:规模|班|层|人)/.test(content);
+    return `msg[${i}] role=${m.role}, len=${content.length}, preview="${preview.slice(0,100)}...", 含面积=${hasArea}, 含投资=${hasInvestment}, 含规模=${hasScale}`;
+  }).join('\n  ');
+  console.log(`\n[AI-CHAT] ============ 请求调试 ============`);
+  console.log(`[AI-CHAT] model: ${requestedModel}, ctxMsgs: ${ctxMsgs.length}, userMsgs: ${userMsgs.length}`);
+  console.log(`[AI-CHAT] ${userMsgSummary}`);
+  console.log(`[AI-CHAT] ========================================\n`);
+
   // Try requested model, fallback to offline if all fail
   tryChat(requestedModel, ctxMsgs, userMsgs)
     .then(reply => {
       const promptLen = req.body.messages?.reduce((s, m) => s + (m.content?.length || 0), 0) || 0;
       trackUsage(req.user?.username || 'unknown', promptLen, requestedModel);
       const cost = estimateCost(promptLen, requestedModel);
+      // v5.6: 增强日志 — 捕获 AI 完整响应用于调试
+      console.log(`\n[AI-CHAT] ============ AI 响应调试 ============`);
+      console.log(`[AI-CHAT] model: ${requestedModel}, promptLen: ${promptLen}, replyLen: ${reply?.length || 0}`);
+      console.log(`[AI-CHAT] reply 前 800 字符: ${(reply || '').slice(0, 800)}`);
+      console.log(`[AI-CHAT] reply 后 200 字符: ${(reply || '').slice(-200)}`);
+      console.log(`[AI-CHAT] ==========================================\n`);
       res.json({ reply, model: requestedModel, cost });
     })
     .catch(async e1 => {

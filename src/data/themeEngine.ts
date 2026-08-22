@@ -13,7 +13,7 @@ export interface ThemeConfig {
 }
 
 export const THEMES: ThemeConfig[] = [
-  { id: 'light', name: '亮白', icon: '☀️', description: '清爽明亮的白色主题' },
+  { id: 'light', name: '亮色', icon: '☀️', description: '清爽明亮的白色主题' },
   { id: 'warm', name: '暖色', icon: '🌅', description: '温馨护眼的暖色调' },
   { id: 'dark', name: '暗色', icon: '🌙', description: '专业深色暗黑主题' },
 ];
@@ -34,6 +34,10 @@ export function getTheme(): ThemeMode {
 export function setTheme(mode: ThemeMode): void {
   localStorage.setItem(THEME_KEY, mode);
   applyTheme(mode);
+  // 派发自定义事件，供需要响应主题变化的组件监听
+  try {
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { mode } }));
+  } catch {}
 }
 
 /** 应用主题到DOM */

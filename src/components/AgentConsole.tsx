@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, Copy, Download, FileText, FileDown, Edit3, Save, RotateCcw, ChevronDown } from 'lucide-react';
+import { Bot, Play, Square, RefreshCw, CheckCircle2, XCircle, Clock, Copy, Download, FileText, FileDown, Edit3, Save, RotateCcw, ChevronDown } from 'lucide-react';
 import { engineeringAgent, type AgentTask, type AgentStep, type AgentContext } from '../data/agentFramework';
 import { multiAgentOrchestrator, AGENT_PROFILES } from '../data/multiAgentOrchestrator';
 import type { AgentProfile } from '../types';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface AgentConsoleProps { projectName: string; onBack: () => void; }
 
@@ -134,65 +135,65 @@ const AgentConsole: React.FC<AgentConsoleProps> = ({ projectName, onBack }) => {
   const profileColor = activeProfile ? PROFILE_COLORS[activeProfile.id] || PROFILE_COLORS['general-engineer'] : null;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* 头部 */}
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
-          <Bot size={24} className="text-purple-400" />
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-[var(--text-primary)]">AI 智能体</h1>
-            <p className="text-sm text-[var(--text-muted)]">{projectName} · 多Agent协作 · 自主拆解任务、自动分析项目数据</p>
-          </div>
-
-          {/* Agent Profile 选择器 */}
-          <div className="relative">
-            <button onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition ${
-                currentProfile
-                  ? `${PROFILE_COLORS[currentProfile.id]?.border || 'border-purple-500/30'} ${PROFILE_COLORS[currentProfile.id]?.text || 'text-purple-400'} hover:bg-purple-500/10`
-                  : 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10'
-              }`}>
-              <Bot size={12} />
-              <span className="max-w-[100px] truncate">{currentProfile?.name || '自动匹配'}</span>
-              <ChevronDown size={12} />
-            </button>
-            {showProfileDropdown && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl shadow-xl z-50 overflow-hidden">
-                <div className="px-3 py-2 border-b border-[var(--border-primary)]">
-                  <span className="text-xs font-medium text-[var(--text-primary)]">选择 Agent 角色</span>
+    <div className="min-h-screen bg-[var(--bg-page)]">
+      <ModuleHeader
+        title="AI 智能体"
+        subtitle={`${projectName} · 多Agent协作 · 自主拆解任务、自动分析项目数据`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
+          <>
+            {/* Agent Profile 选择器 */}
+            <div className="relative">
+              <button onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition ${
+                  currentProfile
+                    ? `${PROFILE_COLORS[currentProfile.id]?.border || 'border-purple-500/30'} ${PROFILE_COLORS[currentProfile.id]?.text || 'text-purple-400'} hover:bg-purple-500/10`
+                    : 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10'
+                }`}>
+                <Bot size={12} />
+                <span className="max-w-[100px] truncate">{currentProfile?.name || '自动匹配'}</span>
+                <ChevronDown size={12} />
+              </button>
+              {showProfileDropdown && (
+                <div className="absolute right-0 top-full mt-1 w-56 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-[var(--border-primary)]">
+                    <span className="text-xs font-medium text-[var(--text-primary)]">选择 Agent 角色</span>
+                  </div>
+                  <button
+                    onClick={() => { setSelectedProfileId('auto'); setShowProfileDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-hover)] transition flex items-center gap-2 ${selectedProfileId === 'auto' ? 'bg-purple-500/10 text-purple-400' : 'text-[var(--text-primary)]'}`}>
+                    <span className="w-2 h-2 rounded-full bg-purple-400" />
+                    自动匹配（推荐）
+                  </button>
+                  {AGENT_PROFILES.map(p => {
+                    const c = PROFILE_COLORS[p.id] || PROFILE_COLORS['general-engineer'];
+                    return (
+                      <button key={p.id}
+                        onClick={() => { setSelectedProfileId(p.id); setShowProfileDropdown(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-hover)] transition flex items-center gap-2 ${selectedProfileId === p.id ? 'bg-purple-500/10' : ''}`}>
+                        <span className={`w-2 h-2 rounded-full ${c.text.replace('text-', 'bg-')}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium ${selectedProfileId === p.id ? 'text-purple-400' : 'text-[var(--text-primary)]'}`}>{p.name}</div>
+                          <div className="text-[var(--text-muted)] truncate">{p.role}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <button
-                  onClick={() => { setSelectedProfileId('auto'); setShowProfileDropdown(false); }}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-hover)] transition flex items-center gap-2 ${selectedProfileId === 'auto' ? 'bg-purple-500/10 text-purple-400' : 'text-[var(--text-primary)]'}`}>
-                  <span className="w-2 h-2 rounded-full bg-purple-400" />
-                  自动匹配（推荐）
-                </button>
-                {AGENT_PROFILES.map(p => {
-                  const c = PROFILE_COLORS[p.id] || PROFILE_COLORS['general-engineer'];
-                  return (
-                    <button key={p.id}
-                      onClick={() => { setSelectedProfileId(p.id); setShowProfileDropdown(false); }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-hover)] transition flex items-center gap-2 ${selectedProfileId === p.id ? 'bg-purple-500/10' : ''}`}>
-                      <span className={`w-2 h-2 rounded-full ${c.text.replace('text-', 'bg-')}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-medium ${selectedProfileId === p.id ? 'text-purple-400' : 'text-[var(--text-primary)]'}`}>{p.name}</div>
-                        <div className="text-[var(--text-muted)] truncate">{p.role}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {isAdmin && (
-            <button onClick={() => setShowPromptEditor(true)}
-              className="px-3 py-1.5 text-xs border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-lg flex items-center gap-1">
-              <Edit3 size={12} /> Agent提示词
-            </button>
-          )}
-        </div>
+            {isAdmin && (
+              <button onClick={() => setShowPromptEditor(true)}
+                className="px-3 py-1.5 text-xs border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-lg flex items-center gap-1">
+                <Edit3 size={12} /> Agent提示词
+              </button>
+            )}
+          </>
+        }
+      />
+      <div className="max-w-4xl mx-auto p-6">
 
         {/* 输入区 */}
         <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-4">

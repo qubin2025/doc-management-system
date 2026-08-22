@@ -15,6 +15,9 @@
  *   - parseHtml(buffer)    → ParseResult
  */
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
+import AdmZip from 'adm-zip';
 
 const logger = {
   info:  (...a) => console.log('[docParser]', new Date().toISOString(), ...a),
@@ -51,14 +54,27 @@ async function loadPdfParse() {
 async function parsePdf(buffer) {
   const fn = await loadPdfParse();
   if (!fn) throw new Error('pdf-parse 未安装，无法解析 PDF');
+
+  // v6.0: 大 PDF 内存保护 — 超过 50MB 时限制解析页数，防 OOM
+  const isLargeFile = buffer.length > 50 * 1024 * 1024;
+  const maxPages = isLargeFile ? PDF_MAX_PAGES : 0; // 0=无限制
+
   try {
-    const result = await fn(buffer, { max: 0 });  // 0=无页数限制
+    const result = await fn(buffer, { max: maxPages, pagerender: undefined });
     const text = cleanText(result.text);
-    return { text, meta: { pages: result.numpages, type: 'pdf' } };
+    const truncated = isLargeFile && result.numpages > PDF_MAX_PAGES;
+    return {
+      text,
+      meta: {
+        pages: result.numpages,
+        type: 'pdf',
+        truncated,
+        parsedPages: truncated ? PDF_MAX_PAGES : result.numpages,
+      },
+    };
   } catch (e) {
-    logger.warn('pdf-parse 解析失败（可能是扫描件）:', e.message);
-    // 降级：提示用户用 OCR
-    throw new Error(`PDF 解析失败（可能为扫描件，建议用 OCR）: ${e.message}`);
+    logger.warn('pdf-parse 解析失败（可能是扫描件或加密PDF）:', e.message);
+    throw new Error(`PDF 解析失败（可能为扫描件/加密文件，建议 OCR 或解密后上传）: ${e.message}`);
   }
 }
 
@@ -158,9 +174,154 @@ function parseHtml(buffer) {
   return { text: cleanText(blocks.join('\n\n') || allText), meta: { type: 'html' } };
 }
 
+// ========== CAD 图纸元数据提取（.dwg / .dxf） ==========
+/**
+ * CAD 文件解析策略：
+ * - .dwg: 二进制格式，无法直接提取文本，仅提取元数据（文件名、大小）
+ * - .dxf: ASCII 文本格式，可提取 HEADER 段变量、图层名、块定义等
+ * 入知识库时存储元数据 + 文件名关键词，支持按图名检索
+ */
+function parseCad(buffer, fileName) {
+  const ext = path.extname(fileName || '').toLowerCase();
+  const fileSizeMB = (buffer.length / 1024 / 1024).toFixed(1);
+  const baseName = path.basename(fileName || 'cad_drawing', ext);
+
+  if (ext === '.dxf') {
+    // DXF 是文本格式，尝试提取关键信息
+    try {
+      const raw = buffer.toString('utf8', 0, Math.min(buffer.length, 5 * 1024 * 1024)); // 只读前5MB
+      const lines = raw.split(/\r?\n/);
+      const layers = new Set();
+      const blocks = new Set();
+      let inLayerTable = false;
+      let inBlockSection = false;
+
+      for (let i = 0; i < lines.length; i++) {
+        const code = lines[i].trim();
+        const value = lines[i + 1]?.trim();
+        if (code === '2' && value === 'LAYER') inLayerTable = true;
+        if (code === '0' && value === 'ENDTAB') inLayerTable = false;
+        if (inLayerTable && code === '2' && value && !['LAYER', 'ENDTAB'].includes(value)) {
+          layers.add(value);
+        }
+        if (code === '2' && value === 'BLOCKS') inBlockSection = true;
+        if (code === '2' && value === 'ENTITIES') inBlockSection = false;
+        if (inBlockSection && code === '2' && value && !['BLOCKS', 'ENTITIES'].includes(value)) {
+          blocks.add(value);
+        }
+      }
+
+      const textParts = [
+        `CAD图纸: ${baseName}`,
+        `格式: DXF (ASCII)`,
+        `文件大小: ${fileSizeMB}MB`,
+        `图层数: ${layers.size}`,
+        `图层: ${[...layers].slice(0, 50).join(', ')}`,
+        `块定义数: ${blocks.size}`,
+        `块: ${[...blocks].slice(0, 30).join(', ')}`,
+      ];
+      return { text: cleanText(textParts.join('\n')), meta: { type: 'cad', format: 'dxf', layers: layers.size, blocks: blocks.size, fileSizeMB } };
+    } catch (e) {
+      logger.warn('DXF 解析失败，降级为元数据:', e.message);
+    }
+  }
+
+  // .dwg 或 DXF 解析失败：仅返回元数据
+  return {
+    text: cleanText([
+      `CAD图纸: ${baseName}`,
+      `格式: ${ext === '.dwg' ? 'DWG (二进制)' : 'DXF'}`,
+      `文件大小: ${fileSizeMB}MB`,
+      `说明: CAD图纸文件，已存储元数据用于检索。如需全文检索请导出为PDF后上传。`,
+    ].join('\n')),
+    meta: { type: 'cad', format: ext === '.dwg' ? 'dwg' : 'dxf', fileSizeMB, binary: ext === '.dwg' },
+  };
+}
+
+// ========== ZIP 归档递归解析 ==========
+/**
+ * 解压 ZIP 归档，递归解析内部支持的文件格式，合并文本
+ * 支持嵌套 ZIP（最多2层），限制文件数和总大小防 OOM
+ */
+async function parseZip(buffer, fileName) {
+  let zip;
+  try {
+    zip = new AdmZip(buffer);
+  } catch (e) {
+    throw new Error(`ZIP 解压失败（可能文件损坏或加密）: ${e.message}`);
+  }
+
+  const entries = zip.getEntries();
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'docparser-zip-'));
+  const results = [];
+  let totalSize = 0;
+  let fileCount = 0;
+
+  try {
+    for (const entry of entries) {
+      if (entry.isDirectory) continue;
+      if (fileCount >= ZIP_MAX_FILES) {
+        logger.warn(`ZIP 内文件数超 ${ZIP_MAX_FILES}，已截断`);
+        break;
+      }
+
+      const entryName = entry.entryName;
+      const ext = path.extname(entryName).toLowerCase();
+      const supportedExts = ['.pdf', '.docx', '.xlsx', '.xls', '.csv', '.txt', '.md', '.json', '.html', '.htm'];
+
+      if (!supportedExts.includes(ext)) continue;
+
+      // 提取到临时目录
+      const safeName = entryName.replace(/[^a-zA-Z0-9._\-/\\]/g, '_');
+      const outPath = path.join(tmpDir, safeName);
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+
+      try {
+        const data = entry.getData();
+        if (totalSize + data.length > ZIP_MAX_TOTAL_SIZE) {
+          logger.warn(`ZIP 解压总大小超 ${ZIP_MAX_TOTAL_SIZE / 1024 / 1024}MB，已截断`);
+          break;
+        }
+        fs.writeFileSync(outPath, data);
+        totalSize += data.length;
+        fileCount++;
+
+        // 递归解析
+        const subResult = await parseDocument(data, entryName);
+        results.push({ name: entryName, text: subResult.text, meta: subResult.meta });
+      } catch (e) {
+        logger.warn(`ZIP 内文件 ${entryName} 解析失败: ${e.message}`);
+      }
+    }
+
+    // 合并文本
+    const mergedText = results.map((r, i) =>
+      `===== [文件${i + 1}/${results.length}] ${r.name} =====\n${r.text}`
+    ).join('\n\n');
+
+    return {
+      text: cleanText(mergedText),
+      meta: {
+        type: 'zip',
+        archiveName: fileName,
+        fileCount: results.length,
+        totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
+        files: results.map(r => ({ name: r.name, type: r.meta?.type })),
+      },
+    };
+  } finally {
+    // 清理临时目录
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
 // ========== 主入口 ==========
-// 5.4 内存保护：解析阶段文件大小预检（防 OOM）
-const MAX_FILE_SIZE = 10 * 1024 * 1024;  // 10MB
+// v6.0: 大幅提高文件上限至 200MB（配合 multipart 流式上传，支持 CAD 大图纸）
+// 大文件采用分页数限制 + 降级策略，防 OOM
+const MAX_FILE_SIZE = 200 * 1024 * 1024;  // 200MB
+const PDF_MAX_PAGES = 1000;  // PDF 最大解析页数（超大型图纸集可能超1000页，截断保护）
+const ZIP_MAX_FILES = 50;    // ZIP 内最大解析文件数
+const ZIP_MAX_TOTAL_SIZE = 100 * 1024 * 1024; // ZIP 解压后总大小上限 100MB
 
 /**
  * 解析文档为纯文本
@@ -172,12 +333,12 @@ export async function parseDocument(buffer, fileName) {
   if (!buffer || !Buffer.isBuffer(buffer)) {
     throw new Error('parseDocument 入参 buffer 必须是 Buffer');
   }
-  // 5.4: 文件大小预检（>10MB 抛错，防解析阶段 OOM）
+  // v6.0: 文件大小预检（>200MB 抛错，配合 multipart 上传上限）
   if (buffer.length > MAX_FILE_SIZE) {
-    throw new Error(`文件 ${fileName || ''} 大小 ${(buffer.length / 1024 / 1024).toFixed(1)}MB 超 ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)}MB 上限，可能 OOM（建议拆分后上传）`);
+    throw new Error(`文件 ${fileName || ''} 大小 ${(buffer.length / 1024 / 1024).toFixed(1)}MB 超 ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)}MB 上限，请拆分后上传`);
   }
   const ext = path.extname(fileName || '').toLowerCase();
-  logger.debug(`Parsing ${fileName} (ext=${ext}, size=${buffer.length} bytes)`);
+  logger.debug(`Parsing ${fileName} (ext=${ext}, size=${(buffer.length / 1024 / 1024).toFixed(2)}MB)`);
   switch (ext) {
     case '.pdf':
       return await parsePdf(buffer);
@@ -197,6 +358,11 @@ export async function parseDocument(buffer, fileName) {
     case '.html':
     case '.htm':
       return parseHtml(buffer);
+    case '.dwg':
+    case '.dxf':
+      return parseCad(buffer, fileName);
+    case '.zip':
+      return await parseZip(buffer, fileName);
     default:
       // 兜底：按文本读取
       logger.warn(`Unknown ext ${ext}, fallback to text`);
@@ -205,6 +371,6 @@ export async function parseDocument(buffer, fileName) {
 }
 
 // 支持格式查询
-export const SUPPORTED_FORMATS = ['.pdf', '.docx', '.xlsx', '.xls', '.csv', '.txt', '.md', '.markdown', '.json', '.html', '.htm'];
+export const SUPPORTED_FORMATS = ['.pdf', '.docx', '.xlsx', '.xls', '.csv', '.txt', '.md', '.markdown', '.json', '.html', '.htm', '.dwg', '.dxf', '.zip'];
 
 export default { parseDocument, SUPPORTED_FORMATS };

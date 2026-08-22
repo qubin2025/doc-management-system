@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, LogOut, MessageSquare, Users } from 'lucide-react';
+import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, MessageSquare, Users } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
 import LoginPage from './components/LoginPage';
@@ -29,7 +29,6 @@ import TailoringEngine from './components/TailoringEngine';
 import AgentConsole from './components/AgentConsole';
 import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
-import { getTheme, setTheme, type ThemeMode } from './data/themeEngine';
 import BaselineManager from './components/BaselineManager';
 import AuditLogViewer from './components/AuditLogViewer';
 import StakeholderManager from './components/StakeholderManager';
@@ -94,7 +93,6 @@ const App: React.FC = () => {
 
   const currentInfo = STANDARD_INFO[standard];
   const currentData = standard === 'DB11/T695-2025' ? buildingData : municipalData;
-  const [themeMode, setThemeMode] = useState<ThemeMode>(() => getTheme());
   const STORAGE_KEY = `doc-mgmt-upload-${standard}`;
   const PROJECTS_KEY = `doc-mgmt-projects-${standard}`;
 
@@ -136,13 +134,27 @@ const App: React.FC = () => {
           setProjects(list);
           setCachedProjects(list);  // v5.2: 填充 API-backed 缓存供数据模块同步读取
           localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
-        } catch {
-          // API失败但有token → token可能过期 → 清除重新登录
-          if (localStorage.getItem(AUTH_KEY)) {
-            localStorage.removeItem(AUTH_KEY);
-            console.warn('[启动] API调用失败, token可能过期, 已清除认证信息');
+        } catch (err: any) {
+          // v6.0 FIX: 区分认证失败 vs 网络/服务器错误
+          //   v5.7 原实现：任何错误都清除 token → 临时网络抖动也会强制登出，闪烁循环
+          //   v6.0 新策略：仅当 err.authFailed=true（后端明确返回 401/未登录）才清除 token
+          //               其他错误（网络断开、500、超时）保留 token，提示用户稍后重试
+          const isAuthFailed = err?.authFailed === true || /未登录|登录已过期|请先登录/.test(err?.message || '');
+          if (isAuthFailed) {
+            if (localStorage.getItem(AUTH_KEY)) {
+              localStorage.removeItem(AUTH_KEY);
+              console.warn('[启动] 认证失效, 已清除认证信息:', err.message);
+            }
+            setApiAvailable(false);
+            setProjects([]);
+            toast('登录状态已失效，请重新登录', 'warning');
+          } else {
+            // 网络/服务器错误：保留 token，避免用户被强制登出
+            console.warn('[启动] 获取项目列表失败(非认证错误), 保留登录态:', err.message);
+            // 尝试加载本地缓存, 避免空白
+            loadProjectsFromLocal();
+            toast('获取项目列表失败：' + (err?.message || '网络错误') + '，已加载本地缓存', 'warning');
           }
-          loadProjectsFromLocal();
         }
       } else {
         loadProjectsFromLocal();
@@ -168,6 +180,40 @@ const App: React.FC = () => {
   // ===== 上传数据 =====
   const [allUploadInfo, setAllUploadInfo] = useState<Record<string, Record<string, UploadInfo[]>>>({});
   const [uploadInfoLoading, setUploadInfoLoading] = useState(false);
+
+  // ===== 本地辅助函数：重命名 / 更新详情（后端成功后调用）=====
+  const doLocalRename = useCallback((oldName: string, newName: string) => {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const newKey = migrateKeyOnRename(key, oldName, newName);
+      if (newKey) {
+        localStorage.setItem(newKey, localStorage.getItem(key)!);
+        localStorage.removeItem(key);
+      }
+    }
+    localStorage.removeItem('knowledge-graph');
+    // v5.6: 同步写 PROJECTS_KEY,确保关闭对话框时本地缓存已更新(避免用户马上刷新看到旧名)
+    setProjects(prev => {
+      const updated = prev.map(p => p.name === oldName ? { ...p, name: newName } : p);
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    if (currentProject === oldName) setCurrentProject(newName);
+    setAllUploadInfo(prev => {
+      const next = { ...prev };
+      if (next[oldName]) { next[newName] = next[oldName]; delete next[oldName]; }
+      return next;
+    });
+  }, [currentProject, PROJECTS_KEY]);
+
+  const doUpdateLocal = useCallback((name: string, details: any) => {
+    setProjects(prev => {
+      const updated = prev.map(p => p.name === name ? { ...p, details } : p);
+      localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, [PROJECTS_KEY]);
 
   // useMemo 保证引用稳定，避免 || {} 每次渲染创建新对象触发 useEffect 无限更新
   const uploadInfo = useMemo(() => allUploadInfo[currentProject] || {}, [allUploadInfo, currentProject]);
@@ -461,24 +507,101 @@ const App: React.FC = () => {
     setView('tailoring-engine');
   };
 
-  const handleDeleteProject = (projName: string) => {
-    if (!confirm(`确定要删除项目"${projName}"及其所有数据吗？此操作不可撤销。`)) return;
-    if (apiAvailable) {
-      api.deleteProjectApi(projName).catch(() => {
-        toast(`后端删除失败，项目"${projName}"仅从本地移除，重启后可能重新出现`, 'warning');
-      });
+  // v5.6: 删除项目 (App 级对话框的删除按钮)
+  // 安全规则:1) 仅 isAdmin 可操作(前端 + 后端 requireRole 双重校验) 2) 强制输入 DELETE-{项目名} 防误触 3) 先 API 成功再改前端 state(禁止乐观删除)
+  const handleDeleteProject = async (projName: string) => {
+    if (!isAdmin) { toast('仅系统管理员可删除项目', 'error'); return; }
+    const expected = `DELETE-${projName}`;
+    const promptText =
+      `[危险操作] 即将永久删除项目「${projName}」\n\n` +
+      `• 后端数据库 20+ 张业务表级联删除(事务)\n` +
+      `• 本地 localStorage/向量库/知识图谱分区同步清理\n` +
+      `• 此操作不可撤销,建议先导出归档\n\n` +
+      `请在下方输入框中准确输入「${expected}」以继续:`;
+    const input = (typeof window !== 'undefined' && typeof (window as any).prompt === 'function')
+      ? (window as any).prompt(promptText, '') as string | null
+      : null;
+    if (input?.trim() !== expected) { if (input !== null) toast('取消删除或输入不匹配', 'warning'); return; }
+    let deletedName: string | null = null;
+    let isPhantom = false;
+    try {
+      if (apiAvailable) {
+        const r = await api.deleteProjectApi(projName);
+        deletedName = r.deletedProjectName || projName;
+        isPhantom = !!(r as any).phantom;
+        // v5.6 FIX: phantom 项目表示后端已无此记录(幽灵项目),跳过 KG 清理(没东西可清)
+        if (!isPhantom) {
+          try { await api.deleteProjectKGNodes(projName); } catch (_) { /* noop */ }
+        }
+      } else {
+        deletedName = projName;
+        isPhantom = true; // 离线模式下所有删除都是纯本地清理
+      }
+    } catch (e: any) {
+      toast(`后端删除失败:${e?.message || '未知错误'}。未删除任何数据。`, 'error');
+      return; // 后端失败则一律不做乐观删除
     }
-    setProjects(prev => prev.filter(p => p.name !== projName));
-    setAllUploadInfo(prev => { const next = { ...prev }; delete next[projName]; return next; });
-    if (currentProject === projName) {
-      const remaining = projects.filter(p => p.name !== projName);
+    // API 成功 → 本地清理
+    const target = deletedName || projName;
+    // localStorage: 清理项目专属 key 缓存 + knowledge-graph 重建
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        // 项目级 key 通用前缀:通用工作项指南/目标/上传信息
+        if (k === `guide-${target}-done` ||
+          k.endsWith(`-${target}-done`) ||
+          k.startsWith(`objectives-root-${target}`) ||
+          k.startsWith(`upload-info-${target}-`) ||
+          k.startsWith(`tailoring-${target}-`) ||
+          k.startsWith(`project-detail-${target}-`) ||
+          k === `kb-sync-state-${target}` ||
+          k.includes(`:${target}:`)) {
+          keysToRemove.push(k);
+        }
+        if (k.startsWith('doc-mgmt-projects-')) {
+          try {
+            const v = JSON.parse(localStorage.getItem(k) || '[]');
+            if (Array.isArray(v)) localStorage.setItem(k, JSON.stringify(v.filter((x: any) => (x.name || '') !== target)));
+          } catch {}
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      localStorage.removeItem('knowledge-graph');
+    } catch (_) { /* localStorage 清理失败不阻断主结论 */ }
+    // 向量库分区清理
+    try {
+      const { vectorStore } = await import('./data/vectorStore');
+      try { vectorStore.removeByPrefix('daily', target); } catch (_) {}
+      try { vectorStore.removeByPrefix('issue', target); } catch (_) {}
+      try { vectorStore.removeByPrefix('exp', target); } catch (_) {}
+    } catch (_) { /* 离线场景跳过 */ }
+    // 前端 React state 同步移除
+    setProjects(prev => {
+      const updated = prev.filter(p => p.name !== target);
+      // 不仅更新当前标准的 key, 更新所有标准的项目列表 key
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('doc-mgmt-projects-')) {
+          localStorage.setItem(k, JSON.stringify(updated));
+        }
+      }
+      return updated;
+    });
+    setAllUploadInfo(prev => { const next = { ...prev }; delete next[target]; return next; });
+    if (currentProject === target) {
+      const remaining = projects.filter(p => p.name !== target);
       setCurrentProject(remaining.length > 0 ? remaining[0].name : '');
     }
+    toast(`项目「${target}」已彻底删除`, 'success');
+    // 300ms 后刷新页面,保证各模块/缓存全量失效不残留
+    setTimeout(() => window.location.reload(), 300);
   };
 
   // ===== AI 对话页 =====
   if (view === 'ai-chat' || showAiChat) {
-    return <AiChatPage onBack={() => { setView('dashboard-global'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} isAdmin={isAdmin} />;
+    return <AiChatPage onBack={() => { setView('homepage'); setShowAiChat(false); }} projectName={currentProject} standard={standard} initialQuery={aiQuery} isAdmin={isAdmin} />;
   }
 
   if (view === 'dashboard' && currentProject) {
@@ -567,7 +690,7 @@ const App: React.FC = () => {
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
       onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
-      onBack={() => setView('project-entry')} />;
+      onBack={() => setView('homepage')} />;
   }
 
   // ===== Agent智能体 (P1-1) =====
@@ -611,7 +734,7 @@ const App: React.FC = () => {
 
   // ===== 审计日志 (Phase 3) =====
   if (view === 'audit-log') {
-    return <AuditLogViewer projectName={currentProject} onBack={() => isAdmin ? setView('admin') : setView('homepage')} />;
+    return <AuditLogViewer projectName={currentProject} onBack={() => setView('homepage')} />;
   }
 
   // ===== PMBOK框架 (P1-4) =====
@@ -624,12 +747,12 @@ const App: React.FC = () => {
     return <TargetManager projectName={currentProject} guideChapters={guideChapters}
       flowMode={onboardingFlow}
       onNext={(nextView) => setView(nextView)}
-      onBack={() => onboardingFlow ? setView('tailoring-engine') : setView('homepage')} />;
+      onBack={() => setView('homepage')} />;
   }
 
   // ===== 手机水印照片 =====
   if (view === 'mobile-photos') {
-    return <MobilePhotoViewer projectName={currentProject || ''} onBack={() => setView('dashboard-global')} />;
+    return <MobilePhotoViewer projectName={currentProject || ''} onBack={() => setView('homepage')} />;
   }
 
   // ===== 现场问题管理 =====
@@ -706,48 +829,137 @@ const App: React.FC = () => {
         onCreateProject={() => { setShowProjectDialog(true); }}
         onRenameProject={(oldName, newName) => {
           if (!newName.trim() || oldName === newName) return;
-          // v5.2: 同步到后端（含子表级联更新 project_name）
+          const trimmed = newName.trim();
+          // v5.5: 先调后端，成功后再更新本地；失败则提示具体错误
           if (apiAvailable) {
-            api.updateProject(oldName, { newName: newName.trim() }).then(ok => {
-              if (!ok) toast('后端同步失败，项目名仅本地更新', 'warning');
+            api.updateProject(oldName, { newName: trimmed }).then(res => {
+              if (res.ok) {
+                doLocalRename(oldName, trimmed);
+              } else {
+                toast(res.error || '后端同步失败', 'error');
+              }
             });
+          } else {
+            doLocalRename(oldName, trimmed);
           }
-          // v5.3: 迁移 localStorage 中所有项目相关键（精确边界匹配，避免前缀混淆）
-          // 使用 migrateKeyOnRename 替代 startsWith，确保"测试"重命名不误迁移"测试1"的键
-          for (let i = localStorage.length - 1; i >= 0; i--) {
-            const key = localStorage.key(i);
-            if (!key) continue;
-            const newKey = migrateKeyOnRename(key, oldName, newName.trim());
-            if (newKey) {
-              localStorage.setItem(newKey, localStorage.getItem(key)!);
-              localStorage.removeItem(key);
-            }
-          }
-          // v5.3: 清除知识图谱缓存，确保下次访问时用新项目名重建
-          localStorage.removeItem('knowledge-graph');
-          setProjects(prev => prev.map(p => p.name === oldName ? { ...p, name: newName.trim() } : p));
-          if (currentProject === oldName) setCurrentProject(newName.trim());
-          // 同步更新 allUploadInfo 中的项目名
-          setAllUploadInfo(prev => {
-            const next = { ...prev };
-            if (next[oldName]) { next[newName.trim()] = next[oldName]; delete next[oldName]; }
-            return next;
-          });
         }}
         onUpdateProject={(name, details) => {
-          // v5.2: 同步到后端
+          // v5.2: 同步到后端；v5.5 失败提示具体错误
           if (apiAvailable) {
-            api.updateProject(name, { details }).then(ok => {
-              if (!ok) toast('详情后端同步失败，仅本地保存', 'warning');
+            api.updateProject(name, { details }).then(res => {
+              if (res.ok) {
+                doUpdateLocal(name, details);
+              } else {
+                toast(res.error || '详情保存失败', 'error');
+              }
             });
+          } else {
+            doUpdateLocal(name, details);
           }
-          setProjects(prev => {
-            const updated = prev.map(p => p.name === name ? { ...p, details } : p);
-            localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
-            return updated;
-          });
         }}
-        onBack={() => setView('dashboard-global')}
+        onSaveProject={async (oldName, newName, details) => {
+          const trimmed = newName.trim();
+          if (!trimmed) return false;
+          const changed = trimmed !== oldName;
+          // 单次 API 调用同时处理重命名 + 详情更新
+          const payload: any = { details };
+          if (changed) payload.newName = trimmed;
+          if (apiAvailable) {
+            let upgradedLocalProject = false; // 标记是否做了 404→create 降级(纯本地项目升级为后端项目)
+            try {
+              let res = await api.updateProject(oldName, payload);
+              // v5.6 修复:本地缓存中有该项目但后端不存在(离线模式创建的纯本地项目)
+              // → 返回 404 "项目不存在" 时,先 createProject 在后端建立该项目,再 PUT 更新一次
+              if (!res.ok && res.error === '项目不存在') {
+                upgradedLocalProject = true;
+                try {
+                  // v5.6 BUG FIX: 之前 createProject(oldName) = "用旧名去创建",然后再 PUT /oldName?oldName→newName 重命名,
+                  //   但如果此时另一个 tab/会话已经有 oldName 对应的行存在于后端(或 oldName 本身被其它项目占了),create 失败且 catch 的 message
+                  //   走 "includes('已存在')" → 静默吞掉,然后继续 PUT /oldName → 该 oldName 指向的是别人的项目,或者根本就是个死循环。
+                  //   正确做法:直接 create 【trimmed 最终目标名】, 因为用户 intent 就是"保存一份叫这个名的项目"。
+                  //   1) 先尝试 trimmed(目标名); 如果 409(已存在),再 fallback oldName。这样避免了目标名被一个"无主的刚创建的空壳 oldName" 占用
+                  const createAttempts = changed ? [trimmed, oldName] : [oldName];
+                  let actuallyCreated = null;
+                  let lastErr: any = null;
+                  for (const nm of createAttempts) {
+                    try {
+                      await api.createProject(nm);
+                      actuallyCreated = nm;
+                      break;
+                    } catch (e2: any) {
+                      lastErr = e2;
+                      const m = (e2?.message || '').toString();
+                      // 如果 UNIQUE 冲突了,尝试下一个候选名
+                      if (!m.includes('已存在') && !m.includes('UNIQUE')) break;
+                    }
+                  }
+                  if (!actuallyCreated) {
+                    // 两个候选名都创建失败(都占了)
+                    toast(`后端无法创建该项目: ${(lastErr?.message || '') || '名称冲突,请换用其他名称'}`, 'error');
+                    return false;
+                  }
+                  // 如果实际创建的名称和 payload.newName 不一致,说明 trimmed 没创建成功,走的是 oldName
+                  // → 先改 payload.newName 以匹配实际项目名,然后等 PUT /actuallyCreated 走重命名流程
+                  //   (除非 actuallyCreated 就是 trimmed,那 oldName 参数要替换)
+                  const apiOldNameForPut = actuallyCreated;
+                  const res2 = await api.updateProject(apiOldNameForPut, payload);
+                  // 覆盖外层 res,供后续 if (res.ok) 判断用
+                  res = res2;
+                  // 如果 PUT 最终成功 → 无论走了哪条路径,最终 DB 中的项目名应该是 trimmed(如果有改名)
+                  // → localStorage 的 doLocalRename 需要用"用户点击保存时的 oldName"作为 src,
+                  //   所以 DO NOT overwrite outer `oldName` / `trimmed` 变量,保持后续逻辑不变。
+                } catch (e: any) {
+                  const msg = e?.message || '';
+                  if (!msg.includes('已存在')) {
+                    toast(`后端无法创建该项目: ${msg || '未知错误'}`, 'error');
+                    return false;
+                  }
+                }
+              }
+              if (res.ok) {
+                // v5.6: 404 降级成功后,强制从后端刷新 projects 列表,使纯本地项目获得后端 id 并同步 projects state
+                // 避免后续再编辑时因前端 state 陈旧导致的 duplicate 死胡同或 404 循环
+                if (upgradedLocalProject) {
+                  try {
+                    const freshList = await api.fetchProjects();
+                    setProjects(freshList);
+                    setCachedProjects(freshList);
+                    localStorage.setItem(PROJECTS_KEY, JSON.stringify(freshList));
+                  } catch (_) { /* 刷新失败不影响成功结论,下次 useEffect 会自动重拉 */ }
+                }
+                if (changed) doLocalRename(oldName, trimmed);
+                doUpdateLocal(changed ? trimmed : oldName, details);
+                toast('保存成功', 'success');
+                return true;
+              } else {
+                // v5.6: 409 改名冲突 + 404 升级场景,先刷新 projects 同步后端最新状态,再给用户明确引导
+                if (upgradedLocalProject) {
+                  try {
+                    const freshList = await api.fetchProjects();
+                    setProjects(freshList);
+                    setCachedProjects(freshList);
+                    localStorage.setItem(PROJECTS_KEY, JSON.stringify(freshList));
+                  } catch (_) { /* noop */ }
+                }
+                if (res.error === '项目名称已存在') {
+                  toast(`新名称「${trimmed}」已被占用${changed ? `,请改回原名称「${oldName}」保存详情,或换用其他未使用的项目名称` : ''}`, 'warning');
+                } else {
+                  toast(res.error || '保存失败', 'error');
+                }
+                return false;
+              }
+            } catch (e: any) {
+              toast(`保存失败: ${e?.message || '未知错误'}`, 'error');
+              return false;
+            }
+          } else {
+            if (changed) doLocalRename(oldName, trimmed);
+            doUpdateLocal(changed ? trimmed : oldName, details);
+            toast('已保存到本地', 'success');
+            return true;
+          }
+        }}
+        onBack={() => setView('homepage')}
         onAiSubmit={(query) => {
           setAiQuery(query);
           setView('ai-chat');
@@ -779,12 +991,10 @@ const App: React.FC = () => {
   if (view === 'homepage') {
     return (
       <HomePage
-        themeMode={themeMode}
         onNavigate={(v, params) => {
           if (params?.chapterId) { setGuideChapterId(params.chapterId); setView('guide-chapter'); }
           else setView(v);
         }}
-        onToggleTheme={() => { const next = themeMode === 'dark' ? 'light' : 'dark'; setTheme(next); setThemeMode(next); }}
         onLogout={handleLogout}
       />
     );
@@ -860,12 +1070,7 @@ const App: React.FC = () => {
                 ) : (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{auth?.user?.role === 'project_manager' ? '项目经理' : auth?.user?.role === 'construction_unit' ? '建设单位' : '用户'}</span>
                 )}
-                <button onClick={() => setView('homepage')} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium border border-gray-200">
-                  <ArrowLeft className="w-4 h-4" /> 返回首页
-                </button>
-                <button onClick={handleLogout} className="px-2 py-1 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 rounded" title="退出登录">
-                  <LogOut className="w-3 h-3" />
-                </button>
+
               </div>
 
               <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
@@ -884,6 +1089,9 @@ const App: React.FC = () => {
                 <button onClick={handleClearAll} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
                   <RefreshCw className="w-4 h-4" />清空记录</button>
               )}
+              <button onClick={() => setView('homepage')} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border border-gray-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50">
+                <ArrowLeft className="w-4 h-4" /> 返回首页
+              </button>
             </div>
           </div>
         </div>
@@ -973,8 +1181,10 @@ const App: React.FC = () => {
                               className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">选择</button>
                           )}
                           {currentProject === p.name && <span className="px-2 py-1 text-xs bg-green-500 text-white rounded">当前</span>}
-                          <button onClick={() => handleDeleteProject(p.name)}
-                            className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded" title="删除项目">删除</button>
+                          {isAdmin && (
+                            <button onClick={() => handleDeleteProject(p.name)}
+                              className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded" title="删除项目(仅管理员)">删除</button>
+                          )}
                         </div>
                       </div>
                     );

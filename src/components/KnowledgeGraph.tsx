@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react';
-import { ArrowLeft, Search, X, Plus, Link2, Save, Users, Cpu, Palette, ChevronDown, RotateCcw, Download, Edit2, Trash2, Camera, Type } from 'lucide-react';
+import { Search, X, Plus, Link2, Save, Users, Palette, ChevronDown, RotateCcw, Download, Edit2, Trash2, Camera, Type, LayoutGrid } from 'lucide-react';
 import * as THREE from 'three';
+// @ts-expect-error - d3-force-3d 未提供官方 TypeScript 类型声明
+import { forceCollide } from 'd3-force-3d';
 import { buildGraph, KnowledgeGraph as KGType, getParentChain, TYPE_NAMES, TYPE_EDGE_NAMES } from '../data/knowledgeGraph';
 import { getCachedProjects } from '../data/projectDataCache';
 import * as api from '../data/api';
+import ModuleHeader from './ModuleHeader';
 
 const ForceGraph3D = React.lazy(() => import('react-force-graph-3d'));
+const ForceGraph2D = React.lazy(() => import('react-force-graph-2d'));
 
 // ===== 类型色 =====
 const TYPE_COLORS: Record<string, string> = {
@@ -13,6 +17,30 @@ const TYPE_COLORS: Record<string, string> = {
   form: '#EC4899', document: '#10B981', supplier: '#F97316', cost: '#14B8A6', person: '#EF4444',
   'construction-plan': '#F59E0B', 'standard-clause': '#3B82F6', 'review-item': '#EF4444', 'risk-point': '#DC2626',
   contract: '#8B5CF6', 'bid-document': '#6366F1', agent: '#8B5CF6',
+  'land-reserve': '#14B8A6', policy: '#EF4444', regulation: '#06B6D4', plan: '#0EA5E9',
+  'daily-report': '#10B981', issue: '#F97316', 'progress-report': '#84CC16',
+  experience: '#D946EF', stakeholder: '#F59E0B',
+  objective: '#6366F1', baseline: '#0EA5E9',
+};
+
+// 类型中文名称查找（兼容大小写和变体）
+const getNodeTypeName = (type: string): string => {
+  if (!type) return '';
+  if (TYPE_NAMES[type]) return TYPE_NAMES[type];
+  const lower = type.toLowerCase().replace(/_/g, '-');
+  if (TYPE_NAMES[lower]) return TYPE_NAMES[lower];
+  const key = Object.keys(TYPE_NAMES).find(k => k.toLowerCase() === lower || k.toLowerCase().replace(/-/g, '') === lower.replace(/-/g, ''));
+  return key ? TYPE_NAMES[key] : type;
+};
+
+const getEdgeTypeName = (type: string): string => {
+  if (!type) return '';
+  if (TYPE_EDGE_NAMES[type]) return TYPE_EDGE_NAMES[type];
+  const lower = type.toLowerCase().replace(/-/g, '_');
+  if (TYPE_EDGE_NAMES[lower]) return TYPE_EDGE_NAMES[lower];
+  const dashed = type.toLowerCase().replace(/_/g, '-');
+  if (TYPE_EDGE_NAMES[dashed]) return TYPE_EDGE_NAMES[dashed];
+  return type;
 };
 
 // ===== 3D 主题光效 =====
@@ -24,6 +52,9 @@ const THEMES: Record<string, { name: string; gradient: string; bgHex: string; li
   moonlight:{ name: '月光白', gradient: 'radial-gradient(circle, #f3f4f6 0%, #e5e7eb 50%, #9ca3af 100%)', bgHex: '#f3f4f6', light: '#ffffff', amb: 0.85, fog: '#f3f4f6' },
 };
 
+// 用于精确测量节点文字宽度的 canvas 上下文（模块级单例，避免重复创建）
+const MEASURE_CTX = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
+
 // ===== 3D 子组件 =====
 const Graph3DCanvas: React.FC<{
   nodes: any[]; edges: any[]; selectedNode: any; onNodeClick: (node: any) => void; theme: string;
@@ -31,7 +62,11 @@ const Graph3DCanvas: React.FC<{
   fontSize?: string; fontColor?: string;
 }> = React.memo(({ nodes: rawNodes, edges: rawEdges, selectedNode, onNodeClick, theme, onLightingReady, fgRefOut, fontSize = 'md', fontColor }) => {
   const fgRef = useRef<any>(null);
-  useEffect(() => { if (fgRefOut) fgRefOut.current = fgRef.current; }, [fgRef.current, fgRefOut]);
+  // 使用 callback ref 确保父组件能立即拿到 ForceGraph 实例（useEffect 不会因 ref.current 变化触发）
+  const setFgRef = useCallback((instance: any) => {
+    fgRef.current = instance;
+    if (fgRefOut) fgRefOut.current = instance;
+  }, [fgRefOut]);
   const themeCfg = THEMES[theme] || THEMES.space;
 
   const gData = useMemo(() => {
@@ -117,12 +152,19 @@ const Graph3DCanvas: React.FC<{
     return group;
   }, [selectedNode]);
 
-  const linkColor = useCallback((l: any) => l.type?.startsWith('BELONGS') ? '#3b82f6' : l.type?.startsWith('PRECEDES') ? '#22c55e' : '#4b5563', []);
+  const linkColor = useCallback((l: any) => {
+    const type = (l.type || '').toUpperCase();
+    if (type.startsWith('BELONGS') || type === 'BELONGS_TO') return '#3b82f6';
+    if (type.startsWith('PRECEDES')) return '#22c55e';
+    if (type.startsWith('REFERENCES') || type.startsWith('HAS_')) return '#8b5cf6';
+    if (type.startsWith('PRODUCES') || type.startsWith('REVIEWS')) return '#f59e0b';
+    return '#4b5563';
+  }, []);
 
   return (
     <div className="absolute inset-0 w-full h-full transition-all duration-1000" style={{ background: themeCfg.gradient }}>
       <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">加载 3D...</div>}>
-        <ForceGraph3D ref={fgRef} graphData={gData} backgroundColor="rgba(0,0,0,0)" nodeThreeObject={nodeObj} nodeThreeObjectExtend={false}
+        <ForceGraph3D ref={setFgRef as any} graphData={gData} backgroundColor="rgba(0,0,0,0)" nodeThreeObject={nodeObj} nodeThreeObjectExtend={false}
           linkWidth={(l: any) => (l.strength || 3) / 5}
           linkColor={linkColor}
           linkOpacity={0.65}
@@ -132,6 +174,129 @@ const Graph3DCanvas: React.FC<{
           showNavInfo={false}
           d3AlphaDecay={0.03} d3VelocityDecay={0.5}
           warmupTicks={30} cooldownTicks={10} />
+      </Suspense>
+    </div>
+  );
+});
+
+// ===== 2D 子组件 =====
+const Graph2DCanvas: React.FC<{
+  nodes: any[]; edges: any[]; selectedNode: any; onNodeClick: (node: any) => void; theme: string;
+  fgRefOut?: React.MutableRefObject<any>;
+  fontSize?: string; fontColor?: string; lightTheme: boolean;
+}> = React.memo(({ nodes: rawNodes, edges: rawEdges, selectedNode, onNodeClick, theme, fgRefOut, fontSize = 'md', fontColor, lightTheme }) => {
+  const fgRef = useRef<any>(null);
+  // 使用 callback ref 确保父组件能立即拿到 ForceGraph 实例（useEffect 不会因 ref.current 变化触发）
+  const setFgRef = useCallback((instance: any) => {
+    fgRef.current = instance;
+    if (fgRefOut) fgRefOut.current = instance;
+  }, [fgRefOut]);
+  const themeCfg = THEMES[theme] || THEMES.space;
+
+  const gData = useMemo(() => {
+    const SIZE_MAP: Record<string, number> = { project: 10, chapter: 8, 'sub-module': 6, 'work-item': 4 };
+    const links = rawEdges.filter(e => {
+      const ids = new Set(rawNodes.map(n => n.id));
+      return ids.has(e.from) && ids.has(e.to);
+    }).map(e => ({ source: e.from, target: e.to, type: e.type || 'REFERENCES', strength: (e.props as any)?.strength || 3 }));
+    return {
+      nodes: rawNodes.map(n => ({ ...n, name: n.label, val: SIZE_MAP[n.type] || 5 })),
+      links,
+    };
+  }, [rawNodes, rawEdges]);
+
+  const connectedIds = useMemo(() => {
+    if (!selectedNode) return new Set<string>();
+    const s = new Set<string>([selectedNode.id]);
+    rawEdges.forEach(e => { if (e.from === selectedNode.id) s.add(e.to); if (e.to === selectedNode.id) s.add(e.from); });
+    return s;
+  }, [selectedNode, rawEdges]);
+
+  // 选中节点居中
+  useEffect(() => {
+    if (selectedNode && fgRef.current) {
+      setTimeout(() => {
+        const gn = gData.nodes.find((n: any) => n.id === selectedNode.id) as any;
+        if (gn && typeof gn.x === 'number') {
+          fgRef.current.centerAt(gn.x, gn.y, 800);
+          fgRef.current.zoom(5, 800);
+        }
+      }, 200);
+    }
+  }, [selectedNode]);
+
+  useEffect(() => { setTimeout(() => fgRef.current?.zoomToFit(400, 80), 1500); }, [gData]);
+
+  const nodeCanvasObject = useCallback((node: any, ctx: any, globalScale: number) => {
+    const nodeColor = TYPE_COLORS[node.type] || '#6366f1';
+    const isSel = node.id === selectedNode?.id;
+    const isConnected = !isSel && connectedIds.has(node.id);
+    const size = (node.val || 5) * 1.2;
+
+    // 选中或连接节点的外圈光晕
+    if (isSel || isConnected) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size + (isSel ? 8 : 4), 0, 2 * Math.PI);
+      ctx.fillStyle = isSel ? nodeColor : `${nodeColor}33`;
+      ctx.fill();
+    }
+
+    // 节点圆
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+    ctx.fillStyle = isSel ? '#ffffff' : isConnected ? '#e0e7ff' : nodeColor;
+    ctx.fill();
+    ctx.strokeStyle = nodeColor;
+    ctx.lineWidth = isSel ? 2.5 : 1;
+    ctx.stroke();
+
+    // 文字标签
+    const fSize = fontSize === 'sm' ? 10 : fontSize === 'lg' ? 16 : 12;
+    const fontSizeScaled = fSize / globalScale;
+    const labelY = node.y + size + fSize / globalScale;
+    ctx.font = `bold ${fontSizeScaled}px "Microsoft YaHei", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // 自适应字体颜色：根据主题背景选择合适对比度，取消外轮廓线
+    // 月光白主题 → 深蓝字；其他所有主题 → 浅灰字（柔和不刺眼）
+    let labelColor: string;
+    if (fontColor) {
+      // 用户自定义颜色优先
+      labelColor = fontColor;
+    } else if (theme === 'moonlight') {
+      // 月光白背景：深蓝色字
+      labelColor = isSel ? '#1e3a8a' : '#1e40af';
+    } else {
+      // 其他所有背景（深空/暮光/星光/破晓）：浅灰色字，柔和不刺眼
+      labelColor = isSel ? '#cbd5e1' : '#94a3b8';
+    }
+
+    ctx.fillStyle = labelColor;
+    ctx.fillText(node.name, node.x, labelY);
+  }, [selectedNode, connectedIds, theme, lightTheme, fontSize, fontColor]);
+
+  const linkColor = useCallback((l: any) => {
+    const type = (l.type || '').toUpperCase();
+    if (type.startsWith('BELONGS') || type === 'BELONGS_TO') return '#3b82f6';
+    if (type.startsWith('PRECEDES')) return '#22c55e';
+    if (type.startsWith('REFERENCES') || type.startsWith('HAS_')) return '#8b5cf6';
+    if (type.startsWith('PRODUCES') || type.startsWith('REVIEWS')) return '#f59e0b';
+    return '#4b5563';
+  }, []);
+
+  return (
+    <div className="absolute inset-0 w-full h-full transition-all duration-1000" style={{ background: themeCfg.gradient }}>
+      <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">加载 2D...</div>}>
+        <ForceGraph2D ref={setFgRef as any} graphData={gData} backgroundColor="rgba(0,0,0,0)"
+          nodeCanvasObject={nodeCanvasObject}
+          linkWidth={(l: any) => (l.strength || 3) / 4}
+          linkColor={linkColor}
+          linkDirectionalParticles={2} linkDirectionalParticleSpeed={0.004} linkDirectionalParticleWidth={1.5} linkDirectionalParticleColor={() => '#ffffff'}
+          onNodeClick={onNodeClick}
+          onNodeDragEnd={(n: any) => { n.fx = n.x; n.fy = n.y; }}
+          cooldownTicks={100}
+          d3AlphaDecay={0.03} d3VelocityDecay={0.5} />
       </Suspense>
     </div>
   );
@@ -149,37 +314,37 @@ const NodeDetailPanel: React.FC<{
   const parentChain = useMemo(() => getParentChain(node.id, nodes, edges), [node.id, nodes, edges]);
 
   return (
-    <div className={`backdrop-blur-3xl border-t md:border rounded-t-3xl md:rounded-xl p-6 shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300 ${pt.panelBg}`}>
-      <div className="w-12 h-1 bg-gray-700/40 rounded-full mx-auto mb-4 md:hidden" />
-      <div className="flex justify-between items-start mb-4">
+    <div className={`backdrop-blur-3xl border-t md:border rounded-t-3xl md:rounded-xl p-4 shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-right duration-300 ${pt.panelBg}`}>
+      <div className="w-10 h-1 bg-gray-700/40 rounded-full mx-auto mb-3 md:hidden" />
+      <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className={`text-xl font-bold ${pt.textMain}`}>{node.label}</h3>
-          <p className="text-xs text-indigo-400 mt-0.5">{TYPE_NAMES[node.type] || node.type}</p>
+          <h3 className={`text-sm font-bold ${pt.textMain}`}>{node.label}</h3>
+          <p className={`text-[10px] ${pt.textMain} mt-0.5 opacity-70`}>{getNodeTypeName(node.type)}</p>
         </div>
-        <button onClick={onClose} className="text-gray-500 hover:text-white p-1"><X size={20} /></button>
+        <button onClick={onClose} className="text-gray-500 hover:text-white p-0.5"><X size={16} /></button>
       </div>
 
-      <div className="space-y-4 max-h-[35vh] md:max-h-[55vh] overflow-y-auto">
+      <div className="space-y-2.5 max-h-[35vh] md:max-h-[55vh] overflow-y-auto">
         {/* 父节点链 */}
         {parentChain.length > 1 && (
           <div>
-            <h5 className="text-xs font-bold text-amber-400 mb-2 uppercase flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <h5 className="text-[10px] font-bold text-amber-400 mb-1.5 uppercase flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-amber-400" />
               父节点链
-              <span className="text-[10px] font-normal text-gray-600 normal-case ml-auto">{parentChain.length}级</span>
+              <span className="text-[9px] font-normal text-gray-600 normal-case ml-auto">{parentChain.length}级</span>
             </h5>
             <div className="flex flex-wrap items-center gap-1 text-[10px]">
               {parentChain.map((p, i) => (
                 <span key={p.id} className="flex items-center gap-1">
                   {i > 0 && <span className="text-gray-600">→</span>}
                   <button onClick={(e) => { e.stopPropagation(); onSelectNode(p.id); }}
-                    className={`px-2 py-1 rounded-full border transition-colors ${
+                    className={`px-2 py-0.5 rounded-full border transition-colors text-[10px] ${
                       p.id === node.id
                         ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300 font-bold'
                         : lightTheme ? 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100' : 'bg-blue-500/10 border-blue-400/20 text-blue-300 hover:bg-blue-500/20'
                     }`}>
                     {p.label}
-                    <span className="ml-1 text-[8px] opacity-70">{TYPE_NAMES[p.type]}</span>
+                    <span className="ml-1 text-[9px] opacity-70 text-indigo-300">{getNodeTypeName(p.type)}</span>
                   </button>
                 </span>
               ))}
@@ -188,25 +353,25 @@ const NodeDetailPanel: React.FC<{
         )}
 
         {/* 属性信息 */}
-        <div className="space-y-1 border-l-2 border-white/5 pl-3 py-1">
-          {node.props?.desc && <p className="text-xs text-gray-300 italic">"{node.props.desc}"</p>}
+        <div className="space-y-1 border-l-2 border-white/10 pl-2.5 py-1">
+          {node.props?.desc && <p className={`text-[11px] italic ${lightTheme ? 'text-gray-700' : 'text-gray-200'}`}>"{node.props.desc}"</p>}
           {node.props?.completed !== undefined && (
-            <p className="text-xs">{node.props.completed === 'true' ? '✅ 已完成' : '⬜ 未完成'}</p>
+            <p className="text-[11px] font-medium">{node.props.completed === 'true' ? '✅ 已完成' : '⬜ 未完成'}</p>
           )}
-          {node.props?.duration && <p className="text-xs text-gray-400">⏱ {node.props.duration}</p>}
-          {node.props?.area && <p className="text-xs text-gray-400">📐 {node.props.area}</p>}
-          <p className="text-[10px] text-gray-600">ID: {node.id}</p>
+          {node.props?.duration && <p className={`text-[11px] ${lightTheme ? 'text-gray-600' : 'text-gray-300'}`}>⏱ {node.props.duration}</p>}
+          {node.props?.area && <p className={`text-[11px] ${lightTheme ? 'text-gray-600' : 'text-gray-300'}`}>📐 {node.props.area}</p>}
+          <p className={`text-[10px] ${lightTheme ? 'text-gray-400' : 'text-gray-500'}`}>ID: {node.id}</p>
         </div>
 
-        <div className="flex gap-2">
-          <button onClick={() => onEdit(node)} className="flex-1 bg-indigo-600/30 py-2 rounded-lg text-xs font-bold hover:bg-indigo-600/50 transition-colors flex items-center justify-center gap-1"><Edit2 size={14} />编辑</button>
-          <button onClick={() => { if (confirm(`删除节点"${node.label}"?`)) onDelete(node.id); }} className="px-4 bg-red-900/20 py-2 rounded-lg text-xs text-red-400 hover:bg-red-900/40 transition-colors"><Trash2 size={14} /></button>
+        <div className="flex gap-1.5">
+          <button onClick={() => onEdit(node)} className="flex-1 bg-indigo-600/30 py-1.5 rounded-md text-[11px] font-bold hover:bg-indigo-600/50 transition-colors flex items-center justify-center gap-1"><Edit2 size={12} />编辑</button>
+          <button onClick={() => { if (confirm(`删除节点"${node.label}"?`)) onDelete(node.id); }} className="px-3 bg-red-900/20 py-1.5 rounded-md text-[11px] text-red-400 hover:bg-red-900/40 transition-colors"><Trash2 size={12} /></button>
         </div>
 
         {/* 关联节点 */}
-        <div className="pt-4 border-t border-gray-800/20">
-          <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">关联节点 ({connections.length})</h5>
-          <div className="grid grid-cols-1 gap-2">
+        <div className="pt-2.5 border-t border-gray-800/20">
+          <h5 className={`text-[10px] font-bold mb-1.5 uppercase ${lightTheme ? 'text-gray-600' : 'text-gray-400'}`}>关联节点 ({connections.length})</h5>
+          <div className="grid grid-cols-1 gap-1.5">
             {connections.map(e => {
               const otherId = e.from === node.id ? e.to : e.from;
               const other = nodes.find(n => n.id === otherId);
@@ -214,22 +379,22 @@ const NodeDetailPanel: React.FC<{
               const isParent = parentChain.some(p => p.id === other.id);
               return (
                 <button key={e.from + e.to + e.type} onClick={() => onSelectNode(other.id)}
-                  className={`flex items-center justify-between text-xs p-2.5 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-between text-[11px] p-2 rounded-md border transition-colors ${
                     isParent ? 'bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10' : 'bg-gray-800/10 border-gray-700/10 hover:bg-indigo-600/10'
                   }`}>
                   <span className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full`} style={{ background: TYPE_COLORS[other.type] || '#6366f1' }} />
-                    <span className="font-medium text-gray-200">{other.label}</span>
-                    {isParent && <span className="text-[9px] text-amber-500">父节点</span>}
+                    <span className={`w-1.5 h-1.5 rounded-full`} style={{ background: TYPE_COLORS[other.type] || '#6366f1' }} />
+                    <span className={`font-medium ${lightTheme ? 'text-gray-800' : 'text-gray-100'}`}>{other.label}</span>
+                    {isParent && <span className="text-[9px] text-amber-500 font-medium">父节点</span>}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="text-[9px] text-gray-600">{TYPE_NAMES[other.type]}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-900/30 text-indigo-300">{TYPE_EDGE_NAMES[e.type] || e.type}</span>
+                    <span className={`text-[10px] ${lightTheme ? 'text-gray-500' : 'text-gray-400'}`}>{getNodeTypeName(other.type)}</span>
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] bg-indigo-600/20 text-indigo-300 font-medium">{getEdgeTypeName(e.type)}</span>
                   </span>
                 </button>
               );
             })}
-            {connections.length === 0 && <p className="text-xs text-gray-600 text-center py-2">暂无关联节点</p>}
+            {connections.length === 0 && <p className={`text-[11px] text-center py-2 ${lightTheme ? 'text-gray-400' : 'text-gray-500'}`}>暂无关联节点</p>}
           </div>
         </div>
       </div>
@@ -267,14 +432,21 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
   const [showFontPanel, setShowFontPanel] = useState(false);
   const [fontSize, setFontSize] = useState<'sm'|'md'|'lg'>(() => (localStorage.getItem('kg-font-size') as any) || 'md');
   const [fontColor, setFontColor] = useState(() => localStorage.getItem('kg-font-color') || '');
+  const [viewMode, setViewMode] = useState<'3d' | '2d'>(() => (localStorage.getItem('kg-view-mode') as '3d' | '2d') || '3d');
+  useEffect(() => { localStorage.setItem('kg-view-mode', viewMode); }, [viewMode]);
+
+  // v5.4: 项目选择器 — 保留完整图谱 (fullGraph) 作为过滤基线，selectedProject 切换时派生 graph
+  const [fullGraph, setFullGraph] = useState<KGType | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string>(() => localStorage.getItem('kg-selected-project') || '');
+  useEffect(() => { localStorage.setItem('kg-selected-project', selectedProject); }, [selectedProject]);
+  const projectList = useMemo(() => getCachedProjects(), [graph]);
 
   // 保存当前图谱位置
   const handleSaveGraph = () => {
     if (!saveName.trim()) return;
-    const fg = fgRef.current;
-    if (!fg) return;
+    const gd = getGraphData();
+    if (!gd?.nodes) return;
     const pos: Record<string, { x: number; y: number; z: number }> = {};
-    const gd = fg.graphData();
     gd.nodes.forEach((n: any) => { if (typeof n.x === 'number') pos[n.id] = { x: n.x, y: n.y, z: n.z }; });
     const v: Record<string, string> = { ...savedGraphs, [saveName.trim()]: JSON.stringify(pos) };
     setSavedGraphs(v);
@@ -289,16 +461,23 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
       const pos = JSON.parse(savedGraphs[name] || '{}');
       const fg = fgRef.current;
       if (!fg) return;
-      const gd = fg.graphData();
+      const gd = getGraphData();
+      if (!gd?.nodes) return;
       Object.entries(pos).forEach(([id, p]: any) => {
         const n = gd.nodes.find((x: any) => x.id === id);
         if (n) { n.fx = p.x; n.fy = p.y; n.fz = p.z; }
       });
       // Reheat simulation briefly
-      fg.d3Force('charge')?.initialize(gd.nodes);
+      if (typeof fg.d3Force === 'function') {
+        try { fg.d3Force('charge')?.initialize(gd.nodes); } catch {}
+      }
       gd.nodes.forEach((n: any) => { if (!n.fx) { n.fx = n.x; n.fy = n.y; n.fz = n.z; } });
       // Tick a few times to settle
-      for (let i = 0; i < 10; i++) fg.d3ReheatSimulation();
+      if (typeof fg.d3ReheatSimulation === 'function') {
+        try {
+          for (let i = 0; i < 10; i++) fg.d3ReheatSimulation();
+        } catch {}
+      }
     } catch {}
     setShowRestoreMenu(false);
   };
@@ -343,13 +522,198 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
       const filteredIds = new Set(filteredNodes.map(n => n.id));
       const filteredEdges = kg.edges.filter(e => filteredIds.has(e.from) && filteredIds.has(e.to));
       setApiAvailable(true);
-      setGraph({ ...kg, nodes: filteredNodes, edges: filteredEdges } as KGType);
+      const full = { ...kg, nodes: filteredNodes, edges: filteredEdges } as KGType;
+      setFullGraph(full);
+      setGraph(full);
     } else {
       setApiAvailable(false);
-      setGraph(buildGraph());
+      const fallback = buildGraph();
+      setFullGraph(fallback);
+      setGraph(fallback);
     }
   };
   useEffect(() => { loadGraph(); }, [typeFilter]);
+
+  // 获取图谱数据（兼容 2D/3D ref API 差异）
+  const getGraphData = () => {
+    const fg = fgRef.current;
+    if (!fg) return null;
+    try {
+      // 3D ref: graphData() 是方法
+      if (typeof fg.graphData === 'function') return fg.graphData();
+      // 2D ref: graphData 可能是 getter，直接访问属性
+      if (fg.graphData) return fg.graphData;
+      return null;
+    } catch { return null; }
+  };
+
+  // 平铺节点：打散初始位置 + 强斥力 + 弱弹簧 + 碰撞检测，让节点充分散开
+  const handleFlattenLayout = () => {
+    const fg = fgRef.current;
+    if (!fg) return;
+    const gd = getGraphData();
+    if (!gd?.nodes) return;
+
+    // 1. 清除固定位置（fx/fy/fz），让节点可以自由移动；并打散初始位置避免从聚团态起步
+    gd.nodes.forEach((n: any) => {
+      n.fx = null; n.fy = null; n.fz = null;
+      const angle = Math.random() * Math.PI * 2;
+      const r = 200 + Math.random() * 300;
+      n.x = Math.cos(angle) * r;
+      n.y = Math.sin(angle) * r;
+      if (viewMode === '3d' && typeof n.z === 'number') n.z = (Math.random() - 0.5) * 400;
+      n.vx = 0; n.vy = 0;
+      if (viewMode === '3d') n.vz = 0;
+    });
+
+    // 2. 注入碰撞检测（仅 3D 模式支持 forceCollide；2D 跳过此步）
+    if (viewMode === '3d' && typeof fg.d3Force === 'function') {
+      try {
+        const collideForce = forceCollide((node: any) => {
+          const baseSize = (node.val || 5) * 1.5;
+          if (!MEASURE_CTX) return baseSize + 20;
+          const fSize = fontSize === 'sm' ? 10 : fontSize === 'lg' ? 16 : 12;
+          MEASURE_CTX.font = `bold ${fSize}px "Microsoft YaHei", sans-serif`;
+          const textW = MEASURE_CTX.measureText(node.name || '').width;
+          return Math.max(baseSize + 12, textW / 2 + 20);
+        }).iterations(6);
+        // 3D forceCollide 需要 initialize 才能正确计算节点碰撞
+        if (gd?.nodes?.length > 0 && typeof collideForce.initialize === 'function') {
+          collideForce.initialize(gd.nodes);
+        }
+        fg.d3Force('collide', collideForce);
+      } catch {}
+    }
+
+    // 3. 大幅强化节点斥力（300+ 节点用 -2500）
+    if (typeof fg.d3Force === 'function') {
+      try {
+        const charge = fg.d3Force('charge');
+        if (charge && typeof charge.strength === 'function') charge.strength(-2500);
+      } catch {}
+    }
+
+    // 4. 减弱链接弹簧力
+    if (typeof fg.d3Force === 'function') {
+      try {
+        const link = fg.d3Force('link');
+        if (link) {
+          if (typeof link.distance === 'function') link.distance(200);
+          if (typeof link.strength === 'function') link.strength(0.01);
+        }
+      } catch {}
+    }
+
+    // 5. 调整 alpha/velocity 衰减率
+    if (viewMode === '3d') {
+      if (typeof fg.d3AlphaDecay === 'function') fg.d3AlphaDecay(0.008);
+      if (typeof fg.d3VelocityDecay === 'function') fg.d3VelocityDecay(0.3);
+    }
+
+    // 6. 重新加热仿真
+    if (typeof fg.d3ReheatSimulation === 'function') {
+      try { fg.d3ReheatSimulation(); } catch {}
+    }
+
+    // 7. 多次 zoomToFit 跟随收敛过程
+    if (typeof fg.zoomToFit === 'function') {
+      setTimeout(() => { try { fg.zoomToFit(400, 80); } catch {} }, 2000);
+      setTimeout(() => { try { fg.zoomToFit(400, 80); } catch {} }, 4000);
+      setTimeout(() => { try { fg.zoomToFit(400, 80); } catch {} }, 6000);
+    }
+  };
+
+  // 恢复初始布局：还原力参数到默认值 + 清除固定位置 + 重新仿真
+  const handleResetLayout = () => {
+    const fg = fgRef.current;
+    if (!fg) return;
+    const gd = getGraphData();
+
+    // 1. 移除平铺注入的 collide 力
+    if (typeof fg.d3Force === 'function') {
+      try { fg.d3Force('collide', null); } catch {}
+      // 2. 还原 charge 斥力
+      try {
+        const charge = fg.d3Force('charge');
+        if (charge && typeof charge.strength === 'function') charge.strength(-30);
+      } catch {}
+      // 3. 还原 link 弹簧力
+      try {
+        const link = fg.d3Force('link');
+        if (link) {
+          if (typeof link.distance === 'function') link.distance(30);
+          if (typeof link.strength === 'function') link.strength(0.3);
+        }
+      } catch {}
+    }
+
+    // 4. 还原 alpha/velocity decay（仅 3D）
+    if (viewMode === '3d') {
+      if (typeof fg.d3AlphaDecay === 'function') fg.d3AlphaDecay(0.0228);
+      if (typeof fg.d3VelocityDecay === 'function') fg.d3VelocityDecay(0.4);
+    }
+
+    // 5. 清除固定位置
+    if (gd?.nodes) {
+      gd.nodes.forEach((n: any) => {
+        n.fx = null; n.fy = null; n.fz = null;
+        n.vx = 0; n.vy = 0; n.vz = 0;
+      });
+    }
+
+    // 6. 重新加热仿真
+    if (typeof fg.d3ReheatSimulation === 'function') {
+      try { fg.d3ReheatSimulation(); } catch {}
+    }
+
+    // 7. 自动适配视图
+    if (typeof fg.zoomToFit === 'function') {
+      setTimeout(() => { try { fg.zoomToFit(400, 80); } catch {} }, 2000);
+      setTimeout(() => { try { fg.zoomToFit(400, 80); } catch {} }, 4000);
+    }
+  };
+
+  // v5.4: 项目选择过滤 — 从 fullGraph 派生 graph（递归收集项目节点的所有后代）
+  useEffect(() => {
+    if (!fullGraph) return;
+    if (!selectedProject) {
+      setGraph(fullGraph);
+      return;
+    }
+    const projNodeId = 'proj-' + selectedProject;
+    // 递归收集项目节点的所有后代节点
+    const descendants = new Set<string>([projNodeId]);
+    let changed = true;
+    let iter = 0;
+    while (changed && iter < 20) {
+      changed = false;
+      iter++;
+      for (const n of fullGraph.nodes) {
+        if (descendants.has(n.id)) continue;
+        // 通过 parentId 关联
+        if (n.parentId && descendants.has(n.parentId)) {
+          descendants.add(n.id);
+          changed = true;
+          continue;
+        }
+        // 兼容 props.project 关联（日报/问题/经验等）
+        const projInProps = n.props?.project;
+        if (projInProps && projInProps === selectedProject) {
+          descendants.add(n.id);
+          changed = true;
+          continue;
+        }
+        // 兼容 parentId 直接是 projectName（非 proj- 前缀，如 daily-xxx 关联）
+        if (n.parentId && n.parentId === selectedProject) {
+          descendants.add(n.id);
+          changed = true;
+        }
+      }
+    }
+    const projNodes = fullGraph.nodes.filter(n => descendants.has(n.id));
+    const projEdges = fullGraph.edges.filter(e => descendants.has(e.from) && descendants.has(e.to));
+    setGraph({ ...fullGraph, nodes: projNodes, edges: projEdges });
+  }, [selectedProject, fullGraph]);
 
   const allNodes = useMemo(() => graph?.nodes || [], [graph]);
   const allEdges = useMemo(() => graph?.edges || [], [graph]);
@@ -367,7 +731,7 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
   const types = useMemo(() => Array.from(new Set(allNodes.map(n => n.type))), [allNodes]);
 
   // 节点操作
-  const openCreateNode = () => { setNodeMode('create'); setNodeEdit({ id: '', type: 'project', label: '', color: '#3B82F6', desc: '' }); setShowNodeDialog(true); };
+  const openCreateNode = () => { setNodeMode('create'); setNodeEdit({ id: '', type: 'project', label: '', color: TYPE_COLORS['project'] || '#3B82F6', desc: '' }); setShowNodeDialog(true); };
   const openEditNode = (n: any) => { setNodeMode('edit'); setNodeEdit({ id: n.id, type: n.type, label: n.label, color: (n.props as any)?.color || '#3B82F6', desc: (n.props as any)?.desc || '' }); setShowNodeDialog(true); };
   const saveNode = async () => {
     if (!nodeEdit.label.trim()) return;
@@ -396,7 +760,8 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
     inputBg: lightTheme ? 'bg-white/80 border-gray-200 text-gray-800 placeholder:text-gray-400' : 'bg-gray-900/40 border-white/10 text-gray-100 placeholder:text-gray-600',
     dialogBg: lightTheme ? 'bg-white/50 backdrop-blur-xl border-gray-200' : 'bg-gray-900/50 backdrop-blur-xl border-white/10',
     dialogInput: lightTheme ? 'bg-white/70 border-gray-300 text-black' : 'bg-gray-800/50 border-white/10 text-gray-100',
-    dialogLabel: lightTheme ? 'text-black font-medium' : 'text-gray-400',
+    dialogLabel: lightTheme ? 'text-black font-medium' : 'text-gray-200 font-medium',
+    dialogPlaceholder: lightTheme ? 'text-gray-400' : 'text-gray-500',
     dialogCancel: lightTheme ? 'text-gray-700 border-gray-300 hover:bg-gray-100' : 'text-gray-400 border-white/10 hover:text-white',
     cardBg: lightTheme ? 'bg-white/40 border-gray-200' : 'bg-gray-900/40 border-white/5',
     textMain: lightTheme ? 'text-gray-800' : 'text-white',
@@ -410,70 +775,100 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
 
   return (
     <div className={`h-screen w-full overflow-hidden flex flex-col font-sans ${lightTheme ? 'bg-gray-100 text-gray-800' : 'bg-gray-950 text-gray-100'}`}>
-      {/* ===== 3D 背景全屏 ===== */}
+      {/* ===== 背景全屏（2D/3D 切换） ===== */}
       <div className="absolute inset-0 z-0">
-        <Graph3DCanvas
-          nodes={filteredNodes} edges={filteredEdges} selectedNode={selectedNode}
-          onNodeClick={(n) => setSelectedNode(n)}
-          theme={theme}
-          onLightingReady={() => {}}
-          fgRefOut={fgRef}
-          fontSize={fontSize}
-          fontColor={fontColor}
-        />
+        {viewMode === '3d' ? (
+          <Graph3DCanvas
+            nodes={filteredNodes} edges={filteredEdges} selectedNode={selectedNode}
+            onNodeClick={(n) => setSelectedNode(n)}
+            theme={theme}
+            onLightingReady={() => {}}
+            fgRefOut={fgRef}
+            fontSize={fontSize}
+            fontColor={fontColor}
+          />
+        ) : (
+          <Graph2DCanvas
+            nodes={filteredNodes} edges={filteredEdges} selectedNode={selectedNode}
+            onNodeClick={(n) => setSelectedNode(n)}
+            theme={theme}
+            fgRefOut={fgRef}
+            fontSize={fontSize}
+            fontColor={fontColor}
+            lightTheme={lightTheme}
+          />
+        )}
       </div>
 
       {/* ===== 顶部栏 ===== */}
-      <header className={`relative z-20 flex items-center justify-between px-4 py-3 backdrop-blur-xl border-b ${t.headerBg}`}>
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className={`p-1.5 rounded-lg ${t.hoverBg}`}><ArrowLeft className={`w-5 h-5 ${t.textSub}`} /></button>
-          <div className="bg-indigo-600 p-1.5 rounded-lg"><Cpu className="text-white" size={18} /></div>
-          <h1 className={`text-lg font-bold tracking-tight ${t.textMain}`}>知识图谱<span className="text-indigo-500">3D</span></h1>
-          <span className={`text-xs ${t.textDim}`}>{allNodes.length}节点 · {allEdges.length}边</span>
-          {apiAvailable !== null && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded ${apiAvailable ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'}`}>{apiAvailable ? 'Neo4j' : '本地'}</span>
-          )}
-          {/* 主题选择 */}
-          <div className="relative ml-2">
-            <button onClick={() => setShowThemeMenu(!showThemeMenu)} className={`flex items-center gap-1 px-2 py-1 rounded-full border transition-colors ${t.btnOutline}`}>
-              <Palette size={12} className="text-indigo-400" />{THEMES[theme]?.name}<ChevronDown size={10} className={`transition-transform ${showThemeMenu ? 'rotate-180' : ''}`} />
+      <ModuleHeader
+        title={`知识图谱${viewMode === '3d' ? '3D' : '2D'}`}
+        subtitle={`${allNodes.length}节点 · ${allEdges.length}边 · ${apiAvailable === null ? '加载中' : apiAvailable ? 'Neo4j' : '本地'}`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        colorClass="blue"
+        onBack={onBack}
+        backLabel="返回首页"
+        actions={
+          <>
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="px-2 py-1 text-xs border border-gray-200 dark:border-slate-700 rounded-lg bg-white/80 dark:bg-slate-800/80 text-gray-700 dark:text-slate-200 backdrop-blur mr-1 max-w-[160px] truncate"
+              title="按项目过滤图谱"
+            >
+              <option value="">全部项目</option>
+              {projectList.map(p => (
+                <option key={p.name} value={p.name}>{p.name}</option>
+              ))}
+            </select>
+            <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg p-0.5 mr-1">
+              <button onClick={() => setViewMode('2d')} className={`px-2.5 py-1 text-xs rounded-md transition ${viewMode === '2d' ? 'bg-white dark:bg-slate-600 shadow text-blue-600 dark:text-blue-300 font-bold' : 'text-gray-500 dark:text-slate-400'}`}>2D</button>
+              <button onClick={() => setViewMode('3d')} className={`px-2.5 py-1 text-xs rounded-md transition ${viewMode === '3d' ? 'bg-white dark:bg-slate-600 shadow text-blue-600 dark:text-blue-300 font-bold' : 'text-gray-500 dark:text-slate-400'}`}>3D</button>
+            </div>
+            <button onClick={handleFlattenLayout} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs" title="平铺节点（防止重叠）">
+              <LayoutGrid className="w-3 h-3" /> 平铺
             </button>
-            {showThemeMenu && (
-              <div className={`absolute top-full left-0 mt-1 backdrop-blur-2xl border rounded-xl shadow-2xl overflow-hidden z-50 min-w-[120px] ${t.menuBg}`}>
-                {Object.entries(THEMES).map(([k, v]) => (
-                  <button key={k} onClick={() => { setTheme(k); setShowThemeMenu(false); }}
-                    className={`w-full text-left px-3 py-2 text-[10px] transition-colors uppercase font-bold tracking-wider ${t.hoverBg} ${theme === k ? 'text-indigo-400' : t.textSub}`}>{v.name}</button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={openCreateNode} className="px-2.5 py-1.5 text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/20 rounded-lg hover:bg-indigo-600/30 flex items-center gap-1"><Plus className="w-3 h-3" />新建</button>
-          <button onClick={openCreateEdge} className="px-2.5 py-1.5 text-xs bg-purple-600/20 text-purple-300 border border-purple-500/20 rounded-lg hover:bg-purple-600/30 flex items-center gap-1"><Link2 className="w-3 h-3" />连线</button>
-          <button onClick={() => setShowFontPanel(true)} className={`px-2 py-1 border rounded-lg flex items-center gap-1 ${t.btnOutline}`} title="字体设置"><Type className="w-3 h-3" /></button>
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className={`px-2 py-1 border rounded-lg ${t.btnOutline}`}>
-            <option value="all">全部</option>{types.map(t => <option key={t} value={t}>{TYPE_NAMES[t] || t}</option>)}
-          </select>
-          <button onClick={loadGraph} className={`px-2 py-1 border rounded-lg flex items-center gap-1 ${t.btnOutline}`}><RotateCcw className="w-3 h-3" />刷新</button>
-          <button onClick={() => { setSaveName(''); setShowSaveDialog(true); }} className={`px-2 py-1 border rounded-lg flex items-center gap-1 ${t.btnOutline}`} title="保存当前图谱"><Camera className="w-3 h-3" /></button>
-          {/* 恢复菜单 */}
-          <div className="relative">
-            <button onClick={() => setShowRestoreMenu(!showRestoreMenu)} className={`px-2 py-1 border rounded-lg flex items-center gap-1 ${t.btnOutline}`} title="恢复图谱版本"><RotateCcw className="w-3 h-3" /></button>
-            {showRestoreMenu && Object.keys(savedGraphs).length > 0 && (
-              <div className={`absolute top-full right-0 mt-1 backdrop-blur-2xl border rounded-xl shadow-2xl overflow-hidden z-50 min-w-[180px] ${t.menuBg}`}>
-                {Object.entries(savedGraphs).map(([name]) => (
-                  <div key={name} className="flex items-center hover:bg-indigo-600/10">
-                    <button onClick={() => handleRestoreGraph(name)} className="flex-1 text-left px-3 py-2 text-xs text-gray-300">{name}</button>
-                    <button onClick={() => handleDeleteSaved(name)} className="px-2 text-red-400 hover:text-red-300"><X size={12} /></button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <button onClick={() => { const data = JSON.stringify({ nodes: allNodes, edges: allEdges }, null, 2); const b = new Blob([data], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'knowledge-graph.json'; a.click(); }} className={`px-2 py-1 border rounded-lg flex items-center gap-1 ${t.btnOutline}`}><Download className="w-3 h-3" /></button>
-        </div>
-      </header>
+            <button onClick={handleResetLayout} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs" title="恢复初始布局（还原力参数）">
+              <RotateCcw className="w-3 h-3" /> 恢复
+            </button>
+            <div className="relative">
+              <button onClick={() => setShowThemeMenu(!showThemeMenu)} className="flex items-center gap-1 px-2 py-1 rounded-full border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs hover:bg-gray-50 dark:hover:bg-slate-800">
+                <Palette size={12} className="text-indigo-500" />{THEMES[theme]?.name}<ChevronDown size={10} className={`transition-transform ${showThemeMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showThemeMenu && (
+                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[120px]">
+                  {Object.entries(THEMES).map(([k, v]) => (
+                    <button key={k} onClick={() => { setTheme(k); setShowThemeMenu(false); }}
+                      className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-slate-700 ${theme === k ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-gray-600 dark:text-slate-300'}`}>{v.name}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={openCreateNode} className="px-2.5 py-1.5 text-xs bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-100 flex items-center gap-1"><Plus className="w-3 h-3" />新建</button>
+            <button onClick={openCreateEdge} className="px-2.5 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><Link2 className="w-3 h-3" />连线</button>
+            <button onClick={() => setShowFontPanel(true)} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs" title="字体设置"><Type className="w-3 h-3" /></button>
+            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300">
+              <option value="all">全部</option>{types.map(t => <option key={t} value={t}>{getNodeTypeName(t)}</option>)}
+            </select>
+            <button onClick={loadGraph} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs"><RotateCcw className="w-3 h-3" />刷新</button>
+            <button onClick={() => { setSaveName(''); setShowSaveDialog(true); }} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs" title="保存当前图谱"><Camera className="w-3 h-3" /></button>
+            <div className="relative">
+              <button onClick={() => setShowRestoreMenu(!showRestoreMenu)} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs" title="恢复图谱版本"><RotateCcw className="w-3 h-3" /></button>
+              {showRestoreMenu && Object.keys(savedGraphs).length > 0 && (
+                <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[180px]">
+                  {Object.entries(savedGraphs).map(([name]) => (
+                    <div key={name} className="flex items-center hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+                      <button onClick={() => handleRestoreGraph(name)} className="flex-1 text-left px-3 py-2 text-xs text-gray-700 dark:text-slate-300">{name}</button>
+                      <button onClick={() => handleDeleteSaved(name)} className="px-2 text-red-500 hover:text-red-600"><X size={12} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={() => { const data = JSON.stringify({ nodes: allNodes, edges: allEdges }, null, 2); const b = new Blob([data], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'knowledge-graph.json'; a.click(); }} className="px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg flex items-center gap-1 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs"><Download className="w-3 h-3" /></button>
+          </>
+        }
+      />
 
       {/* ===== 浮动搜索 + 总览 ===== */}
       <div className="relative z-10 pointer-events-none flex-1">
@@ -482,32 +877,32 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
             <input type="text" placeholder="搜索节点…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              className={`w-full border rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none 500/40 transition-all backdrop-blur-2xl shadow-xl ${t.inputBg}`} />
+              className={`w-full border rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none transition-all backdrop-blur-2xl shadow-xl ${t.inputBg}`} />
             {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"><X size={14} /></button>}
           </div>
           {searchQuery && filteredNodes.length > 0 && (
-            <div className={`mt-2 backdrop-blur-3xl border rounded-2xl max-h-[40vh] overflow-y-auto shadow-2xl ${t.menuBg}`}>
-              {filteredNodes.slice(0, 15).map(n => (
-                <button key={n.id} onClick={() => { setSelectedNode(n); setSearchQuery(''); }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-indigo-600/10 text-left transition-colors border-b border-white/5">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: (n.props as any)?.color || TYPE_COLORS[n.type] || '#6366f1' }}>{n.label[0]}</div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className={`text-sm font-semibold truncate ${lightTheme ? 'text-gray-800' : 'text-gray-200'}`}>{n.label}</p>
-                    <p className={`text-[10px] ${t.textDim}`}>{TYPE_NAMES[n.type] || n.type}</p>
-                  </div>
-                </button>
-              ))}
+            <div className={`mt-2 backdrop-blur-3xl border rounded-2xl max-h-[40vh] overflow-y-auto shadow-2xl ${t.menuBg} [scrollbar-gutter:stable]`}>
+              <div className="py-1">
+                {filteredNodes.slice(0, 15).map(n => (
+                  <button key={n.id} onClick={() => { setSelectedNode(n); setSearchQuery(''); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-indigo-600/10 text-left transition-colors">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ background: (n.props as any)?.color || TYPE_COLORS[n.type] || '#6366f1' }}>{n.label[0]}</div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className={`text-xs font-semibold truncate ${lightTheme ? 'text-gray-800' : 'text-gray-200'}`}>{n.label}</p>
+                      <p className={`text-[9px] ${t.textDim}`}>{getNodeTypeName(n.type)}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* 总览计数器 */}
-        <div className={`absolute top-4 right-4 backdrop-blur-2xl border px-4 py-2.5 rounded-2xl shadow-2xl pointer-events-auto flex items-center gap-3 ${t.cardBg}`}>
-          <div className="bg-indigo-600/20 p-1.5 rounded-lg"><Users size={16} className="text-indigo-400" /></div>
-          <div>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${t.textDim}`}>节点 · 连线</p>
-            <p className={`text-xl font-black leading-none ${t.textMain}`}>{allNodes.length}<span className={`text-sm mx-1 ${t.textDim}`}>·</span>{allEdges.length}</p>
-          </div>
+        <div className={`absolute top-4 right-4 backdrop-blur-2xl border px-3 py-2.5 rounded-2xl shadow-2xl pointer-events-auto flex items-center gap-2.5 ${t.cardBg}`}>
+          <div className="bg-indigo-600/20 p-1 rounded-md flex items-center justify-center"><Users size={12} className="text-indigo-400" /></div>
+          <span className={`text-[10px] font-bold tracking-wider text-slate-700 dark:text-slate-200`}>节点·连线</span>
+          <p className={`text-sm font-bold leading-none ${t.textMain}`}>{allNodes.length}<span className={`text-xs mx-1 ${t.textDim}`}>·</span>{allEdges.length}</p>
         </div>
 
         {/* 节点详情面板（右侧滑入） */}
@@ -525,19 +920,19 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
       {/* ===== 新建/编辑节点弹窗 ===== */}
       {showNodeDialog && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowNodeDialog(false)}>
-          <div className={`backdrop-blur-2xl border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 ${t.dialogBg}`} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h3 className={`text-sm font-bold ${t.textMain}`}>{nodeMode === 'create' ? '新建节点' : '编辑节点'}</h3><button onClick={() => setShowNodeDialog(false)}><X className="w-5 h-5 text-gray-500 hover:text-white" /></button></div>
-            <div className="space-y-3">
-              <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>名称 *</label><input value={nodeEdit.label} onChange={e => setNodeEdit(p => ({ ...p, label: e.target.value }))} className={`w-full border rounded-lg px-3 py-2 text-xs 500/40 outline-none ${t.dialogInput}`} placeholder="输入节点名称" autoFocus /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>类型</label><select value={nodeEdit.type} onChange={e => setNodeEdit(p => ({ ...p, type: e.target.value }))} className={`w-full border rounded-lg px-3 py-2 text-xs outline-none ${t.dialogInput}`}>{types.map(t => <option key={t} value={t}>{TYPE_NAMES[t] || t}</option>)}</select></div>
-                <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>颜色</label><input type="color" value={nodeEdit.color} onChange={e => setNodeEdit(p => ({ ...p, color: e.target.value }))} className={`w-full h-9 border rounded-lg p-1 ${t.dialogInput}`} /></div>
+          <div className={`backdrop-blur-2xl border rounded-xl shadow-2xl w-full max-w-sm mx-4 p-4 ${t.dialogBg}`} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3"><h3 className={`text-xs font-bold ${t.textMain}`}>{nodeMode === 'create' ? '新建节点' : '编辑节点'}</h3><button onClick={() => setShowNodeDialog(false)}><X className="w-4 h-4 text-gray-500 hover:text-white" /></button></div>
+            <div className="space-y-2.5">
+              <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>名称 *</label><input value={nodeEdit.label} onChange={e => setNodeEdit(p => ({ ...p, label: e.target.value }))} className={`w-full border rounded-md px-2.5 py-1.5 text-xs outline-none ${t.dialogInput}`} placeholder="输入节点名称" autoFocus /></div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>类型</label><select value={nodeEdit.type} onChange={e => setNodeEdit(p => ({ ...p, type: e.target.value, color: TYPE_COLORS[e.target.value] || p.color }))} className={`w-full border rounded-md px-2.5 py-1.5 text-xs outline-none ${t.dialogInput}`}>{types.map(t => <option key={t} value={t}>{getNodeTypeName(t)}</option>)}</select></div>
+                <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>颜色</label><div className="flex items-center gap-1.5"><input type="color" value={nodeEdit.color} onChange={e => setNodeEdit(p => ({ ...p, color: e.target.value }))} className={`w-8 h-7 border rounded-md p-0.5 ${t.dialogInput}`} /><span className={`text-[10px] ${t.textSub}`}>{nodeEdit.color}</span></div></div>
               </div>
-              <div><label className={`block text-xs mb-1 ${t.dialogLabel}`}>描述</label><textarea value={nodeEdit.desc} onChange={e => setNodeEdit(p => ({ ...p, desc: e.target.value }))} rows={3} className={`w-full border rounded-lg px-3 py-2 text-xs 500/40 outline-none resize-none ${t.dialogInput}`} placeholder="可选描述" /></div>
+              <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>描述</label><textarea value={nodeEdit.desc} onChange={e => setNodeEdit(p => ({ ...p, desc: e.target.value }))} rows={2} className={`w-full border rounded-md px-2.5 py-1.5 text-xs outline-none resize-none ${t.dialogInput}`} placeholder="可选描述" /></div>
             </div>
-            <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-white/10">
-              <button onClick={() => setShowNodeDialog(false)} className={`px-4 py-2 text-xs border rounded-lg ${t.dialogCancel}`}>取消</button>
-              <button onClick={saveNode} disabled={!nodeEdit.label.trim()} className="px-4 py-2 text-xs font-bold bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 rounded-lg hover:bg-indigo-600/50 disabled:opacity-40 flex items-center gap-1.5"><Save className="w-3.5 h-3.5" />保存</button>
+            <div className="flex justify-end gap-2 mt-3 pt-2.5 border-t border-white/10">
+              <button onClick={() => setShowNodeDialog(false)} className={`px-3 py-1.5 text-[11px] border rounded-md ${t.dialogCancel}`}>取消</button>
+              <button onClick={saveNode} disabled={!nodeEdit.label.trim()} className="px-3 py-1.5 text-[11px] font-bold bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 rounded-md hover:bg-indigo-600/50 disabled:opacity-40 flex items-center gap-1"><Save className="w-3 h-3" />保存</button>
             </div>
           </div>
         </div>
@@ -546,32 +941,32 @@ const KnowledgeGraphView: React.FC<Props> = ({ onBack }) => {
       {/* ===== 新建连线弹窗 ===== */}
       {showEdgeDialog && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowEdgeDialog(false)}>
-          <div className={`backdrop-blur-2xl border rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[85vh] overflow-y-auto p-6 ${t.dialogBg}`} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h3 className={`text-lg font-bold ${t.textMain}`}>新建连线</h3><button onClick={() => setShowEdgeDialog(false)}><X className="w-5 h-5 text-gray-500 hover:text-white" /></button></div>
-            <div className="space-y-4">
+          <div className={`backdrop-blur-2xl border rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[80vh] overflow-y-auto p-4 ${t.dialogBg}`} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3"><h3 className={`text-xs font-bold ${t.textMain}`}>新建连线</h3><button onClick={() => setShowEdgeDialog(false)}><X className="w-4 h-4 text-gray-500 hover:text-white" /></button></div>
+            <div className="space-y-2.5">
               {[['from', '父节点（来源）', edgeFromSearch, setEdgeFromSearch, filteredFrom], ['to', '子节点（目标）', edgeToSearch, setEdgeToSearch, filteredTo]].map(([key, label, search, setSearch, list]) => (
                 <div key={key as string}>
-                  <label className="block text-xs text-gray-400 mb-1">{label as string}</label>
-                  <input value={search as string} onChange={e => (setSearch as any)(e.target.value)} placeholder="输入名称搜索…" className="w-full bg-gray-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 500/40 outline-none mb-1" />
-                  <div className="max-h-28 overflow-y-auto bg-gray-800/20 rounded-xl divide-y divide-white/5">
+                  <label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>{label as string}</label>
+                  <input value={search as string} onChange={e => (setSearch as any)(e.target.value)} placeholder="输入名称搜索…" className={`w-full border rounded-md px-2.5 py-1.5 text-xs outline-none mb-1 ${t.dialogInput}`} />
+                  <div className="max-h-20 overflow-y-auto bg-gray-800/20 rounded-md divide-y divide-white/5">
                     {(list as any[]).map((n: any) => (
-                      <button key={n.id} onClick={() => { setEdgeEdit(p => ({ ...p, [key as string]: n.id })); (setSearch as any)(n.label); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-indigo-600/20 transition-colors ${(edgeEdit as any)[key as string] === n.id ? 'bg-indigo-600/10 text-indigo-300 font-medium' : 'text-gray-400'}`}>{n.label}<span className="text-gray-600 ml-2">({TYPE_NAMES[n.type] || n.type})</span></button>
+                      <button key={n.id} onClick={() => { setEdgeEdit(p => ({ ...p, [key as string]: n.id })); (setSearch as any)(n.label); }} className={`w-full text-left px-2.5 py-1 text-[11px] hover:bg-indigo-600/20 transition-colors ${(edgeEdit as any)[key as string] === n.id ? 'bg-indigo-600/10 text-indigo-300 font-medium' : `${t.textSub}`}`}>{n.label}<span className="text-gray-500 ml-1.5 text-[10px]">({getNodeTypeName(n.type)})</span></button>
                     ))}
-                    {(list as any[]).length === 0 && <p className="px-3 py-2 text-xs text-gray-600">无匹配节点</p>}
+                    {(list as any[]).length === 0 && <p className={`px-2.5 py-1.5 text-[10px] ${t.textDim}`}>无匹配节点</p>}
                   </div>
                 </div>
               ))}
-              {edgeEdit.from && edgeEdit.to && <div className="bg-indigo-500/10 rounded-xl p-2 text-xs text-gray-300">已选: <b className="text-indigo-300">{allNodes.find(n => n.id === edgeEdit.from)?.label || edgeEdit.from} → {allNodes.find(n => n.id === edgeEdit.to)?.label || edgeEdit.to}</b></div>}
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs text-gray-400 mb-1">标签</label><input value={edgeEdit.label} onChange={e => setEdgeEdit(p => ({ ...p, label: e.target.value }))} className="w-full bg-gray-800/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-100 outline-none" placeholder="如: 所属项目" /></div>
-                <div><label className="block text-xs text-gray-400 mb-1">颜色</label><input type="color" value={edgeEdit.color} onChange={e => setEdgeEdit(p => ({ ...p, color: e.target.value }))} className="w-full h-9 bg-gray-800/50 border border-white/10 rounded-xl p-1" /></div>
-                <div><label className="block text-xs text-gray-400 mb-1">粗细: {edgeEdit.width}px</label><input type="range" min="1" max="8" value={edgeEdit.width} onChange={e => setEdgeEdit(p => ({ ...p, width: Number(e.target.value) }))} className="w-full" /></div>
-                <div><label className="block text-xs text-gray-400 mb-1">字号: {edgeEdit.fontSize}px</label><input type="range" min="8" max="24" value={edgeEdit.fontSize} onChange={e => setEdgeEdit(p => ({ ...p, fontSize: Number(e.target.value) }))} className="w-full" /></div>
+              {edgeEdit.from && edgeEdit.to && <div className="bg-indigo-500/10 rounded-md px-2 py-1 text-[10px] text-gray-300">已选: <b className="text-indigo-300">{allNodes.find(n => n.id === edgeEdit.from)?.label || edgeEdit.from} → {allNodes.find(n => n.id === edgeEdit.to)?.label || edgeEdit.to}</b></div>}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>标签</label><input value={edgeEdit.label} onChange={e => setEdgeEdit(p => ({ ...p, label: e.target.value }))} className={`w-full border rounded-md px-2.5 py-1.5 text-xs outline-none ${t.dialogInput}`} placeholder="如: 所属项目" /></div>
+                <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>颜色</label><input type="color" value={edgeEdit.color} onChange={e => setEdgeEdit(p => ({ ...p, color: e.target.value }))} className="w-full h-7 border rounded-md p-0.5" /></div>
+                <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>粗细: {edgeEdit.width}px</label><input type="range" min="1" max="8" value={edgeEdit.width} onChange={e => setEdgeEdit(p => ({ ...p, width: Number(e.target.value) }))} className="w-full" /></div>
+                <div><label className={`block text-[10px] mb-0.5 ${t.dialogLabel}`}>字号: {edgeEdit.fontSize}px</label><input type="range" min="8" max="24" value={edgeEdit.fontSize} onChange={e => setEdgeEdit(p => ({ ...p, fontSize: Number(e.target.value) }))} className="w-full" /></div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-white/10">
-              <button onClick={() => setShowEdgeDialog(false)} className={`px-5 py-2.5 text-xs border rounded-xl ${t.dialogCancel}`}>取消</button>
-              <button onClick={saveEdge} disabled={!edgeEdit.from || !edgeEdit.to} className="px-5 py-2.5 text-sm bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 disabled:opacity-40 flex items-center gap-1.5"><Save className="w-4 h-4" />保存</button>
+            <div className="flex justify-end gap-2 mt-3 pt-2.5 border-t border-white/10">
+              <button onClick={() => setShowEdgeDialog(false)} className={`px-3 py-1.5 text-[11px] border rounded-md ${t.dialogCancel}`}>取消</button>
+              <button onClick={saveEdge} disabled={!edgeEdit.from || !edgeEdit.to} className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-500 disabled:opacity-40 flex items-center gap-1"><Save className="w-3 h-3" />保存</button>
             </div>
           </div>
         </div>

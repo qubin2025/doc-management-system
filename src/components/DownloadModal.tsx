@@ -9,24 +9,73 @@ interface DownloadModalProps {
   projectName: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 const DownloadModal: React.FC<DownloadModalProps> = ({ docName, files, onClose, projectName }) => {
   const [downloadedSet, setDownloadedSet] = useState<Set<number>>(new Set());
+  const [downloadingIdx, setDownloadingIdx] = useState<number | null>(null);
 
-  const handleDownload = (file: UploadInfo, idx: number) => {
-    if (!file.fileData) return;
-    const a = document.createElement('a');
-    a.href = file.fileData;
-    a.download = file.fileName;
-    a.click();
-    // 标记为已下载，2秒后恢复
-    setDownloadedSet(prev => new Set(prev).add(idx));
-    setTimeout(() => {
-      setDownloadedSet(prev => {
-        const next = new Set(prev);
-        next.delete(idx);
-        return next;
-      });
-    }, 2000);
+  const handleDownload = async (file: UploadInfo, idx: number) => {
+    const meta = file as any;
+    const hasFile = meta.hasFile !== false;
+    const canDownload = hasFile && (file.fileData || meta.id);
+    if (!canDownload) return;
+    setDownloadingIdx(idx);
+
+    try {
+      // 模式 1: Base64 内联
+      if (file.fileData && file.fileData.startsWith('data:')) {
+        const a = document.createElement('a');
+        a.href = file.fileData;
+        a.download = file.fileName;
+        a.click();
+      }
+      // 模式 2: 按需从服务器获取
+      else if (meta.id) {
+        const token = localStorage.getItem('doc-system-token') || '';
+        const resp = await fetch(`${API_BASE}/documents/download/${meta.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!resp.ok) throw new Error(`下载失败 (HTTP ${resp.status})`);
+
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await resp.json();
+          if (data.fileData) {
+            const a = document.createElement('a');
+            a.href = data.fileData;
+            a.download = data.fileName || file.fileName;
+            a.click();
+          }
+        } else {
+          const blob = await resp.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+      } else {
+        return;
+      }
+
+      setDownloadedSet(prev => new Set(prev).add(idx));
+      setTimeout(() => {
+        setDownloadedSet(prev => {
+          const next = new Set(prev);
+          next.delete(idx);
+          return next;
+        });
+      }, 2000);
+    } catch (e: any) {
+      console.error('Download failed:', e.message);
+      alert(`下载失败：${e.message}`);
+    } finally {
+      setDownloadingIdx(null);
+    }
   };
 
   return (
@@ -55,7 +104,11 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ docName, files, onClose, 
           ) : (
             <div className="space-y-3">
               {files.map((file, idx) => {
+                const meta = file as any;
+                const hasFile = meta.hasFile !== false;
+                const canDownload = hasFile && (!!file.fileData || !!meta.id);
                 const isDownloaded = downloadedSet.has(idx);
+                const isDownloading = downloadingIdx === idx;
                 return (
                   <div
                     key={idx}
@@ -71,6 +124,9 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ docName, files, onClose, 
                         <span className="font-medium text-sm truncate" title={file.fileName}>
                           {file.fileName}
                         </span>
+                        {!file.fileData && meta.id && (
+                          <span className="text-xs text-green-500">云端</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500 ml-6">
                         <span className="flex items-center gap-1">
@@ -89,19 +145,27 @@ const DownloadModal: React.FC<DownloadModalProps> = ({ docName, files, onClose, 
                     </div>
                     <button
                       onClick={() => handleDownload(file, idx)}
-                      disabled={!file.fileData || isDownloaded}
+                      disabled={!canDownload || isDownloading || isDownloaded}
+                      title={isDownloading ? '下载中…' : canDownload ? '下载文件' : '文件不可用'}
                       className={`ml-3 px-3 py-1.5 text-white rounded-lg transition-all flex items-center gap-1 text-sm shrink-0 min-w-[72px] justify-center ${
                         isDownloaded
                           ? 'bg-green-500 cursor-default'
-                          : file.fileData
-                            ? 'bg-blue-500 hover:bg-blue-600'
-                            : 'bg-gray-300 cursor-not-allowed'
+                          : isDownloading
+                            ? 'bg-blue-400 cursor-wait'
+                            : canDownload
+                              ? 'bg-blue-500 hover:bg-blue-600'
+                              : 'bg-gray-300 cursor-not-allowed'
                       }`}
                     >
                       {isDownloaded ? (
                         <>
                           <Check className="w-4 h-4" />
                           已下载
+                        </>
+                      ) : isDownloading ? (
+                        <>
+                          <Download className="w-4 h-4 animate-pulse" />
+                          下载中
                         </>
                       ) : (
                         <>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ClipboardCheck, ChevronRight, ChevronLeft, Save, RotateCcw, Check, Eye, EyeOff, Target, ArrowRight, ExternalLink } from 'lucide-react';
+import { ClipboardCheck, ChevronRight, Save, RotateCcw, Check, Eye, EyeOff, Target, ArrowRight, ExternalLink } from 'lucide-react';
 import {
   ProjectProfile, WorkItemStatus, TailoringResult, TailoringConfig,
   computeTailoringResult, loadTailoringConfig, saveTailoringConfig,
   PROFILE_TEMPLATES,
 } from '../data/tailoringEngine';
 import { guideChapters as allChapters } from '../data/guideModules';
+import ModuleHeader from './ModuleHeader';
 
 interface TailoringEngineProps {
   projectName: string;
@@ -171,18 +172,14 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
   // === 问卷步骤 ===
   if (step === 'questionnaire') {
     return (
-      <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center gap-3 mb-8">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition">
-              <ArrowLeft size={20} />
-            </button>
-            <ClipboardCheck size={24} className="text-purple-400" />
-            <div>
-              <h1 className="text-xl font-bold">模块裁剪引擎</h1>
-              <p className="text-sm text-[var(--text-muted)]">{projectName} — 项目特征问卷</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
+        <ModuleHeader
+          title="模块裁剪引擎"
+          subtitle={`${projectName} — 项目特征问卷`}
+          icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+          onBack={onBack}
+        />
+        <div className="max-w-3xl mx-auto p-6">
 
           {/* 预设模板 */}
           <div className="mb-6">
@@ -370,21 +367,15 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
   const currentChapter = chapters.find(ch => ch.id === activeChapter) || chapters[0];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* 头部 */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setStep('questionnaire')} className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition">
-              <ChevronLeft size={20} />
-            </button>
-            <ClipboardCheck size={24} className="text-purple-400" />
-            <div>
-              <h1 className="text-xl font-bold">裁剪结果</h1>
-              <p className="text-sm text-[var(--text-muted)]">{projectName}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <ModuleHeader
+        title="裁剪结果"
+        subtitle={projectName}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={() => setStep('questionnaire')}
+        backLabel="返回问卷"
+        actions={
+          <>
             <button onClick={() => setStep('questionnaire')}
               className="px-3 py-1.5 text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition flex items-center gap-1">
               <RotateCcw size={14} /> 重新评估
@@ -406,8 +397,10 @@ const TailoringEngine: React.FC<TailoringEngineProps> = ({ projectName, onBack, 
                 <Target size={14} /> 下一步：目标管理 <ArrowRight size={14} />
               </button>
             )}
-          </div>
-        </div>
+          </>
+        }
+      />
+      <div className="max-w-6xl mx-auto p-6">
 
         {/* 引导流程指示器 */}
         {flowMode && (

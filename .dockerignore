@@ -1,15 +1,45 @@
+# 构建产物与依赖（容器内重新构建）
 node_modules
 backend/node_modules
 dist
-.git
-.env
-backend/.env
+
+# 运行时数据（通过 volume 持久化，不进镜像）
 backend/data
 backend/files
 backend/backups
+logs
+
+# 版本控制与 IDE
+.git
+.github
+.claude
+.trae
+.DS_Store
+
+# 敏感配置（通过 env_file / environment 注入）
+.env
+backend/.env
+
+# 部署配置（由 docker-compose 挂载，不进镜像）
+deploy
+
+# 文档（不影响运行）
+docs
+*.md
+
+# 临时文件与备份
 *.bak
 *.bak2
 *.bak3
 *.clean
 *.fix
-.DS_Store
+
+# 测试与 CI（生产镜像不需要）
+__tests__
+*.test.ts
+*.spec.ts
+
+# 其他无关目录
+nexus3d
+SGZLAI0528
+data

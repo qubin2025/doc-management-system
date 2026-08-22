@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   TrendingUp, AlertTriangle, CheckCircle2, Clock, Search, X, Plus, MessageSquare,
   Image, FileText, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  Bell, Camera, Sun, Moon
+  Bell, Camera
 } from 'lucide-react';
 import { computeIndicators, ProjectIndicators } from '../data/indicatorEngine';
-import { getTheme, setTheme, type ThemeMode } from '../data/themeEngine';
+import { getTheme, type ThemeMode } from '../data/themeEngine';
+import ThemeSwitcher from './ThemeSwitcher';
 import { extractAllPhotos, extractRecentDocUpdates, extractProjectDeadlines, getProjectPhotoCount, getProjectDocCount, countNewThisMonth, countNewThisWeek, fetchMobilePhotoStats, fetchMobilePhotosPreview, ProjectInfo, MobilePhotoStat } from '../data/projectAggregator';
 import { getUnreadCount, getAllNotifications, markRead, markAllRead, deleteNotification, MobileNotification } from '../data/mobileNotifications';
-import { logColorConfig } from '../data/colorDebug';
 import GlobalComparisonCharts from './charts/GlobalComparisonCharts';
 import GlobalAnalysisCharts from './charts/GlobalAnalysisCharts';
 import AiCapabilityCharts from './charts/AiCapabilityCharts';
@@ -180,7 +180,17 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
   const [showDeadlines, setShowDeadlines] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // 主题状态（供图表组件 dark 属性使用，监听主题切换事件实时更新）
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getTheme());
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const mode = (e as CustomEvent).detail?.mode as ThemeMode;
+      if (mode) setThemeMode(mode);
+    };
+    window.addEventListener('themechange', handler);
+    return () => window.removeEventListener('themechange', handler);
+  }, []);
+
   const notifCount = useMemo(() => getUnreadCount(), [refreshing, notifPanel]);
 
   // 从props加载辅助数据（projects由App.tsx统一管理）
@@ -196,9 +206,6 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
   }, [projects]);
 
   useEffect(() => { loadData(); }, [loadData]);
-
-  // 颜色调试日志：记录当前颜色配置与变更历史（仅开发模式）
-  useEffect(() => { logColorConfig('GlobalDashboard', themeMode); }, [themeMode]);
 
   const refresh = async () => {
     setRefreshing(true);
@@ -279,15 +286,7 @@ const GlobalDashboard: React.FC<Props> = ({ onNavigate, onLogout, isAdmin: _isAd
               {refreshing ? '刷新中...' : '刷新'}
             </button>
             {/* 主题切换 */}
-            <button onClick={() => { const next = themeMode === 'dark' ? 'light' : 'dark'; setTheme(next); setThemeMode(next); }}
-              title={themeMode === 'dark' ? '切换亮色主题' : '切换暗色主题'}
-              className="p-1.5 rounded-lg transition-colors hover:scale-110"
-              style={{ background: themeMode === 'dark' ? 'rgba(251,191,36,0.12)' : 'rgba(30,58,138,0.06)', border: themeMode === 'dark' ? '1px solid rgba(251,191,36,0.2)' : '1px solid rgba(30,58,138,0.12)' }}>
-              {themeMode === 'dark'
-                ? <Sun className="w-3.5 h-3.5 text-amber-400" />
-                : <Moon className="w-3.5 h-3.5 text-indigo-500" />
-              }
-            </button>
+            <ThemeSwitcher />
             {onLogout && (
               <button onClick={onLogout}
                 className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-slate-600

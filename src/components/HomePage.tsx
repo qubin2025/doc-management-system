@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ArrowLeft, LogOut, Sun, Moon, Sparkles, Shield,
+  ArrowLeft, LogOut, Sparkles, Shield,
   ClipboardCheck, FileSearch, HardHat, CheckCircle2,
   Bot, Zap, BookOpen, Target, FileText, Camera,
   AlertTriangle, CalendarDays, TrendingUp, FlaskConical,
@@ -9,13 +9,11 @@ import {
 } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
 import ModelAdmin from './ModelAdmin';
+import ThemeSwitcher from './ThemeSwitcher';
 import { useProject } from '../data/ProjectContext';
-import type { ThemeMode } from '../data/themeEngine';
 
 interface HomePageProps {
-  themeMode: ThemeMode;
   onNavigate: (view: string, params?: { chapterId?: string }) => void;
-  onToggleTheme: () => void;
   onLogout: () => void;
 }
 
@@ -31,7 +29,7 @@ interface ModuleCard {
   border: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleTheme, onLogout }) => {
+const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   const { currentProject, isAdmin, auth } = useProject();
   const [showModelAdmin, setShowModelAdmin] = useState(false);
   const [version, setVersion] = useState('');
@@ -139,15 +137,7 @@ const HomePage: React.FC<HomePageProps> = ({ themeMode, onNavigate, onToggleThem
               if (params?.chapterId) { onNavigate('guide-chapter', { chapterId: params.chapterId }); }
               else onNavigate(view);
             }} />}
-            <button onClick={onToggleTheme}
-              title={themeMode === 'dark' ? '切换亮色主题' : '切换暗色主题'}
-              className="p-1.5 rounded-lg transition-colors hover:scale-110"
-              style={{ background: themeMode === 'dark' ? 'rgba(251,191,36,0.12)' : 'rgba(30,58,138,0.06)', border: themeMode === 'dark' ? '1px solid rgba(251,191,36,0.2)' : '1px solid rgba(30,58,138,0.12)' }}>
-              {themeMode === 'dark'
-                ? <Sun className="w-3.5 h-3.5 text-amber-400" />
-                : <Moon className="w-3.5 h-3.5 text-indigo-500" />
-              }
-            </button>
+            <ThemeSwitcher />
             <button onClick={onLogout} className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
               <LogOut className="w-3.5 h-3.5" /> 退出
             </button>

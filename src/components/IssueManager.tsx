@@ -1,7 +1,7 @@
 // IssueManager — 桌面端现场问题管理全项目视图
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { fetchProjectIssues, updateIssueStatusDesktop, DesktopIssue } from '../data/api';
+import ModuleHeader from './ModuleHeader';
 
 interface Props {
   onBack: () => void;
@@ -69,19 +69,7 @@ const IssueManager: React.FC<Props> = ({ onBack, projectName: propProjectName })
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-      {/* Header */}
-      <header className="shrink-0 bg-slate-300/70 backdrop-blur-md border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/zhjk-logo.png" alt="中航建科" className="h-9 w-auto" />
-            <h1 className="text-lg font-bold text-[var(--text-primary,#1e293b)]">现场问题管理</h1>
-          </div>
-          <button onClick={onBack}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" /> 返回
-          </button>
-        </div>
-      </header>
+      <ModuleHeader title="现场问题管理" onBack={onBack} icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />} />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* 统计栏 */}

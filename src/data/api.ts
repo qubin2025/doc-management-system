@@ -24,9 +24,10 @@ function authHeader(): Record<string, string> {
 
 // ========== 连接检查 ==========
 export async function checkConnection(): Promise<boolean> {
-  // v5.7: 使用 /api/health 端点替代 / (根路径返回 404 会导致误判离线)
+  // v6.0: 修复 API_BASE 已含 /api 后又被拼接成 /api/api/health 的 bug
+  // API_BASE = 'http://localhost:3000/api' 或 '/api'（开发代理），所以 health 端点直接拼 /health
   try {
-    const res = await fetch(`${API_BASE}/api/health`, { method: 'GET', signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${API_BASE}/health`, { method: 'GET', signal: AbortSignal.timeout(5000) });
     return res.ok;
   } catch { return false; }
 }
@@ -106,8 +107,29 @@ export async function deleteUser(id: number) {
 // ========== 项目 ==========
 export async function fetchProjects(): Promise<ProjectInfo[]> {
   const res = await fetch(`${API_BASE}/projects`, { headers: headers() });
-  if (!res.ok) throw new Error('获取项目列表失败');
-  const data = await res.json();
+  // v6.0 FIX: 防御性检查 — 防止 HTTP 200 但 body 是 {error:...} 的"伪成功"响应
+  //   （曾因后端 cacheMiddleware 缓存 401 响应以 200 复用，导致前端误判成功后 .map 报错）
+  const data = await safeJson<any>(res);
+  if (!res.ok) {
+    // 真正的 HTTP 4xx/5xx 错误
+    const msg = data?.error || `获取项目列表失败 (HTTP ${res.status})`;
+    // v6.0: 认证类错误抛出特殊标记，调用方可据此决定是否清除 token
+    if (res.status === 401 || /未登录|登录已过期|请先登录/.test(msg)) {
+      const err = new Error(msg) as Error & { authFailed?: true };
+      err.authFailed = true;
+      throw err;
+    }
+    throw new Error(msg);
+  }
+  // v6.0 FIX: 即使 HTTP 200，也要检查 body 是否是错误对象（防止缓存/代理异常）
+  if (data?.error) {
+    const err = new Error(data.error) as Error & { authFailed?: true };
+    if (/未登录|登录已过期|请先登录/.test(data.error)) err.authFailed = true;
+    throw err;
+  }
+  if (!Array.isArray(data)) {
+    throw new Error(`项目列表响应格式异常 (期望数组, 实际 ${typeof data})`);
+  }
   // v5.2: 返回 id + details（后端新增字段）
   return data.map((p: any) => ({
     id: p.id,
@@ -275,6 +297,57 @@ export async function uploadDocument(projectName: string, docId: string, info: U
   });
   if (!res.ok) throw new Error('上传文档失败');
   return await res.json();
+}
+
+/**
+ * v6.0: multipart/form-data 流式上传（支持 200MB 大文件 / CAD 图纸）
+ * 直接传 File 对象，不走 base64，绕开 express.json 10MB 限制
+ */
+export async function uploadDocumentMultipart(
+  projectName: string,
+  docId: string,
+  file: File,
+  meta: { uploadTime: string; uploader: string; version: string; standard: string },
+  onProgress?: (percent: number) => void,
+): Promise<any> {
+  const projects = await fetchProjects();
+  let proj = projects.find(p => p.name === projectName);
+  if (!proj) { await createProject(projectName); const np = await fetchProjects(); proj = np.find(p => p.name === projectName); }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('projectId', String((proj as any).id));
+  formData.append('docId', docId);
+  formData.append('uploadTime', meta.uploadTime);
+  formData.append('uploader', meta.uploader);
+  formData.append('version', meta.version);
+  formData.append('standard', meta.standard);
+
+  // 使用 XHR 以支持上传进度
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}/documents/upload/multipart`);
+    if (authToken) xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch { resolve({}); }
+      } else {
+        let msg = '上传失败';
+        try { msg = JSON.parse(xhr.responseText).error || msg; } catch {}
+        reject(new Error(msg));
+      }
+    };
+    xhr.onerror = () => reject(new Error('网络错误，上传失败'));
+    xhr.send(formData);
+  });
 }
 
 export async function deleteDocumentApi(docId: string, fileIndex: number, projectName: string, standard: string): Promise<void> {

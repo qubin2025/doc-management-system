@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, XCircle, Eye, BookOpen } from 'lucide-react';
+import { CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface KnowledgeEntry {
   id: string; project_name: string; category: string; title: string;
@@ -59,13 +60,7 @@ const KnowledgeReview: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <BookOpen className="w-5 h-5 text-purple-600" />
-            <h1 className="text-lg font-bold text-gray-800">知识审核工作台</h1>
-          </div>
+      <ModuleHeader title="知识审核" onBack={onBack} icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />} actions={
           <div className="flex bg-gray-100 rounded-lg p-0.5">
             {(['pending', 'approved', 'rejected', 'all'] as const).map(s => (
               <button key={s} onClick={() => setFilter(s)}
@@ -74,8 +69,7 @@ const KnowledgeReview: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </button>
             ))}
           </div>
-        </div>
-      </header>
+        } />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {loading ? <p className="text-gray-400 text-sm text-center py-8">加载中…</p> :

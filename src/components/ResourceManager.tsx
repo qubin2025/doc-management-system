@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Edit2, Trash2, Users, Briefcase, MessageSquare } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, MessageSquare } from 'lucide-react';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface TeamMember { id: string; name: string; role: string; dept: string; availability: string; }
 interface RaciItem { id: string; task: string; responsible: string; accountable: string; consulted: string; informed: string; }
@@ -43,14 +44,10 @@ const ResourceManager: React.FC<Props> = ({ projectName, onBack }) => {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
-            <Briefcase size={24} className="text-blue-400" /><div><h1 className="text-xl font-bold text-[var(--text-primary)]">资源与沟通管理</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
-          </div>
+        <ModuleHeader title="资源与沟通管理" icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />} onBack={onBack} subtitle={projectName} actions={
           <button onClick={() => { setEditing({}); setForm({}); }}
             className="px-4 py-2 bg-blue-500 hover:bg-blue-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加{activeTab === 'team' ? '成员' : activeTab === 'raci' ? 'RACI' : '记录'}</button>
-        </div>
+        } />
 
         <div className="flex gap-2 mb-6">
           {(['team', 'raci', 'comm'] as const).map(t => (

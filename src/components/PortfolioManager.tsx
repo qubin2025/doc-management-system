@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BarChart3, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target } from 'lucide-react';
 import { getAllProjectIndicators } from '../data/indicatorEngine';
 import type { ProjectIndicators } from '../data/indicatorEngine';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { onBack: () => void; }
 
@@ -22,11 +23,7 @@ const PortfolioManager: React.FC<Props> = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
-          <BarChart3 size={24} className="text-emerald-400" />
-          <div><h1 className="text-xl font-bold text-[var(--text-primary)]">项目组合管理</h1><p className="text-sm text-[var(--text-muted)]">{indicators.length} 个项目</p></div>
-        </div>
+        <ModuleHeader title="项目组合管理" icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />} onBack={onBack} subtitle={`${indicators.length} 个项目`} />
 
         {/* 组合总览 */}
         <div className="grid grid-cols-4 gap-4 mb-6">

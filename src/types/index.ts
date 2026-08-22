@@ -9,10 +9,14 @@ export interface ProjectInfo {
     scale?: string;          // 建设规模
     investment?: string;     // 投资额
     pipeline?: string;       // 市政管线
+    structureType?: string;   // 主体结构形式
+    landArea?: string;        // 用地面积/占地面积
+    floorHeight?: string;     // 层高
+    floors?: string;          // 层数
     aiReport?: string;       // AI分析报告
     aiReportTime?: string;   // 报告更新时间
     customFields?: { key: string; value: string }[]; // 自定义字段
-    projectDocs?: { fileName: string; uploader: string; uploadTime: string; data: string }[]; // 项目概况文件
+    projectDocs?: { fileName: string; uploader: string; uploadTime: string; data: string; parsedText?: string }[]; // 项目概况文件
   };
 }
 
@@ -38,11 +42,14 @@ export interface DocumentItem {
 
 // 上传文件记录（单个文件）
 export interface UploadInfo {
+  id?: number;            // 后端文档记录 ID（用于下载端点）
   fileName: string;        // 上传文件名
   uploadTime: string;     // 上传时间
   uploader: string;       // 上传人
   version: string;        // 版本号
-  fileData?: string;      // Base64 文件数据
+  fileData?: string;      // Base64 文件数据（小文件）
+  filePath?: string;      // 磁盘存储路径（大文件/multipart）
+  hasFile?: boolean;      // v6.0: 文件可用性哨兵值（true=可下载）
 }
 
 // 筛选条件

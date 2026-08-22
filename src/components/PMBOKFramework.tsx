@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { KNOWLEDGE_AREAS, PERFORMANCE_DOMAINS, computePMBOKCoverage, type ProcessGroup } from '../data/pmbokData';
+import ModuleHeader from './ModuleHeader';
 
 interface PMBOKFrameworkProps { projectName: string; onBack: () => void; }
 
@@ -33,13 +34,14 @@ const PMBOKFramework: React.FC<PMBOKFrameworkProps> = ({ projectName, onBack }) 
   const barColor = (score: number) => score >= 80 ? 'bg-green-400' : score >= 40 ? 'bg-sky-400' : score > 0 ? 'bg-amber-400' : 'bg-[var(--bg-tertiary)]';
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
-          <BookOpen size={24} className="text-blue-400" />
-          <div><h1 className="text-xl font-bold">PMBOK 知识领域框架</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
-        </div>
+    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
+      <ModuleHeader
+        title="PMBOK 知识领域框架"
+        subtitle={projectName}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+      />
+      <div className="max-w-6xl mx-auto p-6">
 
         {/* Tab切换 */}
         <div className="flex gap-2 mb-6">

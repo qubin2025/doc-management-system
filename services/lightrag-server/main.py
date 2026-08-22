@@ -6,28 +6,68 @@ LightRAG 知识引擎微服务 — v2.5.0 AI增强版
 - 向量嵌入（通义Embedding / 降级哈希）
 - 混合检索（关键词+向量+图谱三路融合）
 """
-import os, re, json, hashlib, logging
+import os, re, json, hashlib, logging, sys, time, platform
 from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
 import numpy as np
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-import uvicorn
+_BOOT_T0 = time.time()
+
+def _bootlog(level: str, msg: str, detail: str = ""):
+    ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    tail = f" | {detail}" if detail else ""
+    line = f"{ts} [LIGHTRAG] {level.upper():<6} {msg}{tail}"
+    if level in ("error", "fatal", "warn"):
+        print(line, file=sys.stderr, flush=True)
+    else:
+        print(line, flush=True)
+
+_bootlog("phase", "0: BOOTSTRAP")
+_bootlog("info",  "cwd", os.getcwd())
+_bootlog("info",  "python", f"{sys.version.split()[0]}  platform={platform.platform()}")
+_bootlog("info",  "pid",    f"{os.getpid()}  executable={sys.executable}")
+_bootlog("info",  "argv",   " ".join(sys.argv))
+
+try:
+    from fastapi import FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel, Field
+    import uvicorn
+    _bootlog("ok", "FastAPI imports", "fastapi|uvicorn|pydantic")
+except Exception as _e:
+    _bootlog("fatal", "FastAPI import FAILED", f"{type(_e).__name__}: {_e}")
+    _bootlog("info", "HINT", "pip install fastapi uvicorn pydantic python-multipart requests numpy pdfplumber")
+    sys.exit(2)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("lightrag")
 
 # ========== 配置 ==========
+_bootlog("phase", "1: CONFIG")
 DEEPSEEK_BASE = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+DEEPSEEK_KEY  = os.getenv("DEEPSEEK_API_KEY", "")
 EMBEDDING_KEY = os.getenv("DASHSCOPE_API_KEY", "")
 EMBEDDING_DIM = 768
 
-app = FastAPI(title="LightRAG Engine v2.5", version="2.5.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+def _mask(s: str) -> str:
+    if not s: return "(not set)"
+    return f"{s[:8]}***(len={len(s)})"
 
+_bootlog("info", "DEEPSEEK_BASE", DEEPSEEK_BASE)
+_bootlog("info", "DEEPSEEK_API_KEY", f"present={bool(DEEPSEEK_KEY)}  preview={_mask(DEEPSEEK_KEY)}  AI enabled={bool(DEEPSEEK_KEY)}")
+_bootlog("info", "DASHSCOPE_API_KEY", f"present={bool(EMBEDDING_KEY)}  preview={_mask(EMBEDDING_KEY)}  embedding enabled={bool(EMBEDDING_KEY)}")
+_bootlog("info", "EMBEDDING_DIM",    str(EMBEDDING_DIM))
+
+_bootlog("phase", "2: FASTAPI INIT")
+try:
+    app = FastAPI(title="LightRAG Engine v2.5", version="2.5.0")
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    _bootlog("ok", "FastAPI app created", "CORS=*")
+except Exception as _e:
+    _bootlog("fatal", "FastAPI app create FAILED", f"{type(_e).__name__}: {_e}")
+    sys.exit(3)
+
+_bootlog("phase", "3: MODELS & STORAGE")
 # ========== 数据模型 ==========
 class IndexRequest(BaseModel):
     text: str
@@ -43,17 +83,26 @@ class SyncRequest(BaseModel):
     nodes: List[dict] = Field(default_factory=list)
     edges: List[dict] = Field(default_factory=list)
 
+class ParseRequest(BaseModel):
+    content: Optional[str] = ""       # 纯文本 或 base64 文件内容
+    filename: Optional[str] = ""      # 文件名，用于判断后缀
+    mime_type: Optional[str] = ""     # MIME 类型兜底
+
+_bootlog("ok", "Pydantic models", "IndexRequest|SearchRequest|SyncRequest|ParseRequest")
+
 # ========== 内存存储 ==========
 documents: List[dict] = []
 graph_nodes: Dict[str, dict] = {}
 graph_edges: List[dict] = []
 graph_adj: Dict[str, List[str]] = defaultdict(list)
 vectors: List[Tuple[str, List[float]]] = []
+_bootlog("ok", "In-memory storage", "documents|graph_nodes|graph_edges|graph_adj|vectors — initialized empty")
 
 def _hash(s: str) -> str:
     return hashlib.md5(s.encode()).hexdigest()[:12]
 
 # ========== 1. 智能分块 ==========
+_bootlog("phase", "4: CHUNKER INIT")
 class SmartChunker:
     def __init__(self, max_chunk: int = 800, overlap: int = 100):
         self.max = max_chunk; self.overlap = overlap
@@ -70,6 +119,7 @@ class SmartChunker:
         return chunks if chunks else [text[:2000]]
 
 chunker = SmartChunker()
+_bootlog("ok", "SmartChunker ready", f"max_chunk=800  overlap=100")
 
 # ========== 2. AI实体抽取 ==========
 ENTITY_PROMPT = """你是工程咨询领域的实体识别专家。请从文本中提取关键实体和关系。
@@ -182,6 +232,8 @@ def vector_search(query: str, top_k: int = 10) -> List[dict]:
     return results
 
 # ========== API 端点 ==========
+_bootlog("phase", "5: ROUTES")
+_bootlog("info", "Registering /api/lightrag/* endpoints", "health·index·search·graph·graph/sync·parse·clear  total=7")
 
 @app.get("/api/lightrag/health")
 async def health():
@@ -194,6 +246,7 @@ async def health():
         "ai_enabled":bool(DEEPSEEK_KEY),
         "embedding_enabled":bool(EMBEDDING_KEY),
     }
+_bootlog("ok", "Mounted GET", "/api/lightrag/health")
 
 @app.post("/api/lightrag/index")
 async def index_document(req: IndexRequest):
@@ -217,6 +270,7 @@ async def index_document(req: IndexRequest):
     for i, v in enumerate(embeds): vectors.append((f"{doc_id}_c{i}", v))
     documents.append({"id":doc_id,"source":req.source,"content":req.text,"chunks":chunks,"metadata":req.metadata})
     return {"ok":True,"doc_id":doc_id,"chunks":len(chunks),"entities":len(er.get("entities",[])),"relations":len(er.get("relations",[])),"ai_mode":"ai" if DEEPSEEK_KEY else "regex"}
+_bootlog("ok", "Mounted POST", "/api/lightrag/index")
 
 @app.post("/api/lightrag/search")
 async def search(req: SearchRequest):
@@ -234,10 +288,12 @@ async def search(req: SearchRequest):
             results.append({"nodes":[{"id":n["id"],"label":n["label"],"type":n["type"]} for n in sg["nodes"]],"edges":sg["edges"],"score":0.9})
             modes.append("graph")
     return {"ok":True,"results":results[:req.top_k],"total":len(results),"modes":modes}
+_bootlog("ok", "Mounted POST", "/api/lightrag/search")
 
 @app.get("/api/lightrag/graph")
 async def get_graph():
     return {"ok":True,"nodes":list(graph_nodes.values()),"edges":graph_edges}
+_bootlog("ok", "Mounted GET", "/api/lightrag/graph")
 
 @app.post("/api/lightrag/graph/sync")
 async def sync_graph(req: SyncRequest):
@@ -248,12 +304,7 @@ async def sync_graph(req: SyncRequest):
         graph_edges.append({"from":e.get("from",""),"to":e.get("to",""),"type":e.get("type","RELATED"),"label":e.get("label","")})
         graph_adj[e.get("from","")].append(e.get("to",""))
     return {"ok":True,"nodes":len(graph_nodes),"edges":len(graph_edges)}
-
-# ========== 文档解析 API ==========
-class ParseRequest(BaseModel):
-    content: str = ""  # base64编码的文件内容
-    filename: str = ""
-    mime_type: str = ""
+_bootlog("ok", "Mounted POST", "/api/lightrag/graph/sync")
 
 @app.post("/api/lightrag/parse")
 async def parse_document(req: ParseRequest):
@@ -306,13 +357,38 @@ async def parse_document(req: ParseRequest):
         return {"ok": True, "text": text[:50000], "method": "text"}
 
     return {"ok": False, "error": f"不支持的文件类型: {fname.split('.')[-1]}"}
+_bootlog("ok", "Mounted POST", "/api/lightrag/parse")
 
 @app.delete("/api/lightrag/clear")
 async def clear():
     documents.clear(); graph_nodes.clear(); graph_edges.clear(); graph_adj.clear(); vectors.clear()
     return {"ok":True}
+_bootlog("ok", "Mounted DELETE", "/api/lightrag/clear")
+
+_bootlog("ok", "All routes mounted", "count=7")
+
+_bootlog("phase", "6: UVICORN STARTUP")
+import signal as _signal
 
 if __name__ == "__main__":
     port = int(os.getenv("LIGHTRAG_PORT","8000"))
-    logger.info(f"LightRAG v2.5 :{port} | AI={'ON' if DEEPSEEK_KEY else 'OFF'} | Embed={'ON' if EMBEDDING_KEY else '降级'}")
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    host = os.getenv("LIGHTRAG_HOST", "0.0.0.0")
+    log_level = os.getenv("LIGHTRAG_LOG_LEVEL", "info")
+    _bootlog("info", "About to call uvicorn.run", f"host={host}  port={port}  log_level={log_level}")
+    _bootlog("ok",   "Start summary", f"LightRAG v2.5 :{port} | AI={'ON' if DEEPSEEK_KEY else 'OFF'} | Embed={'ON' if EMBEDDING_KEY else '降级'} | readyTime={time.time()-_BOOT_T0:.2f}s")
+    try:
+        uvicorn.run(app, host=host, port=port, log_level=log_level)
+    except OSError as _e:
+        if "address already in use" in str(_e).lower():
+            _bootlog("fatal", f"PORT {port} ALREADY IN USE (EADDRINUSE)", "→ 请先关闭占用进程: netstat -ano | findstr :"+str(port))
+        else:
+            _bootlog("fatal", "uvicorn.run OSError", f"{type(_e).__name__}: {_e}")
+        sys.exit(4)
+    except KeyboardInterrupt:
+        _bootlog("info", "KeyboardInterrupt — exiting")
+        sys.exit(0)
+    except Exception as _e:
+        _bootlog("fatal", "uvicorn.run UNEXPECTED", f"{type(_e).__name__}: {_e}")
+        sys.exit(5)
+    finally:
+        _bootlog("info", "uvicorn.run returned", f"totalRun={time.time()-_BOOT_T0:.2f}s")

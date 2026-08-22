@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Calendar, Sparkles, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Sparkles, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchDailyReports, DesktopDailyReport } from '../data/api';
 import { deleteDailyReport } from '../mobile/data/mobileApi';
 import PromptConfigDialog from './PromptConfigDialog';
 import { logColorConfig } from '../data/colorDebug';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { onBack: () => void; }
 
@@ -106,17 +107,13 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-      <header className="bg-slate-300/70 backdrop-blur-md border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
-              <ArrowLeft className="w-3.5 h-3.5" /> 返回
-            </button>
-            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-200">项目日报管理</h1>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{list.length}篇 · {names.length}个项目</span>
-          </div>
+      <ModuleHeader
+        title="工程日报管理"
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        subtitle={`${list.length}篇 · ${names.length}个项目`}
+        onBack={onBack}
+        actions={
           <div className="flex items-center gap-2">
-            {/* CHANGE 8: Date range inputs */}
             <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <Calendar className="w-3.5 h-3.5" />
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
@@ -135,8 +132,8 @@ const DesktopDailyReportView: React.FC<Props> = ({ onBack }) => {
               <Sparkles className="w-3.5 h-3.5" /> {aiLoading ? '分析中...' : 'AI分析'}
             </button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* CHANGE 5: Redesigned stats cards */}

@@ -3,60 +3,126 @@ PaddleOCR 统一文档解析服务 — v2.5.0
 全格式覆盖: PDF(文字+扫描件) | DOC/DOCX | XLS/XLSX | 图片(OCR) | TXT
 全局解析入口，替代 pdfjs+mammoth+xlsx+AI Vision 拼凑方案
 """
-import os, tempfile, logging, base64, io
+import os, tempfile, logging, base64, io, sys, time, platform
 from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import uvicorn
+
+_BOOT_T0 = time.time()
+
+def _bootlog(level: str, msg: str, detail: str = ""):
+    ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    tail = f" | {detail}" if detail else ""
+    line = f"{ts} [PADDLEOCR] {level.upper():<6} {msg}{tail}"
+    if level in ("error", "fatal", "warn"):
+        print(line, file=sys.stderr, flush=True)
+    else:
+        print(line, flush=True)
+
+_bootlog("phase", "0: BOOTSTRAP")
+_bootlog("info",  "cwd", os.getcwd())
+_bootlog("info",  "python", f"{sys.version.split()[0]}  platform={platform.platform()}")
+_bootlog("info",  "pid",    f"{os.getpid()}  executable={sys.executable}")
+_bootlog("info",  "argv",   " ".join(sys.argv))
+
+try:
+    import uvicorn
+    _bootlog("ok", "FastAPI & uvicorn import", "ok")
+except Exception as _e:
+    _bootlog("fatal", "FastAPI import FAILED", f"{type(_e).__name__}: {_e}")
+    _bootlog("info", "HINT", "pip install fastapi uvicorn pydantic python-multipart pdfplumber python-docx openpyxl xlrd Pillow numpy")
+    _bootlog("info", "HINT", "OCR引擎: pip install easyocr   (or paddleocr / pytesseract)")
+    sys.exit(2)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("paddleparser")
 
-app = FastAPI(title="PaddleOCR Document Parser v2.5", version="2.5.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_bootlog("phase", "1: FASTAPI INIT")
+try:
+    app = FastAPI(title="PaddleOCR Document Parser v2.5", version="2.5.0")
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    _bootlog("ok", "FastAPI app created", "CORS=*")
+except Exception as _e:
+    _bootlog("fatal", "FastAPI app create FAILED", f"{type(_e).__name__}: {_e}")
+    sys.exit(3)
 
 # 延迟初始化(优先EasyOCR→PaddleOCR→tesseract)
 _ocr = None
 _ocr_engine = None  # 'easyocr' | 'paddleocr' | 'tesseract' | None
+
+_bootlog("phase", "2: OCR ENGINE LAZY-INIT")
+_bootlog("info", "OCR engine will initialize lazily", "chain: EasyOCR → PaddleOCR → Tesseract")
+
+
+# ========== v5.6: 启动时预加载 OCR 模型 ==========
+# 通过 FastAPI lifespan 在 uvicorn 启动前预加载,避免首次请求触发 lazy-init 阻塞
+@app.on_event("startup")
+async def _preload_ocr_on_startup():
+    _bootlog("phase", "2.0: OCR PRELOAD ON STARTUP")
+    t0 = time.time()
+    try:
+        ocr = get_ocr()
+        if ocr is not None:
+            _bootlog("ok", "OCR model preloaded on startup", f"engine={_ocr_engine}  elapsed={time.time()-t0:.2f}s")
+        else:
+            _bootlog("warn", "OCR engine unavailable at startup", "图像/扫描件解析将不可用")
+    except Exception as e:
+        _bootlog("warn", "OCR preload failed (lazy-init still works on first call)", f"{type(e).__name__}: {str(e)[:120]}")
+
 
 def get_ocr():
     global _ocr, _ocr_engine
     if _ocr is not None:
         return _ocr if _ocr is not False else None
 
+    _bootlog("phase", "2.1: OCR INIT — 1st call")
+
     # 1) EasyOCR（最稳定，模型内置pip包）
+    _bootlog("info", "Try: EasyOCR")
     try:
+        t0 = time.time()
         import easyocr
         _ocr = easyocr.Reader(['ch_sim', 'en'], gpu=False, verbose=False)
         _ocr_engine = 'easyocr'
+        _bootlog("ok", "EasyOCR initialized", f"{time.time()-t0:.2f}s  languages=ch_sim+en  gpu=False")
         logger.info("EasyOCR 初始化完成 (中文+英文)")
         return _ocr
     except Exception as e:
+        _bootlog("warn", "EasyOCR failed", f"{type(e).__name__}: {str(e)[:120]}")
         logger.warning(f"EasyOCR失败: {e}")
 
     # 2) PaddleOCR（需要联网下载模型）
+    _bootlog("info", "Try: PaddleOCR")
     try:
+        t0 = time.time()
         os.environ.setdefault('PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK', 'True')
         from paddleocr import PaddleOCR
         _ocr = PaddleOCR(lang='ch', use_doc_orientation_classify=False, use_doc_unwarping=False)
         _ocr_engine = 'paddleocr'
+        _bootlog("ok", "PaddleOCR initialized", f"{time.time()-t0:.2f}s")
         logger.info("PaddleOCR 初始化完成")
         return _ocr
     except Exception as e:
+        _bootlog("warn", "PaddleOCR failed", f"{type(e).__name__}: {str(e)[:120]}")
         logger.warning(f"PaddleOCR失败: {e}")
 
     # 3) Tesseract（最后降级）
+    _bootlog("info", "Try: Tesseract")
     try:
+        t0 = time.time()
         import pytesseract
         _ocr = pytesseract
         _ocr_engine = 'tesseract'
+        _bootlog("ok", "Tesseract OCR available", f"{time.time()-t0:.2f}s")
         logger.info("Tesseract OCR 可用")
         return _ocr
     except Exception as e:
+        _bootlog("warn", "Tesseract failed", f"{type(e).__name__}: {str(e)[:120]}")
         logger.warning(f"Tesseract失败: {e}")
 
     _ocr = False
+    _bootlog("warn", "All OCR engines unavailable", "解析图片/扫描件需要至少安装1种OCR：pip install easyocr")
     return None
 
 # ========== 数据模型 ==========
@@ -246,6 +312,8 @@ def _table_to_text(table: list) -> str:
 
 
 # ========== API 端点 ==========
+_bootlog("phase", "3: ROUTES")
+_bootlog("info", "Registering /api/parse/* endpoints", "health·document  total=2")
 
 @app.get("/api/parse/health")
 async def health():
@@ -257,6 +325,7 @@ async def health():
         "ocr_engine": _ocr_engine or "none",
         "formats": ["pdf","doc","docx","xls","xlsx","png","jpg","jpeg","bmp","tiff","txt","csv"],
     }
+_bootlog("ok", "Mounted GET", "/api/parse/health  (lazy-triggers OCR init)")
 
 @app.post("/api/parse/document")
 async def parse_document(req: ParseRequest):
@@ -341,11 +410,37 @@ async def parse_document(req: ParseRequest):
     except: pass
 
     return {"ok": False, "error": f"不支持的文件格式: {fname.split('.')[-1] if '.' in fname else '未知'}"}
+_bootlog("ok", "Mounted POST", "/api/parse/document  (handles pdf/doc/docx/xls/xlsx/img/txt)")
 
+_bootlog("ok", "All routes mounted", "count=2")
 
 # ========== 启动 ==========
+_bootlog("phase", "4: UVICORN STARTUP")
 if __name__ == "__main__":
-    import numpy as np
+    try:
+        import numpy as np  # noqa: F401 — 启动时预先检查 numpy
+        _bootlog("ok", "NumPy pre-check", f"version={np.__version__}")
+    except Exception as _e:
+        _bootlog("warn", "NumPy not available (will lazily import)", f"{type(_e).__name__}: {_e}")
+
     port = int(os.getenv("PADDLEOCR_PORT", "8001"))
-    logger.info(f"PaddleOCR 文档解析服务启动 :{port}")
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    host = os.getenv("PADDLEOCR_HOST", "0.0.0.0")
+    log_level = os.getenv("PADDLEOCR_LOG_LEVEL", "info")
+    _bootlog("info", "About to call uvicorn.run", f"host={host}  port={port}  log_level={log_level}")
+    _bootlog("ok",   "Start summary", f"PaddleOCR Parser v2.5 :{port}  readyTime={time.time()-_BOOT_T0:.2f}s")
+    try:
+        uvicorn.run(app, host=host, port=port, log_level=log_level)
+    except OSError as _e:
+        if "address already in use" in str(_e).lower():
+            _bootlog("fatal", f"PORT {port} ALREADY IN USE (EADDRINUSE)", "→ 请先关闭占用进程: netstat -ano | findstr :"+str(port))
+        else:
+            _bootlog("fatal", "uvicorn.run OSError", f"{type(_e).__name__}: {_e}")
+        sys.exit(4)
+    except KeyboardInterrupt:
+        _bootlog("info", "KeyboardInterrupt — exiting")
+        sys.exit(0)
+    except Exception as _e:
+        _bootlog("fatal", "uvicorn.run UNEXPECTED", f"{type(_e).__name__}: {_e}")
+        sys.exit(5)
+    finally:
+        _bootlog("info", "uvicorn.run returned", f"totalRun={time.time()-_BOOT_T0:.2f}s")

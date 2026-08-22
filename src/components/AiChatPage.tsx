@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Sparkles, Plus, MessageSquare, Trash2, Edit3, Download, Paperclip, Image, ChevronDown, BarChart3, Phone, Mic, Share2, Copy, Check, FileText, Clock, AlertTriangle } from 'lucide-react';
+import { Send, Sparkles, Plus, MessageSquare, Trash2, Edit3, Download, Paperclip, Image, ChevronDown, BarChart3, Phone, Mic, Share2, Copy, Check, FileText, Clock, AlertTriangle } from 'lucide-react';
 import * as api from '../data/api';
 import { ChatMessage } from '../types';
 import { ragQuery, getIndexStats } from '../data/ragService';
+import ModuleHeader from './ModuleHeader';
 
 const MODELS = ['自动选择', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-r1', 'qwen-turbo', 'glm-4-flash', 'ollama-qwen', 'ollama-llama'];
 const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -276,32 +277,32 @@ const AiChatPage: React.FC<{
   return (
     <>
     <div className="h-screen flex flex-col bg-white">
-      {/* ===== 顶部固定栏 ===== */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-          <h1 className="text-base font-semibold text-gray-800">{active?.title || 'AI 对话'}</h1>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{model}</span>
-          {ragCount > 0 && (
-            <button onClick={() => setRagMode(!ragMode)}
-              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${ragMode ? 'bg-purple-50 text-purple-600' : 'bg-gray-50 text-gray-400'}`}
-              title={`RAG检索${ragMode ? '已开启' : '已关闭'} (${ragCount}个文档索引)`}>
-              RAG{ragMode ? ' ON' : ' OFF'} · {ragCount}篇
+      <ModuleHeader
+        title="AI对话"
+        onBack={onBack}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        actions={
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{model}</span>
+            {ragCount > 0 && (
+              <button onClick={() => setRagMode(!ragMode)}
+                className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${ragMode ? 'bg-purple-50 text-purple-600' : 'bg-gray-50 text-gray-400'}`}
+                title={`RAG检索${ragMode ? '已开启' : '已关闭'} (${ragCount}个文档索引)`}>
+                RAG{ragMode ? ' ON' : ' OFF'} · {ragCount}篇
+              </button>
+            )}
+            <button onClick={handleShare} className={`p-2 rounded-lg text-sm transition-colors ${shared ? 'text-green-500 bg-green-50' : 'text-gray-500 hover:bg-gray-100'}`} title="分享对话">
+              {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
             </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={handleShare} className={`p-2 rounded-lg text-sm transition-colors ${shared ? 'text-green-500 bg-green-50' : 'text-gray-500 hover:bg-gray-100'}`} title="分享对话">
-            {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-          </button>
-          <button onClick={() => { if (activeId && confirm('清除当前对话内容？')) { setSessions(prev => prev.map(s => s.id === activeId ? { ...s, messages: [] } : s)); } }}
-            className="p-2 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" title="清除当前对话">
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="语音输入"><Mic className="w-4 h-4" /></button>
-          <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="语音通话"><Phone className="w-4 h-4" /></button>
-        </div>
-      </header>
+            <button onClick={() => { if (activeId && confirm('清除当前对话内容？')) { setSessions(prev => prev.map(s => s.id === activeId ? { ...s, messages: [] } : s)); } }}
+              className="p-2 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" title="清除当前对话">
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="语音输入"><Mic className="w-4 h-4" /></button>
+            <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="语音通话"><Phone className="w-4 h-4" /></button>
+          </div>
+        }
+      />
 
       <div className="flex-1 flex overflow-hidden">
         {/* ===== 左侧固定栏 ===== */}

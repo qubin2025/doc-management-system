@@ -1,7 +1,8 @@
 import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, History, Trash2, Plus, CheckCircle2, Clock } from 'lucide-react';
+import { History, Trash2, Plus, CheckCircle2, Clock } from 'lucide-react';
 import { computeIndicators } from '../data/indicatorEngine';
+import ModuleHeader from './ModuleHeader';
 
 const getAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -71,17 +72,12 @@ const BaselineManager: React.FC<BaselineManagerProps> = ({ projectName, onBack }
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
-            <History size={24} className="text-green-400" />
-            <div><h1 className="text-xl font-bold text-[var(--text-primary)]">基线管理</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
-          </div>
+        <ModuleHeader title="基线管理" onBack={onBack} subtitle={projectName} icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />} actions={
           <button onClick={() => setShowCreate(true)}
             className="px-4 py-2 bg-green-500 hover:bg-green-400 text-white rounded-lg text-sm transition flex items-center gap-1">
             <Plus size={14} /> 创建基线
           </button>
-        </div>
+        } />
 
         {/* 当前KPI */}
         {currentKpi && (

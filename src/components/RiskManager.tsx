@@ -1,7 +1,8 @@
 import ConfirmDialog from './ConfirmDialog';
 import React, { useState, useEffect } from 'react';
 import { toast } from './Toast';
-import { ArrowLeft, Plus, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import ModuleHeader from './ModuleHeader';
 
 interface RiskItem { id: string; name: string; category: string; probability: number; impact: number; score: number; response: string; owner: string; status: 'open'|'mitigated'|'closed'; }
 
@@ -38,17 +39,19 @@ const RiskManager: React.FC<Props> = ({ projectName, onBack }) => {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
-            <AlertTriangle size={24} className="text-red-400" /><div><h1 className="text-xl font-bold text-[var(--text-primary)]">风险管理</h1><p className="text-sm text-[var(--text-muted)]">{projectName}</p></div>
-          </div>
-          <button onClick={() => { setEditing(null); setForm({ name: '', probability: 3, impact: 3, status: 'open' }); }}
-            className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加风险</button>
-        </div>
+        <ModuleHeader
+          title="风险管理"
+          subtitle={projectName}
+          icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+          onBack={onBack}
+          actions={
+            <button onClick={() => { setEditing(null); setForm({ name: '', probability: 3, impact: 3, status: 'open' }); }}
+              className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg text-sm flex items-center gap-1"><Plus size={14} /> 添加风险</button>
+          }
+        />
 
         {/* 统计 + 热力图 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6 mt-6">
           <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-5 col-span-1 space-y-4">
             <div className="text-center"><div className="text-3xl font-bold text-[var(--text-primary)]">{risks.length}</div><div className="text-xs text-[var(--text-muted)]">风险总数</div></div>
             <div className="grid grid-cols-3 gap-2 text-center text-xs">

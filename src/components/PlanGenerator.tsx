@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader, Download, Sparkles, FileText, GitBranch, Printer, AlertTriangle, CheckCircle, Upload, Database, X } from 'lucide-react';
+import { Loader, Download, Sparkles, FileText, GitBranch, Printer, AlertTriangle, CheckCircle, Upload, Database, X, History } from 'lucide-react';
 import * as api from '../data/api';
 import { getPlanSchema, checkCompleteness, CompletenessReport } from '../data/planSchema';
 import { parseDocument } from '../data/documentParser';
 import { toast } from './Toast';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { projectName: string; onBack: () => void; }
 const PLAN_TEMPLATES = ['施工组织设计', '深基坑专项方案', '塔吊安拆方案', '模板支架方案', '脚手架方案', '临时用电方案', '消防方案'];
@@ -215,37 +216,42 @@ const PlanGenerator: React.FC<Props> = ({ projectName, onBack }) => {
         )}
       </div>
 
-      <div className="flex-1">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30"><div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600"/></button>
-          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center"><FileText className="w-5 h-5 text-white"/></div>
-          <div className="flex items-center gap-3">
-            <div><h1 className="text-lg font-bold text-gray-800">AI方案生成</h1><p className="text-xs text-gray-500">项目: {projectName}</p></div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus === 'online' ? 'AI大模型在线' : aiStatus === 'offline' ? '离线模式（使用本地模板）' : '检测中...'}>
-              <span className={`w-2 h-2 rounded-full ${aiStatus === 'online' ? 'bg-green-500 animate-pulse' : aiStatus === 'offline' ? 'bg-amber-500' : 'bg-gray-400 animate-pulse'}`} />
-              <span className={`text-xs font-medium ${aiStatus === 'online' ? 'text-green-600' : aiStatus === 'offline' ? 'text-amber-600' : 'text-gray-400'}`}>
-                {aiStatus === 'online' ? 'AI在线' : aiStatus === 'offline' ? '离线模式' : '检测中'}
-              </span>
-            </div>
-            <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600">
-              <option value="auto">自动</option>
-              {availableModels.map(m => <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-green-50 text-green-600':'text-gray-500 hover:bg-gray-50'}`}>📋 历史({planHistory.length})</button>
-          {allDone && <button onClick={exportPDF} className="px-3 py-1.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100"><Printer className="w-3.5 h-3.5"/>PDF</button>}
-          {allDone && <button onClick={exportDocx} className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100"><Download className="w-3.5 h-3.5"/>Word</button>}
-          {allDone && <button onClick={async () => {
-            const nodes = [{ id: 'genplan-' + Date.now(), type: 'construction-plan', label: planType + '-' + projectName, props: { project: projectName, auto: 'true' } }];
-            const edges = [{ from: 'genplan-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: 'AI方案' }];
-            try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步图谱', 'success'); } catch { toast('同步失败', 'error'); }
-          }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>}
-        </div>
-      </div></header>
+      <div className="flex-1 flex flex-col min-h-screen">
+        <ModuleHeader
+          title="AI方案生成"
+          subtitle={`项目: ${projectName}`}
+          icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+          colorClass="teal"
+          onBack={onBack}
+          actions={
+            <>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border" title={aiStatus === 'online' ? 'AI大模型在线' : aiStatus === 'offline' ? '离线模式（使用本地模板）' : '检测中...'}>
+                <span className={`w-2 h-2 rounded-full ${aiStatus === 'online' ? 'bg-green-500 animate-pulse' : aiStatus === 'offline' ? 'bg-amber-500' : 'bg-gray-400 animate-pulse'}`} />
+                <span className={`text-xs font-medium ${aiStatus === 'online' ? 'text-green-600' : aiStatus === 'offline' ? 'text-amber-600' : 'text-gray-400'}`}>
+                  {aiStatus === 'online' ? 'AI在线' : aiStatus === 'offline' ? '离线模式' : '检测中'}
+                </span>
+              </div>
+              <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="px-2 py-1 border border-gray-300 rounded-full text-xs bg-white font-medium text-gray-600">
+                <option value="auto">自动</option>
+                {availableModels.map(m => <option key={m.id} value={m.id} disabled={m.status==='offline'}>{m.status==='offline'?'❌ ':''}{m.name}</option>)}
+              </select>
+              <button onClick={() => setShowHistory(!showHistory)} className={`px-3 py-1.5 text-xs rounded-lg flex items-center gap-1 ${showHistory?'bg-green-50 text-green-600':'text-gray-500 hover:bg-gray-50'}`}><History className="w-3.5 h-3.5"/>历史({planHistory.length})</button>
+              {allDone && (
+                <div className="flex rounded-lg border overflow-hidden">
+                  <button onClick={exportPDF} className="px-2.5 py-1.5 text-xs bg-white text-red-500 hover:bg-red-50 flex items-center gap-1"><Printer className="w-3 h-3"/>PDF</button>
+                  <button onClick={exportDocx} className="px-2.5 py-1.5 text-xs bg-white text-blue-500 hover:bg-blue-50 border-l flex items-center gap-1"><Download className="w-3 h-3"/>Word</button>
+                </div>
+              )}
+              {allDone && <button onClick={async () => {
+                const nodes = [{ id: 'genplan-' + Date.now(), type: 'construction-plan', label: planType + '-' + projectName, props: { project: projectName, auto: 'true' } }];
+                const edges = [{ from: 'genplan-' + Date.now(), to: 'proj-' + projectName, type: 'belongs-to', label: 'AI方案' }];
+                try { await api.syncKnowledgeGraph(nodes, edges); toast('已同步图谱', 'success'); } catch { toast('同步失败', 'error'); }
+              }} className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5"/>同步图谱</button>}
+            </>
+          }
+        />
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 w-full">
         <div className={`${chapters.length > 0 ? 'hidden' : ''} max-w-2xl mx-auto space-y-6`}>
           <div className="bg-white rounded-xl border p-6">
             <h3 className="font-semibold mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-green-500"/>AI方案生成设置</h3>

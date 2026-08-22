@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Shield } from 'lucide-react';
+import { Search, Shield } from 'lucide-react';
+import ModuleHeader from './ModuleHeader';
 
 interface AuditLogViewerProps { projectName?: string; onBack: () => void; }
 
@@ -28,12 +29,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectName, onBack }) 
   return (
     <div className="min-h-screen bg-[var(--bg-page)] p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition"><ArrowLeft size={20} /></button>
-            <Shield size={24} className="text-red-400" />
-            <div><h1 className="text-xl font-bold text-[var(--text-primary)]">审计日志</h1><p className="text-sm text-[var(--text-muted)]">{projectName || '全局'}</p></div>
-          </div>
+        <ModuleHeader title="审计日志" icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />} onBack={onBack} subtitle={projectName || '全局'} actions={
           <div className="flex gap-2">
             <select value={filter.action} onChange={e => setFilter(f => ({ ...f, action: e.target.value }))}
               className="bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)]">
@@ -47,7 +43,7 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectName, onBack }) 
               <Search size={12} /> 刷新
             </button>
           </div>
-        </div>
+        } />
 
         <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden">
           {logs.length === 0 ? (

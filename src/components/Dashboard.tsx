@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck, Zap, LayoutDashboard } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, Clock, FileText, ShieldCheck, Zap, LayoutDashboard, RefreshCw } from 'lucide-react';
 import { computeIndicators, ProjectIndicators } from '../data/indicatorEngine';
 import ProjectAnalysisCharts from './charts/ProjectAnalysisCharts';
 import ProjectDeepCharts from './charts/ProjectDeepCharts';
 import ProjectOperationCharts from './charts/ProjectOperationCharts';
 import ProjectAdvancedCharts from './charts/ProjectAdvancedCharts';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { projectName: string; onBack: () => void; onNavigate?: (view: string) => void; }
 
@@ -27,33 +28,36 @@ const Dashboard: React.FC<Props> = ({ projectName, onBack, onNavigate }) => {
   const warnCount = indicators?.alerts.filter(a => a.level === 'warning').length || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between h-[50px]">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" /></button>
-            <img src="/zhjk-logo.png" alt="中航建科" className="h-8 w-auto" />
-            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-200">项目看板</h1>
-            <span className="text-sm text-slate-400 dark:text-slate-500 ml-2">{projectName}</span>
-          </div>
-          <button onClick={() => setRefreshKey(k => k + 1)}
-            className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">刷新</button>
-          {onNavigate && (
-            <div className="flex items-center gap-2">
-              <button onClick={() => onNavigate('homepage')}
-                className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-1 shadow-sm">
-                <LayoutDashboard size={12} /> 项目管理平台
-              </button>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <ModuleHeader
+        title="项目看板"
+        subtitle={projectName}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        colorClass="blue"
+        onBack={onBack}
+        backLabel="返回首页"
+        actions={
+          <>
+            <button onClick={() => onNavigate?.('homepage')}
+              className="px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 flex items-center gap-1.5 font-medium"
+              title="返回工程咨询管理平台">
+              <LayoutDashboard className="w-3.5 h-3.5" />工程咨询管理平台
+            </button>
+            <button onClick={() => setRefreshKey(k => k + 1)}
+              className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center gap-1">
+              <RefreshCw className="w-3.5 h-3.5" />刷新
+            </button>
+            {onNavigate && (
               <button onClick={() => onNavigate('workflow')}
                 className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 flex items-center gap-1">
                 <Zap size={12} /> 工作流
               </button>
-            </div>
-          )}
-        </div>
-      </header>
+            )}
+          </>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 w-full">
         {/* 指标卡片行 */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[

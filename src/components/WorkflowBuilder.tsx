@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Play, ChevronDown, ChevronUp, Zap, CheckCircle2, Plus, Trash2, Edit3, X, Save } from 'lucide-react';
+import { Play, ChevronDown, ChevronUp, CheckCircle2, Plus, Trash2, Edit3, X, Save } from 'lucide-react';
 import { PRESET_WORKFLOWS, executeWorkflow, loadWorkflows, saveWorkflow } from '../data/workflowEngine';
 import { skillRegistry } from '../data/skillRegistry';
 import type { WorkflowDefinition, WorkflowInstance, WorkflowStep } from '../types';
+import ModuleHeader from './ModuleHeader';
 
 interface Props { projectName: string; onBack: () => void; }
 
@@ -108,19 +109,21 @@ const WorkflowBuilder: React.FC<Props> = ({ projectName, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-[var(--bg-hover)] rounded-lg"><ArrowLeft size={20} /></button>
-            <Zap size={24} className="text-purple-400" />
-            <div><h1 className="text-xl font-bold text-[var(--text-primary)]">工作流引擎</h1><p className="text-sm text-[var(--text-muted)]">{projectName} · {allWorkflows.length}个可用</p></div>
-          </div>
+    <div className="min-h-screen bg-[var(--bg-page)]">
+      <ModuleHeader
+        title="工作流引擎"
+        subtitle={`${projectName} · ${allWorkflows.length}个可用`}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        colorClass='blue'
+        actions={
           <button onClick={openCreate}
             className="px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-lg text-sm flex items-center gap-1">
             <Plus size={14} /> 创建工作流
           </button>
-        </div>
+        }
+      />
+      <div className="max-w-4xl mx-auto px-4 py-6">
 
         {customWorkflows.length > 0 && (
           <div className="mb-2 text-xs text-[var(--text-muted)] flex items-center gap-2">

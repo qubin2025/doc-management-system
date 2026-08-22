@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sparkles, Loader2, BrainCircuit, AlertTriangle, FileText, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Loader2, BrainCircuit, AlertTriangle, FileText, CheckCircle2, RefreshCw } from 'lucide-react';
+import ModuleHeader from './ModuleHeader';
 import { fullScan, ScanResult } from '../data/aiAgent';
 import { ProjectIndicators } from '../data/indicatorEngine';
 import { buildGraph, KnowledgeGraph } from '../data/knowledgeGraph';
@@ -36,20 +37,18 @@ const AnalysisCenter: React.FC<Props> = ({ projectName, onBack }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded-lg"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-            <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-emerald-500 flex items-center justify-center rounded-lg"><Sparkles className="w-5 h-5 text-white" /></div>
-            <h1 className="text-lg font-bold text-gray-800">智能分析中心</h1>
-            <span className="text-sm text-gray-400">{projectName}</span>
-          </div>
+      <ModuleHeader
+        title="智能分析中心"
+        subtitle={projectName}
+        icon={<img src="/zhjk-logo.png" alt="中航建科" className="h-10 w-auto" />}
+        onBack={onBack}
+        actions={
           <button onClick={runFullScan} disabled={loading}
             className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}重新扫描
           </button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {loading && !indicators ? (
