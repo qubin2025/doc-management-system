@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
+import Breadcrumb, { type BreadcrumbItem } from './Breadcrumb';
 
 interface ModuleHeaderProps {
   title: string;
@@ -10,6 +11,10 @@ interface ModuleHeaderProps {
   backLabel?: string;
   actions?: React.ReactNode;
   colorClass?: 'blue' | 'teal';
+  /** 自定义面包屑，不传则默认生成 "首页 / title" */
+  breadcrumb?: BreadcrumbItem[];
+  /** 是否显示面包屑，默认 true */
+  showBreadcrumb?: boolean;
 }
 
 const ModuleHeader: React.FC<ModuleHeaderProps> = ({
@@ -20,11 +25,20 @@ const ModuleHeader: React.FC<ModuleHeaderProps> = ({
   backLabel = '返回首页',
   actions,
   colorClass = 'blue',
+  breadcrumb,
+  showBreadcrumb = true,
 }) => {
   const accent =
     colorClass === 'blue'
       ? 'text-blue-600 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/30'
       : 'text-teal-600 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-teal-900/30';
+
+  // 默认面包屑：首页 / 当前页面标题
+  const defaultBreadcrumb: BreadcrumbItem[] = [
+    { label: '首页', onClick: onBack },
+    { label: title },
+  ];
+  const breadcrumbItems = breadcrumb && breadcrumb.length > 0 ? breadcrumb : defaultBreadcrumb;
 
   return (
     <header
@@ -34,11 +48,18 @@ const ModuleHeader: React.FC<ModuleHeaderProps> = ({
         borderColor: 'var(--header-border)',
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3 h-[60px]">
-        {/* 左侧：图标 + 标题 */}
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+        {/* 左侧：面包屑 + 标题 */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {icon}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
+            {/* 面包屑导航 */}
+            {showBreadcrumb && (
+              <div className="mb-0.5">
+                <Breadcrumb items={breadcrumbItems} />
+              </div>
+            )}
+            {/* 页面标题 */}
             <h1
               className="text-lg font-bold truncate"
               style={{ color: 'var(--text-primary)' }}
