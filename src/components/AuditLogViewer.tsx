@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Shield } from 'lucide-react';
 import ModuleHeader from './ModuleHeader';
+import VirtualList from './VirtualList';
 
 interface AuditLogViewerProps { projectName?: string; onBack: () => void; }
 
@@ -52,26 +53,43 @@ const AuditLogViewer: React.FC<AuditLogViewerProps> = ({ projectName, onBack }) 
               <p>暂无审计日志</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr className="bg-[var(--bg-secondary)] text-left"><th className="px-4 py-2.5 text-xs text-[var(--text-muted)]">时间</th><th className="px-4 py-2.5 text-xs text-[var(--text-muted)]">用户</th><th className="px-4 py-2.5 text-xs text-[var(--text-muted)]">操作</th><th className="px-4 py-2.5 text-xs text-[var(--text-muted)]">目标</th><th className="px-4 py-2.5 text-xs text-[var(--text-muted)]">详情</th></tr></thead>
-                <tbody>
-                  {logs.slice(0, 100).map((log, i) => (
-                    <tr key={log.id || i} className="border-t border-[var(--border-primary)] hover:bg-[var(--bg-hover)]">
-                      <td className="px-4 py-2 text-xs text-[var(--text-muted)]">{new Date(log.created_at).toLocaleString('zh-CN')}</td>
-                      <td className="px-4 py-2 text-xs text-[var(--text-primary)]">{log.user_id}</td>
-                      <td className="px-4 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${
+            <>
+              {/* 表头 */}
+              <div className="flex bg-[var(--bg-secondary)] text-xs text-[var(--text-muted)] border-b border-[var(--border-primary)]">
+                <div className="px-4 py-2.5 w-40 flex-shrink-0">时间</div>
+                <div className="px-4 py-2.5 w-28 flex-shrink-0">用户</div>
+                <div className="px-4 py-2.5 w-20 flex-shrink-0">操作</div>
+                <div className="px-4 py-2.5 w-24 flex-shrink-0">目标</div>
+                <div className="px-4 py-2.5 flex-1 min-w-0">详情</div>
+              </div>
+              {/* 虚拟列表 */}
+              <VirtualList
+                items={logs}
+                itemHeight={40}
+                height={560}
+                keyExtractor={(item) => item.id || Math.random()}
+                renderItem={(log) => (
+                  <div className="flex items-center border-b border-[var(--border-primary)] hover:bg-[var(--bg-hover)] text-xs">
+                    <div className="px-4 py-2 w-40 flex-shrink-0 text-[var(--text-muted)] truncate">{new Date(log.created_at).toLocaleString('zh-CN')}</div>
+                    <div className="px-4 py-2 w-28 flex-shrink-0 text-[var(--text-primary)] truncate">{log.user_id}</div>
+                    <div className="px-4 py-2 w-20 flex-shrink-0">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                         log.action === 'delete' ? 'bg-red-500/10 text-red-400' :
                         log.action === 'create' ? 'bg-green-500/10 text-green-400' :
                         log.action === 'update' ? 'bg-sky-500/10 text-sky-400' : 'bg-gray-500/10 text-gray-400'
-                      }`}>{actionLabel(log.action)}</span></td>
-                      <td className="px-4 py-2 text-xs text-[var(--text-muted)]">{targetLabel(log.target_type)}</td>
-                      <td className="px-4 py-2 text-xs text-[var(--text-muted)] max-w-xs truncate">{log.detail || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      }`}>{actionLabel(log.action)}</span>
+                    </div>
+                    <div className="px-4 py-2 w-24 flex-shrink-0 text-[var(--text-muted)] truncate">{targetLabel(log.target_type)}</div>
+                    <div className="px-4 py-2 flex-1 min-w-0 text-[var(--text-muted)] truncate">{log.detail || '-'}</div>
+                  </div>
+                )}
+              />
+              {logs.length > 100 && (
+                <div className="px-4 py-2 text-center text-xs text-[var(--text-muted)] border-t border-[var(--border-primary)]">
+                  共 {logs.length} 条记录，虚拟滚动加载
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -1,7 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { FileText, Upload, BarChart3, Download, RefreshCw, Package, FolderOpen, Building2, Landmark, ArrowLeft, Database, HardDrive, Loader2, MessageSquare, Users } from 'lucide-react';
 import DocumentTable from './components/DocumentTable';
 import FilterBar from './components/FilterBar';
+import GlobalSearch from './components/GlobalSearch';
+import StateView from './components/StateView';
+
+// 大组件懒加载（减少首屏JS体积，按需加载）
+const KnowledgeGraphView = lazy(() => import('./components/KnowledgeGraph'));
+const PlanGenerator = lazy(() => import('./components/PlanGenerator'));
+const TailoringEngine = lazy(() => import('./components/TailoringEngine'));
+const AgentConsole = lazy(() => import('./components/AgentConsole'));
 import LoginPage from './components/LoginPage';
 import AiChat from './components/AiChat';
 import AiChatPage from './components/AiChatPage';
@@ -17,16 +25,12 @@ import AnalysisCenter from './components/AnalysisCenter';
 import AdminPanel from './components/AdminPanel';
 import LandReserveArchive from './components/LandReserveArchive';
 import KnowledgeBase from './components/KnowledgeBase';
-import KnowledgeGraphView from './components/KnowledgeGraph';
 import PolicyLibrary from './components/PolicyLibrary';
 import RegulationsLibrary from './components/RegulationsLibrary';
 import ConstructionReview from './components/ConstructionReview';
 import ContractReview from './components/ContractReview';
 import BidReview from './components/BidReview';
-import PlanGenerator from './components/PlanGenerator';
 import TargetManager from './components/TargetManager';
-import TailoringEngine from './components/TailoringEngine';
-import AgentConsole from './components/AgentConsole';
 import SkillPanel from './components/SkillPanel';
 import PMBOKFramework from './components/PMBOKFramework';
 import BaselineManager from './components/BaselineManager';
@@ -637,7 +641,11 @@ const App: React.FC = () => {
   }
 
   if (view === 'knowledge-graph') {
-    return <KnowledgeGraphView onBack={() => setView('homepage')} />;
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载知识图谱...</div>}>
+        <KnowledgeGraphView onBack={() => setView('homepage')} />
+      </Suspense>
+    );
   }
 
   if (view === 'policy-library') {
@@ -678,7 +686,11 @@ const App: React.FC = () => {
 
   // ===== 方案生成 =====
   if (view === 'plan-generator' && currentProject) {
-    return <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />;
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载方案生成器...</div>}>
+        <PlanGenerator projectName={currentProject} onBack={() => setView('homepage')} />
+      </Suspense>
+    );
   }
 
   // 引导流程：从项目创建或项目选择进入时为true
@@ -686,16 +698,24 @@ const App: React.FC = () => {
 
   // ===== 模块裁剪引擎 (P0-3) =====
   if (view === 'tailoring-engine' && currentProject) {
-    return <TailoringEngine projectName={currentProject}
-      flowMode={onboardingFlow}
-      onNext={(nextView) => setView(nextView)}
-      onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
-      onBack={() => setView('homepage')} />;
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载裁剪引擎...</div>}>
+        <TailoringEngine projectName={currentProject}
+          flowMode={onboardingFlow}
+          onNext={(nextView) => setView(nextView)}
+          onNavigate={(v, p) => { if (p?.chapterId) { setGuideChapterId(p.chapterId); } setView(v); }}
+          onBack={() => setView('homepage')} />
+      </Suspense>
+    );
   }
 
   // ===== Agent智能体 (P1-1) =====
   if (view === 'agent-console' && currentProject) {
-    return <AgentConsole projectName={currentProject} onBack={() => setView('homepage')} />;
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center py-20 text-gray-400"><Loader2 className="w-6 h-6 animate-spin mr-2" />加载智能体控制台...</div>}>
+        <AgentConsole projectName={currentProject} onBack={() => setView('homepage')} />
+      </Suspense>
+    );
   }
 
   // ===== 技能面板 (P1-2) =====
@@ -1097,6 +1117,19 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      {/* 全局搜索（Ctrl+K） */}
+      {currentProject && (
+        <GlobalSearch
+          projectName={currentProject}
+          onNavigate={(view, params) => {
+            if (view === 'guide-chapter' && params?.chapterId) {
+              setGuideChapterId(params.chapterId);
+            }
+            setView(view);
+          }}
+        />
+      )}
+
       {/* 统计卡片 */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="grid grid-cols-3 gap-4">
@@ -1128,11 +1161,12 @@ const App: React.FC = () => {
 
       {/* 表格 */}
       <div className="max-w-7xl mx-auto px-4 pb-8">
-        {uploadInfoLoading ? (
-          <div className="flex items-center justify-center py-20 text-gray-400">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" /> 加载中...
-          </div>
-        ) : (
+        <StateView
+          loading={uploadInfoLoading}
+          empty={!uploadInfoLoading && currentData.length === 0}
+          emptyTitle="暂无文档资料"
+          emptyDescription="当前规程下暂无文档，可点击上方上传按钮添加"
+        >
           <DocumentTable
             data={currentData}
             uploadInfo={uploadInfo}
@@ -1144,7 +1178,7 @@ const App: React.FC = () => {
             canUpload={canUpload}
             projectName={currentProject}
           />
-        )}
+        </StateView>
       </div>
 
       {/* 项目管理对话框 */}
