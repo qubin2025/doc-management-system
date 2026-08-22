@@ -132,7 +132,24 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
+          // React 核心（所有页面共用）
           'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
+          // PDF 预览（仅文档预览页）
+          'pdf-vendor': ['pdfjs-dist'],
+          // Excel/CSV 处理（仅导入导出页）
+          'xlsx-vendor': ['xlsx', 'jszip'],
+          // 图表（仅仪表盘/统计页）
+          'chart-vendor': ['recharts'],
+          // 知识图谱/流程图（仅图谱模块）
+          'graph-vendor': ['vis-network', 'vis-data', '@xyflow/react', 'dagre'],
+          // 3D 力导向图（仅3D图谱页）
+          '3d-vendor': ['three', 'react-force-graph-2d', 'react-force-graph-3d'],
+          // 代码/Markdown 编辑器（仅编辑页）
+          'editor-vendor': ['@uiw/react-codemirror', '@codemirror/lang-markdown', '@codemirror/state', '@codemirror/view'],
+          // 文档解析（DOCX等，仅文档处理页）
+          'doc-parser': ['mammoth'],
+          // 全文搜索（仅搜索页）
+          'search-vendor': ['lunr'],
         },
       },
       input: {

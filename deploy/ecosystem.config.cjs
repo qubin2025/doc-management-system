@@ -12,6 +12,8 @@
  *   - cleanup-daily       : 日报临时文件清理 (每天 04:00 触发)
  *   - cleanup-sessions    : 过期会话清理 (每天 03:00 触发)
  *   - backup-db           : 数据库+文件备份 (每天 02:00 触发)
+ *   - optimize-db         : 数据库性能优化(索引/VACUUM/ANALYZE) (每周日 01:00 触发)
+ *   - cleanup-logs        : 过期日志清理(保留30天) (每天 05:00 触发)
  */
 module.exports = {
   apps: [
@@ -118,6 +120,49 @@ module.exports = {
       merge_logs: true,
       max_restarts: 0,
       kill_timeout: 120000,        // 备份可能较慢
+      watch: false,
+    },
+    {
+      name: 'optimize-db',
+      cwd: './backend',
+      script: 'scripts/optimize-db.js',
+      exec_mode: 'fork',
+      instances: 1,
+      autorestart: false,
+      cron: '0 1 * * 0',          // 每周日 01:00 执行
+      env: {
+        NODE_ENV: 'production',
+        DB_PATH: './data/planning.db',
+        // DRY_RUN: '1',           // 预演模式（只打印不执行）
+      },
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      error_file: './logs/optimize-db-error.log',
+      out_file: './logs/optimize-db-out.log',
+      merge_logs: true,
+      max_restarts: 0,
+      kill_timeout: 60000,
+      watch: false,
+    },
+    {
+      name: 'cleanup-logs',
+      cwd: './backend',
+      script: 'scripts/cleanup-logs.js',
+      exec_mode: 'fork',
+      instances: 1,
+      autorestart: false,
+      cron: '0 5 * * *',          // 每天 05:00 执行
+      env: {
+        NODE_ENV: 'production',
+        LOG_DIR: './logs',
+        KEEP_DAYS: '30',
+        // DRY_RUN: '1',           // 预演模式（只打印不删除）
+      },
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      error_file: './logs/cleanup-logs-error.log',
+      out_file: './logs/cleanup-logs-out.log',
+      merge_logs: true,
+      max_restarts: 0,
+      kill_timeout: 10000,
       watch: false,
     },
   ],

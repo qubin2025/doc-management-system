@@ -82,6 +82,7 @@ function cacheMiddleware(ttlMs = 60000) {
 
 LOG.info('Importing route modules (17 files)...');
 import { getDb } from './db.js';
+import { accessLogStream, errorLog, closeLogger } from './services/logger.js';
 import projectsRouter from './routes/projects.js';
 import documentsRouter from './routes/documents.js';
 import authRouter from './routes/auth.js';
@@ -143,7 +144,7 @@ app.use(cors(corsCfg));
 LOG.ok('CORS mounted');
 
 LOG.info('Mounting morgan request logger...', `format=${isProduction ? 'combined' : 'short'}`);
-app.use(morgan(isProduction ? 'combined' : 'short'));
+app.use(morgan(isProduction ? 'combined' : 'short', { stream: accessLogStream }));
 LOG.info('Mounting express.json body parser...', `limit=${isProduction ? '10mb' : '100mb'}`);
 app.use(express.json({ limit: isProduction ? '10mb' : '100mb' }));
 
@@ -159,14 +160,19 @@ LOG.info('Mounting auth rate limiter', 'window=60s  max=5  paths=/api/auth/login
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// 请求错误日志
+// 请求错误日志（写入按天切割的 error-YYYY-MM-DD.log）
 LOG.info('Mounting 4xx/5xx error logging middleware');
 app.use((req, _res, next) => {
   const start = Date.now();
   _res.on('finish', () => {
     const ms = Date.now() - start;
     if (_res.statusCode >= 400) {
-      console.warn(`[${new Date().toISOString()}] ${req.method} ${req.path} → ${_res.statusCode} (${ms}ms)`);
+      errorLog('HTTP error response', {
+        method: req.method,
+        path: req.path,
+        statusCode: _res.statusCode,
+        duration: ms,
+      });
     }
   });
   next();
@@ -212,19 +218,67 @@ if (isProduction && distExists) {
   LOG.warn('Production mode but /dist missing — no static files will be served. Run: npm run build');
 }
 
-// 健康检查端点
+// 健康检查端点（增强版：服务状态 + 系统资源 + 数据库大小）
 app.get('/api/health', async (_req, res) => {
   const services = { db: false, neo4j: false, ragflow: false, ai: false };
   try { const { getDb } = await import('./db.js'); getDb().prepare('SELECT 1').get(); services.db = true; } catch {}
   try { const r = await fetch('http://localhost:7474', { signal: AbortSignal.timeout(2000) }); services.neo4j = r.ok; } catch {}
   try { const r = await fetch('http://localhost:9380/api/v1/version', { signal: AbortSignal.timeout(2000) }); services.ragflow = r.ok; } catch {}
   services.ai = !!process.env.DEEPSEEK_API_KEY && !process.env.DEEPSEEK_API_KEY.includes('your-');
+
+  // 系统资源监控
+  const mem = process.memoryUsage();
+  const system = {
+    memory: {
+      heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+      rss: Math.round(mem.rss / 1024 / 1024),
+      external: Math.round(mem.external / 1024 / 1024),
+    },
+    uptime: Math.floor(process.uptime()),
+    pid: process.pid,
+    nodeVersion: process.version,
+    platform: process.platform,
+  };
+
+  // 数据库和存储大小
+  const storage = {};
+  try {
+    const dbPath = process.env.DB_PATH || path.join(__dirname, 'data', 'planning.db');
+    if (fs.existsSync(dbPath)) {
+      storage.databaseMB = Math.round(fs.statSync(dbPath).size / 1024 / 1024);
+    }
+    const filesPath = process.env.FILES_PATH || path.join(__dirname, 'files');
+    if (fs.existsSync(filesPath)) {
+      let filesSize = 0;
+      const walk = (dir) => {
+        for (const f of fs.readdirSync(dir)) {
+          const fp = path.join(dir, f);
+          const st = fs.statSync(fp);
+          if (st.isDirectory()) walk(fp);
+          else filesSize += st.size;
+        }
+      };
+      try { walk(filesPath); } catch {}
+      storage.filesMB = Math.round(filesSize / 1024 / 1024);
+    }
+    const logsPath = path.join(PROJECT_ROOT, 'logs');
+    if (fs.existsSync(logsPath)) {
+      let logsSize = 0;
+      for (const f of fs.readdirSync(logsPath)) {
+        try { logsSize += fs.statSync(path.join(logsPath, f)).size; } catch {}
+      }
+      storage.logsMB = Math.round(logsSize / 1024 / 1024);
+    }
+  } catch {}
+
   const allOk = Object.values(services).every(Boolean);
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'healthy' : 'degraded',
     version: '5.1.0',
-    uptime: process.uptime(),
     services,
+    system,
+    storage,
     timestamp: new Date().toISOString(),
   });
 });
@@ -592,6 +646,7 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('SIGTERM', () => {
   LOG.info('Caught SIGTERM — graceful shutdown start');
   const t0 = Date.now();
+  closeLogger();
   server.closeAllConnections?.();
   server.close(() => { LOG.ok(`SIGTERM — server closed in ${Date.now()-t0}ms`); process.exit(0); });
   setTimeout(() => { LOG.warn('SIGTERM — force exit after 5s timeout'); process.exit(0); }, 5000);
