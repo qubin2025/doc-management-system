@@ -24,3 +24,7 @@ login_screenshot.png
 
 # 临时数据
 data/
+
+# 密码/结果临时文件（严禁提交）
+scripts/admin-password.txt
+scripts/pwd-result.txt

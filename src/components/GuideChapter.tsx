@@ -112,6 +112,21 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
     return defaultLinks;
   });
 
+  // 重置连线：清除 localStorage 中的自定义连线，恢复预设逻辑
+  const handleResetLinks = () => {
+    const smLinks = initialChapter.links;
+    const defaultLinks: GuideLink[] = [];
+    smLinks.forEach(sl => {
+      const fromSm = initialChapter.subModules.find(s => s.id === sl.from);
+      const toSm = initialChapter.subModules.find(s => s.id === sl.to);
+      if (fromSm?.workItems[0] && toSm?.workItems[0]) {
+        defaultLinks.push({ from: fromSm.workItems[0].id, to: toSm.workItems[0].id, label: sl.label, isCustom: false });
+      }
+    });
+    localStorage.removeItem(LINKS_KEY);
+    setLinks(defaultLinks);
+  };
+
   const [activeTab, setActiveTab] = useState<'modules' | 'forms' | 'logic'>('modules');
   const [editMode, setEditMode] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -183,17 +198,28 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback; }
     catch { return fallback; }
   };
+  // 过滤掉 Base64 文件内容，localStorage 只存元数据（文件内容由后端 API 持久化）
+  const stripFileData = (maps: Record<string, any[]>): Record<string, any[]> => {
+    const result: Record<string, any[]> = {};
+    for (const [code, list] of Object.entries(maps)) {
+      result[code] = (list as Array<Record<string, any>>).map(f => {
+        const { fileData, ...meta } = f;
+        return { ...meta, fileData: '' };  // fileData 置空，不占 localStorage
+      });
+    }
+    return result;
+  };
+
   const safeSaveJson = (key: string, value: unknown, label: string) => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (e: unknown) {
       const quotaErr = e as { name?: string };
       if (quotaErr?.name === 'QuotaExceededError') {
-        console.error(`[guide] ${label} localStorage 配额已满（5MB）`);
-        toast(`${label}本地存储已满（5MB 上限），请删除旧文件或使用文件下载备份`, 'error');
+        // localStorage 已满但后端 API 已保存成功，仅警告不报错
+        console.warn(`[guide] ${label} localStorage 配额已满（数据已保存到后端，不影响使用）`);
       } else {
         console.error(`[guide] ${label} localStorage 保存异常:`, e);
-        toast(`${label}本地保存失败: ${(e as Error)?.message || '未知错误'}`, 'error');
       }
     }
   };
@@ -276,14 +302,14 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
   };
 
   useEffect(() => {
-    safeSaveJson(SAMPLE_FILES_KEY, sampleFilesMap, '样本文件');
+    safeSaveJson(SAMPLE_FILES_KEY, stripFileData(sampleFilesMap), '样本文件');
     // 仅对发生变化的 formCode 同步到后端（简化：全部同步，依赖 React 18 批处理）
     if (formsApiLoaded && projectName) {
       Object.keys(sampleFilesMap).forEach(code => syncToBackend(code, 'sample'));
     }
   }, [sampleFilesMap, formsApiLoaded, projectName]);
   useEffect(() => {
-    safeSaveJson(ARTIFACTS_KEY, artifactsMap, '成果文件');
+    safeSaveJson(ARTIFACTS_KEY, stripFileData(artifactsMap), '成果文件');
     if (formsApiLoaded && projectName) {
       Object.keys(artifactsMap).forEach(code => syncToBackend(code, 'artifact'));
     }
@@ -767,6 +793,7 @@ const GuideChapter: React.FC<GuideChapterProps> = ({ chapter: initialChapter, pr
             onZoomOut={() => setZoomLevel(z => Math.max(0.25, z - 0.25))}
             onZoomReset={() => setZoomLevel(1)}
             onToggleEditMode={() => setEditMode(!editMode)}
+            onResetLinks={handleResetLinks}
           />
         )}
 

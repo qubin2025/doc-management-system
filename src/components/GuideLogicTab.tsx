@@ -15,11 +15,12 @@ interface GuideLogicTabProps {
   onZoomOut: () => void;
   onZoomReset: () => void;
   onToggleEditMode: () => void;
+  onResetLinks: () => void;
 }
 
 const GuideLogicTab: React.FC<GuideLogicTabProps> = ({
   subModules, checkedItems, completedItems, links, zoomLevel, editMode,
-  onLinksChange, onZoomIn, onZoomOut, onZoomReset, onToggleEditMode,
+  onLinksChange, onZoomIn, onZoomOut, onZoomReset, onToggleEditMode, onResetLinks,
 }) => {
   return (
     <div>
@@ -43,6 +44,10 @@ const GuideLogicTab: React.FC<GuideLogicTabProps> = ({
             editMode ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}>
           <Edit3 className="w-3.5 h-3.5" /> {editMode ? '编辑中' : '编辑模式'}
+        </button>
+        <button onClick={onResetLinks}
+          className="px-3 py-1.5 text-xs rounded-lg border bg-white border-red-200 text-red-600 hover:bg-red-50 transition flex items-center gap-1">
+          重置连线
         </button>
       </div>
 

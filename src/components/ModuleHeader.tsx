@@ -49,26 +49,25 @@ const ModuleHeader: React.FC<ModuleHeaderProps> = ({
       }}
     >
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-        {/* 左侧：面包屑 + 标题 */}
+        {/* 左侧：标题 + 面包屑（同一行） */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {icon}
           <div className="min-w-0 flex-1">
-            {/* 面包屑导航 */}
-            {showBreadcrumb && (
-              <div className="mb-0.5">
+            {/* 标题 + 面包屑（同一行，面包屑紧跟标题后） */}
+            <div className="flex items-center gap-2 min-w-0">
+              <h1
+                className="text-lg font-bold truncate shrink-0"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {title}
+              </h1>
+              {showBreadcrumb && (
                 <Breadcrumb items={breadcrumbItems} />
-              </div>
-            )}
-            {/* 页面标题 */}
-            <h1
-              className="text-lg font-bold truncate"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {title}
-            </h1>
+              )}
+            </div>
             {subtitle && (
               <p
-                className="text-xs truncate"
+                className="text-xs truncate mt-0.5"
                 style={{ color: 'var(--text-muted)' }}
               >
                 {subtitle}

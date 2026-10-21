@@ -10,7 +10,7 @@
     "adm-zip": "^0.6.0",
     "archiver": "^8.0.0",
     "bcrypt": "^6.0.0",
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^11.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
@@ -27,5 +27,9 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
+  },
+  "allowScripts": {
+    "better-sqlite3@11.10.0": true,
+    "bcrypt@6.0.0": true
   }
 }

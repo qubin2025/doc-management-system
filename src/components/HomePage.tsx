@@ -164,11 +164,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
         </div>
 
         {/* 功能模块 */}
-        <div className="flex items-center gap-4 mb-12">
-          <div className="flex-1 h-px bg-gray-200"></div>
-          <span className="text-xs text-gray-400 font-medium">功能模块</span>
-          <div className="flex-1 h-px bg-gray-200"></div>
-        </div>
         <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">功能模块</h2>
         <p className="text-center text-gray-500 mb-8 text-sm">各模块以项目为单位打通数据联系，大模型智能分析驱动全过程管理</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

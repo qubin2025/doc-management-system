@@ -67,35 +67,53 @@ function parseDrawioEdges(saveXml: string, cellToItem: Map<number, string>, exis
 
 // ============ 主组件 ============
 // draw.io embed URL — 开发代理优先，生产直连（多镜像回退）
+// saveAndExit=1: 显示保存按钮，点击后发送 save 事件给父窗口
 const DRAWIO_MIRRORS = [
-  '/drawio-proxy/?embed=1&proto=json&lang=zh',
-  'https://embed.diagrams.net/?embed=1&proto=json&lang=zh',
-  'https://viewer.diagrams.net/?embed=1&proto=json&lang=zh',
+  '/drawio-proxy/?embed=1&proto=json&lang=zh&saveAndExit=1&noSaveBtn=0',
+  'https://embed.diagrams.net/?embed=1&proto=json&lang=zh&saveAndExit=1&noSaveBtn=0',
+  'https://viewer.diagrams.net/?embed=1&proto=json&lang=zh&saveAndExit=1&noSaveBtn=0',
 ];
 const DRAWIO_URL = import.meta.env.DEV ? DRAWIO_MIRRORS[0] : DRAWIO_MIRRORS[1];
 
 const LogicDiagram: React.FC<Props> = (props) => {
   const { subModules, checkedItems, completedItems, links, zoomLevel, onLinksChange } = props;
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [drawioReady, setDrawioReady] = useState(true);
+  const [drawioReady, setDrawioReady] = useState(false);
   const [drawioMirror, setDrawioMirror] = useState(0);
   const [drawioFailed, setDrawioFailed] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const mapRef = useRef<DrawioData>({ xml: '', cellToItem: new Map(), itemToCell: new Map() });
+  const latestXmlRef = useRef<string>('');
 
   const data = useMemo(
     () => buildDrawioData(subModules, checkedItems, completedItems, links),
     [subModules, checkedItems, completedItems, links]
   );
   mapRef.current = data;
+  latestXmlRef.current = data.xml;
 
   const sendToDrawio = useCallback(() => {
     if (!iframeRef.current?.contentWindow) return;
-    iframeRef.current.contentWindow.postMessage(JSON.stringify({ action: 'load', xml: mapRef.current.xml, autosave: 1 }), '*');
+    iframeRef.current.contentWindow.postMessage(JSON.stringify({ action: 'load', xml: latestXmlRef.current, autosave: 1 }), '*');
   }, []);
   const fitToWindow = useCallback(() => {
     if (!iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(JSON.stringify({ action: 'setViewport', scale: 1, center: true }), '*');
   }, []);
+
+  // 导出为 PNG
+  const handleExportPng = useCallback(() => {
+    if (!iframeRef.current?.contentWindow || exporting) return;
+    setExporting(true);
+    iframeRef.current.contentWindow.postMessage(JSON.stringify({ action: 'export', format: 'png', spinKey: 'png', scale: 2 }), '*');
+  }, [exporting]);
+
+  // 导出为 SVG
+  const handleExportSvg = useCallback(() => {
+    if (!iframeRef.current?.contentWindow || exporting) return;
+    setExporting(true);
+    iframeRef.current.contentWindow.postMessage(JSON.stringify({ action: 'export', format: 'svg', spinKey: 'svg' }), '*');
+  }, [exporting]);
   const syncFromDrawio = useCallback(() => {
     if (!iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(JSON.stringify({ action: 'export', format: 'xmlsvg', spinKey: 's' }), '*');
@@ -104,23 +122,37 @@ const LogicDiagram: React.FC<Props> = (props) => {
   useEffect(() => {
     let done = false;
     const handler = (e: MessageEvent) => {
-      // 放宽来源检测：接受任何 diagrams.net 子域名
       const isDrawio = e.origin.includes('diagrams.net') || e.origin.includes('draw.io') || e.origin === window.location.origin;
       if (!isDrawio) return;
       let msg: any;
       try { msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
 
-      // 调试：打印所有消息事件
-      // draw.io event handled silently
-
+      // draw.io 初始化完成后，加载 XML 数据
       if (msg.event === 'init' && !done) {
         done = true;
         setDrawioReady(true);
+        // 延迟加载 XML，确保 draw.io 完全就绪
+        setTimeout(() => sendToDrawio(), 300);
+        setTimeout(fitToWindow, 900);
         return;
       }
+
+      // 处理导出结果
+      if (msg.event === 'export' && msg.data) {
+        setExporting(false);
+        const link = document.createElement('a');
+        link.download = `时序逻辑图_${new Date().toISOString().slice(0,10)}.${msg.format === 'svg' ? 'svg' : 'png'}`;
+        link.href = `data:image/${msg.format || 'png'};base64,${msg.data}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // 保存事件：同步连线
       const saveXml = msg.xml || msg.data;
       if (saveXml && typeof saveXml === 'string' && saveXml.includes('<mxGraphModel') && onLinksChange) {
-        if (msg.event === 'save' || msg.event === 'export' || msg.event === 'autosave') {
+        if (msg.event === 'save' || msg.event === 'autosave') {
           const newEdges = parseDrawioEdges(saveXml, mapRef.current.cellToItem, links);
           if (newEdges.length > 0) onLinksChange([...links, ...newEdges]);
         }
@@ -128,38 +160,26 @@ const LogicDiagram: React.FC<Props> = (props) => {
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []); // eslint-disable-line
+  }, [sendToDrawio, fitToWindow]); // eslint-disable-line
 
+  // draw.io 就绪或数据变化时，加载 XML 到编辑器
   useEffect(() => {
-    if (drawioReady) { sendToDrawio(); setTimeout(fitToWindow, 600); }
-  }, [data.xml]); // eslint-disable-line
-
-  // 使用 postMessage 发送 XML（避开 URL 长度限制）
-  useEffect(() => {
-    if (drawioReady) {
-      setTimeout(() => {
-        sendToDrawio();
-        setTimeout(fitToWindow, 600);
-      }, 500);
-    }
-  }, [drawioReady, data.xml]); // eslint-disable-line
-
-  // 初始加载时也用 postMessage 重试
-  useEffect(() => {
-    const retry = setInterval(() => {
-      if (drawioReady) {
-        sendToDrawio();
-        clearInterval(retry);
-      }
-    }, 2000);
-    return () => clearInterval(retry);
-  }, [drawioReady]); // eslint-disable-line
+    if (!drawioReady) return;
+    sendToDrawio();
+    setTimeout(fitToWindow, 600);
+  }, [drawioReady, data.xml, sendToDrawio, fitToWindow]);
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
-        <span>编辑连线后，点击右侧"同步连线"保存到工作模块</span>
-        <button onClick={syncFromDrawio} className="px-3 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 text-[11px] font-medium shrink-0">同步连线</button>
+      <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 flex-wrap">
+        <span>编辑连线后，点击"同步连线"保存；可导出 PNG/SVG 图片</span>
+        <button onClick={() => { syncFromDrawio(); }} className="px-3 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 text-[11px] font-medium shrink-0">同步连线</button>
+        <button onClick={handleExportPng} disabled={exporting} className="px-3 py-0.5 bg-green-500 text-white rounded hover:bg-green-600 text-[11px] font-medium shrink-0 disabled:opacity-50">
+          {exporting ? '导出中...' : '导出 PNG'}
+        </button>
+        <button onClick={handleExportSvg} disabled={exporting} className="px-3 py-0.5 bg-gray-500 text-white rounded hover:bg-gray-600 text-[11px] font-medium shrink-0 disabled:opacity-50">
+          导出 SVG
+        </button>
       </div>
       <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}>
         {drawioFailed ? (

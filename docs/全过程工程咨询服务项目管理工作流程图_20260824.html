@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全过程工程咨询服务项目管理工作流程图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+    padding: 40px 20px;
+    color: #1e293b;
+  }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  .header p {
+    font-size: 15px;
+    color: #64748b;
+  }
+  .header .meta {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .header .meta span {
+    background: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* 主流程横向布局 */
+  .main-flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .phase {
+    flex: 1;
+    background: white;
+    border-radius: 16px;
+    padding: 24px 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    position: relative;
+    margin: 0 8px;
+  }
+  .phase:first-child { margin-left: 0; }
+  .phase:last-child { margin-right: 0; }
+
+  .phase-header {
+    text-align: center;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid;
+  }
+  .phase-number {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    border-radius: 50%;
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  .phase-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .phase-subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+  }
+
+  .phase-content {
+    list-style: none;
+  }
+  .phase-content li {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+  .phase-content li:hover {
+    transform: translateX(4px);
+  }
+  .phase-content li .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* 阶段颜色 */
+  .phase-1 .phase-header { border-color: #3b82f6; }
+  .phase-1 .phase-number { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  .phase-1 .phase-title { color: #1d4ed8; }
+  .phase-1 .phase-content li { background: #eff6ff; }
+  .phase-1 .phase-content li:hover { background: #dbeafe; }
+  .phase-1 .phase-content li .dot { background: #3b82f6; }
+
+  .phase-2 .phase-header { border-color: #f59e0b; }
+  .phase-2 .phase-number { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .phase-2 .phase-title { color: #b45309; }
+  .phase-2 .phase-content li { background: #fffbeb; }
+  .phase-2 .phase-content li:hover { background: #fef3c7; }
+  .phase-2 .phase-content li .dot { background: #f59e0b; }
+
+  .phase-3 .phase-header { border-color: #10b981; }
+  .phase-3 .phase-number { background: linear-gradient(135deg, #10b981, #059669); }
+  .phase-3 .phase-title { color: #047857; }
+  .phase-3 .phase-content li { background: #ecfdf5; }
+  .phase-3 .phase-content li:hover { background: #d1fae5; }
+  .phase-3 .phase-content li .dot { background: #10b981; }
+
+  .phase-4 .phase-header { border-color: #6366f1; }
+  .phase-4 .phase-number { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+  .phase-4 .phase-title { color: #4338ca; }
+  .phase-4 .phase-content li { background: #eef2ff; }
+  .phase-4 .phase-content li:hover { background: #e0e7ff; }
+  .phase-4 .phase-content li .dot { background: #6366f1; }
+
+  /* 流转箭头 */
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .flow-arrow::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #cbd5e1, #94a3b8);
+    border-radius: 2px;
+  }
+  .flow-arrow::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-left: 10px solid #94a3b8;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+  }
+
+  /* 关键节点 */
+  .milestones {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 8px 40px;
+    padding: 0 20px;
+  }
+  .milestone {
+    text-align: center;
+    flex: 1;
+    position: relative;
+  }
+  .milestone-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .milestone-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+  }
+  .milestone-desc {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  /* 支持系统 */
+  .support-section {
+    background: white;
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+  }
+  .support-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .support-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(180deg, #3b82f6, #6366f1);
+    border-radius: 2px;
+  }
+  .support-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .support-card {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+  }
+  .support-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  }
+  .support-card-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .support-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+  .support-card-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+  }
+
+  /* PMBOK 管理维度 */
+  .pmbok-section {
+    background: white;
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+  }
+  .pmbok-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .pmbok-item {
+    text-align: center;
+    padding: 14px 8px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border: 1px solid #e2e8f0;
+  }
+  .pmbok-item-icon {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+  .pmbok-item-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  /* 底部说明 */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .footer .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .footer .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .footer .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 1200px) {
+    .main-flow { flex-direction: column; }
+    .flow-arrow { width: 100%; height: 30px; }
+    .flow-arrow::before { width: 3px; height: 100%; left: 50%; transform: translateX(-50%); }
+    .flow-arrow::after { border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #94a3b8; bottom: 0; right: auto; left: 50%; transform: translateX(-50%); }
+    .phase { margin: 8px 0; }
+    .support-grid { grid-template-columns: repeat(2, 1fr); }
+    .pmbok-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>全过程工程咨询服务项目管理工作流程图</h1>
+    <p>覆盖项目全生命周期 — 前期工作 · 招标采购 · 工程施工 · 竣工验收及移交</p>
+    <div class="meta">
+      <span>📋 4大阶段</span>
+      <span>🔧 40+子模块</span>
+      <span>📝 200+工作项</span>
+      <span>🤖 AI智能驱动</span>
+    </div>
+  </div>
+
+  <!-- 主流程 -->
+  <div class="main-flow">
+    <!-- 第1章 前期工作 -->
+    <div class="phase phase-1">
+      <div class="phase-header">
+        <div class="phase-number">1</div>
+        <div class="phase-title">前期工作</div>
+        <div class="phase-subtitle">项目立项 · 可行性研究 · 用地规划许可 · 建设许可 · 施工许可</div>
+      </div>
+      <ul class="phase-content">
+        <li><span class="dot"></span>区位规划与实地踏勘</li>
+        <li><span class="dot"></span>工作计划与里程碑制定</li>
+        <li><span class="dot"></span>勘察/设计/施工招标</li>
+        <li><span class="dot"></span>用地规划与选址意见书</li>
+        <li><span class="dot"></span>建设用地规划许可证</li>
+        <li><span class="dot"></span>项目建议书与可研报告</li>
+        <li><span class="dot"></span>发改部门立项审批</li>
+        <li><span class="dot"></span>多规合一平台申报</li>
+        <li><span class="dot"></span>人防/消防/园林方案审查</li>
+        <li><span class="dot"></span>初步设计与施工图审查</li>
+        <li><span class="dot"></span>建设工程规划许可证</li>
+        <li><span class="dot"></span>质监安监备案</li>
+        <li><span class="dot"></span>建设工程施工许可证</li>
+        <li><span class="dot"></span>环境/水保/安评/交评</li>
+      </ul>
+    </div>
+
+    <div class="flow-arrow"></div>
+
+    <!-- 第2章 招标采购 -->
+    <div class="phase phase-2">
+      <div class="phase-header">
+        <div class="phase-number">2</div>
+        <div class="phase-title">招标采购</div>
+        <div class="phase-subtitle">招标文件 · 清单控价 · 合同管理</div>
+      </div>
+      <ul class="phase-content">
+        <li><span class="dot"></span>拟定招标计划</li>
+        <li><span class="dot"></span>编制招标方案</li>
+        <li><span class="dot"></span>招标前置资料准备</li>
+        <li><span class="dot"></span>资格预审文件编制</li>
+        <li><span class="dot"></span>招标文件编制与审核</li>
+        <li><span class="dot"></span>招标公告发布</li>
+        <li><span class="dot"></span>工程量清单编制</li>
+        <li><span class="dot"></span>招标控制价审核</li>
+        <li><span class="dot"></span>开标与评标组织</li>
+        <li><span class="dot"></span>中标候选人公示</li>
+        <li><span class="dot"></span>中标通知书发出</li>
+        <li><span class="dot"></span>合同谈判与签订</li>
+        <li><span class="dot"></span>合同备案与归档</li>
+        <li><span class="dot"></span>AI合同风险审查</li>
+      </ul>
+    </div>
+
+    <div class="flow-arrow"></div>
+
+    <!-- 第3章 工程施工 -->
+    <div class="phase phase-3">
+      <div class="phase-header">
+        <div class="phase-number">3</div>
+        <div class="phase-title">工程施工</div>
+        <div class="phase-subtitle">施工准备 · 设计 · 造价 · 进度 · 质量 · 安全 · 资料 · 合约 · 支付 · 变更签证</div>
+      </div>
+      <ul class="phase-content">
+        <li><span class="dot"></span>质监安监备案手续</li>
+        <li><span class="dot"></span>施工前期策划</li>
+        <li><span class="dot"></span>场地移交与临设搭建</li>
+        <li><span class="dot"></span>设计交底与图纸会审</li>
+        <li><span class="dot"></span>设计变更管理</li>
+        <li><span class="dot"></span>造价跟踪与控制</li>
+        <li><span class="dot"></span>进度计划编制与跟踪</li>
+        <li><span class="dot"></span>质量管理与验收</li>
+        <li><span class="dot"></span>安全监督与检查</li>
+        <li><span class="dot"></span>工程资料管理</li>
+        <li><span class="dot"></span>合约管理与履约</li>
+        <li><span class="dot"></span>工程款支付审核</li>
+        <li><span class="dot"></span>变更签证与询价核价</li>
+        <li><span class="dot"></span>监理协调与例会</li>
+      </ul>
+    </div>
+
+    <div class="flow-arrow"></div>
+
+    <!-- 第4章 竣工验收及移交 -->
+    <div class="phase phase-4">
+      <div class="phase-header">
+        <div class="phase-number">4</div>
+        <div class="phase-title">竣工验收及移交</div>
+        <div class="phase-subtitle">验收计划 · 分项验收 · 资料 · 移交 · 结算 · 决算 · 缺陷责任 · 转固</div>
+      </div>
+      <ul class="phase-content">
+        <li><span class="dot"></span>竣工验收计划编制</li>
+        <li><span class="dot"></span>验收方案与标准制定</li>
+        <li><span class="dot"></span>验收组组建</li>
+        <li><span class="dot"></span>分项工程验收</li>
+        <li><span class="dot"></span>专项验收（消防/人防/规划）</li>
+        <li><span class="dot"></span>竣工资料审核</li>
+        <li><span class="dot"></span>竣工预验收</li>
+        <li><span class="dot"></span>正式竣工验收</li>
+        <li><span class="dot"></span>竣工验收备案</li>
+        <li><span class="dot"></span>竣工结算审核</li>
+        <li><span class="dot"></span>竣工决算编制</li>
+        <li><span class="dot"></span>工程档案移交</li>
+        <li><span class="dot"></span>资产转固</li>
+        <li><span class="dot"></span>缺陷责任期管理</li>
+        <li><span class="dot"></span>保修管理与回访</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 关键里程碑节点 -->
+  <div class="milestones">
+    <div class="milestone">
+      <div class="milestone-icon" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);">📋</div>
+      <div class="milestone-label">立项批复</div>
+      <div class="milestone-desc">项目启动标志</div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">📑</div>
+      <div class="milestone-label">施工许可</div>
+      <div class="milestone-desc">开工前置条件</div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);">🏗️</div>
+      <div class="milestone-label">合同签订</div>
+      <div class="milestone-desc">采购阶段完成</div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);">🔨</div>
+      <div class="milestone-label">正式开工</div>
+      <div class="milestone-desc">施工阶段开始</div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-icon" style="background:linear-gradient(135deg,#e0e7ff,#c7d2fe);">✅</div>
+      <div class="milestone-label">竣工验收</div>
+      <div class="milestone-desc">项目交付标志</div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-icon" style="background:linear-gradient(135deg,#e0e7ff,#c7d2fe);">🏢</div>
+      <div class="milestone-label">资产转固</div>
+      <div class="milestone-desc">项目闭环完成</div>
+    </div>
+  </div>
+
+  <!-- PMBOK 管理维度 -->
+  <div class="pmbok-section">
+    <div class="support-title">PMBOK 十大知识领域 — 全过程贯穿管理</div>
+    <div class="pmbok-grid">
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">🎯</div>
+        <div class="pmbok-item-label">整合管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">📐</div>
+        <div class="pmbok-item-label">范围管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">📅</div>
+        <div class="pmbok-item-label">进度管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">💰</div>
+        <div class="pmbok-item-label">成本管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">✨</div>
+        <div class="pmbok-item-label">质量管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">👥</div>
+        <div class="pmbok-item-label">资源管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">📢</div>
+        <div class="pmbok-item-label">沟通管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">⚠️</div>
+        <div class="pmbok-item-label">风险管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">📦</div>
+        <div class="pmbok-item-label">采购管理</div>
+      </div>
+      <div class="pmbok-item">
+        <div class="pmbok-item-icon">🏛️</div>
+        <div class="pmbok-item-label">相关方管理</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系统支持模块 -->
+  <div class="support-section">
+    <div class="support-title">系统智能支持模块 — AI驱动全过程咨询</div>
+    <div class="support-grid">
+      <div class="support-card">
+        <div class="support-card-icon">🤖</div>
+        <div class="support-card-title">AI智能体</div>
+        <div class="support-card-desc">自主规划执行 · ReAct推理 · 多工具编排</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">⚡</div>
+        <div class="support-card-title">技能面板</div>
+        <div class="support-card-desc">7个AI技能 · 审查/生成/填写 · 一键执行</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">📚</div>
+        <div class="support-card-title">知识库</div>
+        <div class="support-card-desc">规程规范 · 政策法规 · 项目经验 · 方案模板</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">📋</div>
+        <div class="support-card-title">PMBOK框架</div>
+        <div class="support-card-desc">10大知识领域 · 49过程 · 8大绩效域</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">✂️</div>
+        <div class="support-card-title">模块裁剪</div>
+        <div class="support-card-desc">项目特征问卷 · PMBOK裁剪建议 · 灵活组装</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">🔗</div>
+        <div class="support-card-title">工作流引擎</div>
+        <div class="support-card-desc">4个预设模板 · 一键执行 · 步骤可视化</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">🔍</div>
+        <div class="support-card-title">全局搜索</div>
+        <div class="support-card-desc">Ctrl+K快捷键 · 目标/工作项/风险/资源检索</div>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon">🛡️</div>
+        <div class="support-card-title">审计日志</div>
+        <div class="support-card-desc">操作追溯 · 合规审计 · 安全监控</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div>前期工作</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f59e0b;"></div>招标采购</div>
+      <div class="legend-item"><div class="legend-color" style="background:#10b981;"></div>工程施工</div>
+      <div class="legend-item"><div class="legend-color" style="background:#6366f1;"></div>竣工验收及移交</div>
+    </div>
+    <p>全过程工程咨询服务管理系统 · 项目管理工作流程图 · 2026</p>
+  </div>
+
+</div>
+</body>
+</html>
