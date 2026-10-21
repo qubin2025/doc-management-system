@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
+// 轻量声明：避免依赖 @types/node（本测试仅用 process.env）
+declare const process: { env: Record<string, string | undefined> };
+
 const API = 'http://localhost:3000/api';
 
 // 测试凭据：默认 admin/admin123；若系统已修改管理员密码，

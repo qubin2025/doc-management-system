@@ -1,0 +1,552 @@
+﻿
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.8 [39m[90mD:/AICODING0609/工程资料管理系统源码[39m
+
+ [32m✓[39m src/__tests__/cpmEngine.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/__tests__/auth.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/__tests__/projectDelete.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/__tests__/guideModules.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m src/__tests__/kbSync.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/__tests__/mobileWatermark.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/__tests__/backend.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 3043[2mms[22m[39m
+     [33m[2m✓[22m[39m 5. AI连通性 [33m 1269[2mms[22m[39m
+     [33m[2m✓[22m[39m 6. 知识图谱 [33m 943[2mms[22m[39m
+ [32m✓[39m src/__tests__/HomePage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1714[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the logo and title [33m 459[2mms[22m[39m
+     [33m[2m✓[22m[39m renders guide module section [33m 325[2mms[22m[39m
+ [32m✓[39m src/__tests__/AgentConsole.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 797[2mms[22m[39m
+node.exe : [90mstderr[2m | src/__tests__/KnowledgeBase.test.tsx[2m > [22m[2mKnowledgeBase[2m > [22m[2mrenders t
+itle
+所在位置 行:1 字符: 1
++ & "C:\Users\X1 隐士\AppData\Local\Doubao\User Data\sandbox_runtime\base ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...2mrenders title:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mWarning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+Warning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+
+[90mstderr[2m | src/__tests__/KnowledgeBase.test.tsx[2m > [22m[2mKnowledgeBase[2m > [22m[2mrenders 5 library ta
+bs
+[22m[39mWarning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+Warning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+
+[90mstderr[2m | src/__tests__/KnowledgeBase.test.tsx[2m > [22m[2mKnowledgeBase[2m > [22m[2mrenders search input
+[22m[39mWarning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+Warning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+
+[90mstderr[2m | src/__tests__/KnowledgeBase.test.tsx[2m > [22m[2mKnowledgeBase[2m > [22m[2mrenders search mode 
+buttons
+[22m[39mWarning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+Warning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+
+[90mstderr[2m | src/__tests__/KnowledgeBase.test.tsx[2m > [22m[2mKnowledgeBase[2m > [22m[2mcalls onBack when ba
+ck clicked
+[22m[39mWarning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+Warning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+Warning: An update to KnowledgeBase inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at KnowledgeBase (D:/AICODING0609/工程资料管理系统源码/src/components/KnowledgeBase.tsx:53:26)
+
+ [32m✓[39m src/__tests__/KnowledgeBase.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 913[2mms[22m[39m
+     [33m[2m✓[22m[39m renders title [33m 345[2mms[22m[39m
+[90mstdout[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders project name in header
+[22m[39m[O1-人员投入] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:42.762Z'[39m }
+[O5-CPM] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:42.773Z'[39m }
+[O5-CPM] localStorage 数据 { key: [32m'schedule-测试项目'[39m, count: [33m0[39m, sample: [] }
+[O5-CPM] localStorage 为空，请先在"进度管理"中录入项目计划数据
+
+[90mstderr[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders project name in head
+er
+[22m[39m[O2-目标WBS] fetchObjectives 失败 Failed to parse URL from /api/objectives?project=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7
+%9B%AE
+[O1/O2] 加载异常 Failed to parse URL from /api/mobile/daily/list?projectName=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7%9B%AE
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+[O1/O2] 加载异常，已显示空数据
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+
+[90mstdout[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders four KPI cards
+[22m[39m[O1-人员投入] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.076Z'[39m }
+[O5-CPM] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.078Z'[39m }
+[O5-CPM] localStorage 数据 { key: [32m'schedule-测试项目'[39m, count: [33m0[39m, sample: [] }
+[O5-CPM] localStorage 为空，请先在"进度管理"中录入项目计划数据
+
+[90mstderr[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders four KPI cards
+[22m[39m[O2-目标WBS] fetchObjectives 失败 Failed to parse URL from /api/objectives?project=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7
+%9B%AE
+[O1/O2] 加载异常 Failed to parse URL from /api/mobile/daily/list?projectName=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7%9B%AE
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+[O1/O2] 加载异常，已显示空数据
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+
+[90mstdout[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders alert section
+[22m[39m[O1-人员投入] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.244Z'[39m }
+[90mstderr[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders alert section
+[22m[39m[O2-目标WBS] fetchObjectives 失败 Failed to parse URL from /api/objectives?project=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7
+%9B%AE
+[O5-CPM] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.245Z'[39m }
+[O1/O2] 加载异常 Failed to parse URL from /api/mobile/daily/list?projectName=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7%9B%AE
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+[O5-CPM] localStorage 数据 { key: [32m'schedule-测试项目'[39m, count: [33m0[39m, sample: [] }
+[O5-CPM] localStorage 为空，请先在"进度管理"中录入项目计划数据
+
+
+[90mstdout[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders project management platform button
+When testing, code that causes React state updates should be wrapped into act(...):
+[22m[39m[O1-人员投入] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.454Z'[39m }
+
+act(() => {
+[O5-CPM] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.455Z'[39m }
+[O5-CPM] localStorage 数据 { key: [32m'schedule-测试项目'[39m, count: [33m0[39m, sample: [] }
+[O5-CPM] localStorage 为空，请先在"进度管理"中录入项目计划数据
+
+  /* fire events that update state */
+});
+/* assert on the output */
+
+[90mstdout[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders workflow button
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+[22m[39m[O1-人员投入] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.555Z'[39m }
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+[O5-CPM] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.556Z'[39m }
+    at div
+[O5-CPM] localStorage 数据 { key: [32m'schedule-测试项目'[39m, count: [33m0[39m, sample: [] }
+    at div
+[O5-CPM] localStorage 为空，请先在"进度管理"中录入项目计划数据
+    at div
+
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+[O1/O2] 加载异常，已显示空数据
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+
+[90mstderr[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders project management p
+latform button
+[22m[39m[O2-目标WBS] fetchObjectives 失败 Failed to parse URL from /api/objectives?project=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7
+%9B%AE
+[O1/O2] 加载异常 Failed to parse URL from /api/mobile/daily/list?projectName=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7%9B%AE
+[90mstdout[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mcalls onBack when back button clicked
+[22m[39m[O1-人员投入] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.669Z'[39m }
+[O5-CPM] 开始加载 { projectName: [32m'测试项目'[39m, timestamp: [32m'2026-10-21T09:42:43.671Z'[39m }
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+[O5-CPM] localStorage 数据 { key: [32m'schedule-测试项目'[39m, count: [33m0[39m, sample: [] }
+[O5-CPM] localStorage 为空，请先在"进度管理"中录入项目计划数据
+
+ [32m✓[39m src/__tests__/Dashboard.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1693[2mms[22m[39m
+     [33m[2m✓[22m[39m renders project name in header [33m 470[2mms[22m[39m
+
+     [33m[2m✓[22m[39m calls onBack when back button clicked [33m 612[2mms[22m[39m
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+[O1/O2] 加载异常，已显示空数据
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+
+[90mstderr[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mrenders workflow button
+[22m[39m[O2-目标WBS] fetchObjectives 失败 Failed to parse URL from /api/objectives?project=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7
+%9B%AE
+[O1/O2] 加载异常 Failed to parse URL from /api/mobile/daily/list?projectName=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7%9B%AE
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+[O1/O2] 加载异常，已显示空数据
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+
+[90mstderr[2m | src/__tests__/Dashboard.test.tsx[2m > [22m[2mDashboard[2m > [22m[2mcalls onBack when back butto
+n clicked
+[22m[39m[O2-目标WBS] fetchObjectives 失败 Failed to parse URL from /api/objectives?project=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7
+%9B%AE
+[O1/O2] 加载异常 Failed to parse URL from /api/mobile/daily/list?projectName=%E6%B5%8B%E8%AF%95%E9%A1%B9%E7%9B%AE
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+[O1/O2] 加载异常，已显示空数据
+Warning: An update to ProjectOperationCharts inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link
+/wrap-tests-with-act
+    at ProjectOperationCharts (D:/AICODING0609/工程资料管理系统源码/src/components/charts/ProjectOperationCharts.tsx:34:35)
+    at div
+    at div
+    at div
+    at Dashboard (D:/AICODING0609/工程资料管理系统源码/src/components/Dashboard.tsx:23:22)
+
+ [32m✓[39m backend/__tests__/contracts.routes.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/__tests__/storageDiagnose.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m backend/__tests__/auth.routes.test.js [2m([22m[2m9 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/__tests__/guideProgress.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/__tests__/api.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/__tests__/photoApi.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/__tests__/localStorageCleanup.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/__tests__/projectId.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/__tests__/intentDetection.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/__tests__/guideApi.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m21 passed[39m[22m[90m (21)[39m
+[2m      Tests [22m [1m[32m150 passed[39m[22m[90m (150)[39m
+[2m   Start at [22m 17:42:18
+[2m   Duration [22m 33.61s[2m (transform 4.62s, setup 0ms, import 21.99s, tests 8.62s, environment 284.97s)[22m
+
