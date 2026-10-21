@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 
 const API = 'http://localhost:3000/api';
 
+// 测试凭据：默认 admin/admin123；若系统已修改管理员密码，
+// 运行测试时设置环境变量：TEST_USERNAME=admin TEST_PASSWORD=<当前密码>
+const TEST_USERNAME = process.env.TEST_USERNAME || 'admin';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || 'admin123';
+
 describe('后端集成测试', () => {
   let authToken = '';
 
@@ -16,9 +21,9 @@ describe('后端集成测试', () => {
     const res = await fetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+      body: JSON.stringify({ username: TEST_USERNAME, password: TEST_PASSWORD }),
     });
-    expect(res.status, '可能是登录取限流，请等待60秒后重试').toBe(200);
+    expect(res.status, '登录失败：若已修改管理员密码，请设置 TEST_PASSWORD 环境变量为当前密码（如 60 秒内多次尝试可能触发限流）').toBe(200);
     const data = await res.json();
     expect(data).toHaveProperty('token');
     authToken = data.token;

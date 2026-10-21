@@ -86,7 +86,7 @@ router.delete('/apikey/:name', requireAuth, (req, res) => {
 // GET — 系统信息（版本+运行状态）
 router.get('/system', requireAuth, (_req, res) => {
   res.json({
-    version: '5.1.0',
+    version: '2.5.0',
     nodeVersion: process.version,
     platform: process.platform,
     uptime: process.uptime(),

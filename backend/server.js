@@ -275,7 +275,7 @@ app.get('/api/health', async (_req, res) => {
   const allOk = Object.values(services).every(Boolean);
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'healthy' : 'degraded',
-    version: '5.1.0',
+    version: '2.5.0',
     services,
     system,
     storage,
@@ -337,7 +337,7 @@ LOG.phase('5: ROOT ENDPOINTS');
 LOG.info('Registering /api (health), /api/health, /api/stats');
 // Health check（无需登录）
 app.get('/api', (req, res) => {
-  res.json({ status: 'ok', message: '工程资料管理系统 API', version: '1.7.0', uptime: process.uptime() });
+  res.json({ status: 'ok', message: '工程资料管理系统 API', version: '2.5.0', uptime: process.uptime() });
 });
 
 // 系统统计（管理员可见）

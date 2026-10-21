@@ -22,8 +22,9 @@ describe('Dashboard', () => {
 
   it('renders project name in header', () => {
     render(<Dashboard {...defaultProps} />);
-    expect(screen.getByText('项目仪表盘')).toBeTruthy();
-    expect(screen.getByText('测试项目')).toBeTruthy();
+    // 组件标题为"项目看板"；项目名可能多处出现，取首个匹配
+    expect(screen.getAllByText('项目看板')[0]).toBeTruthy();
+    expect(screen.getAllByText('测试项目')[0]).toBeTruthy();
   });
 
   it('renders four KPI cards', () => {
@@ -43,7 +44,8 @@ describe('Dashboard', () => {
 
   it('renders project management platform button', () => {
     render(<Dashboard {...defaultProps} />);
-    expect(screen.getByText('项目管理平台')).toBeTruthy();
+    // 顶栏返回按钮文本为"工程咨询管理平台"
+    expect(screen.getAllByText('工程咨询管理平台')[0]).toBeTruthy();
   });
 
   it('renders workflow button', () => {

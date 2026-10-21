@@ -45,7 +45,8 @@ describe('AgentConsole', () => {
 
   it('renders header with title', () => {
     render(<AgentConsole {...defaultProps} />);
-    expect(screen.getByText('AI 智能体')).toBeTruthy();
+    // 标题可能在页头多处出现，取首个匹配
+    expect(screen.getAllByText('AI 智能体')[0]).toBeTruthy();
   });
 
   it('renders project name in subtitle', () => {

@@ -13,7 +13,8 @@ vi.mock('../data/kbSyncService', () => ({
 describe('KnowledgeBase', () => {
   it('renders title', () => {
     render(<KnowledgeBase onBack={vi.fn()} />);
-    expect(screen.getByText('知识库')).toBeTruthy();
+    // 组件中"知识库"可能出现在标题与页头多处，取首个匹配
+    expect(screen.getAllByText('知识库')[0]).toBeTruthy();
   });
 
   it('renders 5 library tabs', () => {
